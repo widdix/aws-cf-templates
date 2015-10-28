@@ -1,0 +1,434 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "Wordpress: highly available and scalable",
+	"Parameters": {
+		"KeyName": {
+			"Description": "Key Pair name",
+			"Type": "AWS::EC2::KeyPair::KeyName"
+		},
+		"BlogID": {
+			"Description": "A unique identifier for your blog. For internal use only.",
+			"Type": "String",
+			"AllowedPattern": "[A-Za-z0-9\\-]+",
+			"ConstraintDescription": "Only letters, digits or dash allowed."
+		},
+		"BlogTitle": {
+			"Description": "The title of the blog.",
+			"Type": "String"
+		},
+		"AdminUsername": {
+			"Description": "A username for admin.",
+			"Type": "String",
+			"Default": "admin"
+		},
+		"AdminPassword": {
+			"Description": "A password for admin.",
+			"Type": "String",
+			"NoEcho": "true"
+		},
+		"AdminEMail": {
+			"Description": "The email address of the administrator.",
+			"Type": "String"
+		}
+	},
+	"Mappings": {
+		"EC2RegionMap": {
+			"ap-northeast-1": {"AmazonLinuxAMIHVMEBSBacked64bit": "ami-cbf90ecb"},
+			"ap-southeast-1": {"AmazonLinuxAMIHVMEBSBacked64bit": "ami-68d8e93a"},
+			"ap-southeast-2": {"AmazonLinuxAMIHVMEBSBacked64bit": "ami-fd9cecc7"},
+			"eu-central-1": {"AmazonLinuxAMIHVMEBSBacked64bit": "ami-a8221fb5"},
+			"eu-west-1": {"AmazonLinuxAMIHVMEBSBacked64bit": "ami-a10897d6"},
+			"sa-east-1": {"AmazonLinuxAMIHVMEBSBacked64bit": "ami-b52890a8"},
+			"us-east-1": {"AmazonLinuxAMIHVMEBSBacked64bit": "ami-1ecae776"},
+			"us-west-1": {"AmazonLinuxAMIHVMEBSBacked64bit": "ami-d114f295"},
+			"us-west-2": {"AmazonLinuxAMIHVMEBSBacked64bit": "ami-e7527ed7"}
+		}
+	},
+	"Resources": {
+		"VPC": {
+			"Type": "AWS::EC2::VPC",
+			"Properties": {
+				"CidrBlock": "172.31.0.0/16",
+				"EnableDnsHostnames": "true"
+			}
+		},
+		"InternetGateway": {
+			"Type": "AWS::EC2::InternetGateway",
+			"Properties": {
+			}
+		},
+		"VPCGatewayAttachment": {
+			"Type": "AWS::EC2::VPCGatewayAttachment",
+			"Properties": {
+				"VpcId": {"Ref": "VPC"},
+				"InternetGatewayId": {"Ref": "InternetGateway"}
+			}
+		},
+		"SubnetA": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"AvailabilityZone": {"Fn::Select": ["0", {"Fn::GetAZs": ""}]},
+				"CidrBlock": "172.31.38.0/24",
+				"VpcId": {"Ref": "VPC"}
+			}
+		},
+		"SubnetB": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"AvailabilityZone": {"Fn::Select": ["1", {"Fn::GetAZs": ""}]},
+				"CidrBlock": "172.31.37.0/24",
+				"VpcId": {"Ref": "VPC"}
+			}
+		},
+		"RouteTable": {
+			"Type": "AWS::EC2::RouteTable",
+			"Properties": {
+				"VpcId": {"Ref": "VPC"}
+			}
+		},
+		"RouteTableAssociationA": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"SubnetId": {"Ref": "SubnetA"},
+				"RouteTableId": {"Ref": "RouteTable"}
+			}
+		},
+		"RouteTableAssociationB": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"SubnetId": {"Ref": "SubnetB"},
+				"RouteTableId": {"Ref": "RouteTable"}
+			}
+		},
+		"RoutePublicNATToInternet": {
+			"Type": "AWS::EC2::Route",
+			"Properties": {
+				"RouteTableId": {"Ref": "RouteTable"},
+				"DestinationCidrBlock": "0.0.0.0/0",
+				"GatewayId": {"Ref": "InternetGateway"}
+			},
+			"DependsOn": "VPCGatewayAttachment"
+		},
+		"NetworkAcl": {
+			"Type": "AWS::EC2::NetworkAcl",
+			"Properties": {
+				"VpcId": {"Ref": "VPC"}
+			}
+		},
+		"SubnetNetworkAclAssociationA": {
+			"Type": "AWS::EC2::SubnetNetworkAclAssociation",
+			"Properties": {
+				"SubnetId": {"Ref": "SubnetA"},
+				"NetworkAclId": {"Ref": "NetworkAcl"}
+			}
+		},
+		"SubnetNetworkAclAssociationB": {
+			"Type": "AWS::EC2::SubnetNetworkAclAssociation",
+			"Properties": {
+				"SubnetId": {"Ref": "SubnetB"},
+				"NetworkAclId": {"Ref": "NetworkAcl"}
+			}
+		},
+		"NetworkAclEntryIngress": {
+			"Type": "AWS::EC2::NetworkAclEntry",
+			"Properties": {
+				"NetworkAclId": {"Ref": "NetworkAcl"},
+				"RuleNumber": "100",
+				"Protocol": "-1",
+				"RuleAction": "allow",
+				"Egress": "false",
+				"CidrBlock": "0.0.0.0/0"
+			}
+		},
+		"NetworkAclEntryEgress": {
+			"Type": "AWS::EC2::NetworkAclEntry",
+			"Properties": {
+				"NetworkAclId": {"Ref": "NetworkAcl"},
+				"RuleNumber": "100",
+				"Protocol": "-1",
+				"RuleAction": "allow",
+				"Egress": "true",
+				"CidrBlock": "0.0.0.0/0"
+			}
+		},
+		"LoadBalancer": {
+			"Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+			"Properties": {
+				"Subnets": [{"Ref": "SubnetA"}, {"Ref": "SubnetB"}],
+				"LoadBalancerName": {"Ref": "BlogID"},
+				"Listeners": [{
+					"InstancePort": "80",
+					"InstanceProtocol": "HTTP",
+					"LoadBalancerPort": "80",
+					"Protocol": "HTTP"
+				}],
+				"HealthCheck": {
+					"HealthyThreshold": "2",
+					"Interval": "5",
+					"Target": "TCP:80",
+					"Timeout": "3",
+					"UnhealthyThreshold": "2"
+				},
+				"SecurityGroups": [{"Ref": "LoadBalancerSecurityGroup"}],
+				"Scheme": "internet-facing",
+				"CrossZone": "true"
+			}
+		},
+		"LoadBalancerSecurityGroup": {
+			"Type": "AWS::EC2::SecurityGroup",
+			"Properties": {
+				"GroupDescription": "wordpress-elb",
+				"VpcId": {"Ref": "VPC"},
+				"SecurityGroupIngress": [{
+					"CidrIp": "0.0.0.0/0",
+					"FromPort": 80,
+					"IpProtocol": "tcp",
+					"ToPort": 80
+				}]
+			}
+		},
+		"WebServerSecurityGroup": {
+			"Type": "AWS::EC2::SecurityGroup",
+			"Properties": {
+				"GroupDescription": "wordpress-ec2",
+				"VpcId": {"Ref": "VPC"},
+				"SecurityGroupIngress": [{
+					"CidrIp": "0.0.0.0/0",
+					"FromPort": 22,
+					"IpProtocol": "tcp",
+					"ToPort": 22
+				}, {
+					"FromPort": 80,
+					"IpProtocol": "tcp",
+					"SourceSecurityGroupId": {"Ref": "LoadBalancerSecurityGroup"},
+					"ToPort": 80
+				}]
+			}
+		},
+		"DatabaseSecurityGroup": {
+			"Type": "AWS::EC2::SecurityGroup",
+			"Properties": {
+				"GroupDescription": "wordpress-rds",
+				"VpcId": {"Ref": "VPC"},
+				"SecurityGroupIngress": [{
+					"IpProtocol": "tcp",
+					"FromPort": "3306",
+					"ToPort": "3306",
+					"SourceSecurityGroupId": {"Ref": "WebServerSecurityGroup"}
+				}]
+			}
+		},
+		"Database": {
+			"Type": "AWS::RDS::DBInstance",
+			"Properties": {
+				"AllocatedStorage": "5",
+				"BackupRetentionPeriod": "0",
+				"DBInstanceClass": "db.t2.micro",
+				"DBInstanceIdentifier": {"Ref": "BlogID"},
+				"DBName": "wordpress",
+				"Engine": "MySQL",
+				"MasterUsername": "wordpress",
+				"MasterUserPassword": "wordpress",
+				"VPCSecurityGroups": [{"Fn::GetAtt": ["DatabaseSecurityGroup", "GroupId"]}],
+				"DBSubnetGroupName": {"Ref": "DBSubnetGroup"}
+			}
+		},
+		"DBSubnetGroup" : {
+			"Type" : "AWS::RDS::DBSubnetGroup",
+			"Properties" : {
+				"DBSubnetGroupDescription" : "DB subnet group",
+				"SubnetIds": [{"Ref": "SubnetA"}, {"Ref": "SubnetB"}]
+			}
+		},
+		"S3Bucket": {
+			"Type": "AWS::S3::Bucket",
+			"Properties": {
+				"BucketName": {"Ref": "BlogID"}
+			}
+		},
+		"IAMUser" : {
+			"Type" : "AWS::IAM::User",
+			"Properties" : {
+				"Path" : "/",
+				"Policies" : [ {
+					"PolicyName" : "UploadToS3",
+					"PolicyDocument" : {
+						"Version": "2012-10-17",
+						"Statement" : [{
+							"Effect" : "Allow",
+							"Action" : [ "s3:*" ],
+							"Resource" : [
+								{"Fn::Join": ["", ["arn:aws:s3:::", {"Ref": "BlogID"} ,"/*"]]}
+							]
+						}] 
+					}
+      			}]
+			}
+		},
+		"IAMAccessKey" : {
+			"Type" : "AWS::IAM::AccessKey",
+			"Properties" : {
+				"UserName" : { "Ref" : "IAMUser" }
+			}
+		}, 
+		"LaunchConfiguration": {
+			"Type": "AWS::AutoScaling::LaunchConfiguration",
+			"Metadata": {
+				"AWS::CloudFormation::Init": {
+					"config": {
+						"packages": {
+							"yum": {
+								"php": [],
+								"php-mysql": [],
+								"mysql": [],
+								"httpd": []
+							}
+						},
+						"sources": {
+							"/var/www/html": "https://wordpress.org/wordpress-4.2.4.tar.gz"
+						},
+						"files": {
+							"/root/config.sh": {
+								"content": {"Fn::Join": ["", [
+									"#!/bin/bash -ex\n",
+									"cp /var/www/html/wordpress/wp-config-sample.php /var/www/html/wordpress/wp-config.php\n",
+									"sed -i \"s/'database_name_here'/'wordpress'/g\" wp-config.php\n",
+									"sed -i \"s/'username_here'/'wordpress'/g\" wp-config.php\n",
+									"sed -i \"s/'password_here'/'wordpress'/g\" wp-config.php\n",
+									"sed -i \"s/'localhost'/'", {"Fn::GetAtt": ["Database", "Endpoint.Address"]}, "'/g\" wp-config.php\n",
+									"chmod -R 777 wp-content/ \n",
+									"echo \"define('AWS_ACCESS_KEY_ID', '", {"Ref" : "IAMAccessKey"},"'); \" >> wp-config.php \n",
+									"echo \"define('AWS_SECRET_ACCESS_KEY', '", {"Fn::GetAtt": ["IAMAccessKey", "SecretAccessKey"]},"'); \" >> wp-config.php \n",
+									"curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \n",
+									"php wp-cli.phar core install --url=\"", {"Fn::GetAtt": ["LoadBalancer", "DNSName"]}, "/wordpress\" --title=\"", {"Ref": "BlogTitle"}, "\" --admin_user=\"", {"Ref": "AdminUsername"}, "\" --admin_password=\"", {"Ref": "AdminPassword"}, "\" --admin_email=\"", {"Ref": "AdminEMail"}, "\" \n",
+									"php wp-cli.phar plugin install --activate amazon-web-services \n",
+									"php wp-cli.phar plugin install --activate amazon-s3-and-cloudfront \n",
+									"CHARCOUNT=`printf \"",{"Ref": "BlogID"} ,"\" | wc -c` \n",
+									"php wp-cli.phar db query \"DELETE FROM wp_options WHERE option_name = 'tantan_wordpress_s3'; INSERT INTO wp_options (option_name, option_value, autoload) VALUES('tantan_wordpress_s3', 'a:15:{s:17:\\\"post_meta_version\\\";i:1;s:6:\\\"bucket\\\";s:", "$CHARCOUNT", ":\\\"", {"Ref": "BlogID"},"\\\";s:6:\\\"region\\\";s:0:\\\"\\\";s:6:\\\"domain\\\";s:9:\\\"subdomain\\\";s:7:\\\"expires\\\";s:1:\\\"0\\\";s:10:\\\"cloudfront\\\";s:0:\\\"\\\";s:13:\\\"object-prefix\\\";s:19:\\\"wp-content/uploads/\\\";s:10:\\\"copy-to-s3\\\";s:1:\\\"1\\\";s:13:\\\"serve-from-s3\\\";s:1:\\\"1\\\";s:17:\\\"remove-local-file\\\";s:1:\\\"0\\\";s:3:\\\"ssl\\\";s:7:\\\"request\\\";s:12:\\\"hidpi-images\\\";s:1:\\\"0\\\";s:17:\\\"object-versioning\\\";s:1:\\\"0\\\";s:21:\\\"use-yearmonth-folders\\\";s:1:\\\"1\\\";s:20:\\\"enable-object-prefix\\\";s:1:\\\"1\\\";}', 'yes');\" \n"
+								]]},
+								"mode": "000500",
+								"owner": "root",
+								"group": "root"
+							}
+						},
+						"commands": {
+							"01_mv": {
+								"command": "mv * ../",
+								"cwd": "/var/www/html/wordpress"
+							},
+							"01_config": {
+								"command": "/root/config.sh",
+								"cwd": "/var/www/html"
+							}
+						},
+						"services": {
+							"sysvinit": {
+								"httpd": {
+									"enabled": "true",
+									"ensureRunning": "true"
+								}
+							}
+						}
+					}
+				}
+			},
+			"Properties": {
+				"ImageId": {"Fn::FindInMap": ["EC2RegionMap", {"Ref": "AWS::Region"}, "AmazonLinuxAMIHVMEBSBacked64bit"]},
+				"InstanceType": "t2.micro",
+				"SecurityGroups": [{"Ref": "WebServerSecurityGroup"}],
+				"KeyName": {"Ref": "KeyName"},
+				"AssociatePublicIpAddress": true,
+				"UserData": {"Fn::Base64": {"Fn::Join": ["", [
+					"#!/bin/bash -ex\n",
+					"yum update -y aws-cfn-bootstrap\n",
+					"/opt/aws/bin/cfn-init -v --stack ", {"Ref": "AWS::StackName"}, " --resource LaunchConfiguration --region ", {"Ref": "AWS::Region"}, "\n",
+					"/opt/aws/bin/cfn-signal -e $? --stack ", {"Ref": "AWS::StackName"}, " --resource AutoScalingGroup --region ", {"Ref": "AWS::Region"}, "\n"
+				]]}}
+			}
+		},
+		"AutoScalingGroup": {
+			"Type": "AWS::AutoScaling::AutoScalingGroup",
+			"Properties": {
+				"LoadBalancerNames": [{"Ref": "LoadBalancer"}],
+				"LaunchConfigurationName": {"Ref": "LaunchConfiguration"},
+				"MinSize": "2",
+				"MaxSize": "4",
+				"DesiredCapacity": "2",
+				"Cooldown": "60",
+				"HealthCheckGracePeriod": "120",
+				"HealthCheckType": "ELB",
+				"VPCZoneIdentifier": [{"Ref": "SubnetA"}, {"Ref": "SubnetB"}],
+				"Tags": [{
+					"PropagateAtLaunch": true,
+					"Value": "wordpress",
+					"Key": "Name"
+				}]
+			},
+			"CreationPolicy": {
+				"ResourceSignal": {
+					"Timeout": "PT10M"
+				}
+			}
+		},
+		"ScalingUpPolicy": {
+			"Type": "AWS::AutoScaling::ScalingPolicy",
+			"Properties": {
+				"AdjustmentType": "ChangeInCapacity",
+				"AutoScalingGroupName": {"Ref": "AutoScalingGroup"},
+				"Cooldown": "60",
+				"ScalingAdjustment": "1"
+			}
+		},
+		"CPUHighAlarm": {
+			"Type": "AWS::CloudWatch::Alarm",
+			"Properties": {
+				"EvaluationPeriods": "1",
+				"Statistic": "Average",
+				"Threshold": "60",
+				"AlarmDescription": "Alarm if CPU load is high.",
+				"Period": "60",
+				"AlarmActions": [{"Ref": "ScalingUpPolicy"}],
+				"Namespace": "AWS/EC2",
+				"Dimensions": [{
+					"Name": "AutoScalingGroupName",
+					"Value": {"Ref": "AutoScalingGroup"}
+				}],
+				"ComparisonOperator": "GreaterThanThreshold",
+				"MetricName": "CPUUtilization"
+			}
+		},
+		"ScalingDownPolicy": {
+			"Type": "AWS::AutoScaling::ScalingPolicy",
+			"Properties": {
+				"AdjustmentType": "ChangeInCapacity",
+				"AutoScalingGroupName": {"Ref": "AutoScalingGroup"},
+				"Cooldown": "60",
+				"ScalingAdjustment": "-1"
+			}
+		},
+		"CPULowAlarm": {
+			"Type": "AWS::CloudWatch::Alarm",
+			"Properties": {
+				"EvaluationPeriods": "1",
+				"Statistic": "Average",
+				"Threshold": "20",
+				"AlarmDescription": "Alarm if CPU load is low.",
+				"Period": "60",
+				"AlarmActions": [{"Ref": "ScalingDownPolicy"}],
+				"Namespace": "AWS/EC2",
+				"Dimensions": [{
+					"Name": "AutoScalingGroupName",
+					"Value": {"Ref": "AutoScalingGroup"}
+				}],
+				"ComparisonOperator": "LessThanThreshold",
+				"MetricName": "CPUUtilization"
+			}
+		}
+	},
+	"Outputs": {
+		"URL": {
+			"Value": {"Fn::Join": ["", ["http://", {"Fn::GetAtt": ["LoadBalancer", "DNSName"]}]]},
+			"Description": "URL to Wordpress"
+		}
+	}
+}
