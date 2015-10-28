@@ -291,7 +291,7 @@
 							"/root/config.sh": {
 								"content": {"Fn::Join": ["", [
 									"#!/bin/bash -ex\n",
-									"cp /var/www/html/wordpress/wp-config-sample.php /var/www/html/wordpress/wp-config.php\n",
+									"cp wp-config-sample.php wp-config.php\n",
 									"sed -i \"s/'database_name_here'/'wordpress'/g\" wp-config.php\n",
 									"sed -i \"s/'username_here'/'wordpress'/g\" wp-config.php\n",
 									"sed -i \"s/'password_here'/'wordpress'/g\" wp-config.php\n",
