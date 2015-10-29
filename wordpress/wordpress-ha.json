@@ -316,7 +316,7 @@
 								"command": "mv * ../",
 								"cwd": "/var/www/html/wordpress"
 							},
-							"01_config": {
+							"02_config": {
 								"command": "/root/config.sh",
 								"cwd": "/var/www/html"
 							}
