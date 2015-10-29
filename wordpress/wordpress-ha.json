@@ -300,7 +300,7 @@
 									"echo \"define('AWS_ACCESS_KEY_ID', '", {"Ref" : "IAMAccessKey"},"'); \" >> wp-config.php \n",
 									"echo \"define('AWS_SECRET_ACCESS_KEY', '", {"Fn::GetAtt": ["IAMAccessKey", "SecretAccessKey"]},"'); \" >> wp-config.php \n",
 									"curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \n",
-									"php wp-cli.phar core install --url=\"", {"Fn::GetAtt": ["LoadBalancer", "DNSName"]}, "/wordpress\" --title=\"", {"Ref": "BlogTitle"}, "\" --admin_user=\"", {"Ref": "AdminUsername"}, "\" --admin_password=\"", {"Ref": "AdminPassword"}, "\" --admin_email=\"", {"Ref": "AdminEMail"}, "\" \n",
+									"php wp-cli.phar core install --url=\"", {"Fn::GetAtt": ["LoadBalancer", "DNSName"]}, "\" --title=\"", {"Ref": "BlogTitle"}, "\" --admin_user=\"", {"Ref": "AdminUsername"}, "\" --admin_password=\"", {"Ref": "AdminPassword"}, "\" --admin_email=\"", {"Ref": "AdminEMail"}, "\" \n",
 									"php wp-cli.phar plugin install --activate amazon-web-services \n",
 									"php wp-cli.phar plugin install --activate amazon-s3-and-cloudfront \n",
 									"CHARCOUNT=`printf \"",{"Ref": "BlogID"} ,"\" | wc -c` \n",
