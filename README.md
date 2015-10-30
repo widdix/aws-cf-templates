@@ -5,7 +5,7 @@ Collection of templates exclusively designed for AWS CloudFormation. Create and 
 
 * Speed up development and migration: reuse our CloudFormation templates to create complex environments for common use cases with ease.
 * Rely on high quality infrastructure templates: peer-reviewed by an expert (certified AWS solutions architect Professional) and verified with automated tests.
-* Premium Support available: Get help in case of small and big emergencies and submit feature request. Interested? Mail to (team@widdix.de)[mailto:team@widdix.de].
+* Premium Support available: Get help in case of small and big emergencies and submit feature request. Interested? Mail to [team@widdix.de](mailto:team@widdix.de).
 
 ## Templates
 
@@ -19,4 +19,4 @@ All templates are published under Apache License Version 2.0.
 
 ## About
 
-This is a (cloudonaut.io)[https://cloudonaut.io/templates-for-aws-cloudformation/] project. Engineered by (https://widdix.net)[widdix.net].
+This is a [cloudonaut.io](https://cloudonaut.io/templates-for-aws-cloudformation/) project. Engineered by [https://widdix.net](widdix.net).

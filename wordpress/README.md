@@ -23,7 +23,7 @@ Use this template to create a **highly available** and **scalable** Wordpress en
 
 ### Installation Guide
 
-1. Open AWS CloudFormation within the Management Console: (https://console.aws.amazon.com/cloudformation)[https://console.aws.amazon.com/cloudformation].
+1. Open AWS CloudFormation within the Management Console: [https://console.aws.amazon.com/cloudformation](https://console.aws.amazon.com/cloudformation).
 1. Create a new stack by clicking on the **Create Stack** button.
 1. Select **Upload a template to Amazon S3* and upload the JSON-file **wordpress-ha.json** from this repository.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -37,4 +37,4 @@ Use this template to create a **highly available** and **scalable** Wordpress en
 
 ### Support needed?
 
-Do you need help? Mail to (team@widdix.de)[mailto:team@widdix.de].
+Do you need help? Mail to [team@widdix.de](mailto:team@widdix.de).
