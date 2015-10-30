@@ -246,10 +246,10 @@
 				"StorageType": "gp2"
 			}
 		},
-		"DBSubnetGroup" : {
-			"Type" : "AWS::RDS::DBSubnetGroup",
-			"Properties" : {
-				"DBSubnetGroupDescription" : "DB subnet group",
+		"DBSubnetGroup": {
+			"Type": "AWS::RDS::DBSubnetGroup",
+			"Properties": {
+				"DBSubnetGroupDescription": "DB subnet group",
 				"SubnetIds": [{"Ref": "SubnetA"}, {"Ref": "SubnetB"}]
 			}
 		},
@@ -259,29 +259,29 @@
 				"BucketName": {"Ref": "BlogID"}
 			}
 		},
-		"IAMUser" : {
-			"Type" : "AWS::IAM::User",
-			"Properties" : {
-				"Path" : "/",
-				"Policies" : [ {
-					"PolicyName" : "UploadToS3",
-					"PolicyDocument" : {
+		"IAMUser": {
+			"Type": "AWS::IAM::User",
+			"Properties": {
+				"Path": "/",
+				"Policies": [{
+					"PolicyName": "UploadToS3",
+					"PolicyDocument": {
 						"Version": "2012-10-17",
-						"Statement" : [{
-							"Effect" : "Allow",
-							"Action" : [ "s3:*" ],
-							"Resource" : [
+						"Statement": [{
+							"Effect": "Allow",
+							"Action": ["s3:*"],
+							"Resource": [
 								{"Fn::Join": ["", ["arn:aws:s3:::", {"Ref": "BlogID"} ,"/*"]]}
 							]
 						}] 
 					}
-      			}]
+      	}]
 			}
 		},
-		"IAMAccessKey" : {
-			"Type" : "AWS::IAM::AccessKey",
-			"Properties" : {
-				"UserName" : { "Ref" : "IAMUser" }
+		"IAMAccessKey": {
+			"Type": "AWS::IAM::AccessKey",
+			"Properties": {
+				"UserName": {"Ref": "IAMUser"}
 			}
 		}, 
 		"LaunchConfiguration": {
@@ -310,7 +310,7 @@
 									"sed -i \"s/'password_here'/'wordpress'/g\" wp-config.php\n",
 									"sed -i \"s/'localhost'/'", {"Fn::GetAtt": ["Database", "Endpoint.Address"]}, "'/g\" wp-config.php\n",
 									"chmod -R 777 wp-content/ \n",
-									"echo \"define('AWS_ACCESS_KEY_ID', '", {"Ref" : "IAMAccessKey"},"'); \" >> wp-config.php \n",
+									"echo \"define('AWS_ACCESS_KEY_ID', '", {"Ref": "IAMAccessKey"},"'); \" >> wp-config.php \n",
 									"echo \"define('AWS_SECRET_ACCESS_KEY', '", {"Fn::GetAtt": ["IAMAccessKey", "SecretAccessKey"]},"'); \" >> wp-config.php \n",
 									"curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \n",
 									"php wp-cli.phar core install --url=\"", {"Fn::GetAtt": ["LoadBalancer", "DNSName"]}, "\" --title=\"", {"Ref": "BlogTitle"}, "\" --admin_user=\"", {"Ref": "BlogAdminUsername"}, "\" --admin_password=\"", {"Ref": "BlogAdminPassword"}, "\" --admin_email=\"", {"Ref": "BlogAdminEMail"}, "\" \n",
