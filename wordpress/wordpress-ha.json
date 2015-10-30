@@ -1,11 +1,7 @@
 {
 	"AWSTemplateFormatVersion": "2010-09-09",
-	"Description": "Wordpress: highly available and scalable",
+	"Description": "Wordpress: highly available and scalable, a cloudonaut.io template",
 	"Parameters": {
-		"KeyName": {
-			"Description": "Key Pair name",
-			"Type": "AWS::EC2::KeyPair::KeyName"
-		},
 		"BlogID": {
 			"Description": "A unique identifier for your blog. For internal use only.",
 			"Type": "String",
@@ -13,22 +9,37 @@
 			"ConstraintDescription": "Only letters, digits or dash allowed."
 		},
 		"BlogTitle": {
-			"Description": "The title of the blog.",
-			"Type": "String"
+			"Description": "The title of the Wordpress blog.",
+			"Type": "String",
+			"Default": "Just another Wordpress blog"
 		},
-		"AdminUsername": {
-			"Description": "A username for admin.",
+		"BlogAdminUsername": {
+			"Description": "A username for the Wordpress admin.",
 			"Type": "String",
 			"Default": "admin"
 		},
-		"AdminPassword": {
-			"Description": "A password for admin.",
+		"BlogAdminPassword": {
+			"Description": "A password for the Wordpress admin.",
 			"Type": "String",
 			"NoEcho": "true"
 		},
-		"AdminEMail": {
-			"Description": "The email address of the administrator.",
+		"BlogAdminEMail": {
+			"Description": "The email address of the Wordpress admin.",
 			"Type": "String"
+		},
+		"WebServerKeyName": {
+			"Description": "The key pair to establish a SSH connection to the web servers.",
+			"Type": "AWS::EC2::KeyPair::KeyName"
+		},
+		"WebServerInstanceType": {
+			"Description": "The instance type of web servers (e.g. t2.micro).",
+			"Type": "String",
+			"Default": "t2.micro"
+		},
+		"DBServerInstanceType": {
+			"Description": "The instance type of database server (e.g. db.t2.micro).",
+			"Type": "String",
+			"Default": "db.t2.micro"
 		}
 	},
 	"Mappings": {
@@ -223,14 +234,16 @@
 			"Properties": {
 				"AllocatedStorage": "5",
 				"BackupRetentionPeriod": "0",
-				"DBInstanceClass": "db.t2.micro",
+				"DBInstanceClass": {"Ref": "DBServerInstanceType"},
 				"DBInstanceIdentifier": {"Ref": "BlogID"},
 				"DBName": "wordpress",
 				"Engine": "MySQL",
 				"MasterUsername": "wordpress",
 				"MasterUserPassword": "wordpress",
 				"VPCSecurityGroups": [{"Fn::GetAtt": ["DatabaseSecurityGroup", "GroupId"]}],
-				"DBSubnetGroupName": {"Ref": "DBSubnetGroup"}
+				"DBSubnetGroupName": {"Ref": "DBSubnetGroup"},
+				"MultiAZ": "true",
+				"StorageType": "gp2"
 			}
 		},
 		"DBSubnetGroup" : {
@@ -300,7 +313,7 @@
 									"echo \"define('AWS_ACCESS_KEY_ID', '", {"Ref" : "IAMAccessKey"},"'); \" >> wp-config.php \n",
 									"echo \"define('AWS_SECRET_ACCESS_KEY', '", {"Fn::GetAtt": ["IAMAccessKey", "SecretAccessKey"]},"'); \" >> wp-config.php \n",
 									"curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \n",
-									"php wp-cli.phar core install --url=\"", {"Fn::GetAtt": ["LoadBalancer", "DNSName"]}, "\" --title=\"", {"Ref": "BlogTitle"}, "\" --admin_user=\"", {"Ref": "AdminUsername"}, "\" --admin_password=\"", {"Ref": "AdminPassword"}, "\" --admin_email=\"", {"Ref": "AdminEMail"}, "\" \n",
+									"php wp-cli.phar core install --url=\"", {"Fn::GetAtt": ["LoadBalancer", "DNSName"]}, "\" --title=\"", {"Ref": "BlogTitle"}, "\" --admin_user=\"", {"Ref": "BlogAdminUsername"}, "\" --admin_password=\"", {"Ref": "BlogAdminPassword"}, "\" --admin_email=\"", {"Ref": "BlogAdminEMail"}, "\" \n",
 									"php wp-cli.phar plugin install --activate amazon-web-services \n",
 									"php wp-cli.phar plugin install --activate amazon-s3-and-cloudfront \n",
 									"CHARCOUNT=`printf \"",{"Ref": "BlogID"} ,"\" | wc -c` \n",
@@ -334,16 +347,17 @@
 			},
 			"Properties": {
 				"ImageId": {"Fn::FindInMap": ["EC2RegionMap", {"Ref": "AWS::Region"}, "AmazonLinuxAMIHVMEBSBacked64bit"]},
-				"InstanceType": "t2.micro",
+				"InstanceType": {"Ref": "WebServerInstanceType"},
 				"SecurityGroups": [{"Ref": "WebServerSecurityGroup"}],
-				"KeyName": {"Ref": "KeyName"},
+				"KeyName": {"Ref": "WebServerKeyName"},
 				"AssociatePublicIpAddress": true,
 				"UserData": {"Fn::Base64": {"Fn::Join": ["", [
 					"#!/bin/bash -ex\n",
 					"yum update -y aws-cfn-bootstrap\n",
 					"/opt/aws/bin/cfn-init -v --stack ", {"Ref": "AWS::StackName"}, " --resource LaunchConfiguration --region ", {"Ref": "AWS::Region"}, "\n",
 					"/opt/aws/bin/cfn-signal -e $? --stack ", {"Ref": "AWS::StackName"}, " --resource AutoScalingGroup --region ", {"Ref": "AWS::Region"}, "\n"
-				]]}}
+				]]}},
+				"InstanceMonitoring": "true"
 			}
 		},
 		"AutoScalingGroup": {
@@ -373,10 +387,11 @@
 		"ScalingUpPolicy": {
 			"Type": "AWS::AutoScaling::ScalingPolicy",
 			"Properties": {
-				"AdjustmentType": "ChangeInCapacity",
+				"AdjustmentType": "PercentChangeInCapacity",
+				"MinAdjustmentStep": "1",
 				"AutoScalingGroupName": {"Ref": "AutoScalingGroup"},
-				"Cooldown": "60",
-				"ScalingAdjustment": "1"
+				"Cooldown": "300",
+				"ScalingAdjustment": "25"
 			}
 		},
 		"CPUHighAlarm": {
@@ -384,7 +399,7 @@
 			"Properties": {
 				"EvaluationPeriods": "1",
 				"Statistic": "Average",
-				"Threshold": "60",
+				"Threshold": "75",
 				"AlarmDescription": "Alarm if CPU load is high.",
 				"Period": "60",
 				"AlarmActions": [{"Ref": "ScalingUpPolicy"}],
@@ -400,10 +415,11 @@
 		"ScalingDownPolicy": {
 			"Type": "AWS::AutoScaling::ScalingPolicy",
 			"Properties": {
-				"AdjustmentType": "ChangeInCapacity",
+				"AdjustmentType": "PercentChangeInCapacity",
+				"MinAdjustmentStep": "1",
 				"AutoScalingGroupName": {"Ref": "AutoScalingGroup"},
-				"Cooldown": "60",
-				"ScalingAdjustment": "-1"
+				"Cooldown": "300",
+				"ScalingAdjustment": "-25"
 			}
 		},
 		"CPULowAlarm": {
@@ -411,7 +427,7 @@
 			"Properties": {
 				"EvaluationPeriods": "1",
 				"Statistic": "Average",
-				"Threshold": "20",
+				"Threshold": "25",
 				"AlarmDescription": "Alarm if CPU load is low.",
 				"Period": "60",
 				"AlarmActions": [{"Ref": "ScalingDownPolicy"}],
