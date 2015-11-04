@@ -1,0 +1,87 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "EC2 instance with auto-recovery",
+	"Parameters": {
+		"KeyName": {
+			"Description": "The name of the key pair used to log into the EC2 instance via SSH.",
+			"Type": "AWS::EC2::KeyPair::KeyName"
+		},
+		"InstanceType": {
+			"Description": "The instance type for the EC2 instance.",
+			"Type": "String",
+			"Default": "t2.micro"
+		},
+		"Name": {
+			"Description": "The name for the EC2 instance.",
+			"Type": "String"
+		},
+		"SecurityGroup": {
+			"Description": "The security group for the EC2 instance.",
+			"Type": "AWS::EC2::SecurityGroup::Id"
+		},
+		"Subnet": {
+			"Description": "The subnet the EC2 instance is launched into.",
+			"Type": "AWS::EC2::Subnet::Id"
+		} 
+	},
+	"Mappings": {
+		"EC2RegionMap": {
+			"ap-northeast-1": {"AmazonLinuxAMIHVMEBSBacked64bit": "ami-cbf90ecb"},
+			"ap-southeast-1": {"AmazonLinuxAMIHVMEBSBacked64bit": "ami-68d8e93a"},
+			"ap-southeast-2": {"AmazonLinuxAMIHVMEBSBacked64bit": "ami-fd9cecc7"},
+			"eu-central-1": {"AmazonLinuxAMIHVMEBSBacked64bit": "ami-a8221fb5"},
+			"eu-west-1": {"AmazonLinuxAMIHVMEBSBacked64bit": "ami-a10897d6"},
+			"sa-east-1": {"AmazonLinuxAMIHVMEBSBacked64bit": "ami-b52890a8"},
+			"us-east-1": {"AmazonLinuxAMIHVMEBSBacked64bit": "ami-1ecae776"},
+			"us-west-1": {"AmazonLinuxAMIHVMEBSBacked64bit": "ami-d114f295"},
+			"us-west-2": {"AmazonLinuxAMIHVMEBSBacked64bit": "ami-e7527ed7"}
+		}
+	},
+	"Resources": {
+		"ElasticIP": {
+			"Type": "AWS::EC2::EIP",
+			"DependsOn": "GatewayToInternet",
+			"Properties": {
+				"InstanceId": {"Ref": "Server"},
+				"Domain": "vpc"
+			}
+		},
+		"Server": {
+			"Type": "AWS::EC2::Instance",
+			"Properties": {
+				"ImageId": {"Fn::FindInMap": ["EC2RegionMap", {"Ref": "AWS::Region"}, "AmazonLinuxAMIHVMEBSBacked64bit"]},
+				"InstanceType": {"Ref": "InstanceType"},
+				"KeyName": {"Ref": "KeyName"},
+				"SecurityGroupIds": [{"Ref": "SecurityGroup"}],
+				"SubnetId": {"Ref": "Subnet"},
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": {"Ref": "Name"}
+					}
+				]
+			}
+		},
+		"RecoveryAlarm": {
+			"Type": "AWS::CloudWatch::Alarm",
+			"Properties": {
+				"AlarmDescription": "Recover server when underlying hardware fails.",
+				"Namespace": "AWS/EC2" ,
+				"MetricName": "StatusCheckFailed_System",
+				"Statistic": "Minimum",
+				"Period": "60",
+				"EvaluationPeriods": "5",
+				"ComparisonOperator": "GreaterThanThreshold",
+				"Threshold": "0",
+				"AlarmActions": [{"Fn::Join": ["", ["arn:aws:automate:", { "Ref": "AWS::Region"}, ":ec2:recover"]]}],
+				"Dimensions": [{"Name": "InstanceId", "Value": {"Ref": "Server"}}]
+			}
+	    }
+	},
+	"Outputs": {
+		"ElasticIP": {
+			"Description": "The public IP address of the EC2 instance.",
+			"Value": {"Ref": "ElasticIP"}
+		}
+	}
+}
