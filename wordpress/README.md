@@ -35,6 +35,10 @@ Use this template to create a **highly available** and **scalable** Wordpress en
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 1. Grab the URL of the Wordpress environment from the **Outputs** tab of your stack.
 
+### Limitations
+
+* It is not possible to install plugins or themes with the web interface at the moment as the changes are not propagated to all servers automatically.
+
 ### Support needed?
 
 Do you need help? Mail to [team@widdix.de](mailto:team@widdix.de).
