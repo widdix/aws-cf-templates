@@ -64,7 +64,7 @@
 		"RecoveryAlarm": {
 			"Type": "AWS::CloudWatch::Alarm",
 			"Properties": {
-				"AlarmDescription": "Recover server when underlying hardware fails.",
+				"AlarmDescription": "Recovering server when underlying hardware fails.",
 				"Namespace": "AWS/EC2" ,
 				"MetricName": "StatusCheckFailed_System",
 				"Statistic": "Minimum",
