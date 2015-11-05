@@ -40,13 +40,12 @@
 	"Resources": {
 		"ElasticIP": {
 			"Type": "AWS::EC2::EIP",
-			"DependsOn": "GatewayToInternet",
 			"Properties": {
-				"InstanceId": {"Ref": "Server"},
+				"InstanceId": {"Ref": "VirtualMachine"},
 				"Domain": "vpc"
 			}
 		},
-		"Server": {
+		"VirtualMachine": {
 			"Type": "AWS::EC2::Instance",
 			"Properties": {
 				"ImageId": {"Fn::FindInMap": ["EC2RegionMap", {"Ref": "AWS::Region"}, "AmazonLinuxAMIHVMEBSBacked64bit"]},
@@ -74,7 +73,7 @@
 				"ComparisonOperator": "GreaterThanThreshold",
 				"Threshold": "0",
 				"AlarmActions": [{"Fn::Join": ["", ["arn:aws:automate:", { "Ref": "AWS::Region"}, ":ec2:recover"]]}],
-				"Dimensions": [{"Name": "InstanceId", "Value": {"Ref": "Server"}}]
+				"Dimensions": [{"Name": "InstanceId", "Value": {"Ref": "VirtualMachine"}}]
 			}
 	    }
 	},
