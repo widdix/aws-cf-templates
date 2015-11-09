@@ -9,7 +9,8 @@ Collection of templates exclusively designed for AWS CloudFormation. Create and 
 
 ## Templates
 
-* Wordpress: highly avaialbe and scalable
+* [Wordpress: highly avaialbe and scalable)(https://github.com/widdix/aws-cf-templates/tree/master/wordpress)
+* [EC2: auto-recovery](https://github.com/widdix/aws-cf-templates/tree/master/ec2)
 
 More templates will be available soon.
 
