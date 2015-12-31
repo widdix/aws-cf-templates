@@ -37,7 +37,7 @@ Use this template to create a **highly available** and **scalable** Wordpress en
 
 ### Limitations
 
-* It is not possible to install plugins or themes with the web interface at the moment as the changes are not propagated to all servers automatically.
+Installing and updating core, plugins and themes is disabled. You need to edit the ``/root/config.sh`` to change core, plugins and themes during bootstrapping of EC2 instances.
 
 ### Support needed?
 
