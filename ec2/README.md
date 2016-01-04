@@ -15,7 +15,7 @@ Use the `ec2-auto-recovery.json` template to launch an EC2 instance with auto-re
 
 1. Open AWS CloudFormation within the Management Console: [https://console.aws.amazon.com/cloudformation](https://console.aws.amazon.com/cloudformation).
 1. Create a new stack by clicking on the **Create Stack** button.
-1. Select **Upload a template to Amazon S3* and upload the JSON-file `ec2-auto-recovery.json` from this repository.
+1. Select **Upload a template to Amazon S3** and upload the JSON-file `ec2-auto-recovery.json` from this repository.
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
