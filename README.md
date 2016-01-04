@@ -1,4 +1,5 @@
 # aws-cf-templates
+
 Collection of templates exclusively designed for AWS CloudFormation. Create and update common infrastructure for common use cases on AWS within minutes.
 
 ## Benefits
@@ -9,8 +10,9 @@ Collection of templates exclusively designed for AWS CloudFormation. Create and 
 
 ## Templates
 
-* [Wordpress: highly avaialbe and scalable](https://github.com/widdix/aws-cf-templates/tree/master/wordpress)
-* [EC2: auto-recovery](https://github.com/widdix/aws-cf-templates/tree/master/ec2)
+* [Wordpress](https://github.com/widdix/aws-cf-templates/tree/master/wordpress)
+* [EC2](https://github.com/widdix/aws-cf-templates/tree/master/ec2)
+* [VPC](https://github.com/widdix/aws-cf-templates/tree/master/vpc)
 
 More templates will be available soon.
 
