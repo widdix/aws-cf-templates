@@ -42,7 +42,7 @@
 		"SubnetAPublic": {
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
-				"AvailabilityZone": {"Fn::Join": ["", [{"Ref": "AWS::Region"}, "a"]]},
+				"AvailabilityZone": {"Fn::Select": ["0", {"Fn::GetAZs": ""}]},
 				"CidrBlock": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".0.0/20"]]},
 				"MapPublicIpOnLaunch": true,
 				"VpcId": {"Ref": "VPC"},
@@ -58,7 +58,7 @@
 		"SubnetAPrivate": {
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
-				"AvailabilityZone": {"Fn::Join": ["", [{"Ref": "AWS::Region"}, "a"]]},
+				"AvailabilityZone": {"Fn::Select": ["0", {"Fn::GetAZs": ""}]},
 				"CidrBlock": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".16.0/20"]]},
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
@@ -73,7 +73,7 @@
 		"SubnetBPublic": {
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
-				"AvailabilityZone": {"Fn::Join": ["", [{"Ref": "AWS::Region"}, "b"]]},
+				"AvailabilityZone": {"Fn::Select": ["1", {"Fn::GetAZs": ""}]},
 				"CidrBlock": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".32.0/20"]]},
 				"MapPublicIpOnLaunch": true,
 				"VpcId": {"Ref": "VPC"},
@@ -89,7 +89,7 @@
 		"SubnetBPrivate": {
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
-				"AvailabilityZone": {"Fn::Join": ["", [{"Ref": "AWS::Region"}, "b"]]},
+				"AvailabilityZone": {"Fn::Select": ["1", {"Fn::GetAZs": ""}]},
 				"CidrBlock": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".48.0/20"]]},
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
@@ -104,7 +104,7 @@
 		"SubnetCPublic": {
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
-				"AvailabilityZone": {"Fn::Join": ["", [{"Ref": "AWS::Region"}, "c"]]},
+				"AvailabilityZone": {"Fn::Select": ["2", {"Fn::GetAZs": ""}]},
 				"CidrBlock": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".64.0/20"]]},
 				"MapPublicIpOnLaunch": true,
 				"VpcId": {"Ref": "VPC"},
@@ -120,7 +120,7 @@
 		"SubnetCPrivate": {
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
-				"AvailabilityZone": {"Fn::Join": ["", [{"Ref": "AWS::Region"}, "c"]]},
+				"AvailabilityZone": {"Fn::Select": ["2", {"Fn::GetAZs": ""}]},
 				"CidrBlock": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".80.0/20"]]},
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
