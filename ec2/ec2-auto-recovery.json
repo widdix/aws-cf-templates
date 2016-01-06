@@ -1,6 +1,6 @@
 {
 	"AWSTemplateFormatVersion": "2010-09-09",
-	"Description": "EC2 instance with auto-recovery",
+	"Description": "EC2: instance with auto-recovery, a cloudonaut.io template",
 	"Parameters": {
 		"KeyName": {
 			"Description": "The name of the key pair used to log into the EC2 instance via SSH.",

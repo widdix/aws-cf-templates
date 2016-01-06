@@ -1,6 +1,6 @@
 {
 	"AWSTemplateFormatVersion": "2010-09-09",
-	"Description": "Wordpress: highly available and scalable, a cloudonaut.io template",
+	"Description": "Wordpress: fault tolerant and scalable, a cloudonaut.io template",
 	"Parameters": {
 		"BlogID": {
 			"Description": "A unique identifier for your blog. For internal use only.",
