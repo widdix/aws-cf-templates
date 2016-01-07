@@ -32,6 +32,7 @@
 			"ap-southeast-1": {"NATAMI": "ami-e2fc3f81"},
 			"ap-southeast-2": {"NATAMI": "ami-e3217a80"},
 			"eu-central-1": {"NATAMI": "ami-0b322e67"},
+			"ap-northeast-2": {"NATAMI": "ami-4118d72f"},
 			"ap-northeast-1": {"NATAMI": "ami-f885ae96"},
 			"us-east-1": {"NATAMI": "ami-68115b02"},
 			"sa-east-1": {"NATAMI": "ami-8631b5ea"},
