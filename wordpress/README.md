@@ -4,7 +4,17 @@
 
 Use the `wordpress-ha.json` template to create a **fault tolerant** and **scalable** Wordpress environment within minutes.
 
+### Architecture
+
+![Architecture](./wordpress-ha.png?raw=true "Architecture")
+
 ### Components
+
+#### Dependencies
+
+This template depends on other templates.
+
+* [VPC stack with at least two public and private subnets](https://github.com/widdix/aws-cf-templates/tree/master/vpc)
 
 #### AWS services
 
@@ -23,6 +33,7 @@ Use the `wordpress-ha.json` template to create a **fault tolerant** and **scalab
 
 ### Installation Guide
 
+1. This templates depends on one of our VPC templates. [Please create a VPC stack with at least two public and private subnets first.](https://github.com/widdix/aws-cf-templates/tree/master/vpc)
 1. Open AWS CloudFormation within the Management Console: [https://console.aws.amazon.com/cloudformation](https://console.aws.amazon.com/cloudformation).
 1. Create a new stack by clicking on the **Create Stack** button.
 1. Select **Upload a template to Amazon S3** and upload the JSON-file `wordpress-ha.json` from this repository.
@@ -37,7 +48,7 @@ Use the `wordpress-ha.json` template to create a **fault tolerant** and **scalab
 
 ### Limitations
 
-Installing and updating core, plugins and themes is disabled. You need to edit the ``/root/config.sh`` to change core, plugins and themes during bootstrapping of EC2 instances.
+Installing and updating core, plugins and themes is disabled. You need to edit the `/root/config.sh` to change core, plugins and themes during bootstrapping of EC2 instances.
 
 ## Support needed?
 

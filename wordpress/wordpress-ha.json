@@ -2,6 +2,18 @@
 	"AWSTemplateFormatVersion": "2010-09-09",
 	"Description": "Wordpress: fault tolerant and scalable, a cloudonaut.io template",
 	"Parameters": {
+		"VPC": {
+			"Description": "Use VPC output from vpc stack.",
+			"Type": "AWS::EC2::VPC::Id"
+		},
+		"PublicSubnets": {
+			"Description": "Use SubnetAPublic, SubnetBPublic, [SubnetCPublic] output from vpc stack.",
+			"Type": "List<AWS::EC2::Subnet::Id>"
+		},
+		"PrivateSubnets": {
+			"Description": "Use SubnetAPrivate, SubnetBPrivate, [SubnetCPrivate] output from vpc stack.",
+			"Type": "List<AWS::EC2::Subnet::Id>"
+		},
 		"BlogID": {
 			"Description": "A unique identifier for your blog. For internal use only.",
 			"Type": "String",
@@ -56,135 +68,6 @@
 		}
 	},
 	"Resources": {
-		"VPC": {
-			"Type": "AWS::EC2::VPC",
-			"Properties": {
-				"CidrBlock": "172.31.0.0/16",
-				"EnableDnsHostnames": "true"
-			}
-		},
-		"InternetGateway": {
-			"Type": "AWS::EC2::InternetGateway",
-			"Properties": {
-			}
-		},
-		"VPCGatewayAttachment": {
-			"Type": "AWS::EC2::VPCGatewayAttachment",
-			"Properties": {
-				"VpcId": {"Ref": "VPC"},
-				"InternetGatewayId": {"Ref": "InternetGateway"}
-			}
-		},
-		"SubnetA": {
-			"Type": "AWS::EC2::Subnet",
-			"Properties": {
-				"AvailabilityZone": {"Fn::Select": ["0", {"Fn::GetAZs": ""}]},
-				"CidrBlock": "172.31.38.0/24",
-				"VpcId": {"Ref": "VPC"}
-			}
-		},
-		"SubnetB": {
-			"Type": "AWS::EC2::Subnet",
-			"Properties": {
-				"AvailabilityZone": {"Fn::Select": ["1", {"Fn::GetAZs": ""}]},
-				"CidrBlock": "172.31.37.0/24",
-				"VpcId": {"Ref": "VPC"}
-			}
-		},
-		"RouteTable": {
-			"Type": "AWS::EC2::RouteTable",
-			"Properties": {
-				"VpcId": {"Ref": "VPC"}
-			}
-		},
-		"RouteTableAssociationA": {
-			"Type": "AWS::EC2::SubnetRouteTableAssociation",
-			"Properties": {
-				"SubnetId": {"Ref": "SubnetA"},
-				"RouteTableId": {"Ref": "RouteTable"}
-			}
-		},
-		"RouteTableAssociationB": {
-			"Type": "AWS::EC2::SubnetRouteTableAssociation",
-			"Properties": {
-				"SubnetId": {"Ref": "SubnetB"},
-				"RouteTableId": {"Ref": "RouteTable"}
-			}
-		},
-		"RoutePublicNATToInternet": {
-			"Type": "AWS::EC2::Route",
-			"Properties": {
-				"RouteTableId": {"Ref": "RouteTable"},
-				"DestinationCidrBlock": "0.0.0.0/0",
-				"GatewayId": {"Ref": "InternetGateway"}
-			},
-			"DependsOn": "VPCGatewayAttachment"
-		},
-		"NetworkAcl": {
-			"Type": "AWS::EC2::NetworkAcl",
-			"Properties": {
-				"VpcId": {"Ref": "VPC"}
-			}
-		},
-		"SubnetNetworkAclAssociationA": {
-			"Type": "AWS::EC2::SubnetNetworkAclAssociation",
-			"Properties": {
-				"SubnetId": {"Ref": "SubnetA"},
-				"NetworkAclId": {"Ref": "NetworkAcl"}
-			}
-		},
-		"SubnetNetworkAclAssociationB": {
-			"Type": "AWS::EC2::SubnetNetworkAclAssociation",
-			"Properties": {
-				"SubnetId": {"Ref": "SubnetB"},
-				"NetworkAclId": {"Ref": "NetworkAcl"}
-			}
-		},
-		"NetworkAclEntryIngress": {
-			"Type": "AWS::EC2::NetworkAclEntry",
-			"Properties": {
-				"NetworkAclId": {"Ref": "NetworkAcl"},
-				"RuleNumber": "100",
-				"Protocol": "-1",
-				"RuleAction": "allow",
-				"Egress": "false",
-				"CidrBlock": "0.0.0.0/0"
-			}
-		},
-		"NetworkAclEntryEgress": {
-			"Type": "AWS::EC2::NetworkAclEntry",
-			"Properties": {
-				"NetworkAclId": {"Ref": "NetworkAcl"},
-				"RuleNumber": "100",
-				"Protocol": "-1",
-				"RuleAction": "allow",
-				"Egress": "true",
-				"CidrBlock": "0.0.0.0/0"
-			}
-		},
-		"LoadBalancer": {
-			"Type": "AWS::ElasticLoadBalancing::LoadBalancer",
-			"Properties": {
-				"Subnets": [{"Ref": "SubnetA"}, {"Ref": "SubnetB"}],
-				"LoadBalancerName": {"Ref": "BlogID"},
-				"Listeners": [{
-					"InstancePort": "80",
-					"InstanceProtocol": "HTTP",
-					"LoadBalancerPort": "80",
-					"Protocol": "HTTP"
-				}],
-				"HealthCheck": {
-					"HealthyThreshold": "2",
-					"Interval": "5",
-					"Target": "TCP:80",
-					"Timeout": "3",
-					"UnhealthyThreshold": "2"
-				},
-				"SecurityGroups": [{"Ref": "LoadBalancerSecurityGroup"}],
-				"Scheme": "internet-facing",
-				"CrossZone": "true"
-			}
-		},
 		"LoadBalancerSecurityGroup": {
 			"Type": "AWS::EC2::SecurityGroup",
 			"Properties": {
@@ -229,6 +112,36 @@
 				}]
 			}
 		},
+		"LoadBalancer": {
+			"Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+			"Properties": {
+				"Subnets": {"Ref": "PublicSubnets"},
+				"LoadBalancerName": {"Ref": "BlogID"},
+				"Listeners": [{
+					"InstancePort": "80",
+					"InstanceProtocol": "HTTP",
+					"LoadBalancerPort": "80",
+					"Protocol": "HTTP"
+				}],
+				"HealthCheck": {
+					"HealthyThreshold": "2",
+					"Interval": "5",
+					"Target": "TCP:80",
+					"Timeout": "3",
+					"UnhealthyThreshold": "2"
+				},
+				"SecurityGroups": [{"Ref": "LoadBalancerSecurityGroup"}],
+				"Scheme": "internet-facing",
+				"CrossZone": "true"
+			}
+		},
+		"DBSubnetGroup": {
+			"Type": "AWS::RDS::DBSubnetGroup",
+			"Properties": {
+				"DBSubnetGroupDescription": "DB subnet group",
+				"SubnetIds": {"Ref": "PrivateSubnets"}
+			}
+		},
 		"Database": {
 			"Type": "AWS::RDS::DBInstance",
 			"Properties": {
@@ -244,13 +157,6 @@
 				"DBSubnetGroupName": {"Ref": "DBSubnetGroup"},
 				"MultiAZ": "true",
 				"StorageType": "gp2"
-			}
-		},
-		"DBSubnetGroup": {
-			"Type": "AWS::RDS::DBSubnetGroup",
-			"Properties": {
-				"DBSubnetGroupDescription": "DB subnet group",
-				"SubnetIds": [{"Ref": "SubnetA"}, {"Ref": "SubnetB"}]
 			}
 		},
 		"S3Bucket": {
@@ -311,8 +217,8 @@
 									"sed -i \"s/'localhost'/'", {"Fn::GetAtt": ["Database", "Endpoint.Address"]}, "'/g\" wp-config.php\n",
 									"echo \"define('AWS_ACCESS_KEY_ID', '", {"Ref": "IAMAccessKey"},"'); \" >> wp-config.php \n",
 									"echo \"define('AWS_SECRET_ACCESS_KEY', '", {"Fn::GetAtt": ["IAMAccessKey", "SecretAccessKey"]},"'); \" >> wp-config.php \n",
-									"echo \"define( 'DISALLOW_FILE_MODS', true ); \" >> wp-config.php \n",
-									"echo \"define( 'WP_AUTO_UPDATE_CORE', false ); \" >> wp-config.php \n",
+									"echo \"define('DISALLOW_FILE_MODS', true ; \" >> wp-config.php \n",
+									"echo \"define('WP_AUTO_UPDATE_CORE', false); \" >> wp-config.php \n",
 									"chmod -R 777 wp-content/ \n",									
 									"curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \n",
 									"php wp-cli.phar core install --url=\"", {"Fn::GetAtt": ["LoadBalancer", "DNSName"]}, "\" --title=\"", {"Ref": "BlogTitle"}, "\" --admin_user=\"", {"Ref": "BlogAdminUsername"}, "\" --admin_password=\"", {"Ref": "BlogAdminPassword"}, "\" --admin_email=\"", {"Ref": "BlogAdminEMail"}, "\" \n",
@@ -373,7 +279,7 @@
 				"Cooldown": "60",
 				"HealthCheckGracePeriod": "120",
 				"HealthCheckType": "ELB",
-				"VPCZoneIdentifier": [{"Ref": "SubnetA"}, {"Ref": "SubnetB"}],
+				"VPCZoneIdentifier": {"Ref": "PublicSubnets"},
 				"Tags": [{
 					"PropagateAtLaunch": true,
 					"Value": "wordpress",
