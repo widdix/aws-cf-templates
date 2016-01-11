@@ -217,7 +217,7 @@
 									"sed -i \"s/'localhost'/'", {"Fn::GetAtt": ["Database", "Endpoint.Address"]}, "'/g\" wp-config.php\n",
 									"echo \"define('AWS_ACCESS_KEY_ID', '", {"Ref": "IAMAccessKey"},"'); \" >> wp-config.php \n",
 									"echo \"define('AWS_SECRET_ACCESS_KEY', '", {"Fn::GetAtt": ["IAMAccessKey", "SecretAccessKey"]},"'); \" >> wp-config.php \n",
-									"echo \"define('DISALLOW_FILE_MODS', true ; \" >> wp-config.php \n",
+									"echo \"define('DISALLOW_FILE_MODS', true); \" >> wp-config.php \n",
 									"echo \"define('WP_AUTO_UPDATE_CORE', false); \" >> wp-config.php \n",
 									"chmod -R 777 wp-content/ \n",									
 									"curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \n",
