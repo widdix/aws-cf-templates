@@ -4,6 +4,10 @@
 
 Use the `ec2-auto-recovery.json` template to launch an EC2 instance with auto-recovery. If the instance fails it will be replaced automatically. All data stored on EBS volumes will still be available. The public and private IP address won't change. Auto-recovery does only work inside of a single availability zone (AZ).
 
+### Architecture
+
+![Architecture](./ec2-auto-recovery.png?raw=true "Architecture")
+
 ### Components
 
 #### AWS services

@@ -6,6 +6,10 @@ A VPC is a virtual network inside AWS where you can isolate your setup using pri
 
 Use the `vpc-2azs.json` template to create a VPC with two private and two public subnets.
 
+### Architecture
+
+![Architecture](./vpc-2azs.png?raw=true "Architecture")
+
 ### Components
 
 #### AWS services
@@ -28,6 +32,10 @@ Use the `vpc-2azs.json` template to create a VPC with two private and two public
 
 Use the `vpc-3azs.json` template to create a VPC with three private and two public subnets.
 
+### Architecture
+
+![Architecture](./vpc-3azs.png?raw=true "Architecture")
+
 ### Components
 
 #### AWS services
@@ -46,9 +54,13 @@ Use the `vpc-3azs.json` template to create a VPC with three private and two publ
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
-## Nat instance
+## NAT instance
 
 Use the `vpc-nat-instance.json` template to create a **highly available** NAT instance that forwards HTTP, HTTPS and NTP traffic from private subnets to the Internet.
+
+### Architecture
+
+![Architecture](./vpc-nat-instance.png?raw=true "Architecture")
 
 ### Components
 
@@ -70,8 +82,11 @@ Use the `vpc-nat-instance.json` template to create a **highly available** NAT in
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
-### Limitations
-
 ## Support needed?
 
 Do you need help? Mail to [team@widdix.de](mailto:team@widdix.de).
+
+
+--------
+
+[AWS diagrams created with Cloudcraft](https://cloudcraft.co/)
