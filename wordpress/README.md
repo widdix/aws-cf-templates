@@ -33,8 +33,8 @@ This template depends on other templates.
 
 ### Installation Guide
 
-1. Download the template [wordpress-ha.json](https://raw.githubusercontent.com/widdix/aws-cf-templates/master/wordpress/wordpress-ha.json)
 1. This templates depends on one of our VPC templates. [Please create a VPC stack with at least two public and private subnets first.](https://github.com/widdix/aws-cf-templates/tree/master/vpc)
+1. Download the template [wordpress-ha.json](https://raw.githubusercontent.com/widdix/aws-cf-templates/master/wordpress/wordpress-ha.json)
 1. Open AWS CloudFormation within the Management Console: [https://console.aws.amazon.com/cloudformation](https://console.aws.amazon.com/cloudformation).
 1. Create a new stack by clicking on the **Create Stack** button.
 1. Select **Upload a template to Amazon S3** and upload the template `wordpress-ha.json`.
