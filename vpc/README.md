@@ -18,9 +18,10 @@ Use the `vpc-2azs.json` template to create a VPC with two private and two public
 
 ### Installation Guide
 
+1. Download the template [vpc-2azs.json](https://raw.githubusercontent.com/widdix/aws-cf-templates/master/vpc/vpc-2azs.json)
 1. Open AWS CloudFormation within the Management Console: [https://console.aws.amazon.com/cloudformation](https://console.aws.amazon.com/cloudformation).
 1. Create a new stack by clicking on the **Create Stack** button.
-1. Select **Upload a template to Amazon S3** and upload the JSON-file `vpc-2azs.json` from this repository.
+1. Select **Upload a template to Amazon S3** and upload the template `vpc-2azs.json`.
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -44,9 +45,10 @@ Use the `vpc-3azs.json` template to create a VPC with three private and two publ
 
 ### Installation Guide
 
+1. Download the template [vpc-3azs.json](https://raw.githubusercontent.com/widdix/aws-cf-templates/master/vpc/vpc-3azs.json)
 1. Open AWS CloudFormation within the Management Console: [https://console.aws.amazon.com/cloudformation](https://console.aws.amazon.com/cloudformation).
 1. Create a new stack by clicking on the **Create Stack** button.
-1. Select **Upload a template to Amazon S3** and upload the JSON-file `vpc-3azs.json` from this repository.
+1. Select **Upload a template to Amazon S3** and upload the template `vpc-3azs.json`.
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -71,9 +73,10 @@ Use the `vpc-nat-instance.json` template to create a **highly available** NAT in
 
 ### Installation Guide
 
+1. Download the template [vpc-nat-instance.json](https://raw.githubusercontent.com/widdix/aws-cf-templates/master/vpc/vpc-nat-instance.json)
 1. Open AWS CloudFormation within the Management Console: [https://console.aws.amazon.com/cloudformation](https://console.aws.amazon.com/cloudformation).
 1. Create a new stack by clicking on the **Create Stack** button.
-1. Select **Upload a template to Amazon S3** and upload the JSON-file `vpc-nat-instance.json` from this repository.
+1. Select **Upload a template to Amazon S3** and upload the template `vpc-nat-instance.json`.
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
