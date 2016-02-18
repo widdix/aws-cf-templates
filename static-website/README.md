@@ -29,7 +29,6 @@ Use the `static-website.json` template to create the infrastructure for hosting 
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
-1. Grab the public IP address of the EC2 instance from the **Outputs** tab of your stack.
 
 ## Support needed?
 
