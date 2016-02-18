@@ -4,6 +4,10 @@
 
 Use the `static-website.json` template to create the infrastructure for hosting a static website. 
 
+### Architecture
+
+![Architecture](./static-website.png?raw=true "Architecture")
+
 ### Components
 
 #### AWS services
@@ -14,7 +18,7 @@ Use the `static-website.json` template to create the infrastructure for hosting 
 
 ### Installation Guide
 
-1. Download the template [wstatic-website.json](https://raw.githubusercontent.com/widdix/aws-cf-templates/master/static-website/static-website.json)
+1. Download the template [static-website.json](https://raw.githubusercontent.com/widdix/aws-cf-templates/master/static-website/static-website.json)
 1. Open AWS CloudFormation within the Management Console: [https://console.aws.amazon.com/cloudformation](https://console.aws.amazon.com/cloudformation).
 1. Create a new stack by clicking on the **Create Stack** button.
 1. Select **Upload a template to Amazon S3** and upload the template `static-website.json`.
