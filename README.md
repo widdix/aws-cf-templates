@@ -23,4 +23,4 @@ All templates are published under Apache License Version 2.0.
 
 ## About
 
-This is a [cloudonaut.io](https://cloudonaut.io/templates-for-aws-cloudformation/) project. Engineered by [https://widdix.net](widdix.net).
+This is a [cloudonaut.io](https://cloudonaut.io/templates-for-aws-cloudformation/) project. Engineered by [widdix](https://widdix.net).
