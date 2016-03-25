@@ -14,7 +14,9 @@
 	"Resources": {
 		"EIP": {
 			"Type": "AWS::EC2::EIP",
-			"Properties": {}
+			"Properties": {
+				"Domain": "vpc"
+			}
 		},
 		"NatGateway": {
 			"Type": "AWS::EC2::NatGateway",

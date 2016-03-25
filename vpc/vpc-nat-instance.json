@@ -43,7 +43,9 @@
 	"Resources": {
 		"EIP": {
 			"Type": "AWS::EC2::EIP",
-			"Properties": {}
+			"Properties": {
+				"Domain": "vpc"
+			}
 		},
 		"NATSecurityGroup": {
 			"Type": "AWS::EC2::SecurityGroup",
