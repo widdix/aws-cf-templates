@@ -10,10 +10,11 @@ Collection of templates exclusively designed for AWS CloudFormation. Create and 
 
 ## Templates
 
-* [Wordpress](https://github.com/widdix/aws-cf-templates/tree/master/wordpress)
-* [Static website](https://github.com/widdix/aws-cf-templates/tree/master/static-website)
 * [EC2](https://github.com/widdix/aws-cf-templates/tree/master/ec2)
+* [Security](https://github.com/widdix/aws-cf-templates/tree/master/security)
+* [Static website](https://github.com/widdix/aws-cf-templates/tree/master/static-website)
 * [VPC](https://github.com/widdix/aws-cf-templates/tree/master/vpc)
+* [Wordpress](https://github.com/widdix/aws-cf-templates/tree/master/wordpress)
 
 More templates will be available soon.
 
