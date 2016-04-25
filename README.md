@@ -20,8 +20,7 @@ All templates are published under Apache License Version 2.0.
 
 We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments.
 
-Andreas Wittig: [![Contact Andreas on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/andreaswittig)
-Michael Wittig: [![Contact Andreas on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/andreaswittig)
+[![Contact Andreas on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/andreaswittig) Andreas Wittig or [![Contact Michael on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/michaelwittig) Michael Wittig
 
 ## About
 

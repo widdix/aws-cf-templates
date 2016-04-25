@@ -55,6 +55,4 @@ Installing and updating core, plugins and themes is disabled. You need to edit t
 
 Do you need help?
 
-Andreas Wittig: [![Contact Andreas on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/andreaswittig)
-
-Michael Wittig: [![Contact Andreas on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/andreaswittig)
+[![Contact Andreas on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/andreaswittig) Andreas Wittig or [![Contact Michael on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/michaelwittig) Michael Wittig
