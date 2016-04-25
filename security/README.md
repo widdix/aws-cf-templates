@@ -28,4 +28,8 @@ Use the `cloudtrail.json` template to setup CloudTrail across all regions.
 
 ## Support needed?
 
-Do you need help? Mail to [team@widdix.de](mailto:team@widdix.de).
+Do you need help?
+
+Andreas Wittig: [![Contact Andreas on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/andreaswittig)
+
+Michael Wittig: [![Contact Andreas on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/andreaswittig)

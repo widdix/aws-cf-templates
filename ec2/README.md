@@ -32,4 +32,8 @@ Use the `ec2-auto-recovery.json` template to launch an EC2 instance with auto-re
 
 ## Support needed?
 
-Do you need help? Mail to [team@widdix.de](mailto:team@widdix.de).
+Do you need help?
+
+Andreas Wittig: [![Contact Andreas on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/andreaswittig)
+
+Michael Wittig: [![Contact Andreas on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/andreaswittig)

@@ -53,4 +53,8 @@ Installing and updating core, plugins and themes is disabled. You need to edit t
 
 ## Support needed?
 
-Do you need help? Mail to [team@widdix.de](mailto:team@widdix.de).
+Do you need help?
+
+Andreas Wittig: [![Contact Andreas on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/andreaswittig)
+
+Michael Wittig: [![Contact Andreas on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/andreaswittig)

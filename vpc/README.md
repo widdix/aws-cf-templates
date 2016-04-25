@@ -116,7 +116,11 @@ Use the `vpc-nat-instance.json` template to create a **highly available** NAT in
 
 ## Support needed?
 
-Do you need help? Mail to [team@widdix.de](mailto:team@widdix.de).
+Do you need help?
+
+Andreas Wittig: [![Contact Andreas on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/andreaswittig)
+
+Michael Wittig: [![Contact Andreas on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/andreaswittig)
 
 
 --------
