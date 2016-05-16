@@ -1,0 +1,92 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Security: Config setup, a cloudonaut.io template",
+  "Parameters": {
+    "DeliveryFrequency": {
+      "Description": "The frequency with which AWS Config delivers configuration snapshots",
+      "Type": "String",
+      "AllowedValues": ["One_Hour", "Three_Hours", "Six_Hours", "Twelve_Hours", "TwentyFour_Hours"],
+      "Default": "Six_Hours"
+    }
+  },
+  "Resources": {
+    "ConfigBucket": {
+      "DeletionPolicy": "Retain",
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+      }
+    },
+    "ConfigTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+      }
+    },
+    "DeliveryChannel": {
+      "Type": "AWS::Config::DeliveryChannel",
+      "Properties": {
+        "ConfigSnapshotDeliveryProperties": {
+          "DeliveryFrequency": {"Ref": "DeliveryFrequency"}
+        },
+        "S3BucketName": {"Ref": "ConfigBucket"},
+        "SnsTopicARN": {"Ref": "ConfigTopic"}
+      }
+    },
+    "ConfigurationRecorderRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "ManagedPolicyArns": ["arn:aws:iam::aws:policy/service-role/AWSConfigRole"],
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Sid": "AssumeRole1",
+            "Effect": "Allow",
+            "Principal": {
+              "Service": "config.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+          }]
+        },
+        "Policies": [{
+          "PolicyName": "s3-policy",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Effect": "Allow",
+              "Action": "s3:PutObject",
+              "Resource": {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref": "ConfigBucket"}, "/*"]]},
+              "Condition": {
+                "StringLike": {
+                  "s3:x-amz-acl": "bucket-owner-full-control"
+                }
+              }
+            }, {
+              "Effect": "Allow",
+              "Action": ["s3:GetBucketAcl"],
+              "Resource": {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref": "ConfigBucket"}]]}
+            }]
+          }
+        }, {
+          "PolicyName": "sns-policy",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Effect": "Allow",
+              "Action": "sns:Publish",
+              "Resource": {"Ref": "ConfigTopic"}
+            }]
+          }
+        }]
+      }
+    },
+    "ConfigurationRecorder": {
+      "Type": "AWS::Config::ConfigurationRecorder",
+      "Properties": {
+        "RecordingGroup": {
+          "AllSupported": true,
+          "IncludeGlobalResourceTypes": true
+        },
+        "RoleARN": {"Fn::GetAtt": ["ConfigurationRecorderRole", "Arn"]}
+      }
+    }
+  }
+}

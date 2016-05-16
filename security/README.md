@@ -10,6 +10,7 @@ Use the `cloudtrail.json` template to setup CloudTrail across all regions.
 
 * CloudTrail: records AWS API calls
 * S3: object storage
+* SNS: pub/sub
 * CloudWatch Logs: search and monitor your logs
 
 ### Installation Guide
@@ -43,6 +44,32 @@ Use the `account-password-policy.json` template to create a account password pol
 1. Open AWS CloudFormation within the Management Console: [https://console.aws.amazon.com/cloudformation](https://console.aws.amazon.com/cloudformation).
 1. Create a new stack by clicking on the **Create Stack** button.
 1. Select **Upload a template to Amazon S3** and upload the template `account-password-policy.json`.
+1. Click **Next** to proceed with the next step of the wizard.
+1. Specify a name and all parameters for the stack.
+1. Click **Next** to proceed with the next step of the wizard.
+1. Click **Next** to skip the **Options** step of the wizard.
+1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
+1. Click **Create** to start the creation of the stack.
+1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
+## Config setup
+
+Use the `config.json` template to setup AWS Config.
+
+### Components
+
+#### AWS services
+
+* Config: creates AWS resource inventory
+* S3: object storage
+* SNS: pub/sub
+
+### Installation Guide
+
+1. Download the template [config.json](https://raw.githubusercontent.com/widdix/aws-cf-templates/master/security/config.json)
+1. Open AWS CloudFormation within the Management Console: [https://console.aws.amazon.com/cloudformation](https://console.aws.amazon.com/cloudformation).
+1. Create a new stack by clicking on the **Create Stack** button.
+1. Select **Upload a template to Amazon S3** and upload the template `config.json`.
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
