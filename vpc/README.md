@@ -58,7 +58,7 @@ Use the `vpc-3azs.json` template to create a VPC with three private and two publ
 
 ## NAT Gateway
 
-Use the `vpc-nat-gateway.json` template to create a NAT Gateway that forwards HTTP, HTTPS and NTP traffic from private subnets to the Internet.
+Use the `vpc-nat-gateway.json` template to create a NAT Gateway that forwards all traffic from private subnets to the Internet.
 
 ### Architecture
 
