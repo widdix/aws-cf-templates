@@ -51,48 +51,40 @@
 			"Type": "AWS::EC2::SecurityGroup",
 			"Properties": {
 				"GroupDescription": "NAT",
+				"SecurityGroupEgress": [{
+					"IpProtocol": "udp",
+					"FromPort": 123,
+					"ToPort": 123,
+					"CidrIp": "0.0.0.0/0"
+				}, {
+					"IpProtocol": "tcp",
+					"FromPort": 80,
+					"ToPort": 80,
+					"CidrIp": "0.0.0.0/0"
+				}, {
+					"IpProtocol": "tcp",
+					"FromPort": 443,
+					"ToPort": 443,
+					"CidrIp": "0.0.0.0/0"
+				}],
+				"SecurityGroupIngress": [{
+					"IpProtocol": "udp",
+					"FromPort": 123,
+					"ToPort": 123,
+					"CidrIp": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".0.0/16"]]}
+				}, {
+					"IpProtocol": "tcp",
+					"FromPort": 80,
+					"ToPort": 80,
+					"CidrIp": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".0.0/16"]]}
+				}, {
+					"IpProtocol": "tcp",
+					"FromPort": 443,
+					"ToPort": 443,
+					"CidrIp": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".0.0/16"]]}
+				}],
 				"Tags": [],
 				"VpcId": {"Ref": "VPC"}
-			}
-		},
-		"NATSecurityGroupOutHTTP": {
-			"Type": "AWS::EC2::SecurityGroupEgress",
-			"Properties":{
-				"IpProtocol": "tcp",
-				"FromPort": "80",
-				"ToPort": "80",
-				"CidrIp": "0.0.0.0/0",
-				"GroupId": {"Ref": "NATSecurityGroup"}
-			}
-		},
-		"NATSecurityGroupOutHTTPS": {
-			"Type": "AWS::EC2::SecurityGroupEgress",
-			"Properties":{
-				"IpProtocol": "tcp",
-				"FromPort": "443",
-				"ToPort": "443",
-				"CidrIp": "0.0.0.0/0",
-				"GroupId": {"Ref": "NATSecurityGroup"}
-			}
-		},
-		"NATSecurityGroupOutNTP": {
-			"Type": "AWS::EC2::SecurityGroupEgress",
-			"Properties":{
-				"IpProtocol": "udp",
-				"FromPort": "123",
-				"ToPort": "123",
-				"CidrIp": "0.0.0.0/0",
-				"GroupId": {"Ref": "NATSecurityGroup"}
-			}
-		},
-		"NATSecurityGroupInVPC": {
-			"Type": "AWS::EC2::SecurityGroupIngress",
-			"Properties":{
-				"IpProtocol": "tcp",
-				"FromPort": "80",
-				"ToPort": "80",
-				"CidrIp": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".0.0/16"]]},
-				"GroupId": {"Ref": "NATSecurityGroup"}
 			}
 		},
 		"NATInstanceProfile": {
