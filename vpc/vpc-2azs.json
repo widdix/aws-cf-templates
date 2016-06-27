@@ -59,7 +59,7 @@
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
 				"AvailabilityZone": {"Fn::Select": ["0", {"Fn::GetAZs": ""}]},
-				"CidrBlock": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".16.0/20"]]},
+				"CidrBlock": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".64.0/20"]]},
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
 					"Key": "Name",
@@ -74,7 +74,7 @@
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
 				"AvailabilityZone": {"Fn::Select": ["1", {"Fn::GetAZs": ""}]},
-				"CidrBlock": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".32.0/20"]]},
+				"CidrBlock": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".16.0/20"]]},
 				"MapPublicIpOnLaunch": true,
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
@@ -90,7 +90,7 @@
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
 				"AvailabilityZone": {"Fn::Select": ["1", {"Fn::GetAZs": ""}]},
-				"CidrBlock": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".48.0/20"]]},
+				"CidrBlock": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".80.0/20"]]},
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
 					"Key": "Name",
