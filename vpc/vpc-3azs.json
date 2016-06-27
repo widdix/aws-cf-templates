@@ -7,6 +7,12 @@
 			"Type": "String",
 			"MinLength": "1",
 			"MaxLength": "3"
+		},
+		"VPCName": {
+			"Description": "Short name of the new VPC",
+			"Type": "String",
+			"MinLength": "1",
+			"MaxLength": "32"
 		}
 	},
 	"Resources": {
@@ -19,7 +25,7 @@
 				"InstanceTenancy": "default",
 				"Tags": [{
 					"Key": "Name",
-					"Value": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".0.0/16"]]}
+					"Value": {"Ref": "VPCName"}
 				}]
 			}
 		},
