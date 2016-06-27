@@ -54,7 +54,7 @@
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
 					"Key": "Name",
-					"Value": "A public"
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " A public"]]}
 				}, {
 					"Key": "Reach",
 					"Value": "public"
@@ -69,7 +69,7 @@
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
 					"Key": "Name",
-					"Value": "A private"
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " A private"]]}
 				}, {
 					"Key": "Reach",
 					"Value": "private"
@@ -85,7 +85,7 @@
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
 					"Key": "Name",
-					"Value": "B public"
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " B public"]]}
 				}, {
 					"Key": "Reach",
 					"Value": "public"
@@ -100,7 +100,7 @@
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
 					"Key": "Name",
-					"Value": "B private"
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " B private"]]}
 				}, {
 					"Key": "Reach",
 					"Value": "private"
@@ -116,7 +116,7 @@
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
 					"Key": "Name",
-					"Value": "C public"
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " C public"]]}
 				}, {
 					"Key": "Reach",
 					"Value": "public"
@@ -131,7 +131,7 @@
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
 					"Key": "Name",
-					"Value": "C private"
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " C private"]]}
 				}, {
 					"Key": "Reach",
 					"Value": "private"
@@ -147,7 +147,7 @@
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
 					"Key": "Name",
-					"Value": "D public"
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " D public"]]}
 				}, {
 					"Key": "Reach",
 					"Value": "public"
@@ -162,7 +162,7 @@
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
 					"Key": "Name",
-					"Value": "D private"
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " D private"]]}
 				}, {
 					"Key": "Reach",
 					"Value": "private"
@@ -175,7 +175,7 @@
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
 					"Key": "Name",
-					"Value": "Public"
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " public"]]}
 				}]
 			}
 		},
@@ -185,7 +185,7 @@
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
 					"Key": "Name",
-					"Value": "Private"
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " private"]]}
 				}]
 			}
 		},
@@ -260,7 +260,7 @@
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
 					"Key": "Name",
-					"Value": "Public"
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " public"]]}
 				}]
 			}
 		},
@@ -270,7 +270,7 @@
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
 					"Key": "Name",
-					"Value": "Private"
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " private"]]}
 				}]
 			}
 		},
@@ -377,47 +377,47 @@
 	},
 	"Outputs": {
 		"VPC": {
-			"Description": "VPC.",
+			"Description": "VPC",
 			"Value": {"Ref": "VPC"}
 		},
 		"SubnetAPublic": {
-			"Description": "Subnet A public.",
+			"Description": "Subnet A public",
 			"Value": {"Ref": "SubnetAPublic"}
 		},
 		"SubnetAPrivate": {
-			"Description": "Subnet A private.",
+			"Description": "Subnet A private",
 			"Value": {"Ref": "SubnetAPrivate"}
 		},
 		"SubnetBPublic": {
-			"Description": "Subnet B public.",
+			"Description": "Subnet B public",
 			"Value": {"Ref": "SubnetBPublic"}
 		},
 		"SubnetBPrivate": {
-			"Description": "Subnet B private.",
+			"Description": "Subnet B private",
 			"Value": {"Ref": "SubnetBPrivate"}
 		},
 		"SubnetCPublic": {
-			"Description": "Subnet C public.",
+			"Description": "Subnet C public",
 			"Value": {"Ref": "SubnetCPublic"}
 		},
 		"SubnetCPrivate": {
-			"Description": "Subnet C private.",
+			"Description": "Subnet C private",
 			"Value": {"Ref": "SubnetCPrivate"}
 		},
 		"SubnetDPublic": {
-			"Description": "Subnet D public.",
+			"Description": "Subnet D public",
 			"Value": {"Ref": "SubnetDPublic"}
 		},
 		"SubnetDPrivate": {
-			"Description": "Subnet D private.",
+			"Description": "Subnet D private",
 			"Value": {"Ref": "SubnetDPrivate"}
 		},
 		"RouteTablePrivate": {
-			"Description": "Route table private.",
+			"Description": "Route table private",
 			"Value": {"Ref": "RouteTablePrivate"}
 		},
 		"RouteTablePublic": {
-			"Description": "Route table public.",
+			"Description": "Route table public",
 			"Value": {"Ref": "RouteTablePublic"}
 		}
 	}
