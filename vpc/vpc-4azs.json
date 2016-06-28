@@ -1,6 +1,6 @@
 {
 	"AWSTemplateFormatVersion": "2010-09-09",
-	"Description": "VPC: public and private subnets in four availability zones",
+	"Description": "VPC: public anE private subnets in four availability zones",
 	"Parameters": {
 		"ClassB": {
 			"Description": "Class B of VPC (10.XXX.0.0/16)",
@@ -107,42 +107,11 @@
 				}]
 			}
 		},
-		"SubnetCPublic": {
+		"SubnetDPublic": {
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
 				"AvailabilityZone": {"Fn::Select": ["2", {"Fn::GetAZs": ""}]},
 				"CidrBlock": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".32.0/20"]]},
-				"MapPublicIpOnLaunch": true,
-				"VpcId": {"Ref": "VPC"},
-				"Tags": [{
-					"Key": "Name",
-					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " C public"]]}
-				}, {
-					"Key": "Reach",
-					"Value": "public"
-				}]
-			}
-		},
-		"SubnetCPrivate": {
-			"Type": "AWS::EC2::Subnet",
-			"Properties": {
-				"AvailabilityZone": {"Fn::Select": ["2", {"Fn::GetAZs": ""}]},
-				"CidrBlock": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".96.0/20"]]},
-				"VpcId": {"Ref": "VPC"},
-				"Tags": [{
-					"Key": "Name",
-					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " C private"]]}
-				}, {
-					"Key": "Reach",
-					"Value": "private"
-				}]
-			}
-		},
-		"SubnetDPublic": {
-			"Type": "AWS::EC2::Subnet",
-			"Properties": {
-				"AvailabilityZone": {"Fn::Select": ["3", {"Fn::GetAZs": ""}]},
-				"CidrBlock": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".48.0/20"]]},
 				"MapPublicIpOnLaunch": true,
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
@@ -157,12 +126,43 @@
 		"SubnetDPrivate": {
 			"Type": "AWS::EC2::Subnet",
 			"Properties": {
+				"AvailabilityZone": {"Fn::Select": ["2", {"Fn::GetAZs": ""}]},
+				"CidrBlock": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".96.0/20"]]},
+				"VpcId": {"Ref": "VPC"},
+				"Tags": [{
+					"Key": "Name",
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " D private"]]}
+				}, {
+					"Key": "Reach",
+					"Value": "private"
+				}]
+			}
+		},
+		"SubnetEPublic": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"AvailabilityZone": {"Fn::Select": ["3", {"Fn::GetAZs": ""}]},
+				"CidrBlock": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".48.0/20"]]},
+				"MapPublicIpOnLaunch": true,
+				"VpcId": {"Ref": "VPC"},
+				"Tags": [{
+					"Key": "Name",
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " E public"]]}
+				}, {
+					"Key": "Reach",
+					"Value": "public"
+				}]
+			}
+		},
+		"SubnetEPrivate": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
 				"AvailabilityZone": {"Fn::Select": ["3", {"Fn::GetAZs": ""}]},
 				"CidrBlock": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".112.0/20"]]},
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
 					"Key": "Name",
-					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " D private"]]}
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " E private"]]}
 				}, {
 					"Key": "Reach",
 					"Value": "private"
@@ -217,20 +217,6 @@
 				"RouteTableId": {"Ref": "RouteTablePrivate"}
 			}
 		},
-		"RouteTableAssociationCPublic": {
-			"Type": "AWS::EC2::SubnetRouteTableAssociation",
-			"Properties": {
-				"SubnetId": {"Ref": "SubnetCPublic"},
-				"RouteTableId": {"Ref": "RouteTablePublic"}
-			}
-		},
-		"RouteTableAssociationCPrivate": {
-			"Type": "AWS::EC2::SubnetRouteTableAssociation",
-			"Properties": {
-				"SubnetId": {"Ref": "SubnetCPrivate"},
-				"RouteTableId": {"Ref": "RouteTablePrivate"}
-			}
-		},
 		"RouteTableAssociationDPublic": {
 			"Type": "AWS::EC2::SubnetRouteTableAssociation",
 			"Properties": {
@@ -242,6 +228,20 @@
 			"Type": "AWS::EC2::SubnetRouteTableAssociation",
 			"Properties": {
 				"SubnetId": {"Ref": "SubnetDPrivate"},
+				"RouteTableId": {"Ref": "RouteTablePrivate"}
+			}
+		},
+		"RouteTableAssociationEPublic": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"SubnetId": {"Ref": "SubnetEPublic"},
+				"RouteTableId": {"Ref": "RouteTablePublic"}
+			}
+		},
+		"RouteTableAssociationEPrivate": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"SubnetId": {"Ref": "SubnetEPrivate"},
 				"RouteTableId": {"Ref": "RouteTablePrivate"}
 			}
 		},
@@ -302,20 +302,6 @@
 				"NetworkAclId": {"Ref": "NetworkAclPrivate"}
 			}
 		},
-		"SubnetNetworkAclAssociationCPublic": {
-			"Type": "AWS::EC2::SubnetNetworkAclAssociation",
-			"Properties": {
-				"SubnetId": {"Ref": "SubnetCPublic"},
-				"NetworkAclId": {"Ref": "NetworkAclPublic"}
-			}
-		},
-		"SubnetNetworkAclAssociationCPrivate": {
-			"Type": "AWS::EC2::SubnetNetworkAclAssociation",
-			"Properties": {
-				"SubnetId": {"Ref": "SubnetCPrivate"},
-				"NetworkAclId": {"Ref": "NetworkAclPrivate"}
-			}
-		},
 		"SubnetNetworkAclAssociationDPublic": {
 			"Type": "AWS::EC2::SubnetNetworkAclAssociation",
 			"Properties": {
@@ -327,6 +313,20 @@
 			"Type": "AWS::EC2::SubnetNetworkAclAssociation",
 			"Properties": {
 				"SubnetId": {"Ref": "SubnetDPrivate"},
+				"NetworkAclId": {"Ref": "NetworkAclPrivate"}
+			}
+		},
+		"SubnetNetworkAclAssociationEPublic": {
+			"Type": "AWS::EC2::SubnetNetworkAclAssociation",
+			"Properties": {
+				"SubnetId": {"Ref": "SubnetEPublic"},
+				"NetworkAclId": {"Ref": "NetworkAclPublic"}
+			}
+		},
+		"SubnetNetworkAclAssociationEPrivate": {
+			"Type": "AWS::EC2::SubnetNetworkAclAssociation",
+			"Properties": {
+				"SubnetId": {"Ref": "SubnetEPrivate"},
 				"NetworkAclId": {"Ref": "NetworkAclPrivate"}
 			}
 		},
@@ -396,14 +396,6 @@
 			"Description": "Subnet B private",
 			"Value": {"Ref": "SubnetBPrivate"}
 		},
-		"SubnetCPublic": {
-			"Description": "Subnet C public",
-			"Value": {"Ref": "SubnetCPublic"}
-		},
-		"SubnetCPrivate": {
-			"Description": "Subnet C private",
-			"Value": {"Ref": "SubnetCPrivate"}
-		},
 		"SubnetDPublic": {
 			"Description": "Subnet D public",
 			"Value": {"Ref": "SubnetDPublic"}
@@ -411,6 +403,14 @@
 		"SubnetDPrivate": {
 			"Description": "Subnet D private",
 			"Value": {"Ref": "SubnetDPrivate"}
+		},
+		"SubnetEPublic": {
+			"Description": "Subnet E public",
+			"Value": {"Ref": "SubnetEPublic"}
+		},
+		"SubnetEPrivate": {
+			"Description": "Subnet E private",
+			"Value": {"Ref": "SubnetEPrivate"}
 		},
 		"RouteTablePrivate": {
 			"Description": "Route table private",
