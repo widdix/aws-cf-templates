@@ -535,11 +535,11 @@
 			"Value": {"Ref": "RouteTableAPrivate"}
 		},
 		"RouteTableBPrivate": {
-			"Description": "Route table private",
+			"Description": "Route table B private",
 			"Value": {"Ref": "RouteTableBPrivate"}
 		},
 		"RouteTableDPrivate": {
-			"Description": "Route table Dprivate",
+			"Description": "Route table D private",
 			"Value": {"Ref": "RouteTableDPrivate"}
 		},
 		"RouteTableEPrivate": {
