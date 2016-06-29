@@ -179,13 +179,43 @@
 				}]
 			}
 		},
-		"RouteTablePrivate": {
+		"RouteTableAPrivate": {
 			"Type": "AWS::EC2::RouteTable",
 			"Properties": {
 				"VpcId": {"Ref": "VPC"},
 				"Tags": [{
 					"Key": "Name",
-					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " private"]]}
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " A private"]]}
+				}]
+			}
+		},
+		"RouteTableBPrivate": {
+			"Type": "AWS::EC2::RouteTable",
+			"Properties": {
+				"VpcId": {"Ref": "VPC"},
+				"Tags": [{
+					"Key": "Name",
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " B private"]]}
+				}]
+			}
+		},
+		"RouteTableDPrivate": {
+			"Type": "AWS::EC2::RouteTable",
+			"Properties": {
+				"VpcId": {"Ref": "VPC"},
+				"Tags": [{
+					"Key": "Name",
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " D private"]]}
+				}]
+			}
+		},
+		"RouteTableEPrivate": {
+			"Type": "AWS::EC2::RouteTable",
+			"Properties": {
+				"VpcId": {"Ref": "VPC"},
+				"Tags": [{
+					"Key": "Name",
+					"Value": {"Fn::Join": ["", [{"Ref": "VPCName"}, " E private"]]}
 				}]
 			}
 		},
@@ -200,7 +230,7 @@
 			"Type": "AWS::EC2::SubnetRouteTableAssociation",
 			"Properties": {
 				"SubnetId": {"Ref": "SubnetAPrivate"},
-				"RouteTableId": {"Ref": "RouteTablePrivate"}
+				"RouteTableId": {"Ref": "RouteTableAPrivate"}
 			}
 		},
 		"RouteTableAssociationBPublic": {
@@ -214,7 +244,7 @@
 			"Type": "AWS::EC2::SubnetRouteTableAssociation",
 			"Properties": {
 				"SubnetId": {"Ref": "SubnetBPrivate"},
-				"RouteTableId": {"Ref": "RouteTablePrivate"}
+				"RouteTableId": {"Ref": "RouteTableBPrivate"}
 			}
 		},
 		"RouteTableAssociationDPublic": {
@@ -228,7 +258,7 @@
 			"Type": "AWS::EC2::SubnetRouteTableAssociation",
 			"Properties": {
 				"SubnetId": {"Ref": "SubnetDPrivate"},
-				"RouteTableId": {"Ref": "RouteTablePrivate"}
+				"RouteTableId": {"Ref": "RouteTableDPrivate"}
 			}
 		},
 		"RouteTableAssociationEPublic": {
@@ -242,7 +272,7 @@
 			"Type": "AWS::EC2::SubnetRouteTableAssociation",
 			"Properties": {
 				"SubnetId": {"Ref": "SubnetEPrivate"},
-				"RouteTableId": {"Ref": "RouteTablePrivate"}
+				"RouteTableId": {"Ref": "RouteTableEPrivate"}
 			}
 		},
 		"RouteTablePublicInternetRoute": {
@@ -412,13 +442,25 @@
 			"Description": "Subnet E private",
 			"Value": {"Ref": "SubnetEPrivate"}
 		},
-		"RouteTablePrivate": {
-			"Description": "Route table private",
-			"Value": {"Ref": "RouteTablePrivate"}
-		},
 		"RouteTablePublic": {
 			"Description": "Route table public",
 			"Value": {"Ref": "RouteTablePublic"}
+		},
+		"RouteTableAPrivate": {
+			"Description": "Route table A private",
+			"Value": {"Ref": "RouteTableAPrivate"}
+		},
+		"RouteTablePrivate": {
+			"Description": "Route table private",
+			"Value": {"Ref": "RouteTableBPrivate"}
+		},
+		"RouteTableDPrivate": {
+			"Description": "Route table Dprivate",
+			"Value": {"Ref": "RouteTableDPrivate"}
+		},
+		"RouteTableEPrivate": {
+			"Description": "Route table E private",
+			"Value": {"Ref": "RouteTableEPrivate"}
 		}
 	}
 }
