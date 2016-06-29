@@ -404,7 +404,25 @@
 				"CidrBlock": "0.0.0.0/0"
 			}
 		},
-		"EIP": {
+		"EIPA": {
+			"Type": "AWS::EC2::EIP",
+			"Properties": {
+				"Domain": "vpc"
+			}
+		},
+		"EIPB": {
+			"Type": "AWS::EC2::EIP",
+			"Properties": {
+				"Domain": "vpc"
+			}
+		},
+		"EIPD": {
+			"Type": "AWS::EC2::EIP",
+			"Properties": {
+				"Domain": "vpc"
+			}
+		},
+		"EIPE": {
 			"Type": "AWS::EC2::EIP",
 			"Properties": {
 				"Domain": "vpc"
@@ -413,28 +431,28 @@
 		"NatGatewayA": {
 			"Type": "AWS::EC2::NatGateway",
 			"Properties": {
-				"AllocationId": {"Fn::GetAtt": ["EIP", "AllocationId"]},
+				"AllocationId": {"Fn::GetAtt": ["EIPA", "AllocationId"]},
 				"SubnetId": {"Ref": "SubnetAPublic"}
 			}
 		},
 		"NatGatewayB": {
 			"Type": "AWS::EC2::NatGateway",
 			"Properties": {
-				"AllocationId": {"Fn::GetAtt": ["EIP", "AllocationId"]},
+				"AllocationId": {"Fn::GetAtt": ["EIPB", "AllocationId"]},
 				"SubnetId": {"Ref": "SubnetBPublic"}
 			}
 		},
 		"NatGatewayD": {
 			"Type": "AWS::EC2::NatGateway",
 			"Properties": {
-				"AllocationId": {"Fn::GetAtt": ["EIP", "AllocationId"]},
+				"AllocationId": {"Fn::GetAtt": ["EIPD", "AllocationId"]},
 				"SubnetId": {"Ref": "SubnetDPublic"}
 			}
 		},
 		"NatGatewayE": {
 			"Type": "AWS::EC2::NatGateway",
 			"Properties": {
-				"AllocationId": {"Fn::GetAtt": ["EIP", "AllocationId"]},
+				"AllocationId": {"Fn::GetAtt": ["EIPE", "AllocationId"]},
 				"SubnetId": {"Ref": "SubnetEPublic"}
 			}
 		},
