@@ -403,6 +403,72 @@
 				"Egress": "true",
 				"CidrBlock": "0.0.0.0/0"
 			}
+		},
+		"EIP": {
+			"Type": "AWS::EC2::EIP",
+			"Properties": {
+				"Domain": "vpc"
+			}
+		},
+		"NatGatewayA": {
+			"Type": "AWS::EC2::NatGateway",
+			"Properties": {
+				"AllocationId": {"Fn::GetAtt": ["EIP", "AllocationId"]},
+				"SubnetId": {"Ref": "SubnetAPublic"}
+			}
+		},
+		"NatGatewayB": {
+			"Type": "AWS::EC2::NatGateway",
+			"Properties": {
+				"AllocationId": {"Fn::GetAtt": ["EIP", "AllocationId"]},
+				"SubnetId": {"Ref": "SubnetBPublic"}
+			}
+		},
+		"NatGatewayD": {
+			"Type": "AWS::EC2::NatGateway",
+			"Properties": {
+				"AllocationId": {"Fn::GetAtt": ["EIP", "AllocationId"]},
+				"SubnetId": {"Ref": "SubnetDPublic"}
+			}
+		},
+		"NatGatewayE": {
+			"Type": "AWS::EC2::NatGateway",
+			"Properties": {
+				"AllocationId": {"Fn::GetAtt": ["EIP", "AllocationId"]},
+				"SubnetId": {"Ref": "SubnetEPublic"}
+			}
+		},
+		"RouteTablePrivateANatRoute": {
+			"Type": "AWS::EC2::Route",
+			"Properties": {
+				"RouteTableId": {"Ref": "RouteTableAPrivate"},
+				"DestinationCidrBlock": "0.0.0.0/0",
+				"NatGatewayId": {"Ref": "NatGatewayA"}
+			}
+		},
+		"RouteTablePrivateBNatRoute": {
+			"Type": "AWS::EC2::Route",
+			"Properties": {
+				"RouteTableId": {"Ref": "RouteTableBPrivate"},
+				"DestinationCidrBlock": "0.0.0.0/0",
+				"NatGatewayId": {"Ref": "NatGatewayB"}
+			}
+		},
+		"RouteTablePrivateDNatRoute": {
+			"Type": "AWS::EC2::Route",
+			"Properties": {
+				"RouteTableId": {"Ref": "RouteTableDPrivate"},
+				"DestinationCidrBlock": "0.0.0.0/0",
+				"NatGatewayId": {"Ref": "NatGatewayD"}
+			}
+		},
+		"RouteTablePrivateENatRoute": {
+			"Type": "AWS::EC2::Route",
+			"Properties": {
+				"RouteTableId": {"Ref": "RouteTableEPrivate"},
+				"DestinationCidrBlock": "0.0.0.0/0",
+				"NatGatewayId": {"Ref": "NatGatewayE"}
+			}
 		}
 	},
 	"Outputs": {
@@ -450,7 +516,7 @@
 			"Description": "Route table A private",
 			"Value": {"Ref": "RouteTableAPrivate"}
 		},
-		"RouteTablePrivate": {
+		"RouteTableBPrivate": {
 			"Description": "Route table private",
 			"Value": {"Ref": "RouteTableBPrivate"}
 		},
