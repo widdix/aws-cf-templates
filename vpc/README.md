@@ -31,11 +31,16 @@ Use the `vpc-2azs.json` template to create a VPC with two private and two public
 
 ## VPC with private and public subnets in three Availability Zones
 
-Use the `vpc-3azs.json` template to create a VPC with three private and two public subnets.
+Use the `vpc-3azs.json` template to create a VPC with three private and three public subnets.
 
 ### Architecture
 
 ![Architecture](./vpc-3azs.png?raw=true "Architecture")
+
+## VPC with private and public subnets in four Availability Zones
+
+Use the `vpc-4azs.json` template to create a VPC with four private and four public subnets.
+
 
 ### Components
 
