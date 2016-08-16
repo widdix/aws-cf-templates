@@ -1,0 +1,364 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Jenkins 2: fault tolerant and scalable, a cloudonaut.io template",
+  "Parameters": {
+    "VPC": {
+      "Description": "Use VPC output from vpc stack.",
+      "Type": "AWS::EC2::VPC::Id"
+    },
+    "MasterELBScheme": {
+      "Description": "Indicates whether the load balancer in front of the Jenkins master is Internet-facing or internal.",
+      "Type": "String",
+      "AllowedValues": ["internet-facing", "internal"],
+      "Default": "internet-facing"
+    },
+    "MasterELBSubnets": {
+      "Description": "Use SubnetAPublic and SubntBPublic outputs for ELBScheme internet-facing or SubnetAPrivate and SubnetBPrivate outputs for ELBScheme intrnal from vpc stack.",
+      "Type": "List<AWS::EC2::Subnet::Id>"
+    },
+    "SubnetA": {
+      "Description": "Use SubnetAPublic or SubnetAPrivate output from vpc stack. If you choose SubnetAPrivate you need a NAT instance or a NAT gateway.",
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "SubnetB": {
+      "Description": "Use SubnetBPublic or SubnetBPrivate output from vpc stack. If you choose SubnetAPrivate you need a NAT instance or a NAT gateway.",
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "MasterKeyName": {
+      "Description": "The key pair to establish a SSH connection to the Jenkins master.",
+      "Type": "AWS::EC2::KeyPair::KeyName"
+    },
+    "MasterInstanceType": {
+      "Description": "The instance type of web servers (e.g. t2.micro).",
+      "Type": "String",
+      "Default": "t2.micro"
+    },
+    "AdminPassword": {
+      "Description": "A password for the Jenkins admin.",
+      "Type": "String",
+      "NoEcho": "true"
+    }
+  },
+  "Mappings": {
+    "EC2RegionMap": {
+      "ap-south-1": {"AMI": "ami-ffbdd790"},
+      "eu-west-1": {"AMI": "ami-f9dd458a"},
+      "ap-southeast-1": {"AMI": "ami-a59b49c6"},
+      "ap-southeast-2": {"AMI": "ami-dc361ebf"},
+      "eu-central-1": {"AMI": "ami-ea26ce85"},
+      "ap-northeast-2": {"AMI": "ami-2b408b45"},
+      "ap-northeast-1": {"AMI": "ami-374db956"},
+      "us-east-1": {"AMI": "ami-6869aa05"},
+      "sa-east-1": {"AMI": "ami-6dd04501"},
+      "us-west-1": {"AMI": "ami-31490d51"},
+      "us-west-2": {"AMI": "ami-7172b611"}
+    }
+  },
+  "Resources": {
+    "MasterStorageSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "jenkins-master",
+        "VpcId": {"Ref": "VPC"},
+        "SecurityGroupIngress": [{
+          "SourceSecurityGroupId": {"Ref": "MasterSecurityGroup"},
+          "FromPort": 2049,
+          "ToPort": 2049,
+          "IpProtocol": "tcp"
+        }]
+      }
+    },
+    "MasterStorage": {
+      "Type": "AWS::EFS::FileSystem",
+      "Properties": {
+        "FileSystemTags": [{
+          "Value": "jenkins-master-storage",
+          "Key": "Name"
+        }],
+        "PerformanceMode": "generalPurpose"
+      }
+    },
+    "MasterStorageMountTargetA": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": {"Ref": "MasterStorage"},
+        "SecurityGroups": [{"Ref": "MasterStorageSecurityGroup"}],
+        "SubnetId": {"Ref": "SubnetA"}
+      }
+    },
+    "MasterStorageMountTargetB": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": {"Ref": "MasterStorage"},
+        "SecurityGroups": [{"Ref": "MasterStorageSecurityGroup"}],
+        "SubnetId": {"Ref": "SubnetB"}
+      }
+    },
+
+    "MasterELBSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "jenkins-elb-master",
+        "VpcId": {"Ref": "VPC"},
+        "SecurityGroupIngress": [{
+          "CidrIp": "0.0.0.0/0",
+          "FromPort": 80,
+          "ToPort": 80,
+          "IpProtocol": "tcp"
+        }]
+      }
+    },
+    "MasterELB": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Name": "jenkins-master",
+        "Scheme": {"Ref": "MasterELBScheme"},
+        "SecurityGroups": [{"Ref": "MasterELBSecurityGroup"}],
+        "Subnets": {"Ref": "MasterELBSubnets"},
+        "Tags": [{
+          "Key": "Name",
+          "Value": "jenkins-master"
+        }]
+      }
+    },
+    "MasterELBTargetGroup": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Name": "jenkins-master",
+        "Port": 8080,
+        "Protocol": "HTTP",
+        "Tags": [{
+          "Key": "Name",
+          "Value": "jenkins-master"
+        }],
+        "VpcId": {"Ref": "VPC"}
+      }
+    },
+    "MasterELBListener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "DefaultActions": [{
+          "TargetGroupArn": {"Ref": "MasterELBTargetGroup"},
+          "Type": "forward"
+        }],
+        "LoadBalancerArn": {"Ref": "MasterELB"},
+        "Port": 80,
+        "Protocol": "HTTP"
+      }
+    },
+    "MasterSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "jenkins-master",
+        "VpcId": {"Ref": "VPC"},
+        "SecurityGroupIngress": [{
+          "CidrIp": "0.0.0.0/0",
+          "FromPort": 22,
+          "ToPort": 22,
+          "IpProtocol": "tcp"
+        }, {
+          "SourceSecurityGroupId": {"Ref": "MasterELBSecurityGroup"},
+          "FromPort": 8080,
+          "ToPort": 8080,
+          "IpProtocol": "tcp"
+        }]
+      }
+    },
+    "MasterLaunchConfiguration": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Metadata": {
+        "AWS::CloudFormation::Init": {
+          "configSets": {
+            "default": ["mount",  "install", "setup"]
+          },
+          "mount": {
+            "packages": {
+              "yum": {
+                "nfs-utils": []
+              }
+            },
+            "commands": {
+              "a_groupadd": {
+                "command": "groupadd -g 497 jenkins",
+                "test": "if grep -q jenkins /etc/group; then exit 1; else exit 0; fi"
+              },
+              "b_useradd": {
+                "command": "adduser -u 498 -g 497 -s /bin/false -d /var/lib/jenkins -c 'Jenkins Continuous Integration Server' jenkins",
+                "test": "if grep -q jenkins /etc/passwd; then exit 1; else exit 0; fi"
+              },
+              "c_mountpoint_mkdir": {
+                "command": "mkdir /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins",
+                "test": "[ ! -d /var/lib/jenkins ]"
+              },
+              "d_mountpoint_mount": {
+                "command": {"Fn::Join": ["", ["mount -t nfs4 -o vers=4.1 \"$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).", {"Ref": "MasterStorage"}, ".efs.", {"Ref": "AWS::Region"}, ".amazonaws.com:/\" /var/lib/jenkins"]]},
+                "test": "if mount | grep -q /var/lib/jenkins; then exit 1; else exit 0; fi"
+              }
+            }
+          },
+          "install": {
+            "packages": {
+              "rpm": {
+                "jenkins": "http://pkg.jenkins-ci.org/redhat-stable/jenkins-2.7.2-1.1.noarch.rpm"
+              },
+              "yum": {
+                "git": []
+              }
+            },
+            "files": {
+              "/etc/cfn/cfn-hup.conf": {
+                "content": {"Fn::Join": ["", [
+                  "[main]", "\n",
+                  "stack=", {"Ref": "AWS::StackId"}, "\n",
+                  "region=", {"Ref": "AWS::Region"}, "\n"
+                ]]},
+                "mode": "000400",
+                "owner": "root",
+                "group": "root"
+              },
+              "/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
+                "content": {"Fn::Join": ["", [
+                  "[cfn-auto-reloader-hook]", "\n",
+                  "triggers=post.update", "\n",
+                  "path=Resources.MasterLaunchConfiguration.Metadata.AWS::CloudFormation::Init", "\n",
+                  "action=/opt/aws/bin/cfn-init --verbose --stack=", {"Ref": "AWS::StackName"}, " --region=", {"Ref": "AWS::Region"}, " --resource=MasterLaunchConfiguration", "\n",
+                  "runas=root", "\n"
+                ]]}
+              }
+            },
+            "services": {
+              "sysvinit": {
+                "jenkins": {
+                  "enabled": "true",
+                  "ensureRunning": "true",
+                  "packages": {
+                    "rpm": ["jenkins"]
+                  }
+                },
+                "cfn-hup": {
+                  "enabled": "true",
+                  "ensureRunning": "true",
+                  "files": ["/etc/cfn/cfn-hup.conf", "/etc/cfn/hooks.d/cfn-auto-reloader.conf"]
+                }
+              }
+            }
+          },
+          "setup": {
+            "files": {
+              "/root/plugins.txt": {
+                "content": {"Fn::Join": ["", [
+                  "cloudbees-folder", "\n",
+                  "timestamper", "\n",
+                  "workflow-aggregator", "\n",
+                  "subversion", "\n",
+                  "ldap", "\n",
+                  "antisamy-markup-formatter", "\n",
+                  "ws-cleanup", "\n",
+                  "github-organization-folder", "\n",
+                  "ssh-slaves", "\n",
+                  "email-ext", "\n",
+                  "build-timeout", "\n",
+                  "ant", "\n",
+                  "pipeline-stage-view", "\n",
+                  "matrix-auth", "\n",
+                  "mailer", "\n",
+                  "credentials-binding", "\n",
+                  "gradle", "\n",
+                  "git", "\n",
+                  "pam-auth", "\n"
+                ]]},
+                "mode": "000400",
+                "owner": "root",
+                "group": "root"
+              }
+            },
+            "commands": {
+              "a_await_jenkins": {
+                "command": "until $(curl --output /dev/null --silent --head --fail --user \"admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)\" http://localhost:8080/cli/); do printf '.'; sleep 1; done",
+                "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
+              },
+              "b_activate_slave_agent_port": {
+                "command": "sed -i -e \"s@<slaveAgentPort>.*</slaveAgentPort>@<slaveAgentPort>49817</slaveAgentPort>@\" /var/lib/jenkins/config.xml",
+                "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
+              },
+              "c_restart_jenkins": {
+                "command":  "service jenkins restart",
+                "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
+              },
+              "d_await_jenkins": {
+                "command": "until $(curl --output /dev/null --silent --head --fail --user \"admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)\" http://localhost:8080/cli/); do printf '.'; sleep 1; done",
+                "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
+              },
+              "e_install_plugins": {
+                "command": "while read -r plugin; do java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s \"http://localhost:8080/\" -noKeyAuth install-plugin \"$plugin\" --username admin --password \"$(cat /var/lib/jenkins/secrets/initialAdminPassword)\"; done < /root/plugins.txt",
+                "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
+              },
+              "f_restart_jenkins": {
+                "command":  "service jenkins restart",
+                "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
+              },
+              "g_await_jenkins": {
+                "command": "until $(curl --output /dev/null --silent --head --fail --user \"admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)\" http://localhost:8080/cli/); do printf '.'; sleep 1; done",
+                "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
+              },
+              "h_set_admin_password": {
+                "command": {"Fn::Join": ["", ["echo 'jenkins.model.Jenkins.instance.securityRealm.createAccount(\"admin\", \"", {"Ref": "AdminPassword"}, "\")' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s \"http://localhost:8080/\" -noKeyAuth groovy = --username admin --password \"$(cat /var/lib/jenkins/secrets/initialAdminPassword)\""]]},
+                "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
+              },
+
+              "z_create_setup_done_file": {
+                "command": "echo \"Setup done. Don not delete this file.\" > /var/lib/jenkins/setup_done.txt",
+                "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
+              }
+            }
+          }
+        }
+      },
+      "Properties": {
+        "ImageId": {"Fn::FindInMap": ["EC2RegionMap", {"Ref": "AWS::Region"}, "AMI"]},
+        "InstanceType": {"Ref": "MasterInstanceType"},
+        "SecurityGroups": [{"Ref": "MasterSecurityGroup"}],
+        "KeyName": {"Ref": "MasterKeyName"},
+        "UserData": {"Fn::Base64": {"Fn::Join": ["", [
+          "#!/bin/bash -x", "\n",
+          "/opt/aws/bin/cfn-init -v --stack ", {"Ref": "AWS::StackName"}, " --resource MasterLaunchConfiguration --region ", {"Ref": "AWS::Region"}, "\n",
+          "/opt/aws/bin/cfn-signal -e $? --stack ", {"Ref": "AWS::StackName"}, " --resource MasterAutoScalingGroup --region ", {"Ref": "AWS::Region"}, "\n"
+        ]]}}
+      }
+    },
+    "MasterAutoScalingGroup": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "DependsOn": ["MasterStorageMountTargetA", "MasterStorageMountTargetB"],
+      "Properties": {
+        "LaunchConfigurationName": {"Ref": "MasterLaunchConfiguration"},
+        "MinSize": "1",
+        "MaxSize": "1",
+        "DesiredCapacity": "1",
+        "VPCZoneIdentifier": [{"Ref": "SubnetA"}, {"Ref": "SubnetB"}],
+        "TargetGroupARNs": [{"Ref": "MasterELBTargetGroup"}],
+        "Tags": [{
+          "PropagateAtLaunch": true,
+          "Value": "jenkins-master",
+          "Key": "Name"
+        }]
+      },
+      "CreationPolicy": {
+        "ResourceSignal": {
+          "Timeout": "PT10M"
+        }
+      },
+      "UpdatePolicy": {
+        "AutoScalingRollingUpdate": {
+          "PauseTime": "PT10M",
+          "WaitOnResourceSignals": true
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "AdminUsername": {
+      "Value": "admin",
+      "Description": "User name for the Jenkins admin"
+    }
+  }
+}
