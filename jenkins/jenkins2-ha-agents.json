@@ -58,7 +58,7 @@
     "AgentMaxSize": {
       "Description": "The maximum size of the agents Auto Scaling group.",
       "Type": "Number",
-      "Default": "1",
+      "Default": "2",
       "MinValue": "1"
     }
   },
@@ -404,7 +404,7 @@
       "Properties": {
         "LaunchConfigurationName": {"Ref": "MasterLaunchConfiguration"},
         "MinSize": "1",
-        "MaxSize": {"Ref": "AgentMaxSize"},
+        "MaxSize": "1",
         "DesiredCapacity": "1",
         "HealthCheckGracePeriod": 120,
         "HealthCheckType": "ELB",
@@ -582,6 +582,7 @@
               "/var/lib/jenkins/start-agent.sh": {
                 "content": {"Fn::Join": ["", [
                   "#!/bin/bash -ex", "\n",
+                  "#TODO this will not work when the master is restarted and get's a new ip, how can we healtcheck agents and terminate them if they can no longer connect to the master? e.g. ask the master if they are online??", "\n",
                   "masterInstanceId=$(aws --region ", {"Ref": "AWS::Region"}, " autoscaling describe-auto-scaling-groups --auto-scaling-group-names ", {"Ref": "MasterAutoScalingGroup"}, " --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)", "\n",
                   "masterIP=$(aws --region ", {"Ref": "AWS::Region"}, " ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)", "\n",
                   "java -jar slave.jar -jnlpUrl http://$masterIP:8080/computer/$(curl -s http://169.254.169.254/latest/meta-data/instance-id)/slave-agent.jnlp -jnlpCredentials admin:", {"Ref": "MasterAdminPassword"}, "\n"
@@ -642,7 +643,7 @@
       "Properties": {
         "LaunchConfigurationName": {"Ref": "AgentLaunchConfiguration"},
         "MinSize": "1",
-        "MaxSize": "1",
+        "MaxSize": {"Ref": "AgentMaxSize"},
         "DesiredCapacity": "1",
         "VPCZoneIdentifier": [{"Ref": "SubnetA"}, {"Ref": "SubnetB"}],
         "Tags": [{
@@ -661,6 +662,29 @@
           "PauseTime": "PT10M",
           "WaitOnResourceSignals": true
         }
+      }
+    },
+    "AgentScalingUpPolicy": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "AdjustmentType": "ChangeInCapacity",
+        "AutoScalingGroupName": {"Ref": "AgentAutoScalingGroup"},
+        "Cooldown": "300",
+        "ScalingAdjustment": "1"
+      }
+    },
+    "BuildQueueHighAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "EvaluationPeriods": "1",
+        "Statistic": "Sum",
+        "Threshold": "4",
+        "AlarmDescription": "Alarm if Build Queue is high.",
+        "Period": "60",
+        "AlarmActions": [{"Ref": "AgentScalingUpPolicy"}],
+        "Namespace": {"Ref": "AWS::StackName"},
+        "ComparisonOperator": "GreaterThanThreshold",
+        "MetricName": "BuildQueue"
       }
     }
   },
