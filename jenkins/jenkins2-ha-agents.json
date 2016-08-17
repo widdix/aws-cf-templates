@@ -512,6 +512,7 @@
     },
     "AgentAutoScalingGroup": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "DependsOn": "MasterAutoScalingGroup",
       "Properties": {
         "LaunchConfigurationName": {"Ref": "AgentLaunchConfiguration"},
         "MinSize": "1",
