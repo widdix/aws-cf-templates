@@ -1,11 +1,9 @@
 # Security Templates for AWS CloudFormation
 
 ## CloudTrail across all regions
-
 This template enables CloudTrail to records AWS API calls across all regions in your AWS account. API calls are archived in S3 and also pushed CloudWatch Logs. If new API calls are available in S3 a SNS topic is notified.
 
 ### Installation Guide
-
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=security-cloudtrail&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/security/cloudtrail.json"><img src="../cloudformation-launch-stack.png?raw=true" alt="Launch Stack"></a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
@@ -16,7 +14,6 @@ This template enables CloudTrail to records AWS API calls across all regions in 
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
 ## Account Password Policy
-
 This template creates an account password policy for your IAM users. You can:
 
 * set IAM user passwords to be valid for only the specified number of days.
@@ -32,7 +29,6 @@ This template creates an account password policy for your IAM users. You can:
 Or just use the suggested defaults.
 
 ### Installation Guide
-
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=security-account-password-policy&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/security/account-password-policy.json"><img src="../cloudformation-launch-stack.png?raw=true" alt="Launch Stack"></a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
@@ -43,11 +39,9 @@ Or just use the suggested defaults.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
 ## AWS Config setup
-
 This template enables AWS Config to deliver a AWS resource inventory to S3.
 
 ### Installation Guide
-
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=security-config&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/security/config.json"><img src="../cloudformation-launch-stack.png?raw=true" alt="Launch Stack"></a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.

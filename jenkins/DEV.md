@@ -1,7 +1,6 @@
 # Developer notes
 
 ## RegionMap
-
 To update the region map execute the following lines in your terminal:
 
 ```

@@ -1,13 +1,11 @@
 # Wordpress Templates for AWS CloudFormation
 
 ## Wordpress: fault tolerant + scalable
-
 This template describes a **fault tolerant** and **scalable** Wordpress environment.
 
 ![Architecture](./wordpress-ha.png?raw=true "Architecture")
 
 ### Installation Guide
-
 1. This templates depends on one of our [VPC templates](/vpc-templates-for-aws-cloudformation/). Please create a VPC stack first: <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.json"><img src="../cloudformation-launch-stack.png?raw=true" alt="Launch Stack"></a>
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=wordpress-ha&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/wordpress/wordpress-ha.json"><img src="../cloudformation-launch-stack.png?raw=true" alt="Launch Stack"></a>
 1. Click **Next** to proceed with the next step of the wizard.
@@ -20,7 +18,6 @@ This template describes a **fault tolerant** and **scalable** Wordpress environm
 1. Grab the URL of the Wordpress environment from the **Outputs** tab of your stack.
 
 ### Limitations
-
 Installing and updating core, plugins and themes is disabled. You need to edit the `/root/config.sh` to change core, plugins and themes during bootstrapping of EC2 instances.
 
 ## Support
