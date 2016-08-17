@@ -16,9 +16,7 @@ We are offering the following templates:
 * [VPC ](./vpc)
 * [Wordpress](./wordpress)
 
-We are interested in your requirements. Please use the following survey to upvote and add templates you are impatiently waiting for:
-
-<iframe src="https://docs.google.com/forms/d/1SGdSaE9XXBbL7KbAeyya1FXgx4kqCELnEQEX63EeIKU/viewform?embedded=true" width="760" height="800" frameborder="0" marginheight="0" marginwidth="0">Loading...</iframe>
+We are interested in your requirements. [Please use the following survey to upvote and add templates you are impatiently waiting for](https://docs.google.com/forms/d/e/1FAIpQLSerhIuMuCWrHai639FoUOt8ffmMqWr0PWzLhCn3VN29VUi8TA/viewform?usp=send_form)
 
 ## License
 All templates are published under Apache License Version 2.0.
