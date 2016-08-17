@@ -1,27 +1,14 @@
-# aws-cf-templates
+# Static Website Templates for AWS CloudFormation
 
-## Static website
+## Static website with CDN
 
-Use the `static-website.json` template to create the infrastructure for hosting a static website. 
-
-### Architecture
+This template describes the infrastructure for hosting a static website behind a CDN.
 
 ![Architecture](./static-website.png?raw=true "Architecture")
 
-### Components
-
-#### AWS services
-
-* S3: object storage
-* CloudFront: CDN
-* Route53: DNS names
-
 ### Installation Guide
 
-1. Download the template [static-website.json](https://raw.githubusercontent.com/widdix/aws-cf-templates/master/static-website/static-website.json)
-1. Open AWS CloudFormation within the Management Console: [https://console.aws.amazon.com/cloudformation](https://console.aws.amazon.com/cloudformation).
-1. Create a new stack by clicking on the **Create Stack** button.
-1. Select **Upload a template to Amazon S3** and upload the template `static-website.json`.
+1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=ec2-auto-recovery&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/static-website/static-website.json"><img src="../cloudformation-launch-stack.png?raw=true" alt="Launch Stack"></a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -30,8 +17,11 @@ Use the `static-website.json` template to create the infrastructure for hosting 
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
-## Support needed?
+## Support
+We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
 
-Do you need help?
+## Feedback
+We are looking forward to your feedback. Mail to [team@widdix.de](mailto:team@widdix.de).
 
-[![Contact Andreas on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/andreaswittig) Andreas Wittig or [![Contact Michael on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/michaelwittig) Michael Wittig
+## About
+A [cloudonaut.io](https://cloudonaut.io/templates-for-aws-cloudformation/) project. Engineered by [widdix](https://widdix.net).

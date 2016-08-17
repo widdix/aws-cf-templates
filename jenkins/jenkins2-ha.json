@@ -40,7 +40,7 @@
     }
   },
   "Mappings": {
-    "EC2RegionMap": {
+    "RegionMap": {
       "ap-south-1": {"AMI": "ami-ffbdd790"},
       "eu-west-1": {"AMI": "ami-f9dd458a"},
       "ap-southeast-1": {"AMI": "ami-a59b49c6"},
@@ -324,7 +324,7 @@
         }
       },
       "Properties": {
-        "ImageId": {"Fn::FindInMap": ["EC2RegionMap", {"Ref": "AWS::Region"}, "AMI"]},
+        "ImageId": {"Fn::FindInMap": ["RegionMap", {"Ref": "AWS::Region"}, "AMI"]},
         "InstanceType": {"Ref": "MasterInstanceType"},
         "SecurityGroups": [{"Ref": "MasterSecurityGroup"}],
         "KeyName": {"Ref": "KeyName"},

@@ -1,43 +1,15 @@
-# aws-cf-templates
+# Wordpress Templates for AWS CloudFormation
 
-## Wordpress
+## Wordpress: fault tolerant + scalable
 
-Use the `wordpress-ha.json` template to create a **fault tolerant** and **scalable** Wordpress environment within minutes.
-
-### Architecture
+This template describes a **fault tolerant** and **scalable** Wordpress environment.
 
 ![Architecture](./wordpress-ha.png?raw=true "Architecture")
 
-### Components
-
-#### Dependencies
-
-This template depends on other templates.
-
-* [VPC stack with at least two public and private subnets](https://github.com/widdix/aws-cf-templates/tree/master/vpc)
-
-#### AWS services
-
-* EC2: virtual servers running Apache serving Wordpress (PHP application)
-* RDS: highly available MySQL database
-* S3: stores and delivers uploaded media files (e.g. images, videos, ...)
-* ELB: distributes incoming HTTP requests to multiple virtual servers
-* VPC: environment is running in a separate private network
-* Auto Scaling: manages the fleet of virtual servers
-* CloudWatch: monitors the usage of the virtual servers and adds or removes additional servers if needed
-
-#### Others
-
-* Wordpress plugins: amazon-web-services and amazon-s3-and-cloudfront
-* Wordpress CLI: wp-cli 
-
 ### Installation Guide
 
-1. This templates depends on one of our VPC templates. [Please create a VPC stack with at least two public and private subnets first.](https://github.com/widdix/aws-cf-templates/tree/master/vpc)
-1. Download the template [wordpress-ha.json](https://raw.githubusercontent.com/widdix/aws-cf-templates/master/wordpress/wordpress-ha.json)
-1. Open AWS CloudFormation within the Management Console: [https://console.aws.amazon.com/cloudformation](https://console.aws.amazon.com/cloudformation).
-1. Create a new stack by clicking on the **Create Stack** button.
-1. Select **Upload a template to Amazon S3** and upload the template `wordpress-ha.json`.
+1. This templates depends on one of our [VPC templates](/vpc-templates-for-aws-cloudformation/). Please create a VPC stack first: <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.json"><img src="../cloudformation-launch-stack.png?raw=true" alt="Launch Stack"></a>
+1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=wordpress-ha&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/wordpress/wordpress-ha.json"><img src="../cloudformation-launch-stack.png?raw=true" alt="Launch Stack"></a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -51,8 +23,11 @@ This template depends on other templates.
 
 Installing and updating core, plugins and themes is disabled. You need to edit the `/root/config.sh` to change core, plugins and themes during bootstrapping of EC2 instances.
 
-## Support needed?
+## Support
+We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
 
-Do you need help?
+## Feedback
+We are looking forward to your feedback. Mail to [team@widdix.de](mailto:team@widdix.de).
 
-[![Contact Andreas on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/andreaswittig) Andreas Wittig or [![Contact Michael on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/michaelwittig) Michael Wittig
+## About
+A [cloudonaut.io](https://cloudonaut.io/templates-for-aws-cloudformation/) project. Engineered by [widdix](https://widdix.net).
