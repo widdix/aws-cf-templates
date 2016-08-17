@@ -1,10 +1,22 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "Jenkins 2: fault tolerant and scalable, a cloudonaut.io template",
+  "Description": "Jenkins 2: highly available Jenkins master, a cloudonaut.io template",
   "Parameters": {
     "VPC": {
       "Description": "Use VPC output from vpc stack.",
       "Type": "AWS::EC2::VPC::Id"
+    },
+    "SubnetA": {
+      "Description": "Use SubnetAPublic or SubnetAPrivate output from vpc stack. If you choose SubnetAPrivate you need a NAT instance or a NAT gateway.",
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "SubnetB": {
+      "Description": "Use SubnetBPublic or SubnetBPrivate output from vpc stack. If you choose SubnetAPrivate you need a NAT instance or a NAT gateway.",
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "KeyName": {
+      "Description": "The key pair to establish a SSH connection to the Jenkins master.",
+      "Type": "AWS::EC2::KeyPair::KeyName"
     },
     "MasterELBScheme": {
       "Description": "Indicates whether the load balancer in front of the Jenkins master is Internet-facing or internal.",
@@ -16,25 +28,13 @@
       "Description": "Use SubnetAPublic and SubntBPublic outputs for ELBScheme internet-facing or SubnetAPrivate and SubnetBPrivate outputs for ELBScheme intrnal from vpc stack.",
       "Type": "List<AWS::EC2::Subnet::Id>"
     },
-    "SubnetA": {
-      "Description": "Use SubnetAPublic or SubnetAPrivate output from vpc stack. If you choose SubnetAPrivate you need a NAT instance or a NAT gateway.",
-      "Type": "AWS::EC2::Subnet::Id"
-    },
-    "SubnetB": {
-      "Description": "Use SubnetBPublic or SubnetBPrivate output from vpc stack. If you choose SubnetAPrivate you need a NAT instance or a NAT gateway.",
-      "Type": "AWS::EC2::Subnet::Id"
-    },
-    "MasterKeyName": {
-      "Description": "The key pair to establish a SSH connection to the Jenkins master.",
-      "Type": "AWS::EC2::KeyPair::KeyName"
-    },
     "MasterInstanceType": {
-      "Description": "The instance type of web servers (e.g. t2.micro).",
+      "Description": "The instance type of the Jenkins master.",
       "Type": "String",
       "Default": "t2.micro"
     },
-    "AdminPassword": {
-      "Description": "A password for the Jenkins admin.",
+    "MasterAdminPassword": {
+      "Description": "A password for the Jenkins master admin.",
       "Type": "String",
       "NoEcho": "true"
     }
@@ -311,7 +311,7 @@
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
               "h_set_admin_password": {
-                "command": {"Fn::Join": ["", ["echo 'jenkins.model.Jenkins.instance.securityRealm.createAccount(\"admin\", \"", {"Ref": "AdminPassword"}, "\")' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s \"http://localhost:8080/\" -noKeyAuth groovy = --username admin --password \"$(cat /var/lib/jenkins/secrets/initialAdminPassword)\""]]},
+                "command": {"Fn::Join": ["", ["echo 'jenkins.model.Jenkins.instance.securityRealm.createAccount(\"admin\", \"", {"Ref": "MasterAdminPassword"}, "\")' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s \"http://localhost:8080/\" -noKeyAuth groovy = --username admin --password \"$(cat /var/lib/jenkins/secrets/initialAdminPassword)\""]]},
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
 
@@ -327,7 +327,7 @@
         "ImageId": {"Fn::FindInMap": ["EC2RegionMap", {"Ref": "AWS::Region"}, "AMI"]},
         "InstanceType": {"Ref": "MasterInstanceType"},
         "SecurityGroups": [{"Ref": "MasterSecurityGroup"}],
-        "KeyName": {"Ref": "MasterKeyName"},
+        "KeyName": {"Ref": "KeyName"},
         "UserData": {"Fn::Base64": {"Fn::Join": ["", [
           "#!/bin/bash -x", "\n",
           "/opt/aws/bin/cfn-init -v --stack ", {"Ref": "AWS::StackName"}, " --resource MasterLaunchConfiguration --region ", {"Ref": "AWS::Region"}, "\n",
