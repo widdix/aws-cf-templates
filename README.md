@@ -9,12 +9,12 @@ Using our Infrastructure as Code templates will help you to bootstrap common set
 ## Templates
 We are offering the following templates:
 
-* [EC2](./tree/master/ec2)
-* [Jenkins ](./tree/master/jenkins)
-* [Security](h./tree/master/security)
-* [Static website](./tree/master/static-website)
-* [VPC ](./tree/master/vpc)
-* [Wordpress](./tree/master/wordpress)
+* [EC2](./ec2)
+* [Jenkins ](./jenkins)
+* [Security](./security)
+* [Static website](./static-website)
+* [VPC ](./vpc)
+* [Wordpress](./wordpress)
 
 More templates will be available soon.
 
