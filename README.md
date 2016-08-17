@@ -9,12 +9,12 @@ Using our Infrastructure as Code templates will help you to bootstrap common set
 ## Templates
 We are offering the following templates:
 
-* [EC2](https://github.com/widdix/aws-cf-templates/tree/master/ec2)
-* [Jenkins ](https://github.com/widdix/aws-cf-templates/tree/master/jenkins)
-* [Security](https://github.com/widdix/aws-cf-templates/tree/master/security)
-* [Static website](https://github.com/widdix/aws-cf-templates/tree/master/static-website)
-* [VPC ](https://github.com/widdix/aws-cf-templates/tree/master/vpc)
-* [Wordpress](https://github.com/widdix/aws-cf-templates/tree/master/wordpress)
+* [EC2](./tree/master/ec2)
+* [Jenkins ](./tree/master/jenkins)
+* [Security](h./tree/master/security)
+* [Static website](./tree/master/static-website)
+* [VPC ](./tree/master/vpc)
+* [Wordpress](./tree/master/wordpress)
 
 More templates will be available soon.
 
