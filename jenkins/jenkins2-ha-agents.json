@@ -54,6 +54,12 @@
       "Default": "8",
       "MinValue": "8",
       "MaxValue": "1024"
+    },
+    "AgentMaxSize": {
+      "Description": "The maximum size of the agents Auto Scaling group.",
+      "Type": "Number",
+      "Default": "1",
+      "MinValue": "1"
     }
   },
   "Mappings": {
@@ -121,11 +127,6 @@
           "FromPort": 80,
           "ToPort": 80,
           "IpProtocol": "tcp"
-        }, {
-          "CidrIp": "0.0.0.0/0",
-          "FromPort": 49817,
-          "ToPort": 49817,
-          "IpProtocol": "tcp"
         }]
       }
     },
@@ -140,17 +141,15 @@
           "Timeout": "5",
           "UnhealthyThreshold": "3"
         },
+        "ConnectionSettings": {
+          "IdleTimeout": 3600
+        },
         "LoadBalancerName": "jenkins-master",
         "Listeners": [{
           "InstancePort": "8080",
           "InstanceProtocol": "HTTP",
           "LoadBalancerPort": "80",
           "Protocol": "HTTP"
-        }, {
-          "InstancePort": "49817",
-          "InstanceProtocol": "TCP",
-          "LoadBalancerPort": "49817",
-          "Protocol": "TCP"
         }],
         "Scheme": {"Ref": "MasterELBScheme"},
         "SecurityGroups": [{"Ref": "MasterELBSecurityGroup"}],
@@ -158,6 +157,41 @@
         "Tags": [{
           "Key": "Name",
           "Value": "jenkins-master"
+        }]
+      }
+    },
+    "MasterInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [{"Ref": "MasterIAMRole"}]
+      }
+    },
+    "MasterIAMRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": {
+              "Service": ["ec2.amazonaws.com"]
+            },
+            "Action": ["sts:AssumeRole"]
+          }]
+        },
+        "Path": "/",
+        "Policies": [{
+          "PolicyName": "cloudwatch",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Sid": "write",
+              "Effect": "Allow",
+              "Action": "cloudwatch:PutMetricData",
+              "Resource": "*"
+            }]
+          }
         }]
       }
     },
@@ -177,7 +211,12 @@
           "ToPort": 8080,
           "IpProtocol": "tcp"
         }, {
-          "SourceSecurityGroupId": {"Ref": "MasterELBSecurityGroup"},
+          "SourceSecurityGroupId": {"Ref": "AgentSecurityGroup"},
+          "FromPort": 8080,
+          "ToPort": 8080,
+          "IpProtocol": "tcp"
+        }, {
+          "SourceSecurityGroupId": {"Ref": "AgentSecurityGroup"},
           "FromPort": 49817,
           "ToPort": 49817,
           "IpProtocol": "tcp"
@@ -290,6 +329,18 @@
                 "mode": "000400",
                 "owner": "root",
                 "group": "root"
+              },
+              "/etc/cron.d/cloudwatch-build-queue": {
+                "content": {"Fn::Join": ["", [
+                  "SHELL=/bin/bash", "\n",
+                  "PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin", "\n",
+                  "MAILTO=root", "\n",
+                  "HOME=/", "\n",
+                  "* * * * * root aws --region ", {"Ref": "AWS::Region"}, " cloudwatch put-metric-data --namespace ", {"Ref": "AWS::StackName"}, " --metric-name BuildQueue --value $(curl -s 'http://admin:", {"Ref": "MasterAdminPassword"}, "@localhost:8080/queue/api/xml' | grep -o '<item' | wc -l) --unit Count", "\n"
+                ]]},
+                "mode": "000644",
+                "owner": "root",
+                "group": "root"
               }
             },
             "commands": {
@@ -336,6 +387,7 @@
       },
       "Properties": {
         "ImageId": {"Fn::FindInMap": ["RegionMap", {"Ref": "AWS::Region"}, "AMI"]},
+        "IamInstanceProfile": {"Ref": "MasterInstanceProfile"},
         "InstanceType": {"Ref": "MasterInstanceType"},
         "SecurityGroups": [{"Ref": "MasterSecurityGroup"}],
         "KeyName": {"Ref": "KeyName"},
@@ -352,7 +404,7 @@
       "Properties": {
         "LaunchConfigurationName": {"Ref": "MasterLaunchConfiguration"},
         "MinSize": "1",
-        "MaxSize": "1",
+        "MaxSize": {"Ref": "AgentMaxSize"},
         "DesiredCapacity": "1",
         "HealthCheckGracePeriod": 120,
         "HealthCheckType": "ELB",
@@ -374,6 +426,44 @@
           "PauseTime": "PT10M",
           "WaitOnResourceSignals": true
         }
+      }
+    },
+    "AgentInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [{"Ref": "AgentIAMRole"}]
+      }
+    },
+    "AgentIAMRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": {
+              "Service": ["ec2.amazonaws.com"]
+            },
+            "Action": ["sts:AssumeRole"]
+          }]
+        },
+        "Path": "/",
+        "Policies": [{
+          "PolicyName": "ec2",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Sid": "read",
+              "Effect": "Allow",
+              "Action": [
+                "ec2:DescribeInstances",
+                "autoscaling:DescribeAutoScalingGroups"
+              ],
+              "Resource": "*"
+            }]
+          }
+        }]
       }
     },
     "AgentSecurityGroup": {
@@ -423,6 +513,20 @@
                 ]]}
               }
             },
+            "commands": {
+              "a_groupadd": {
+                "command": "groupadd -g 497 jenkins",
+                "test": "if grep -q jenkins /etc/group; then exit 1; else exit 0; fi"
+              },
+              "b_useradd": {
+                "command": "adduser -u 498 -g 497 -s /bin/bash -d /var/lib/jenkins -c 'Jenkins Continuous Integration Server' jenkins",
+                "test": "if grep -q jenkins /etc/passwd; then exit 1; else exit 0; fi"
+              },
+              "c_mkdir": {
+                "command": "mkdir /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins",
+                "test": "[ ! -d /var/lib/jenkins ]"
+              }
+            },
             "services": {
               "sysvinit": {
                 "cfn-hup": {
@@ -452,21 +556,42 @@
                 "mode": "000400",
                 "owner": "root",
                 "group": "root"
+              },
+              "/root/check-agent.sh": {
+                "content": {"Fn::Join": ["", [
+                  "#!/bin/bash -ex", "\n",
+                  "masterInstanceId=$(aws --region ", {"Ref": "AWS::Region"}, " autoscaling describe-auto-scaling-groups --auto-scaling-group-names ", {"Ref": "MasterAutoScalingGroup"}, " --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)", "\n",
+                  "masterIP=$(aws --region ", {"Ref": "AWS::Region"}, " ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)", "\n",
+                  "java -jar jenkins-cli.jar -s http://$masterIP:8080 -noKeyAuth get-node $(curl -s http://169.254.169.254/latest/meta-data/instance-id) --username admin --password ", {"Ref": "MasterAdminPassword"}, "\n"
+                ]]},
+                "mode": "000555",
+                "owner": "root",
+                "group": "root"
+              },
+              "/root/create-agent.sh": {
+                "content": {"Fn::Join": ["", [
+                  "#!/bin/bash -ex", "\n",
+                  "masterInstanceId=$(aws --region ", {"Ref": "AWS::Region"}, " autoscaling describe-auto-scaling-groups --auto-scaling-group-names ", {"Ref": "MasterAutoScalingGroup"}, " --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)", "\n",
+                  "masterIP=$(aws --region ", {"Ref": "AWS::Region"}, " ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)", "\n",
+                  "cat /root/agent.xml | java -jar jenkins-cli.jar -s http://$masterIP:8080 -noKeyAuth create-node $(curl -s http://169.254.169.254/latest/meta-data/instance-id) --username admin --password ", {"Ref": "MasterAdminPassword"}, "\n"
+                ]]},
+                "mode": "000555",
+                "owner": "root",
+                "group": "root"
+              },
+              "/var/lib/jenkins/start-agent.sh": {
+                "content": {"Fn::Join": ["", [
+                  "#!/bin/bash -ex", "\n",
+                  "masterInstanceId=$(aws --region ", {"Ref": "AWS::Region"}, " autoscaling describe-auto-scaling-groups --auto-scaling-group-names ", {"Ref": "MasterAutoScalingGroup"}, " --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)", "\n",
+                  "masterIP=$(aws --region ", {"Ref": "AWS::Region"}, " ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)", "\n",
+                  "java -jar slave.jar -jnlpUrl http://$masterIP:8080/computer/$(curl -s http://169.254.169.254/latest/meta-data/instance-id)/slave-agent.jnlp -jnlpCredentials admin:", {"Ref": "MasterAdminPassword"}, "\n"
+                ]]},
+                "mode": "000500",
+                "owner": "jenkins",
+                "group": "jenkins"
               }
             },
             "commands": {
-              "a_groupadd": {
-                "command": "groupadd -g 497 jenkins",
-                "test": "if grep -q jenkins /etc/group; then exit 1; else exit 0; fi"
-              },
-              "b_useradd": {
-                "command": "adduser -u 498 -g 497 -s /bin/bash -d /var/lib/jenkins -c 'Jenkins Continuous Integration Server' jenkins",
-                "test": "if grep -q jenkins /etc/passwd; then exit 1; else exit 0; fi"
-              },
-              "c_mkdir": {
-                "command": "mkdir /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins",
-                "test": "[ ! -d /var/lib/jenkins ]"
-              },
               "d_download_slave_jar": {
                 "command": {"Fn::Join": ["", ["wget http://", {"Fn::GetAtt": ["MasterELB", "DNSName"]}, "/jnlpJars/slave.jar"]]},
                 "cwd": "/var/lib/jenkins",
@@ -478,12 +603,12 @@
                 "test": "[ ! -f /var/lib/jenkins/jenkins-cli.jar ]"
               },
               "f_create_agent": {
-                "command": {"Fn::Join": ["", ["cat /root/agent.xml | java -jar jenkins-cli.jar -s http://", {"Fn::GetAtt": ["MasterELB", "DNSName"]}, " -noKeyAuth create-node $(curl -s http://169.254.169.254/latest/meta-data/instance-id) --username admin --password ", {"Ref": "MasterAdminPassword"}]]},
+                "command": "/root/create-agent.sh",
                 "cwd": "/var/lib/jenkins",
-                "test": {"Fn::Join": ["", ["if java -jar jenkins-cli.jar -s http://", {"Fn::GetAtt": ["MasterELB", "DNSName"]}, " -noKeyAuth get-node $(curl -s http://169.254.169.254/latest/meta-data/instance-id) --username admin --password ", {"Ref": "MasterAdminPassword"}, "; then exit 1; else exit 0; fi"]]}
+                "test": "if /root/check-agent.sh; then exit 1; else exit 0; fi"
               },
               "g_start_agent": {
-                "command": {"Fn::Join": ["", ["su - jenkins -c 'screen -m -d -S agent java -jar slave.jar -jnlpUrl http://", {"Fn::GetAtt": ["MasterELB", "DNSName"]}, "/computer/$(curl -s http://169.254.169.254/latest/meta-data/instance-id)/slave-agent.jnlp -jnlpCredentials admin:", {"Ref": "MasterAdminPassword"}, "'"]]},
+                "command": "su - jenkins -c 'screen -m -d -S agent /var/lib/jenkins/start-agent.sh'",
                 "cwd": "/var/lib/jenkins",
                 "test": "if su - jenkins -c 'screen -ls' | grep -q agent; then exit 1; else exit 0; fi"
               }
@@ -493,6 +618,7 @@
       },
       "Properties": {
         "ImageId": {"Fn::FindInMap": ["RegionMap", {"Ref": "AWS::Region"}, "AMI"]},
+        "IamInstanceProfile": {"Ref": "AgentInstanceProfile"},
         "InstanceType": {"Ref": "AgentInstanceType"},
         "SecurityGroups": [{"Ref": "AgentSecurityGroup"}],
         "KeyName": {"Ref": "KeyName"},
@@ -518,8 +644,6 @@
         "MinSize": "1",
         "MaxSize": "1",
         "DesiredCapacity": "1",
-        "HealthCheckGracePeriod": 120,
-        "HealthCheckType": "ELB",
         "VPCZoneIdentifier": [{"Ref": "SubnetA"}, {"Ref": "SubnetB"}],
         "Tags": [{
           "PropagateAtLaunch": true,
