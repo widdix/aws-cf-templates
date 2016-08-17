@@ -468,12 +468,12 @@
                 "test": "[ ! -d /var/lib/jenkins ]"
               },
               "d_download_slave_jar": {
-                "command": "wget http://jenkins-master-2031977385.eu-west-1.elb.amazonaws.com/jnlpJars/slave.jar",
+                "command": {"Fn::Join": ["", ["wget http://", {"Fn::GetAtt": ["MasterELB", "DNSName"]}, "/jnlpJars/slave.jar"]]},
                 "cwd": "/var/lib/jenkins",
                 "test": "[ ! -f /var/lib/jenkins/slave.jar ]"
               },
               "e_download_cli_jar": {
-                "command": "wget http://jenkins-master-2031977385.eu-west-1.elb.amazonaws.com/jnlpJars/jenkins-cli.jar",
+                "command": {"Fn::Join": ["", ["wget http://", {"Fn::GetAtt": ["MasterELB", "DNSName"]}, "/jnlpJars/jenkins-cli.jar"]]},
                 "cwd": "/var/lib/jenkins",
                 "test": "[ ! -f /var/lib/jenkins/jenkins-cli.jar ]"
               },
