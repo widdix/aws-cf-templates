@@ -1,6 +1,6 @@
 # Wordpress Templates for AWS CloudFormation
 
-## Wordpress: fault tolerant + scalable
+## Wordpress: fault tolerant and scalable
 This template describes a **fault tolerant** and **scalable** Wordpress environment.
 
 ![Architecture](./wordpress-ha.png?raw=true "Architecture")
