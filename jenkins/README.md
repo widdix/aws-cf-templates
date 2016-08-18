@@ -1,5 +1,7 @@
 # Jenkins Templates for AWS CloudFormation
 
+![Demo](./demo.gif?raw=true "Demo")
+
 ## Jenkins 2.0: highly available master
 This template describes a Jenkins master in a highly available manner. If the master instance fails it will be replaced automatically. All data stored on EFS where it is replicated across AZs and the file system can grow without a limit. The Jenkins master sits behind a load balancer to provide a fixed endpoint.
 
