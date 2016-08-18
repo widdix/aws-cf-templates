@@ -70,8 +70,8 @@
     "AgentDesiredCapacity": {
       "Description": "The desired start size of the agents Auto Scaling group. We need one agent during startup for technical reasons.",
       "Type": "Number",
-      "Default": "1",
-      "MinValue": "1"
+      "Default": "0",
+      "MinValue": "0"
     },
     "AgentMaxBuildWaitTimeInSeconds": {
       "Description": "Maximum time in seconds an agent can continue with a build although it should be scaled down.",
@@ -80,6 +80,9 @@
       "MinValue": "600",
       "MaxValue": "3600"
     }
+  },
+  "Conditions": {
+    "ZeroAgents": {"Fn::Equals": ["", {"Ref": "AgentDesiredCapacity"}]}
   },
   "Mappings": {
     "RegionMap": {
@@ -627,6 +630,62 @@
         }
       }
     },
+    "AgentELBSG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "jenkins-elb-agent",
+        "VpcId": {"Ref": "VPC"},
+        "SecurityGroupIngress": []
+      }
+    },
+    "AgentELB": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Name": "jenkins-agent",
+        "Scheme": "internal",
+        "SecurityGroups": [{"Ref": "AgentELBSG"}],
+        "Subnets": [{"Ref": "SubnetA"}, {"Ref": "SubnetB"}],
+        "Tags": [{
+          "Key": "Name",
+          "Value": "jenkins-agent"
+        }]
+      }
+    },
+    "AgentELBTargetGroup": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "HealthCheckIntervalSeconds": 10,
+        "HealthCheckPath": "/",
+        "HealthCheckPort": 8080,
+        "HealthCheckProtocol": "HTTP",
+        "HealthCheckTimeoutSeconds": 5,
+        "HealthyThresholdCount": 3,
+        "UnhealthyThresholdCount": 3,
+        "Matcher": {
+          "HttpCode": "200"
+        },
+        "Name": "jenkins-agent",
+        "Port": 8080,
+        "Protocol": "HTTP",
+        "Tags": [{
+          "Key": "Name",
+          "Value": "jenkins-agent"
+        }],
+        "VpcId": {"Ref": "VPC"}
+      }
+    },
+    "AgentELBListener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "DefaultActions": [{
+          "TargetGroupArn": {"Ref": "AgentELBTargetGroup"},
+          "Type": "forward"
+        }],
+        "LoadBalancerArn": {"Ref": "AgentELB"},
+        "Port": 8080,
+        "Protocol": "HTTP"
+      }
+    },
     "AgentIP": {
       "Type": "AWS::IAM::InstanceProfile",
       "Properties": {
@@ -691,6 +750,11 @@
           "CidrIp": "0.0.0.0/0",
           "FromPort": 22,
           "ToPort": 22,
+          "IpProtocol": "tcp"
+        }, {
+          "SourceSecurityGroupId": {"Ref": "AgentELBSG"},
+          "FromPort": 8080,
+          "ToPort": 8080,
           "IpProtocol": "tcp"
         }]
       }
@@ -885,7 +949,6 @@
               "/var/lib/jenkins/start-agent.sh": {
                 "content": {"Fn::Join": ["", [
                   "#!/bin/bash -ex", "\n",
-                  "#TODO this will not work when the master is restarted and gets a new ip, how can we healtcheck agents and terminate them if they can no longer connect to the master? e.g. ask the master if they are online??", "\n",
                   "masterInstanceId=$(aws --region ", {"Ref": "AWS::Region"}, " autoscaling describe-auto-scaling-groups --auto-scaling-group-names ", {"Ref": "MasterASG"}, " --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)", "\n",
                   "masterIP=$(aws --region ", {"Ref": "AWS::Region"}, " ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)", "\n",
                   "java -jar slave.jar -jnlpUrl http://$masterIP:8080/computer/$(curl -s http://169.254.169.254/latest/meta-data/instance-id)/slave-agent.jnlp -jnlpCredentials admin:", {"Ref": "MasterAdminPassword"}, "\n"
@@ -990,6 +1053,9 @@
         "MinSize": {"Ref": "AgentMinSize"},
         "MaxSize": {"Ref": "AgentMaxSize"},
         "DesiredCapacity": {"Ref": "AgentDesiredCapacity"},
+        "HealthCheckGracePeriod": 120,
+        "HealthCheckType": "ELB",
+        "TargetGroupARNs": [{"Ref": "AgentELBTargetGroup"}],
         "VPCZoneIdentifier": [{"Ref": "SubnetA"}, {"Ref": "SubnetB"}],
         "Tags": [{
           "PropagateAtLaunch": true,
@@ -997,11 +1063,15 @@
           "Key": "Name"
         }]
       },
-      "CreationPolicy": {
-        "ResourceSignal": {
-          "Timeout": "PT10M"
+      "CreationPolicy": {"Fn::If": [
+        "ZeroAgents",
+        {"Ref": "AWS::NoValue"},
+        {
+          "ResourceSignal": {
+            "Timeout": "PT10M"
+          }
         }
-      },
+      ]},
       "UpdatePolicy": {
         "AutoScalingRollingUpdate": {
           "PauseTime": "PT10M",
