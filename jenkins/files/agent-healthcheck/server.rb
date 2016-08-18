@@ -1,7 +1,9 @@
 #!/usr/bin/env ruby
 
+require 'net/http'
 require 'aws-sdk'
-require 'sinatra'
+require 'yaml'
+require 'webrick'
 require 'syslog/logger'
 
 $log = Syslog::Logger.new 'healthcheck'
@@ -18,33 +20,39 @@ def isHealthy(agent)
     auto_scaling_group_names: [$conf['masterASG']]
   )
   masterInstanceId = resp1.auto_scaling_groups[0].instances[0].instance_id
-  puts masterInstanceId
   resp2 = ec2.describe_instances(
     instance_ids: [masterInstanceId]
   )
   masterIP = resp2.reservations[0].instances[0].private_ip_address
-  puts masterIP
-
-
-  #"cat /root/agent.xml | java -jar jenkins-cli.jar -s http://$masterIP:8080 -noKeyAuth create-node $(curl -s http://169.254.169.254/latest/meta-data/instance-id) --username admin --password ", {"Ref": "MasterAdminPassword"}, "\n"  
-  #if system("java -jar jenkins-cli.jar -s http://#{masterIP}:8080 -noKeyAuth create-node #{agent} --username admin --password #{$conf['masterAdminPassword']}")
-  #  $log.info "agent #{agent} is marked as offline"
-  #  return true
-  #else
-  #  $log.error "agent #{agent} could not be marked as offline"
-  #  return false
-  #end
-
-  return true
-end
-
-set :port, 8080
-get '/' do
-  if isHealthy(instanceId)
-    status 200
-    "Healthy"
+  url = URI.parse("http://#{masterIP}:8080/computer/#{agent}/api/xml")
+  req = Net::HTTP::Get.new(url.to_s)
+  req.basic_auth('admin', $conf['masterAdminPassword'])
+  res = Net::HTTP.start(url.host, url.port) {|http|
+    http.request(req)
+  }
+  if res.code == '200'
+    if res.body.include? '<offline>true</offline>'
+      return false
+    elsif res.body.include? '<offline>false</offline>'
+      return true
+    else
+      $log.error "unexpected body: #{res.body}"
+      return false
+    end
   else
-    status 503
-    "Unhealthy!"
+    $log.error "unexpected response code: #{res.code}"
+    return false
   end
 end
+
+server = WEBrick::HTTPServer.new :Port => 8080
+server.mount_proc '/' do |req, res|
+  if isHealthy($instanceId)
+    res.status = 200
+    res.body = "Healthy"
+  else
+    res.status = 503
+    res.body = "Unhealthy!"
+  end
+end
+server.start
