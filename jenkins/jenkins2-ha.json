@@ -448,7 +448,6 @@
                 "command": {"Fn::Join": ["", ["echo 'jenkins.model.Jenkins.instance.securityRealm.createAccount(\"admin\", \"", {"Ref": "MasterAdminPassword"}, "\")' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s \"http://localhost:8080/\" -noKeyAuth groovy = --username admin --password \"$(cat /var/lib/jenkins/secrets/initialAdminPassword)\""]]},
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
-
               "z_create_setup_done_file": {
                 "command": "echo \"Setup done. Don not delete this file.\" > /var/lib/jenkins/setup_done.txt",
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
