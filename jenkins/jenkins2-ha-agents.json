@@ -68,10 +68,10 @@
       "MinValue": "0"
     },
     "AgentDesiredCapacity": {
-      "Description": "The desired start size of the agents Auto Scaling group.",
+      "Description": "The desired start size of the agents Auto Scaling group. We need one agent during startup for technical reasons.",
       "Type": "Number",
-      "Default": "0",
-      "MinValue": "0"
+      "Default": "1",
+      "MinValue": "1"
     },
     "AgentMaxBuildWaitTimeInSeconds": {
       "Description": "Maximum time in seconds an agent can continue with a build although it should be scaled down.",
