@@ -163,9 +163,6 @@
           "Timeout": "5",
           "UnhealthyThreshold": "3"
         },
-        "ConnectionSettings": {
-          "IdleTimeout": 3600
-        },
         "LoadBalancerName": "jenkins-master",
         "Listeners": [{
           "InstancePort": "8080",
