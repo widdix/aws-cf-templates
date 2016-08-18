@@ -1,27 +1,31 @@
-# aws-cf-templates
+# Free Templates for AWS CloudFormation
+Using our Infrastructure as Code templates will help you to bootstrap common setups on Amazon Web Services (AWS) within minutes. Our templates are exclusively designed for AWS CloudFormation, the Infrastructure as Code services on AWS.
 
-Collection of templates exclusively designed for AWS CloudFormation. Create and update common infrastructure for common use cases on AWS within minutes.
+## Benefits
+* Speed up development and migration: reuse our CloudFormation templates to create complex environments for common use cases with ease.
+* Rely on high quality infrastructure templates: peer-reviewed by an expert (certified AWS solutions architect Professional) and verified with automated tests.
+* Premium Support available: Get help in case of small and big emergencies and submit feature request.
 
 ## Templates
+We are offering the following templates:
 
-* [EC2](https://github.com/widdix/aws-cf-templates/tree/master/ec2)
-* [Security](https://github.com/widdix/aws-cf-templates/tree/master/security)
-* [Static website](https://github.com/widdix/aws-cf-templates/tree/master/static-website)
-* [VPC](https://github.com/widdix/aws-cf-templates/tree/master/vpc)
-* [Wordpress](https://github.com/widdix/aws-cf-templates/tree/master/wordpress)
+* [EC2](./ec2)
+* [Jenkins ](./jenkins)
+* [Security](./security)
+* [Static website](./static-website)
+* [VPC ](./vpc)
+* [Wordpress](./wordpress)
 
-More templates will be available soon.
+We are interested in your requirements. [Please use the following survey to upvote and add templates you are impatiently waiting for](https://docs.google.com/forms/d/e/1FAIpQLSerhIuMuCWrHai639FoUOt8ffmMqWr0PWzLhCn3VN29VUi8TA/viewform?usp=send_form)
 
 ## License
-
 All templates are published under Apache License Version 2.0.
 
 ## Support
+We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
 
-We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments.
-
-[![Contact Andreas on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/andreaswittig) Andreas Wittig or [![Contact Michael on Codementor](https://cdn.codementor.io/badges/contact_me_github.svg)](https://www.codementor.io/michaelwittig) Michael Wittig
+## Feedback
+We are looking forward to your feedback. Mail to [team@widdix.de](mailto:team@widdix.de).
 
 ## About
-
-This is a [cloudonaut.io](https://cloudonaut.io/templates-for-aws-cloudformation/) project. Engineered by [widdix](https://widdix.net).
+A [cloudonaut.io](https://cloudonaut.io/templates-for-aws-cloudformation/) project. Engineered by [widdix](https://widdix.net).
