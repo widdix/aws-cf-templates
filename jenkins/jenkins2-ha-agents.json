@@ -432,7 +432,7 @@
                 ]]}
               },
               "/etc/init.d/lifecycle-poller": {
-                "source": "https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/jenkins/files/lifecycle-poller",
+                "source": "https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/jenkins/files/lifecycle-poller/lifecycle-poller",
                 "mode": "000755",
                 "owner": "root",
                 "group": "root"
@@ -449,13 +449,13 @@
                 "group": "root"
               },
               "/opt/lifecycle-poller/daemon.rb": {
-                "source": "https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/jenkins/files/daemon.rb",
+                "source": "https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/jenkins/files/lifecycle-poller/daemon.rb",
                 "mode": "000500",
                 "owner": "root",
                 "group": "root"
               },
               "/opt/lifecycle-poller/worker.rb": {
-                "source": "https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/jenkins/files/worker.rb",
+                "source": "https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/jenkins/files/lifecycle-poller/worker.rb",
                 "mode": "000500",
                 "owner": "root",
                 "group": "root"
@@ -879,7 +879,7 @@
               "/var/lib/jenkins/start-agent.sh": {
                 "content": {"Fn::Join": ["", [
                   "#!/bin/bash -ex", "\n",
-                  "#TODO this will not work when the master is restarted and get's a new ip, how can we healtcheck agents and terminate them if they can no longer connect to the master? e.g. ask the master if they are online??", "\n",
+                  "#TODO this will not work when the master is restarted and gets a new ip, how can we healtcheck agents and terminate them if they can no longer connect to the master? e.g. ask the master if they are online??", "\n",
                   "masterInstanceId=$(aws --region ", {"Ref": "AWS::Region"}, " autoscaling describe-auto-scaling-groups --auto-scaling-group-names ", {"Ref": "MasterASG"}, " --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)", "\n",
                   "masterIP=$(aws --region ", {"Ref": "AWS::Region"}, " ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)", "\n",
                   "java -jar slave.jar -jnlpUrl http://$masterIP:8080/computer/$(curl -s http://169.254.169.254/latest/meta-data/instance-id)/slave-agent.jnlp -jnlpCredentials admin:", {"Ref": "MasterAdminPassword"}, "\n"
