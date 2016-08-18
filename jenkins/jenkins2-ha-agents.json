@@ -847,6 +847,13 @@
             }
           },
           "setup": {
+            "packages": {
+              "rubygems": {
+                "aws-sdk": ["2.2.29"],
+                "daemons": ["1.2.3"],
+                "sinatra": ["1.4.7"]
+              }
+            },
             "files": {
               "/root/agent.xml": {
                 "source": "https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/jenkins/files/agent.xml",
@@ -887,6 +894,34 @@
                 "mode": "000500",
                 "owner": "jenkins",
                 "group": "jenkins"
+              },
+              "/etc/init.d/agent-healthcheck": {
+                "source": "https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/jenkins/files/agent-healthcheck/agent-healthcheck",
+                "mode": "000755",
+                "owner": "root",
+                "group": "root"
+              },
+              "/opt/agent-healthcheck/healthcheck.conf": {
+                "content": {"Fn::Join": ["", [
+                  "region: ", {"Ref": "AWS::Region"}, "\n",
+                  "masterASG: ", {"Ref": "MasterASG"}, "\n",
+                  "masterAdminPassword: ", {"Ref": "MasterAdminPassword"}, "\n"
+                ]]},
+                "mode": "000400",
+                "owner": "root",
+                "group": "root"
+              },
+              "/opt/agent-healthcheck/daemon.rb": {
+                "source": "https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/jenkins/files/agent-healthcheck/daemon.rb",
+                "mode": "000500",
+                "owner": "root",
+                "group": "root"
+              },
+              "/opt/agent-healthcheck/server.rb": {
+                "source": "https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/jenkins/files/agent-healthcheck/server.rb",
+                "mode": "000500",
+                "owner": "root",
+                "group": "root"
               }
             },
             "commands": {
@@ -909,6 +944,20 @@
                 "command": "su - jenkins -c 'screen -m -d -S agent /var/lib/jenkins/start-agent.sh'",
                 "cwd": "/var/lib/jenkins",
                 "test": "if su - jenkins -c 'screen -ls' | grep -q agent; then exit 1; else exit 0; fi"
+              }
+            },
+            "services": {
+              "sysvinit": {
+                "agent-healthcheck": {
+                  "enabled": "true",
+                  "ensureRunning": "true",
+                  "files": [
+                    "/etc/init.d/agent-healthcheck",
+                    "/opt/agent-healthcheck/healthcheck.conf",
+                    "/opt/agent-healthcheck/daemon.rb",
+                    "/opt/agent-healthcheck/server.rb"
+                  ]
+                }
               }
             }
           }

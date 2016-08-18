@@ -14,6 +14,7 @@ This template describes a Jenkins master in a highly available manner. If the ma
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
 1. Click **Next** to skip the **Options** step of the wizard.
+1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 1. Grab the `MasterEndpoint` of the Jenkins master from the **Outputs** tab of your stack.
