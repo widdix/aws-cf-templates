@@ -25,7 +25,7 @@
       "Default": "internet-facing"
     },
     "MasterELBSubnets": {
-      "Description": "Use SubnetAPublic and SubntBPublic outputs for ELBScheme internet-facing or SubnetAPrivate and SubnetBPrivate outputs for ELBScheme intrnal from vpc stack.",
+      "Description": "Use SubnetAPublic and SubntBPublic outputs for ELBScheme internet-facing or SubnetAPrivate and SubnetBPrivate outputs for ELBScheme internal from vpc stack.",
       "Type": "List<AWS::EC2::Subnet::Id>"
     },
     "MasterInstanceType": {
@@ -60,6 +60,25 @@
       "Type": "Number",
       "Default": "2",
       "MinValue": "1"
+    },
+    "AgentMinSize": {
+      "Description": "The minimum size of the agents Auto Scaling group.",
+      "Type": "Number",
+      "Default": "0",
+      "MinValue": "0"
+    },
+    "AgentDesiredCapacity": {
+      "Description": "The desired start size of the agents Auto Scaling group.",
+      "Type": "Number",
+      "Default": "0",
+      "MinValue": "0"
+    },
+    "AgentMaxBuildWaitTimeInSeconds": {
+      "Description": "Maximum time in seconds an agent can continue with a build although it should be scaled down.",
+      "Type": "Number",
+      "Default": "600",
+      "MinValue": "600",
+      "MaxValue": "3600"
     }
   },
   "Mappings": {
@@ -192,6 +211,31 @@
               "Resource": "*"
             }]
           }
+        }, {
+          "PolicyName": "autoscaling",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Sid": "write",
+              "Effect": "Allow",
+              "Action": "autoscaling:CompleteLifecycleAction",
+              "Resource": "*"
+            }]
+          }
+        }, {
+          "PolicyName": "sqs",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Sid": "write",
+              "Effect": "Allow",
+              "Action": [
+                "sqs:DeleteMessage",
+                "sqs:ReceiveMessage"
+              ],
+              "Resource": {"Fn::GetAtt": ["AgentTerminatingLifecycleHookQueue", "Arn"]}
+            }]
+          }     
         }]
       }
     },
@@ -234,6 +278,10 @@
             "packages": {
               "yum": {
                 "nfs-utils": []
+              },
+              "rubygems": {
+                "aws-sdk": ["2.2.29"],
+                "daemons": ["1.2.3"]
               }
             },
             "commands": {
@@ -283,6 +331,165 @@
                   "action=/opt/aws/bin/cfn-init --verbose --stack=", {"Ref": "AWS::StackName"}, " --region=", {"Ref": "AWS::Region"}, " --resource=MasterLaunchConfiguration", "\n",
                   "runas=root", "\n"
                 ]]}
+              },
+              "/etc/init.d/lifecycle-poller": {
+                "content": {"Fn::Join": ["", [
+                  "#!/usr/bin/env ruby", "\n",
+                  "# chkconfig:    - 80 20", "\n",
+                  "\n",
+                  "APP_NAME = 'lifecycle-poller'  ", "\n",
+                  "APP_PATH = '/opt/lifecycle-poller/daemon.rb'", "\n",
+                  "\n",
+                  "case ARGV.first", "\n",
+                  "  when 'start'", "\n",
+                  "    puts \"Starting #{APP_NAME}...\"", "\n",
+                  "    system(APP_PATH, 'start')", "\n",
+                  "    exit($?.exitstatus)", "\n",
+                  "  when 'stop'", "\n",
+                  "    system(APP_PATH, 'stop')", "\n",
+                  "    exit($?.exitstatus)", "\n",
+                  "  when 'restart'", "\n",
+                  "    system(APP_PATH, 'restart')", "\n",
+                  "    exit($?.exitstatus)", "\n",
+                  "  when 'status'", "\n",
+                  "    system(APP_PATH, 'status')", "\n",
+                  "    exit($?.exitstatus)", "\n",
+                  "end", "\n",
+                  "\n",
+                  "unless %w{start stop restart status}.include? ARGV.first", "\n",
+                  "  puts \"Usage: #{APP_NAME} {start|stop|restart|status}\"", "\n",
+                  "  exit(1)", "\n",
+                  "end", "\n"
+                ]]},
+                "mode": "000755",
+                "owner": "root",
+                "group": "root"
+              },
+              "/opt/lifecycle-poller/poller.conf": {
+                "content": {"Fn::Join": ["", [
+                  "region: ", {"Ref": "AWS::Region"}, "\n",
+                  "queueUrl: ", {"Ref": "AgentTerminatingLifecycleHookQueue"}, "\n",
+                  "maxWaitInSeconds: ", {"Ref": "AgentMaxBuildWaitTimeInSeconds"}, "\n",
+                  "masterAdminPassword: ", {"Ref": "MasterAdminPassword"}, "\n"
+                ]]},
+                "mode": "000400",
+                "owner": "root",
+                "group": "root"
+              },
+              "/opt/lifecycle-poller/daemon.rb": {
+                "content": {"Fn::Join": ["", [
+                  "#!/usr/bin/env ruby", "\n",
+                  "\n",
+                  "require 'daemons'", "\n",
+                  "\n",
+                  "Daemons.run(__dir__ + '/worker.rb', {:monitor => true})", "\n"
+                ]]},
+                "mode": "000500",
+                "owner": "root",
+                "group": "root"
+              },
+              "/opt/lifecycle-poller/worker.rb": {
+                "content": {"Fn::Join": ["", [
+                  "#!/usr/bin/env ruby", "\n",
+                  "\n",
+                  "require 'net/http'", "\n",
+                  "require 'aws-sdk'", "\n",
+                  "require 'json'", "\n",
+                  "require 'uri'", "\n",
+                  "require 'yaml'", "\n",
+                  "require 'syslog/logger'", "\n",
+                  "\n",
+                  "$log = Syslog::Logger.new 'poller'", "\n",
+                  "$conf = YAML::load_file(__dir__ + '/poller.conf')", "\n",
+                  "Aws.config.update(region: $conf['region'])", "\n",
+                  "$log.info 'poller started'", "\n",
+                  "\n",
+                  "def takeAgentTemporarilyOffline(agent)", "\n",
+                  "  if system(\"java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s http://localhost:8080 -noKeyAuth offline-node #{agent} -m 'scale down' --username admin --password $conf['masterAdminPassword']\")", "\n",
+                  "    $log.info \"agent #{agent} is marked as offline\"", "\n",
+                  "    return true", "\n",
+                  "  else", "\n",
+                  "    $log.error \"agent #{agent} could not be marked as offline\"", "\n",
+                  "    return false", "\n",
+                  "  end", "\n",
+                  "end", "\n",
+                  "def deleteAgent(agent)", "\n",
+                  "  if system(\"java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s http://localhost:8080 -noKeyAuth delete-node #{agent} --username admin --password $conf['masterAdminPassword']\")", "\n",
+                  "    $log.info \"agent #{agent} is deleted\"", "\n",
+                  "    return true", "\n",
+                  "  else", "\n",
+                  "    $log.error \"agent #{agent} could not be deleted\"", "\n",
+                  "    return false", "\n",
+                  "  end", "\n",
+                  "end", "\n",
+                  "def isAgentIdle(agent)", "\n",
+                  "  url = URI.parse(\"http://localhost:8080/computer/#{agent}/api/xml\")", "\n",
+                  "  req = Net::HTTP::Get.new(url.to_s)", "\n",
+                  "  req.basic_auth('admin', \"$conf['masterAdminPassword']\")", "\n",
+                  "  res = Net::HTTP.start(url.host, url.port) {|http|", "\n",
+                  "    http.request(req)", "\n",
+                  "  }", "\n",
+                  "  if res.code == '200'", "\n",
+                  "    if res.body.include? '<idle>true</idle>'", "\n",
+                  "      return true", "\n",
+                  "    elsif res.body.include? '<idle>false</idle>'", "\n",
+                  "      return false", "\n",
+                  "    else", "\n",
+                  "      $log.error \"unexpected body: #{res.body}\"", "\n",
+                  "      return false", "\n",
+                  "    end", "\n",
+                  "  else", "\n",
+                  "    $log.error \"unexpected response code: #{res.code}\"", "\n",
+                  "    return false", "\n",
+                  "  end", "\n",
+                  "end", "\n",
+                  "def awaitAgentIdle(agent)", "\n",
+                  "  endTime = Time.now.to_i + ", {"Ref": "AgentMaxBuildWaitTimeInSeconds"}, "\n",
+                  "  while Time.now.to_i < endTime do", "\n",
+                  "    if isAgentIdle agent", "\n",
+                  "      $log.info \"agent #{agent} is idle\"", "\n",
+                  "      return true", "\n",
+                  "    end", "\n",
+                  "    sleep 5 # seconds", "\n",
+                  "  end", "\n",
+                  "  $log.error \"agent #{agent} is not idle, but wait time elapsed\"", "\n",
+                  "  return false", "\n",
+                  "end", "\n",
+                  "def completeLifecycleAction(token, hook, asg)", "\n",
+                  "  autoscaling = Aws::AutoScaling::Client.new()", "\n",
+                  "  autoscaling.complete_lifecycle_action(", "\n",
+                  "    lifecycle_hook_name: hook,", "\n",
+                  "    auto_scaling_group_name: asg,", "\n",
+                  "    lifecycle_action_token: token,", "\n",
+                  "    lifecycle_action_result: 'CONTINUE'", "\n",
+                  "  )", "\n",
+                  "end", "\n",
+                  "def pollSQS()", "\n",
+                  "  poller = Aws::SQS::QueuePoller.new($conf['queueUrl'])", "\n",
+                  "  poller.poll do |msg|", "\n",
+                  "    body = JSON.parse(msg.body)", "\n",
+                  "    $log.debug \"message #{body}\"", "\n",
+                  "    if body['Event'] == 'autoscaling:TEST_NOTIFICATION'", "\n",
+                  "      $log.info 'received test notification'", "\n",
+                  "    else", "\n",
+                  "      if body['LifecycleTransition'] == 'autoscaling:EC2_INSTANCE_TERMINATING'", "\n",
+                  "        $log.info \"lifecycle transition for agent #{body['EC2InstanceId']}\"", "\n",
+                  "        takeAgentTemporarilyOffline body['EC2InstanceId']", "\n",
+                  "        awaitAgentIdle body['EC2InstanceId']", "\n",
+                  "        deleteAgent body['EC2InstanceId']", "\n",
+                  "        completeLifecycleAction body['LifecycleActionToken'], body['LifecycleHookName'], body['AutoScalingGroupName']", "\n",
+                  "      else", "\n",
+                  "        $log.error \"received unsupported lifecycle transition: #{body['LifecycleTransition']}\"", "\n",
+                  "      end", "\n",
+                  "    end", "\n",
+                  "  end", "\n",
+                  "end", "\n",
+                  "", "\n",
+                  "pollSQS", "\n"
+                ]]},
+                "mode": "000500",
+                "owner": "root",
+                "group": "root"
               }
             },
             "services": {
@@ -297,7 +504,20 @@
                 "cfn-hup": {
                   "enabled": "true",
                   "ensureRunning": "true",
-                  "files": ["/etc/cfn/cfn-hup.conf", "/etc/cfn/hooks.d/cfn-auto-reloader.conf"]
+                  "files": [
+                    "/etc/cfn/cfn-hup.conf",
+                    "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
+                  ]
+                },
+                "lifecycle-poller": {
+                  "enabled": "true",
+                  "ensureRunning": "true",
+                  "files": [
+                    "/etc/init.d/lifecycle-poller",
+                    "/opt/lifecycle-poller/poller.conf",
+                    "/opt/lifecycle-poller/daemon.rb",
+                    "/opt/lifecycle-poller/worker.rb"
+                  ]
                 }
               }
             }
@@ -338,7 +558,7 @@
                   "HOME=/", "\n",
                   "* * * * * root aws --region ", {"Ref": "AWS::Region"}, " cloudwatch put-metric-data --namespace ", {"Ref": "AWS::StackName"}, " --metric-name BuildQueue --value $(curl -s 'http://admin:", {"Ref": "MasterAdminPassword"}, "@localhost:8080/queue/api/xml' | grep -o '<item' | wc -l) --unit Count", "\n"
                 ]]},
-                "mode": "000644",
+                "mode": "000600",
                 "owner": "root",
                 "group": "root"
               }
@@ -564,7 +784,7 @@
                   "masterIP=$(aws --region ", {"Ref": "AWS::Region"}, " ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)", "\n",
                   "java -jar jenkins-cli.jar -s http://$masterIP:8080 -noKeyAuth get-node $(curl -s http://169.254.169.254/latest/meta-data/instance-id) --username admin --password ", {"Ref": "MasterAdminPassword"}, "\n"
                 ]]},
-                "mode": "000555",
+                "mode": "000500",
                 "owner": "root",
                 "group": "root"
               },
@@ -575,7 +795,7 @@
                   "masterIP=$(aws --region ", {"Ref": "AWS::Region"}, " ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)", "\n",
                   "cat /root/agent.xml | java -jar jenkins-cli.jar -s http://$masterIP:8080 -noKeyAuth create-node $(curl -s http://169.254.169.254/latest/meta-data/instance-id) --username admin --password ", {"Ref": "MasterAdminPassword"}, "\n"
                 ]]},
-                "mode": "000555",
+                "mode": "000500",
                 "owner": "root",
                 "group": "root"
               },
@@ -642,9 +862,9 @@
       "DependsOn": "MasterAutoScalingGroup",
       "Properties": {
         "LaunchConfigurationName": {"Ref": "AgentLaunchConfiguration"},
-        "MinSize": "1",
+        "MinSize": {"Ref": "AgentMinSize"},
         "MaxSize": {"Ref": "AgentMaxSize"},
-        "DesiredCapacity": "1",
+        "DesiredCapacity": {"Ref": "AgentDesiredCapacity"},
         "VPCZoneIdentifier": [{"Ref": "SubnetA"}, {"Ref": "SubnetB"}],
         "Tags": [{
           "PropagateAtLaunch": true,
@@ -664,6 +884,55 @@
         }
       }
     },
+    "AgentTerminatingLifecycleHookQueue": {
+       "Type": "AWS::SQS::Queue",
+       "Properties": {
+          "QueueName": {"Fn::Join": ["", [{"Ref": "AWS::StackName"}, "-terminating-lifecycle-hook"]]},
+          "VisibilityTimeout": {"Ref": "AgentMaxBuildWaitTimeInSeconds"}
+       }
+    },
+    "AgentTerminatingLifecycleHookIAMRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": {
+              "Service": ["autoscaling.amazonaws.com"]
+            },
+            "Action": ["sts:AssumeRole"]
+          }]
+        },
+        "Path": "/",
+        "Policies": [{
+          "PolicyName": "sqs",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Sid": "write",
+              "Effect": "Allow",
+              "Action": [
+                "sqs:SendMessage",
+                "sqs:GetQueueUrl"
+              ],
+              "Resource": {"Fn::GetAtt": ["AgentTerminatingLifecycleHookQueue", "Arn"]}
+            }]
+          }
+        }]
+      }
+    },
+    "AgentTerminatingLifecycleHook": {
+      "Type": "AWS::AutoScaling::LifecycleHook",
+      "Properties": {
+        "HeartbeatTimeout": {"Ref": "AgentMaxBuildWaitTimeInSeconds"},
+        "DefaultResult": "CONTINUE",
+        "AutoScalingGroupName": {"Ref": "AgentAutoScalingGroup"},
+        "LifecycleTransition": "autoscaling:EC2_INSTANCE_TERMINATING",
+        "NotificationTargetARN": {"Fn::GetAtt": ["AgentTerminatingLifecycleHookQueue", "Arn"]},
+        "RoleARN": {"Fn::GetAtt": ["AgentTerminatingLifecycleHookIAMRole", "Arn"]}
+      }
+    },
     "AgentScalingUpPolicy": {
       "Type": "AWS::AutoScaling::ScalingPolicy",
       "Properties": {
@@ -677,13 +946,36 @@
       "Type": "AWS::CloudWatch::Alarm",
       "Properties": {
         "EvaluationPeriods": "1",
-        "Statistic": "Sum",
+        "Statistic": "Maximum",
         "Threshold": "4",
         "AlarmDescription": "Alarm if Build Queue is high.",
         "Period": "60",
         "AlarmActions": [{"Ref": "AgentScalingUpPolicy"}],
         "Namespace": {"Ref": "AWS::StackName"},
-        "ComparisonOperator": "GreaterThanThreshold",
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "MetricName": "BuildQueue"
+      }
+    },
+    "AgentScalingDownPolicy": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "AdjustmentType": "ChangeInCapacity",
+        "AutoScalingGroupName": {"Ref": "AgentAutoScalingGroup"},
+        "Cooldown": "300",
+        "ScalingAdjustment": "-1"
+      }
+    },
+    "BuildQueueEmptyAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "EvaluationPeriods": "1",
+        "Statistic": "Maximum",
+        "Threshold": "0",
+        "AlarmDescription": "Alarm if Build Queue is empty.",
+        "Period": "60",
+        "AlarmActions": [{"Ref": "AgentScalingDownPolicy"}],
+        "Namespace": {"Ref": "AWS::StackName"},
+        "ComparisonOperator": "LessThanOrEqualToThreshold",
         "MetricName": "BuildQueue"
       }
     }

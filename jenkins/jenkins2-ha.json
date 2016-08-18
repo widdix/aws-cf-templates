@@ -25,7 +25,7 @@
       "Default": "internet-facing"
     },
     "MasterELBSubnets": {
-      "Description": "Use SubnetAPublic and SubntBPublic outputs for ELBScheme internet-facing or SubnetAPrivate and SubnetBPrivate outputs for ELBScheme intrnal from vpc stack.",
+      "Description": "Use SubnetAPublic and SubntBPublic outputs for ELBScheme internet-facing or SubnetAPrivate and SubnetBPrivate outputs for ELBScheme internal from vpc stack.",
       "Type": "List<AWS::EC2::Subnet::Id>"
     },
     "MasterInstanceType": {
