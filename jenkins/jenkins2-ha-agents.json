@@ -97,13 +97,13 @@
     }
   },
   "Resources": {
-    "MasterStorageSecurityGroup": {
+    "MasterStorageSG": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "jenkins-master",
         "VpcId": {"Ref": "VPC"},
         "SecurityGroupIngress": [{
-          "SourceSecurityGroupId": {"Ref": "MasterSecurityGroup"},
+          "SourceSecurityGroupId": {"Ref": "MasterSG"},
           "FromPort": 2049,
           "ToPort": 2049,
           "IpProtocol": "tcp"
@@ -124,7 +124,7 @@
       "Type": "AWS::EFS::MountTarget",
       "Properties": {
         "FileSystemId": {"Ref": "MasterStorage"},
-        "SecurityGroups": [{"Ref": "MasterStorageSecurityGroup"}],
+        "SecurityGroups": [{"Ref": "MasterStorageSG"}],
         "SubnetId": {"Ref": "SubnetA"}
       }
     },
@@ -132,11 +132,11 @@
       "Type": "AWS::EFS::MountTarget",
       "Properties": {
         "FileSystemId": {"Ref": "MasterStorage"},
-        "SecurityGroups": [{"Ref": "MasterStorageSecurityGroup"}],
+        "SecurityGroups": [{"Ref": "MasterStorageSG"}],
         "SubnetId": {"Ref": "SubnetB"}
       }
     },
-    "MasterELBSecurityGroup": {
+    "MasterELBSG": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "jenkins-elb-master",
@@ -171,7 +171,7 @@
           "Protocol": "HTTP"
         }],
         "Scheme": {"Ref": "MasterELBScheme"},
-        "SecurityGroups": [{"Ref": "MasterELBSecurityGroup"}],
+        "SecurityGroups": [{"Ref": "MasterELBSG"}],
         "Subnets": {"Ref": "MasterELBSubnets"},
         "Tags": [{
           "Key": "Name",
@@ -179,7 +179,7 @@
         }]
       }
     },
-    "MasterInstanceProfile": {
+    "MasterIP": {
       "Type": "AWS::IAM::InstanceProfile",
       "Properties": {
         "Path": "/",
@@ -236,10 +236,27 @@
               "Resource": {"Fn::GetAtt": ["AgentTerminatingLifecycleHookQueue", "Arn"]}
             }]
           }     
+        }, {
+          "PolicyName": "logs",
+          "PolicyDocument":{
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:DescribeLogStreams"
+              ],
+              "Resource": [
+                "arn:aws:logs:*:*:*"
+              ]
+            }]
+          }
         }]
       }
     },
-    "MasterSecurityGroup": {
+    "MasterSG": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "jenkins-master",
@@ -250,24 +267,24 @@
           "ToPort": 22,
           "IpProtocol": "tcp"
         }, {
-          "SourceSecurityGroupId": {"Ref": "MasterELBSecurityGroup"},
+          "SourceSecurityGroupId": {"Ref": "MasterELBSG"},
           "FromPort": 8080,
           "ToPort": 8080,
           "IpProtocol": "tcp"
         }, {
-          "SourceSecurityGroupId": {"Ref": "AgentSecurityGroup"},
+          "SourceSecurityGroupId": {"Ref": "AgentSG"},
           "FromPort": 8080,
           "ToPort": 8080,
           "IpProtocol": "tcp"
         }, {
-          "SourceSecurityGroupId": {"Ref": "AgentSecurityGroup"},
+          "SourceSecurityGroupId": {"Ref": "AgentSG"},
           "FromPort": 49817,
           "ToPort": 49817,
           "IpProtocol": "tcp"
         }]
       }
     },
-    "MasterLaunchConfiguration": {
+    "MasterLC": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Metadata": {
         "AWS::CloudFormation::Init": {
@@ -309,10 +326,92 @@
                 "jenkins": "http://pkg.jenkins-ci.org/redhat-stable/jenkins-2.7.2-1.1.noarch.rpm"
               },
               "yum": {
-                "git": []
+                "git": [],
+                "awslogs": []
               }
             },
             "files": {
+              "/etc/awslogs/awscli.conf": {
+                "content": {"Fn::Join": ["", [
+                  "[default]", "\n",
+                  "region = ", {"Ref": "AWS::Region"}, "\n",
+                  "\n",
+                  "[plugins]", "\n",
+                  "cwlogs = cwlogs", "\n"
+                ]]},
+                "mode": "000644",
+                "owner": "root",
+                "group": "root"
+              },
+              "/etc/awslogs/awslogs.conf": {
+                "content": {"Fn::Join": ["", [
+                  "[general]", "\n",
+                  "state_file = /var/lib/awslogs/agent-state", "\n",
+                  "\n",
+                  "[/var/log/messages]", "\n",
+                  "datetime_format = %b %d %H:%M:%S", "\n",
+                  "file = /var/log/messages", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/messages", "\n",
+                  "\n",
+                  "[/var/log/secure]", "\n",
+                  "datetime_format = %b %d %H:%M:%S", "\n",
+                  "file = /var/log/secure", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/secure", "\n",
+                  "\n",
+                  "[/var/log/cron]", "\n",
+                  "datetime_format = %b %d %H:%M:%S", "\n",
+                  "file = /var/log/cron", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cron", "\n",
+                  "\n",
+                  "[/var/log/cloud-init.log]", "\n",
+                  "datetime_format = %b %d %H:%M:%S", "\n",
+                  "file = /var/log/cloud-init.log", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cloud-init.log", "\n",
+                  "\n",
+                  "[/var/log/cfn-init.log]", "\n",
+                  "datetime_format = %Y-%m-%d %H:%M:%S", "\n",
+                  "file = /var/log/cfn-init.log", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cfn-init.log", "\n",
+                  "\n",
+                  "[/var/log/cfn-hup.log]", "\n",
+                  "datetime_format = %Y-%m-%d %H:%M:%S", "\n",
+                  "file = /var/log/cfn-hup.log", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cfn-hup.log", "\n",
+                  "\n",
+                  "[/var/log/cfn-init-cmd.log]", "\n",
+                  "datetime_format = %Y-%m-%d %H:%M:%S", "\n",
+                  "file = /var/log/cfn-init-cmd.log", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cfn-init-cmd.log", "\n",
+                  "\n",
+                  "[/var/log/cloud-init-output.log]", "\n",
+                  "file = /var/log/cloud-init-output.log", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cloud-init-output.log", "\n",
+                  "\n",
+                  "[/var/log/dmesg]", "\n",
+                  "file = /var/log/dmesg", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/dmesg", "\n",
+                  "\n",
+                  "[/var/log/jenkins/jenkins.log]", "\n",
+                  "datetime_format = %d %b %Y %H:%M:%S", "\n",
+                  "multi_line_start_pattern = {datetime_format}", "\n",
+                  "file = /var/log/jenkins/jenkins.log", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/jenkins/jenkins.log", "\n",
+                  "\n"
+                ]]},
+                "mode": "000644",
+                "owner": "root",
+                "group": "root"
+              },
               "/etc/cfn/cfn-hup.conf": {
                 "content": {"Fn::Join": ["", [
                   "[main]", "\n",
@@ -327,8 +426,8 @@
                 "content": {"Fn::Join": ["", [
                   "[cfn-auto-reloader-hook]", "\n",
                   "triggers=post.update", "\n",
-                  "path=Resources.MasterLaunchConfiguration.Metadata.AWS::CloudFormation::Init", "\n",
-                  "action=/opt/aws/bin/cfn-init --verbose --stack=", {"Ref": "AWS::StackName"}, " --region=", {"Ref": "AWS::Region"}, " --resource=MasterLaunchConfiguration", "\n",
+                  "path=Resources.MasterLC.Metadata.AWS::CloudFormation::Init", "\n",
+                  "action=/opt/aws/bin/cfn-init --verbose --stack=", {"Ref": "AWS::StackName"}, " --region=", {"Ref": "AWS::Region"}, " --resource=MasterLC", "\n",
                   "runas=root", "\n"
                 ]]}
               },
@@ -494,6 +593,17 @@
             },
             "services": {
               "sysvinit": {
+                "awslogs": {
+                  "enabled": "true",
+                  "ensureRunning": "true",
+                  "packages": {
+                    "yum": ["awslogs"]
+                  },
+                  "files": [
+                    "/etc/awslogs/awslogs.conf",
+                    "/etc/awslogs/awscli.conf"
+                  ]
+                },
                 "jenkins": {
                   "enabled": "true",
                   "ensureRunning": "true",
@@ -607,22 +717,22 @@
       },
       "Properties": {
         "ImageId": {"Fn::FindInMap": ["RegionMap", {"Ref": "AWS::Region"}, "AMI"]},
-        "IamInstanceProfile": {"Ref": "MasterInstanceProfile"},
+        "IamInstanceProfile": {"Ref": "MasterIP"},
         "InstanceType": {"Ref": "MasterInstanceType"},
-        "SecurityGroups": [{"Ref": "MasterSecurityGroup"}],
+        "SecurityGroups": [{"Ref": "MasterSG"}],
         "KeyName": {"Ref": "KeyName"},
         "UserData": {"Fn::Base64": {"Fn::Join": ["", [
           "#!/bin/bash -x", "\n",
-          "/opt/aws/bin/cfn-init -v --stack ", {"Ref": "AWS::StackName"}, " --resource MasterLaunchConfiguration --region ", {"Ref": "AWS::Region"}, "\n",
-          "/opt/aws/bin/cfn-signal -e $? --stack ", {"Ref": "AWS::StackName"}, " --resource MasterAutoScalingGroup --region ", {"Ref": "AWS::Region"}, "\n"
+          "/opt/aws/bin/cfn-init -v --stack ", {"Ref": "AWS::StackName"}, " --resource MasterLC --region ", {"Ref": "AWS::Region"}, "\n",
+          "/opt/aws/bin/cfn-signal -e $? --stack ", {"Ref": "AWS::StackName"}, " --resource MasterASG --region ", {"Ref": "AWS::Region"}, "\n"
         ]]}}
       }
     },
-    "MasterAutoScalingGroup": {
+    "MasterASG": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
       "DependsOn": ["MasterStorageMountTargetA", "MasterStorageMountTargetB"],
       "Properties": {
-        "LaunchConfigurationName": {"Ref": "MasterLaunchConfiguration"},
+        "LaunchConfigurationName": {"Ref": "MasterLC"},
         "MinSize": "1",
         "MaxSize": "1",
         "DesiredCapacity": "1",
@@ -648,7 +758,7 @@
         }
       }
     },
-    "AgentInstanceProfile": {
+    "AgentIP": {
       "Type": "AWS::IAM::InstanceProfile",
       "Properties": {
         "Path": "/",
@@ -683,10 +793,27 @@
               "Resource": "*"
             }]
           }
+        }, {
+          "PolicyName": "logs",
+          "PolicyDocument":{
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:DescribeLogStreams"
+              ],
+              "Resource": [
+                "arn:aws:logs:*:*:*"
+              ]
+            }]
+          }
         }]
       }
     },
-    "AgentSecurityGroup": {
+    "AgentSG": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "jenkins-agent",
@@ -699,7 +826,7 @@
         }]
       }
     },
-    "AgentLaunchConfiguration": {
+    "AgentLC": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Metadata": {
         "AWS::CloudFormation::Init": {
@@ -709,10 +836,92 @@
           "install": {
             "packages": {
               "yum": {
-                "git": []
+                "git": [],
+                "awslogs": []
               }
             },
             "files": {
+              "/etc/awslogs/awscli.conf": {
+                "content": {"Fn::Join": ["", [
+                  "[default]", "\n",
+                  "region = ", {"Ref": "AWS::Region"}, "\n",
+                  "\n",
+                  "[plugins]", "\n",
+                  "cwlogs = cwlogs", "\n"
+                ]]},
+                "mode": "000644",
+                "owner": "root",
+                "group": "root"
+              },
+              "/etc/awslogs/awslogs.conf": {
+                "content": {"Fn::Join": ["", [
+                  "[general]", "\n",
+                  "state_file = /var/lib/awslogs/agent-state", "\n",
+                  "\n",
+                  "[/var/log/messages]", "\n",
+                  "datetime_format = %b %d %H:%M:%S", "\n",
+                  "file = /var/log/messages", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/messages", "\n",
+                  "\n",
+                  "[/var/log/secure]", "\n",
+                  "datetime_format = %b %d %H:%M:%S", "\n",
+                  "file = /var/log/secure", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/secure", "\n",
+                  "\n",
+                  "[/var/log/cron]", "\n",
+                  "datetime_format = %b %d %H:%M:%S", "\n",
+                  "file = /var/log/cron", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cron", "\n",
+                  "\n",
+                  "[/var/log/cloud-init.log]", "\n",
+                  "datetime_format = %b %d %H:%M:%S", "\n",
+                  "file = /var/log/cloud-init.log", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cloud-init.log", "\n",
+                  "\n",
+                  "[/var/log/cfn-init.log]", "\n",
+                  "datetime_format = %Y-%m-%d %H:%M:%S", "\n",
+                  "file = /var/log/cfn-init.log", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cfn-init.log", "\n",
+                  "\n",
+                  "[/var/log/cfn-hup.log]", "\n",
+                  "datetime_format = %Y-%m-%d %H:%M:%S", "\n",
+                  "file = /var/log/cfn-hup.log", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cfn-hup.log", "\n",
+                  "\n",
+                  "[/var/log/cfn-init-cmd.log]", "\n",
+                  "datetime_format = %Y-%m-%d %H:%M:%S", "\n",
+                  "file = /var/log/cfn-init-cmd.log", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cfn-init-cmd.log", "\n",
+                  "\n",
+                  "[/var/log/cloud-init-output.log]", "\n",
+                  "file = /var/log/cloud-init-output.log", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cloud-init-output.log", "\n",
+                  "\n",
+                  "[/var/log/dmesg]", "\n",
+                  "file = /var/log/dmesg", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/dmesg", "\n",
+                  "\n",
+                  "[/var/log/jenkins/jenkins.log]", "\n",
+                  "datetime_format = %d %b %Y %H:%M:%S", "\n",
+                  "multi_line_start_pattern = {datetime_format}", "\n",
+                  "file = /var/log/jenkins/jenkins.log", "\n",
+                  "log_stream_name = {instance_id}", "\n",
+                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/jenkins/jenkins.log", "\n",
+                  "\n"
+                ]]},
+                "mode": "000644",
+                "owner": "root",
+                "group": "root"
+              },
               "/etc/cfn/cfn-hup.conf": {
                 "content": {"Fn::Join": ["", [
                   "[main]", "\n",
@@ -727,8 +936,8 @@
                 "content": {"Fn::Join": ["", [
                   "[cfn-auto-reloader-hook]", "\n",
                   "triggers=post.update", "\n",
-                  "path=Resources.AgentLaunchConfiguration.Metadata.AWS::CloudFormation::Init", "\n",
-                  "action=/opt/aws/bin/cfn-init --verbose --stack=", {"Ref": "AWS::StackName"}, " --region=", {"Ref": "AWS::Region"}, " --resource=AgentLaunchConfiguration", "\n",
+                  "path=Resources.AgentLC.Metadata.AWS::CloudFormation::Init", "\n",
+                  "action=/opt/aws/bin/cfn-init --verbose --stack=", {"Ref": "AWS::StackName"}, " --region=", {"Ref": "AWS::Region"}, " --resource=AgentLC", "\n",
                   "runas=root", "\n"
                 ]]}
               }
@@ -749,6 +958,17 @@
             },
             "services": {
               "sysvinit": {
+                "awslogs": {
+                  "enabled": "true",
+                  "ensureRunning": "true",
+                  "packages": {
+                    "yum": ["awslogs"]
+                  },
+                  "files": [
+                    "/etc/awslogs/awslogs.conf",
+                    "/etc/awslogs/awscli.conf"
+                  ]
+                },
                 "cfn-hup": {
                   "enabled": "true",
                   "ensureRunning": "true",
@@ -780,7 +1000,7 @@
               "/root/check-agent.sh": {
                 "content": {"Fn::Join": ["", [
                   "#!/bin/bash -ex", "\n",
-                  "masterInstanceId=$(aws --region ", {"Ref": "AWS::Region"}, " autoscaling describe-auto-scaling-groups --auto-scaling-group-names ", {"Ref": "MasterAutoScalingGroup"}, " --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)", "\n",
+                  "masterInstanceId=$(aws --region ", {"Ref": "AWS::Region"}, " autoscaling describe-auto-scaling-groups --auto-scaling-group-names ", {"Ref": "MasterASG"}, " --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)", "\n",
                   "masterIP=$(aws --region ", {"Ref": "AWS::Region"}, " ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)", "\n",
                   "java -jar jenkins-cli.jar -s http://$masterIP:8080 -noKeyAuth get-node $(curl -s http://169.254.169.254/latest/meta-data/instance-id) --username admin --password ", {"Ref": "MasterAdminPassword"}, "\n"
                 ]]},
@@ -791,7 +1011,7 @@
               "/root/create-agent.sh": {
                 "content": {"Fn::Join": ["", [
                   "#!/bin/bash -ex", "\n",
-                  "masterInstanceId=$(aws --region ", {"Ref": "AWS::Region"}, " autoscaling describe-auto-scaling-groups --auto-scaling-group-names ", {"Ref": "MasterAutoScalingGroup"}, " --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)", "\n",
+                  "masterInstanceId=$(aws --region ", {"Ref": "AWS::Region"}, " autoscaling describe-auto-scaling-groups --auto-scaling-group-names ", {"Ref": "MasterASG"}, " --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)", "\n",
                   "masterIP=$(aws --region ", {"Ref": "AWS::Region"}, " ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)", "\n",
                   "cat /root/agent.xml | java -jar jenkins-cli.jar -s http://$masterIP:8080 -noKeyAuth create-node $(curl -s http://169.254.169.254/latest/meta-data/instance-id) --username admin --password ", {"Ref": "MasterAdminPassword"}, "\n"
                 ]]},
@@ -803,7 +1023,7 @@
                 "content": {"Fn::Join": ["", [
                   "#!/bin/bash -ex", "\n",
                   "#TODO this will not work when the master is restarted and get's a new ip, how can we healtcheck agents and terminate them if they can no longer connect to the master? e.g. ask the master if they are online??", "\n",
-                  "masterInstanceId=$(aws --region ", {"Ref": "AWS::Region"}, " autoscaling describe-auto-scaling-groups --auto-scaling-group-names ", {"Ref": "MasterAutoScalingGroup"}, " --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)", "\n",
+                  "masterInstanceId=$(aws --region ", {"Ref": "AWS::Region"}, " autoscaling describe-auto-scaling-groups --auto-scaling-group-names ", {"Ref": "MasterASG"}, " --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)", "\n",
                   "masterIP=$(aws --region ", {"Ref": "AWS::Region"}, " ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)", "\n",
                   "java -jar slave.jar -jnlpUrl http://$masterIP:8080/computer/$(curl -s http://169.254.169.254/latest/meta-data/instance-id)/slave-agent.jnlp -jnlpCredentials admin:", {"Ref": "MasterAdminPassword"}, "\n"
                 ]]},
@@ -839,9 +1059,9 @@
       },
       "Properties": {
         "ImageId": {"Fn::FindInMap": ["RegionMap", {"Ref": "AWS::Region"}, "AMI"]},
-        "IamInstanceProfile": {"Ref": "AgentInstanceProfile"},
+        "IamInstanceProfile": {"Ref": "AgentIP"},
         "InstanceType": {"Ref": "AgentInstanceType"},
-        "SecurityGroups": [{"Ref": "AgentSecurityGroup"}],
+        "SecurityGroups": [{"Ref": "AgentSG"}],
         "KeyName": {"Ref": "KeyName"},
         "BlockDeviceMappings": [{
           "DeviceName": "/dev/xvda",
@@ -852,16 +1072,16 @@
         }],
         "UserData": {"Fn::Base64": {"Fn::Join": ["", [
           "#!/bin/bash -x", "\n",
-          "/opt/aws/bin/cfn-init -v --stack ", {"Ref": "AWS::StackName"}, " --resource AgentLaunchConfiguration --region ", {"Ref": "AWS::Region"}, "\n",
-          "/opt/aws/bin/cfn-signal -e $? --stack ", {"Ref": "AWS::StackName"}, " --resource AgentAutoScalingGroup --region ", {"Ref": "AWS::Region"}, "\n"
+          "/opt/aws/bin/cfn-init -v --stack ", {"Ref": "AWS::StackName"}, " --resource AgentLC --region ", {"Ref": "AWS::Region"}, "\n",
+          "/opt/aws/bin/cfn-signal -e $? --stack ", {"Ref": "AWS::StackName"}, " --resource AgentASG --region ", {"Ref": "AWS::Region"}, "\n"
         ]]}}
       }
     },
-    "AgentAutoScalingGroup": {
+    "AgentASG": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
-      "DependsOn": "MasterAutoScalingGroup",
+      "DependsOn": "MasterASG",
       "Properties": {
-        "LaunchConfigurationName": {"Ref": "AgentLaunchConfiguration"},
+        "LaunchConfigurationName": {"Ref": "AgentLC"},
         "MinSize": {"Ref": "AgentMinSize"},
         "MaxSize": {"Ref": "AgentMaxSize"},
         "DesiredCapacity": {"Ref": "AgentDesiredCapacity"},
@@ -927,7 +1147,7 @@
       "Properties": {
         "HeartbeatTimeout": {"Ref": "AgentMaxBuildWaitTimeInSeconds"},
         "DefaultResult": "CONTINUE",
-        "AutoScalingGroupName": {"Ref": "AgentAutoScalingGroup"},
+        "AutoScalingGroupName": {"Ref": "AgentASG"},
         "LifecycleTransition": "autoscaling:EC2_INSTANCE_TERMINATING",
         "NotificationTargetARN": {"Fn::GetAtt": ["AgentTerminatingLifecycleHookQueue", "Arn"]},
         "RoleARN": {"Fn::GetAtt": ["AgentTerminatingLifecycleHookIAMRole", "Arn"]}
@@ -937,7 +1157,7 @@
       "Type": "AWS::AutoScaling::ScalingPolicy",
       "Properties": {
         "AdjustmentType": "ChangeInCapacity",
-        "AutoScalingGroupName": {"Ref": "AgentAutoScalingGroup"},
+        "AutoScalingGroupName": {"Ref": "AgentASG"},
         "Cooldown": "300",
         "ScalingAdjustment": "1"
       }
@@ -960,7 +1180,7 @@
       "Type": "AWS::AutoScaling::ScalingPolicy",
       "Properties": {
         "AdjustmentType": "ChangeInCapacity",
-        "AutoScalingGroupName": {"Ref": "AgentAutoScalingGroup"},
+        "AutoScalingGroupName": {"Ref": "AgentASG"},
         "Cooldown": "300",
         "ScalingAdjustment": "-1"
       }
