@@ -38,6 +38,12 @@
       "Type": "String",
       "NoEcho": "true"
     },
+    "MasterLogsRetentionInDays": {
+      "Description": "Specifies the number of days you want to retain log events in the specified log group.",
+      "Type": "Number",
+      "AllowedValues": [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653],
+      "Default": 14
+    },
     "AgentInstanceType": {
       "Description": "The instance type of the Jenkins agents.",
       "Type": "String",
@@ -74,6 +80,12 @@
       "Default": "600",
       "MinValue": "600",
       "MaxValue": "3600"
+    },
+    "AgentLogsRetentionInDays": {
+      "Description": "Specifies the number of days you want to retain log events in the specified log group.",
+      "Type": "Number",
+      "AllowedValues": [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653],
+      "Default": 14
     }
   },
   "Conditions": {
@@ -279,6 +291,12 @@
         }]
       }
     },
+    "MasterLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "RetentionInDays": {"Ref": "MasterLogsRetentionInDays"}
+      }
+    },
     "MasterLC": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Metadata": {
@@ -346,61 +364,61 @@
                   "[/var/log/messages]", "\n",
                   "datetime_format = %b %d %H:%M:%S", "\n",
                   "file = /var/log/messages", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/messages", "\n",
+                  "log_stream_name = {instance_id}/var/log/messages", "\n",
+                  "log_group_name = ", {"Ref": "MasterLogs"}, "\n",
                   "\n",
                   "[/var/log/secure]", "\n",
                   "datetime_format = %b %d %H:%M:%S", "\n",
                   "file = /var/log/secure", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/secure", "\n",
+                  "log_stream_name = {instance_id}/var/log/secure", "\n",
+                  "log_group_name = ", {"Ref": "MasterLogs"}, "\n",
                   "\n",
                   "[/var/log/cron]", "\n",
                   "datetime_format = %b %d %H:%M:%S", "\n",
                   "file = /var/log/cron", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cron", "\n",
+                  "log_stream_name = {instance_id}/var/log/cron", "\n",
+                  "log_group_name = ", {"Ref": "MasterLogs"}, "\n",
                   "\n",
                   "[/var/log/cloud-init.log]", "\n",
                   "datetime_format = %b %d %H:%M:%S", "\n",
                   "file = /var/log/cloud-init.log", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cloud-init.log", "\n",
+                  "log_stream_name = {instance_id}/var/log/cloud-init.log", "\n",
+                  "log_group_name = ", {"Ref": "MasterLogs"}, "\n",
                   "\n",
                   "[/var/log/cfn-init.log]", "\n",
                   "datetime_format = %Y-%m-%d %H:%M:%S", "\n",
                   "file = /var/log/cfn-init.log", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cfn-init.log", "\n",
+                  "log_stream_name = {instance_id}/var/log/cfn-init.log", "\n",
+                  "log_group_name = ", {"Ref": "MasterLogs"}, "\n",
                   "\n",
                   "[/var/log/cfn-hup.log]", "\n",
                   "datetime_format = %Y-%m-%d %H:%M:%S", "\n",
                   "file = /var/log/cfn-hup.log", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cfn-hup.log", "\n",
+                  "log_stream_name = {instance_id}/var/log/cfn-hup.log", "\n",
+                  "log_group_name = ", {"Ref": "MasterLogs"}, "\n",
                   "\n",
                   "[/var/log/cfn-init-cmd.log]", "\n",
                   "datetime_format = %Y-%m-%d %H:%M:%S", "\n",
                   "file = /var/log/cfn-init-cmd.log", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cfn-init-cmd.log", "\n",
+                  "log_stream_name = {instance_id}/var/log/cfn-init-cmd.log", "\n",
+                  "log_group_name = ", {"Ref": "MasterLogs"}, "\n",
                   "\n",
                   "[/var/log/cloud-init-output.log]", "\n",
                   "file = /var/log/cloud-init-output.log", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cloud-init-output.log", "\n",
+                  "log_stream_name = {instance_id}/var/log/cloud-init-output.log", "\n",
+                  "log_group_name = ", {"Ref": "MasterLogs"}, "\n",
                   "\n",
                   "[/var/log/dmesg]", "\n",
                   "file = /var/log/dmesg", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/dmesg", "\n",
+                  "log_stream_name = {instance_id}/var/log/dmesg", "\n",
+                  "log_group_name = ", {"Ref": "MasterLogs"}, "\n",
                   "\n",
                   "[/var/log/jenkins/jenkins.log]", "\n",
                   "datetime_format = %d %b %Y %H:%M:%S", "\n",
                   "multi_line_start_pattern = {datetime_format}", "\n",
                   "file = /var/log/jenkins/jenkins.log", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/jenkins/jenkins.log", "\n",
+                  "log_stream_name = {instance_id}/var/log/jenkins/jenkins.log", "\n",
+                  "log_group_name = ", {"Ref": "MasterLogs"}, "\n",
                   "\n"
                 ]]},
                 "mode": "000644",
@@ -751,6 +769,12 @@
         }]
       }
     },
+    "AgentLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "RetentionInDays": {"Ref": "AgentLogsRetentionInDays"}
+      }
+    },
     "AgentLC": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Metadata": {
@@ -786,61 +810,61 @@
                   "[/var/log/messages]", "\n",
                   "datetime_format = %b %d %H:%M:%S", "\n",
                   "file = /var/log/messages", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/messages", "\n",
+                  "log_stream_name = {instance_id}/var/log/messages", "\n",
+                  "log_group_name = ", {"Ref": "AgentLogs"}, "\n",
                   "\n",
                   "[/var/log/secure]", "\n",
                   "datetime_format = %b %d %H:%M:%S", "\n",
                   "file = /var/log/secure", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/secure", "\n",
+                  "log_stream_name = {instance_id}/var/log/secure", "\n",
+                  "log_group_name = ", {"Ref": "AgentLogs"}, "\n",
                   "\n",
                   "[/var/log/cron]", "\n",
                   "datetime_format = %b %d %H:%M:%S", "\n",
                   "file = /var/log/cron", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cron", "\n",
+                  "log_stream_name = {instance_id}/var/log/cron", "\n",
+                  "log_group_name = ", {"Ref": "AgentLogs"}, "\n",
                   "\n",
                   "[/var/log/cloud-init.log]", "\n",
                   "datetime_format = %b %d %H:%M:%S", "\n",
                   "file = /var/log/cloud-init.log", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cloud-init.log", "\n",
+                  "log_stream_name = {instance_id}/var/log/cloud-init.log", "\n",
+                  "log_group_name = ", {"Ref": "AgentLogs"}, "\n",
                   "\n",
                   "[/var/log/cfn-init.log]", "\n",
                   "datetime_format = %Y-%m-%d %H:%M:%S", "\n",
                   "file = /var/log/cfn-init.log", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cfn-init.log", "\n",
+                  "log_stream_name = {instance_id}/var/log/cfn-init.log", "\n",
+                  "log_group_name = ", {"Ref": "AgentLogs"}, "\n",
                   "\n",
                   "[/var/log/cfn-hup.log]", "\n",
                   "datetime_format = %Y-%m-%d %H:%M:%S", "\n",
                   "file = /var/log/cfn-hup.log", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cfn-hup.log", "\n",
+                  "log_stream_name = {instance_id}/var/log/cfn-hup.log", "\n",
+                  "log_group_name = ", {"Ref": "AgentLogs"}, "\n",
                   "\n",
                   "[/var/log/cfn-init-cmd.log]", "\n",
                   "datetime_format = %Y-%m-%d %H:%M:%S", "\n",
                   "file = /var/log/cfn-init-cmd.log", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cfn-init-cmd.log", "\n",
+                  "log_stream_name = {instance_id}/var/log/cfn-init-cmd.log", "\n",
+                  "log_group_name = ", {"Ref": "AgentLogs"}, "\n",
                   "\n",
                   "[/var/log/cloud-init-output.log]", "\n",
                   "file = /var/log/cloud-init-output.log", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/cloud-init-output.log", "\n",
+                  "log_stream_name = {instance_id}/var/log/cloud-init-output.log", "\n",
+                  "log_group_name = ", {"Ref": "AgentLogs"}, "\n",
                   "\n",
                   "[/var/log/dmesg]", "\n",
                   "file = /var/log/dmesg", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/dmesg", "\n",
+                  "log_stream_name = {instance_id}/var/log/dmesg", "\n",
+                  "log_group_name = ", {"Ref": "AgentLogs"}, "\n",
                   "\n",
                   "[/var/log/jenkins/jenkins.log]", "\n",
                   "datetime_format = %d %b %Y %H:%M:%S", "\n",
                   "multi_line_start_pattern = {datetime_format}", "\n",
                   "file = /var/log/jenkins/jenkins.log", "\n",
-                  "log_stream_name = {instance_id}", "\n",
-                  "log_group_name = ", {"Ref": "AWS::StackName"},"/var/log/jenkins/jenkins.log", "\n",
+                  "log_stream_name = {instance_id}/var/log/jenkins/jenkins.log", "\n",
+                  "log_group_name = ", {"Ref": "AgentLogs"}, "\n",
                   "\n"
                 ]]},
                 "mode": "000644",
@@ -1055,15 +1079,12 @@
           "Key": "Name"
         }]
       },
-      "CreationPolicy": {"Fn::If": [
-        "ZeroAgents",
-        {"Ref": "AWS::NoValue"},
-        {
-          "ResourceSignal": {
-            "Timeout": "PT10M"
-          }
+      "CreationPolicy": {
+        "ResourceSignal": {
+          "Timeout": "PT10M",
+          "Count": {"Fn::If": ["ZeroAgents", "0", "1"]}
         }
-      ]},
+      },
       "UpdatePolicy": {
         "AutoScalingRollingUpdate": {
           "PauseTime": "PT10M",
