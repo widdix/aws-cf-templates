@@ -77,7 +77,7 @@
     }
   },
   "Conditions": {
-    "ZeroAgents": {"Fn::Equals": ["", {"Ref": "AgentDesiredCapacity"}]}
+    "ZeroAgents": {"Fn::Equals": ["0", {"Ref": "AgentDesiredCapacity"}]}
   },
   "Mappings": {
     "RegionMap": {

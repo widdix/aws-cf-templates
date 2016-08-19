@@ -39,7 +39,7 @@ Or just use the suggested defaults.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
 ## AWS Config setup
-This template enables AWS Config to deliver a AWS resource inventory to S3.
+This template enables AWS Config to deliver a AWS resource inventory to S3. Allowing you to keep track of infrastructure changes for compliance and debugging of your cloud infrastructure. 
 
 ### Installation Guide
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=security-config&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/security/config.json"><img src="../cloudformation-launch-stack.png?raw=true" alt="Launch Stack"></a>
