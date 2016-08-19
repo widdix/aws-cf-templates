@@ -43,11 +43,6 @@
       "Type": "String",
       "Default": "t2.micro"
     },
-    "AgentInstanceType": {
-      "Description": "The instance type of the Jenkins agents.",
-      "Type": "String",
-      "Default": "t2.micro"
-    },
     "AgentVolumeSize": {
       "Description": "The volume size, in Gibibytes (GiB). This can be a number from 8 – 1024.",
       "Type": "Number",
