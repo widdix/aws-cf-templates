@@ -160,23 +160,9 @@
       }
     },
     "MasterELB": {
-      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
       "Properties": {
-        "CrossZone": true,
-        "HealthCheck": {
-          "HealthyThreshold": "3",
-          "Interval": "10",
-          "Target": "TCP:8080",
-          "Timeout": "5",
-          "UnhealthyThreshold": "3"
-        },
-        "LoadBalancerName": "jenkins-master",
-        "Listeners": [{
-          "InstancePort": "8080",
-          "InstanceProtocol": "HTTP",
-          "LoadBalancerPort": "80",
-          "Protocol": "HTTP"
-        }],
+        "Name": "jenkins-master",
         "Scheme": {"Ref": "MasterELBScheme"},
         "SecurityGroups": [{"Ref": "MasterELBSG"}],
         "Subnets": {"Ref": "MasterELBSubnets"},
@@ -184,6 +170,41 @@
           "Key": "Name",
           "Value": "jenkins-master"
         }]
+      }
+    },
+    "MasterELBTargetGroup": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "HealthCheckIntervalSeconds": 10,
+        "HealthCheckPath": "/login",
+        "HealthCheckPort": 8080,
+        "HealthCheckProtocol": "HTTP",
+        "HealthCheckTimeoutSeconds": 5,
+        "HealthyThresholdCount": 3,
+        "UnhealthyThresholdCount": 3,
+        "Matcher": {
+          "HttpCode": "200"
+        },
+        "Name": "jenkins-master",
+        "Port": 8080,
+        "Protocol": "HTTP",
+        "Tags": [{
+          "Key": "Name",
+          "Value": "jenkins-master"
+        }],
+        "VpcId": {"Ref": "VPC"}
+      }
+    },
+    "MasterELBListener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "DefaultActions": [{
+          "TargetGroupArn": {"Ref": "MasterELBTargetGroup"},
+          "Type": "forward"
+        }],
+        "LoadBalancerArn": {"Ref": "MasterELB"},
+        "Port": 80,
+        "Protocol": "HTTP"
       }
     },
     "MasterIP": {
@@ -621,7 +642,7 @@
         "HealthCheckGracePeriod": 120,
         "HealthCheckType": "ELB",
         "VPCZoneIdentifier": [{"Ref": "SubnetA"}, {"Ref": "SubnetB"}],
-        "LoadBalancerNames": [{"Ref": "MasterELB"}],
+        "TargetGroupARNs": [{"Ref": "MasterELBTargetGroup"}],
         "Tags": [{
           "PropagateAtLaunch": true,
           "Value": "jenkins-master",
