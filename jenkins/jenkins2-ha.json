@@ -489,7 +489,7 @@
         "MinSize": "1",
         "MaxSize": "1",
         "DesiredCapacity": "1",
-        "HealthCheckGracePeriod": 120,
+        "HealthCheckGracePeriod": 600,
         "HealthCheckType": "ELB",
         "VPCZoneIdentifier": [{"Ref": "SubnetA"}, {"Ref": "SubnetB"}],
         "TargetGroupARNs": [{"Ref": "MasterELBTargetGroup"}],

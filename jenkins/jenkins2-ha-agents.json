@@ -1090,7 +1090,7 @@
         "MinSize": {"Ref": "AgentMinSize"},
         "MaxSize": {"Ref": "AgentMaxSize"},
         "DesiredCapacity": {"Ref": "AgentDesiredCapacity"},
-        "HealthCheckGracePeriod": 120,
+        "HealthCheckGracePeriod": 600,
         "HealthCheckType": "ELB",
         "TargetGroupARNs": [{"Ref": "AgentELBTargetGroup"}],
         "VPCZoneIdentifier": [{"Ref": "SubnetA"}, {"Ref": "SubnetB"}],
