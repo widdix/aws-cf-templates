@@ -8,7 +8,7 @@ This template describes a VPC with two private and two public subnets.
 ![Architecture](./vpc-2azs.png?raw=true "Architecture")
 
 ### Installation Guide
-1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.json"><img src="../cloudformation-launch-stack.png?raw=true" alt="Launch Stack"></a>
+1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.json">Launch Stack</a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -22,7 +22,7 @@ This template describes a VPC with three private and three public subnets.
 ![Architecture](./vpc-3azs.png?raw=true "Architecture")
 
 ### Installation Guide
-1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-3azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-3azs.json"><img src="../cloudformation-launch-stack.png?raw=true" alt="Launch Stack"></a>
+1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-3azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-3azs.json">Launch Stack</a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -36,7 +36,7 @@ This template describes a VPC with four private and four public subnets.
 ![Architecture](./vpc-4azs.png?raw=true "Architecture")
 
 ### Installation Guide
-1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-4azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-4azs.json"><img src="../cloudformation-launch-stack.png?raw=true" alt="Launch Stack"></a>
+1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-4azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-4azs.json">Launch Stack</a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -50,7 +50,7 @@ This template describes a NAT Gateway that forwards HTTP, HTTPS and NTP traffic 
 ![Architecture](./vpc-nat-gateway.png?raw=true "Architecture")
 
 ### Installation Guide
-1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-nat-gateway&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-nat-gateway.json"><img src="../cloudformation-launch-stack.png?raw=true" alt="Launch Stack"></a>
+1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-nat-gateway&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-nat-gateway.json">Launch Stack</a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -64,7 +64,7 @@ This template describes a **highly available** Network Address Translation (NAT)
 
 ![Architecture](./vpc-nat-instance.png?raw=true "Architecture")
 ### Installation Guide
-1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-nat-instance&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-nat-instance.json"><img src="../cloudformation-launch-stack.png?raw=true" alt="Launch Stack"></a>
+1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-nat-instance&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-nat-instance.json">Launch Stack</a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
