@@ -6,8 +6,8 @@ This template describes a **fault tolerant** and **scalable** Wordpress environm
 ![Architecture](./wordpress-ha.png?raw=true "Architecture")
 
 ### Installation Guide
-1. This templates depends on one of our [VPC templates](../vpc/). Please create a VPC stack first: <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.json"><img src="../cloudformation-launch-stack.png?raw=true" alt="Launch Stack"></a>
-1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=wordpress-ha&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/wordpress/wordpress-ha.json"><img src="../cloudformation-launch-stack.png?raw=true" alt="Launch Stack"></a>
+1. This templates depends on one of our [VPC templates](../vpc/). Please create a VPC stack first: <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.json">![Launch Stack](../cloudformation-launch-stack.png?raw=true)</a>
+1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=wordpress-ha&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/wordpress/wordpress-ha.json">![Launch Stack](../cloudformation-launch-stack.png?raw=true)</a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
