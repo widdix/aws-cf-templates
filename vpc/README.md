@@ -33,8 +33,6 @@ This template describes a VPC with three private and three public subnets.
 ## VPC with private and public subnets in four Availability Zones
 This template describes a VPC with four private and four public subnets.
 
-![Architecture](./vpc-4azs.png?raw=true "Architecture")
-
 ### Installation Guide
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-4azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-4azs.json">Launch Stack</a>
 1. Click **Next** to proceed with the next step of the wizard.
