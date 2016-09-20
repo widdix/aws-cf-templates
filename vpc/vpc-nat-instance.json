@@ -26,7 +26,7 @@
 			"Default": ""
 		},
 		"KeyName": {
-			"Description": "Optional key pair of the ec2-user to establish a SSH connection to the SSH bastion host/instance.",
+			"Description": "Optional key pair of the ec2-user to establish a SSH connection to the NAT instance.",
 			"Type": "String",
 			"Default": ""
 		},
