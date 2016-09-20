@@ -189,13 +189,13 @@
     "MasterELBTargetGroup": {
       "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
       "Properties": {
-        "HealthCheckIntervalSeconds": 10,
+        "HealthCheckIntervalSeconds": 15,
         "HealthCheckPath": "/login",
         "HealthCheckPort": 8080,
         "HealthCheckProtocol": "HTTP",
-        "HealthCheckTimeoutSeconds": 5,
-        "HealthyThresholdCount": 3,
-        "UnhealthyThresholdCount": 3,
+        "HealthCheckTimeoutSeconds": 10,
+        "HealthyThresholdCount": 2,
+        "UnhealthyThresholdCount": 8,
         "Matcher": {
           "HttpCode": "200"
         },
@@ -799,13 +799,13 @@
     "AgentELBTargetGroup": {
       "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
       "Properties": {
-        "HealthCheckIntervalSeconds": 10,
+        "HealthCheckIntervalSeconds": 15,
         "HealthCheckPath": "/",
         "HealthCheckPort": 8080,
         "HealthCheckProtocol": "HTTP",
-        "HealthCheckTimeoutSeconds": 5,
-        "HealthyThresholdCount": 3,
-        "UnhealthyThresholdCount": 3,
+        "HealthCheckTimeoutSeconds": 10,
+        "HealthyThresholdCount": 2,
+        "UnhealthyThresholdCount": 8,
         "Matcher": {
           "HttpCode": "200"
         },
