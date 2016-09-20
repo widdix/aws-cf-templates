@@ -7,11 +7,11 @@
 			"Type": "AWS::EC2::VPC::Id"
 		},
 		"PublicSubnets": {
-			"Description": "Use SubnetAPublic, SubnetBPublic, [SubnetCPublic] output from vpc stack.",
+			"Description": "Use SubnetAPublic, SubnetBPublic [, SubnetCPublic[, SubnetDPublic]] output from vpc stack.",
 			"Type": "List<AWS::EC2::Subnet::Id>"
 		},
 		"PrivateSubnets": {
-			"Description": "Use SubnetAPrivate, SubnetBPrivate, [SubnetCPrivate] output from vpc stack.",
+			"Description": "Use SubnetAPrivate, SubnetBPrivate [, SubnetCPrivate[, SubnetDPrivate]] output from vpc stack.",
 			"Type": "List<AWS::EC2::Subnet::Id>"
 		},
 		"BlogID": {
@@ -39,14 +39,32 @@
 			"Description": "The email address of the Wordpress admin.",
 			"Type": "String"
 		},
+		"WebServerSSHBastionSecurityGroup": {
+			"Description": "Optional use SSHBastionSecurityGroup output from vpc-ssh-bastion stack.",
+			"Type": "String",
+			"Default": ""
+		},
 		"WebServerKeyName": {
-			"Description": "The key pair to establish a SSH connection to the web servers.",
-			"Type": "AWS::EC2::KeyPair::KeyName"
+			"Description": "Optional key pair of the ec2-user to establish a SSH connection to the web server.",
+			"Type": "String",
+			"Default": ""
+		},
+		"WebServerIAMUserSSHAccess": {
+			"Description": "Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).",
+			"Type": "String",
+			"AllowedValues": ["true", "false"],
+			"Default": "false"
 		},
 		"WebServerInstanceType": {
 			"Description": "The instance type of web servers (e.g. t2.micro).",
 			"Type": "String",
 			"Default": "t2.micro"
+		},
+		"WebServerLogsRetentionInDays": {
+			"Description": "Specifies the number of days you want to retain log events.",
+			"Type": "Number",
+			"AllowedValues": [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653],
+			"Default": 14
 		},
 		"DBServerInstanceType": {
 			"Description": "The instance type of database server (e.g. db.t2.micro).",
@@ -54,21 +72,33 @@
 			"Default": "db.t2.micro"
 		}
 	},
+	"Conditions": {
+		"HasKeyName": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "WebServerKeyName"}]}]},
+		"HasIAMUserSSHAccess": {"Fn::Equals": ["true", {"Ref": "WebServerIAMUserSSHAccess"}]},
+		"HasSSHBastionSecurityGroup": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "WebServerSSHBastionSecurityGroup"}]}]}
+	},
 	"Mappings": {
 		"EC2RegionMap": {
-			"eu-west-1": {"AMI": "ami-b0ac25c3"},
-			"ap-southeast-1": {"AMI": "ami-1ddc0b7e"},
-			"ap-southeast-2": {"AMI": "ami-0c95b86f"},
-			"eu-central-1": {"AMI": "ami-d3c022bc"},
-			"ap-northeast-2": {"AMI": "ami-cf32faa1"},
-			"ap-northeast-1": {"AMI": "ami-29160d47"},
-			"us-east-1": {"AMI": "ami-f5f41398"},
-			"sa-east-1": {"AMI": "ami-fb890097"},
-			"us-west-1": {"AMI": "ami-6e84fa0e"},
-			"us-west-2": {"AMI": "ami-d0f506b0"}
+			"ap-south-1": {"AMI": "ami-ffbdd790"},
+			"eu-west-1": {"AMI": "ami-f9dd458a"},
+			"ap-southeast-1": {"AMI": "ami-a59b49c6"},
+			"ap-southeast-2": {"AMI": "ami-dc361ebf"},
+			"eu-central-1": {"AMI": "ami-ea26ce85"},
+			"ap-northeast-2": {"AMI": "ami-2b408b45"},
+			"ap-northeast-1": {"AMI": "ami-374db956"},
+			"us-east-1": {"AMI": "ami-6869aa05"},
+			"sa-east-1": {"AMI": "ami-6dd04501"},
+			"us-west-1": {"AMI": "ami-31490d51"},
+			"us-west-2": {"AMI": "ami-7172b611"}
 		}
 	},
 	"Resources": {
+		"WebServerLogs": {
+			"Type": "AWS::Logs::LogGroup",
+			"Properties": {
+				"RetentionInDays": {"Ref": "WebServerLogsRetentionInDays"}
+			}
+		},
 		"LoadBalancerSecurityGroup": {
 			"Type": "AWS::EC2::SecurityGroup",
 			"Properties": {
@@ -88,16 +118,22 @@
 				"GroupDescription": "wordpress-ec2",
 				"VpcId": {"Ref": "VPC"},
 				"SecurityGroupIngress": [{
-					"CidrIp": "0.0.0.0/0",
-					"FromPort": 22,
-					"IpProtocol": "tcp",
-					"ToPort": 22
-				}, {
 					"FromPort": 80,
 					"IpProtocol": "tcp",
 					"SourceSecurityGroupId": {"Ref": "LoadBalancerSecurityGroup"},
 					"ToPort": 80
 				}]
+			}
+		},
+		"WebServerSecurityGroupInSSHBastion": {
+			"Type": "AWS::EC2::SecurityGroupIngress",
+			"Condition": "HasSSHBastionSecurityGroup",
+			"Properties": {
+				"GroupId": {"Ref": "WebServerSecurityGroup"},
+				"IpProtocol": "tcp",
+				"FromPort": 22,
+				"ToPort": 22,
+				"SourceSecurityGroupId": {"Ref": "WebServerSSHBastionSecurityGroup"}
 			}
 		},
 		"DatabaseSecurityGroup": {
@@ -191,17 +227,140 @@
 				"UserName": {"Ref": "IAMUser"}
 			}
 		}, 
+		"WebServerInstanceProfile": {
+			"Type": "AWS::IAM::InstanceProfile",
+			"Properties": {
+				"Path": "/",
+				"Roles": [{"Ref": "WebServerIAMRole"}]
+			}
+		},
+		"WebServerIAMRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [{
+						"Effect": "Allow",
+						"Principal": {
+							"Service": ["ec2.amazonaws.com"]
+						},
+						"Action": ["sts:AssumeRole"]
+					}]
+				},
+				"Path": "/",
+				"Policies": []
+			}
+		},
+		"WebServerIAMPolicySSHAccess": {
+			"Type": "AWS::IAM::Policy",
+			"Condition": "HasIAMUserSSHAccess",
+			"Properties": { 
+				"Roles": [{"Ref": "WebServerIAMRole"}],
+				"PolicyName": "iam",
+				"PolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [{
+						"Effect": "Allow",
+						"Action": [
+							"iam:ListUsers"
+						],
+						"Resource": [
+							"*"
+						]
+					}, {
+						"Effect": "Allow",
+						"Action": [
+							"iam:ListSSHPublicKeys",
+							"iam:GetSSHPublicKey"
+						],
+						"Resource": [
+							{"Fn::Join": ["", ["arn:aws:iam::", {"Ref": "AWS::AccountId"},":user/*"]]}
+						]
+					}]
+				}
+			}
+		},
 		"LaunchConfiguration": {
 			"Type": "AWS::AutoScaling::LaunchConfiguration",
 			"Metadata": {
 				"AWS::CloudFormation::Init": {
+					"configSets": {
+						"default": {"Fn::If": ["HasIAMUserSSHAccess", ["ssh-access", "config"], ["config"]]}
+					},
+					"ssh-access": {
+						"files": {
+							"/opt/authorized_keys_command.sh": {
+								"content": {"Fn::Join": ["", [
+									"#!/bin/bash -e", "\n",
+									"if [ -z \"$1\" ]; then", "\n",
+									"  exit 1", "\n",
+									"fi", "\n",
+									"aws iam list-ssh-public-keys --user-name \"$1\" --query \"SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]\" --output text | while read KeyId; do", "\n",
+									"  aws iam get-ssh-public-key --user-name \"$1\" --ssh-public-key-id \"$KeyId\" --encoding SSH --query \"SSHPublicKey.SSHPublicKeyBody\" --output text", "\n",
+									"done", "\n"
+								]]},
+								"mode": "000755",
+								"owner": "root",
+								"group": "root"
+							},
+							"/opt/import_users.sh": {
+								"content": {"Fn::Join": ["", [
+									"#!/bin/bash", "\n",
+									"aws iam list-users --query \"Users[].[UserName]\" --output text | while read User; do", "\n",
+									"  if id -u \"$User\" >/dev/null 2>&1; then", "\n",
+									"    echo \"$User exists\"", "\n",
+									"  else", "\n",
+									"    /usr/sbin/adduser \"$User\"", "\n",
+									"    echo \"$User ALL=(ALL) NOPASSWD:ALL\" > \"/etc/sudoers.d/$User\"", "\n",
+									"  fi", "\n",
+									"done", "\n"
+								]]},
+								"mode": "000755",
+								"owner": "root",
+								"group": "root"
+							},
+							"/etc/cron.d/import_users": {
+								"content": {"Fn::Join": ["", [
+									"*/10 * * * * root /opt/import_users.sh", "\n"
+								]]},
+								"mode": "000644",
+								"owner": "root",
+								"group": "root"
+							}
+						},
+						"commands": {
+							"a_configure_sshd_command": {
+								"command": "sed -i 's:#AuthorizedKeysCommand none:AuthorizedKeysCommand /opt/authorized_keys_command.sh:g' /etc/ssh/sshd_config"
+							},
+							"b_configure_sshd_commanduser": {
+								"command": "sed -i 's:#AuthorizedKeysCommandUser nobody:AuthorizedKeysCommandUser nobody:g' /etc/ssh/sshd_config"
+							},
+							"c_import_users": {
+								"command": "./import_users.sh",
+								"cwd": "/opt"
+							}
+						},
+						"services": {
+							"sysvinit": {
+								"sshd": {
+									"enabled": "true",
+									"ensureRunning": "true",
+									"commands": [
+										"a_configure_sshd_command",
+										"b_configure_sshd_commanduser"
+									]
+								}
+							}
+						}
+					},
 					"config": {
 						"packages": {
 							"yum": {
 								"php": [],
 								"php-mysql": [],
 								"mysql": [],
-								"httpd": []
+								"httpd": [],
+								"awslogs": []
 							}
 						},
 						"sources": {
@@ -231,6 +390,112 @@
 								"mode": "000500",
 								"owner": "root",
 								"group": "root"
+							},
+							"/etc/awslogs/awscli.conf": {
+								"content": {"Fn::Join": ["", [
+									"[default]", "\n",
+									"region = ", {"Ref": "AWS::Region"}, "\n",
+									"\n",
+									"[plugins]", "\n",
+									"cwlogs = cwlogs", "\n"
+								]]},
+								"mode": "000644",
+								"owner": "root",
+								"group": "root"
+							},
+							"/etc/awslogs/awslogs.conf": {
+								"content": {"Fn::Join": ["", [
+									"[general]", "\n",
+									"state_file = /var/lib/awslogs/agent-state", "\n",
+									"\n",
+									"[/var/log/messages]", "\n",
+									"datetime_format = %b %d %H:%M:%S", "\n",
+									"file = /var/log/messages", "\n",
+									"log_stream_name = {instance_id}/var/log/messages", "\n",
+									"log_group_name = ", {"Ref": "WebServerLogs"}, "\n",
+									"\n",
+									"[/var/log/secure]", "\n",
+									"datetime_format = %b %d %H:%M:%S", "\n",
+									"file = /var/log/secure", "\n",
+									"log_stream_name = {instance_id}/var/log/secure", "\n",
+									"log_group_name = ", {"Ref": "WebServerLogs"}, "\n",
+									"\n",
+									"[/var/log/cron]", "\n",
+									"datetime_format = %b %d %H:%M:%S", "\n",
+									"file = /var/log/cron", "\n",
+									"log_stream_name = {instance_id}/var/log/cron", "\n",
+									"log_group_name = ", {"Ref": "WebServerLogs"}, "\n",
+									"\n",
+									"[/var/log/cloud-init.log]", "\n",
+									"datetime_format = %b %d %H:%M:%S", "\n",
+									"file = /var/log/cloud-init.log", "\n",
+									"log_stream_name = {instance_id}/var/log/cloud-init.log", "\n",
+									"log_group_name = ", {"Ref": "WebServerLogs"}, "\n",
+									"\n",
+									"[/var/log/cfn-init.log]", "\n",
+									"datetime_format = %Y-%m-%d %H:%M:%S", "\n",
+									"file = /var/log/cfn-init.log", "\n",
+									"log_stream_name = {instance_id}/var/log/cfn-init.log", "\n",
+									"log_group_name = ", {"Ref": "WebServerLogs"}, "\n",
+									"\n",
+									"[/var/log/cfn-hup.log]", "\n",
+									"datetime_format = %Y-%m-%d %H:%M:%S", "\n",
+									"file = /var/log/cfn-hup.log", "\n",
+									"log_stream_name = {instance_id}/var/log/cfn-hup.log", "\n",
+									"log_group_name = ", {"Ref": "WebServerLogs"}, "\n",
+									"\n",
+									"[/var/log/cfn-init-cmd.log]", "\n",
+									"datetime_format = %Y-%m-%d %H:%M:%S", "\n",
+									"file = /var/log/cfn-init-cmd.log", "\n",
+									"log_stream_name = {instance_id}/var/log/cfn-init-cmd.log", "\n",
+									"log_group_name = ", {"Ref": "WebServerLogs"}, "\n",
+									"\n",
+									"[/var/log/cloud-init-output.log]", "\n",
+									"file = /var/log/cloud-init-output.log", "\n",
+									"log_stream_name = {instance_id}/var/log/cloud-init-output.log", "\n",
+									"log_group_name = ", {"Ref": "WebServerLogs"}, "\n",
+									"\n",
+									"[/var/log/dmesg]", "\n",
+									"file = /var/log/dmesg", "\n",
+									"log_stream_name = {instance_id}/var/log/dmesg", "\n",
+									"log_group_name = ", {"Ref": "WebServerLogs"}, "\n",
+									"\n",
+									"[/var/log/httpd/access_log]", "\n",
+									"datetime_format = %b %d %H:%M:%S %Y", "\n",
+									"file = /var/log/httpd/access_log", "\n",
+									"log_stream_name = {instance_id}/var/log/httpd/access_log", "\n",
+									"log_group_name = ", {"Ref": "WebServerLogs"}, "\n",
+									"\n",
+									"[/var/log/httpd/error_log]", "\n",
+									"datetime_format = %d/%b/%Y:%H:%M:%S %z", "\n",
+									"file = /var/log/httpd/error_log", "\n",
+									"log_stream_name = {instance_id}/var/log/httpd/error_log", "\n",
+									"log_group_name = ", {"Ref": "WebServerLogs"}, "\n",
+									"\n"
+								]]},
+								"mode": "000644",
+								"owner": "root",
+								"group": "root"
+							},
+							"/etc/cfn/cfn-hup.conf": {
+								"content": {"Fn::Join": ["", [
+									"[main]", "\n",
+									"stack=", {"Ref": "AWS::StackId"}, "\n",
+									"region=", {"Ref": "AWS::Region"}, "\n",
+									"interval=1", "\n"
+								]]},
+								"mode": "000400",
+								"owner": "root",
+								"group": "root"
+							},
+							"/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
+								"content": {"Fn::Join": ["", [
+									"[cfn-auto-reloader-hook]", "\n",
+									"triggers=post.update", "\n",
+									"path=Resources.LaunchConfiguration.Metadata.AWS::CloudFormation::Init", "\n",
+									"action=/opt/aws/bin/cfn-init --verbose --stack=", {"Ref": "AWS::StackName"}, " --region=", {"Ref": "AWS::Region"}, " --resource=LaunchConfiguration", "\n",
+									"runas=root", "\n"
+								]]}
 							}
 						},
 						"commands": {
@@ -248,6 +513,25 @@
 								"httpd": {
 									"enabled": "true",
 									"ensureRunning": "true"
+								},
+								"awslogs": {
+									"enabled": "true",
+									"ensureRunning": "true",
+									"packages": {
+										"yum": ["awslogs"]
+									},
+									"files": [
+										"/etc/awslogs/awslogs.conf",
+										"/etc/awslogs/awscli.conf"
+									]
+								},
+								"cfn-hup": {
+									"enabled": "true",
+									"ensureRunning": "true",
+									"files": [
+										"/etc/cfn/cfn-hup.conf",
+										"/etc/cfn/hooks.d/cfn-auto-reloader.conf"
+									]
 								}
 							}
 						}
@@ -255,18 +539,17 @@
 				}
 			},
 			"Properties": {
+				"AssociatePublicIpAddress": true,
+				"IamInstanceProfile": {"Ref": "WebServerInstanceProfile"},
 				"ImageId": {"Fn::FindInMap": ["EC2RegionMap", {"Ref": "AWS::Region"}, "AMI"]},
 				"InstanceType": {"Ref": "WebServerInstanceType"},
 				"SecurityGroups": [{"Ref": "WebServerSecurityGroup"}],
-				"KeyName": {"Ref": "WebServerKeyName"},
-				"AssociatePublicIpAddress": true,
+				"KeyName": {"Fn::If": ["HasKeyName", {"Ref": "WebServerKeyName"}, {"Ref": "AWS::NoValue"}]},
 				"UserData": {"Fn::Base64": {"Fn::Join": ["", [
-					"#!/bin/bash -ex\n",
-					"yum update -y aws-cfn-bootstrap\n",
+					"#!/bin/bash -x\n",
 					"/opt/aws/bin/cfn-init -v --stack ", {"Ref": "AWS::StackName"}, " --resource LaunchConfiguration --region ", {"Ref": "AWS::Region"}, "\n",
 					"/opt/aws/bin/cfn-signal -e $? --stack ", {"Ref": "AWS::StackName"}, " --resource AutoScalingGroup --region ", {"Ref": "AWS::Region"}, "\n"
-				]]}},
-				"InstanceMonitoring": "true"
+				]]}}
 			}
 		},
 		"AutoScalingGroup": {
@@ -290,6 +573,12 @@
 			"CreationPolicy": {
 				"ResourceSignal": {
 					"Timeout": "PT10M"
+				}
+			},
+			"UpdatePolicy": {
+				"AutoScalingRollingUpdate": {
+					"PauseTime": "PT10M",
+					"WaitOnResourceSignals": true
 				}
 			}
 		},

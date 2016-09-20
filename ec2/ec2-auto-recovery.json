@@ -2,9 +2,21 @@
 	"AWSTemplateFormatVersion": "2010-09-09",
 	"Description": "EC2: instance with auto-recovery, a cloudonaut.io template",
 	"Parameters": {
+		"SSHBastionSecurityGroup": {
+			"Description": "Optional use SSHBastionSecurityGroup output from vpc-ssh-bastion stack.",
+			"Type": "String",
+			"Default": ""
+		},
 		"KeyName": {
-			"Description": "The name of the key pair used to log into the EC2 instance via SSH.",
-			"Type": "AWS::EC2::KeyPair::KeyName"
+			"Description": "Optional key pair of the ec2-user to establish a SSH connection to the EC2 instance.",
+			"Type": "String",
+			"Default": ""
+		},
+		"IAMUserSSHAccess": {
+			"Description": "Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).",
+			"Type": "String",
+			"AllowedValues": ["true", "false"],
+			"Default": "false"
 		},
 		"InstanceType": {
 			"Description": "The instance type for the EC2 instance.",
@@ -15,28 +27,40 @@
 			"Description": "The name for the EC2 instance.",
 			"Type": "String"
 		},
-		"SecurityGroup": {
-			"Description": "The security group for the EC2 instance.",
-			"Type": "AWS::EC2::SecurityGroup::Id"
+		"VPC": {
+			"Description": "Use VPC output from vpc stack.",
+			"Type": "AWS::EC2::VPC::Id"
 		},
 		"Subnet": {
-			"Description": "The subnet the EC2 instance is launched into.",
+			"Description": "Use SubnetAPublic, SubnetAPrivate, SubnetBPublic, SubnetBrivate [, SubnetCPublic, SubnetCPrivate [, SubnetDPublic, SubnetDPrivate]] output from vpc stack.",
 			"Type": "AWS::EC2::Subnet::Id"
-		} 
+		},
+		"LogsRetentionInDays": {
+			"Description": "Specifies the number of days you want to retain log events.",
+			"Type": "Number",
+			"AllowedValues": [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653],
+			"Default": 14
+		}
 	},
 	"Mappings": {
 		"RegionMap": {
-			"eu-west-1": {"AMI": "ami-b0ac25c3"},
-			"ap-southeast-1": {"AMI": "ami-1ddc0b7e"},
-			"ap-southeast-2": {"AMI": "ami-0c95b86f"},
-			"eu-central-1": {"AMI": "ami-d3c022bc"},
-			"ap-northeast-2": {"AMI": "ami-cf32faa1"},
-			"ap-northeast-1": {"AMI": "ami-29160d47"},
-			"us-east-1": {"AMI": "ami-f5f41398"},
-			"sa-east-1": {"AMI": "ami-fb890097"},
-			"us-west-1": {"AMI": "ami-6e84fa0e"},
-			"us-west-2": {"AMI": "ami-d0f506b0"}
+			"ap-south-1": {"AMI": "ami-ffbdd790"},
+			"eu-west-1": {"AMI": "ami-f9dd458a"},
+			"ap-southeast-1": {"AMI": "ami-a59b49c6"},
+			"ap-southeast-2": {"AMI": "ami-dc361ebf"},
+			"eu-central-1": {"AMI": "ami-ea26ce85"},
+			"ap-northeast-2": {"AMI": "ami-2b408b45"},
+			"ap-northeast-1": {"AMI": "ami-374db956"},
+			"us-east-1": {"AMI": "ami-6869aa05"},
+			"sa-east-1": {"AMI": "ami-6dd04501"},
+			"us-west-1": {"AMI": "ami-31490d51"},
+			"us-west-2": {"AMI": "ami-7172b611"}
 		}
+	},
+	"Conditions": {
+		"HasKeyName": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "KeyName"}]}]},
+		"HasIAMUserSSHAccess": {"Fn::Equals": ["true", {"Ref": "IAMUserSSHAccess"}]},
+		"HasSSHBastionSecurityGroup": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "SSHBastionSecurityGroup"}]}]}
 	},
 	"Resources": {
 		"ElasticIP": {
@@ -46,18 +70,323 @@
 				"Domain": "vpc"
 			}
 		},
+		"Logs": {
+			"Type": "AWS::Logs::LogGroup",
+			"Properties": {
+				"RetentionInDays": {"Ref": "LogsRetentionInDays"}
+			}
+		},
+		"SecurityGroup": {
+			"Type": "AWS::EC2::SecurityGroup",
+			"Properties": {
+				"GroupDescription": {"Ref": "Name"},
+				"VpcId": {"Ref": "VPC"}
+			}
+		},
+		"SecurityGroupInSSHBastion": {
+			"Type": "AWS::EC2::SecurityGroupIngress",
+			"Condition": "HasSSHBastionSecurityGroup",
+			"Properties": {
+				"GroupId": {"Ref": "SecurityGroup"},
+				"IpProtocol": "tcp",
+				"FromPort": 22,
+				"ToPort": 22,
+				"SourceSecurityGroupId": {"Ref": "SSHBastionSecurityGroup"}
+			}
+		},
+		"InstanceProfile": {
+			"Type": "AWS::IAM::InstanceProfile",
+			"Properties": {
+				"Path": "/",
+				"Roles": [{"Ref": "IAMRole"}]
+			}
+		},
+		"IAMRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [{
+						"Effect": "Allow",
+						"Principal": {
+							"Service": ["ec2.amazonaws.com"]
+						},
+						"Action": ["sts:AssumeRole"]
+					}]
+				},
+				"Path": "/",
+				"Policies": [{
+					"PolicyName": "logs",
+					"PolicyDocument":{
+						"Version": "2012-10-17",
+						"Statement": [{
+							"Effect": "Allow",
+							"Action": [
+								"logs:CreateLogGroup",
+								"logs:CreateLogStream",
+								"logs:PutLogEvents",
+								"logs:DescribeLogStreams"
+							],
+							"Resource": [
+								"arn:aws:logs:*:*:*"
+							]
+						}]
+					}
+				}]
+			}
+		},
+		"IAMPolicySSHAccess": {
+			"Type": "AWS::IAM::Policy",
+			"Condition": "HasIAMUserSSHAccess",
+			"Properties": { 
+				"Roles": [{"Ref": "IAMRole"}],
+				"PolicyName": "iam",
+				"PolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [{
+						"Effect": "Allow",
+						"Action": [
+							"iam:ListUsers"
+						],
+						"Resource": [
+							"*"
+						]
+					}, {
+						"Effect": "Allow",
+						"Action": [
+							"iam:ListSSHPublicKeys",
+							"iam:GetSSHPublicKey"
+						],
+						"Resource": [
+							{"Fn::Join": ["", ["arn:aws:iam::", {"Ref": "AWS::AccountId"},":user/*"]]}
+						]
+					}]
+				}
+			}
+		},
 		"VirtualMachine": {
 			"Type": "AWS::EC2::Instance",
+			"Metadata": {
+				"AWS::CloudFormation::Init": {
+					"configSets": {
+						"default": {"Fn::If": ["HasIAMUserSSHAccess", ["ssh-access", "config"], ["config"]]}
+					},
+					"ssh-access": {
+						"files": {
+							"/opt/authorized_keys_command.sh": {
+								"content": {"Fn::Join": ["", [
+									"#!/bin/bash -e", "\n",
+									"if [ -z \"$1\" ]; then", "\n",
+									"  exit 1", "\n",
+									"fi", "\n",
+									"aws iam list-ssh-public-keys --user-name \"$1\" --query \"SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]\" --output text | while read KeyId; do", "\n",
+									"  aws iam get-ssh-public-key --user-name \"$1\" --ssh-public-key-id \"$KeyId\" --encoding SSH --query \"SSHPublicKey.SSHPublicKeyBody\" --output text", "\n",
+									"done", "\n"
+								]]},
+								"mode": "000755",
+								"owner": "root",
+								"group": "root"
+							},
+							"/opt/import_users.sh": {
+								"content": {"Fn::Join": ["", [
+									"#!/bin/bash", "\n",
+									"aws iam list-users --query \"Users[].[UserName]\" --output text | while read User; do", "\n",
+									"  if id -u \"$User\" >/dev/null 2>&1; then", "\n",
+									"    echo \"$User exists\"", "\n",
+									"  else", "\n",
+									"    /usr/sbin/adduser \"$User\"", "\n",
+									"    echo \"$User ALL=(ALL) NOPASSWD:ALL\" > \"/etc/sudoers.d/$User\"", "\n",
+									"  fi", "\n",
+									"done", "\n"
+								]]},
+								"mode": "000755",
+								"owner": "root",
+								"group": "root"
+							},
+							"/etc/cron.d/import_users": {
+								"content": {"Fn::Join": ["", [
+									"*/10 * * * * root /opt/import_users.sh", "\n"
+								]]},
+								"mode": "000644",
+								"owner": "root",
+								"group": "root"
+							}
+						},
+						"commands": {
+							"a_configure_sshd_command": {
+								"command": "sed -i 's:#AuthorizedKeysCommand none:AuthorizedKeysCommand /opt/authorized_keys_command.sh:g' /etc/ssh/sshd_config"
+							},
+							"b_configure_sshd_commanduser": {
+								"command": "sed -i 's:#AuthorizedKeysCommandUser nobody:AuthorizedKeysCommandUser nobody:g' /etc/ssh/sshd_config"
+							},
+							"c_import_users": {
+								"command": "./import_users.sh",
+								"cwd": "/opt"
+							}
+						},
+						"services": {
+							"sysvinit": {
+								"sshd": {
+									"enabled": "true",
+									"ensureRunning": "true",
+									"commands": [
+										"a_configure_sshd_command",
+										"b_configure_sshd_commanduser"
+									]
+								}
+							}
+						}
+					},
+					"config": {
+						"packages": {
+							"yum": {
+								"awslogs": []
+							}
+						},
+						"files": {
+							"/etc/awslogs/awscli.conf": {
+								"content": {"Fn::Join": ["", [
+									"[default]", "\n",
+									"region = ", {"Ref": "AWS::Region"}, "\n",
+									"\n",
+									"[plugins]", "\n",
+									"cwlogs = cwlogs", "\n"
+								]]},
+								"mode": "000644",
+								"owner": "root",
+								"group": "root"
+							},
+							"/etc/awslogs/awslogs.conf": {
+								"content": {"Fn::Join": ["", [
+									"[general]", "\n",
+									"state_file = /var/lib/awslogs/agent-state", "\n",
+									"\n",
+									"[/var/log/messages]", "\n",
+									"datetime_format = %b %d %H:%M:%S", "\n",
+									"file = /var/log/messages", "\n",
+									"log_stream_name = {instance_id}/var/log/messages", "\n",
+									"log_group_name = ", {"Ref": "Logs"}, "\n",
+									"\n",
+									"[/var/log/secure]", "\n",
+									"datetime_format = %b %d %H:%M:%S", "\n",
+									"file = /var/log/secure", "\n",
+									"log_stream_name = {instance_id}/var/log/secure", "\n",
+									"log_group_name = ", {"Ref": "Logs"}, "\n",
+									"\n",
+									"[/var/log/cron]", "\n",
+									"datetime_format = %b %d %H:%M:%S", "\n",
+									"file = /var/log/cron", "\n",
+									"log_stream_name = {instance_id}/var/log/cron", "\n",
+									"log_group_name = ", {"Ref": "Logs"}, "\n",
+									"\n",
+									"[/var/log/cloud-init.log]", "\n",
+									"datetime_format = %b %d %H:%M:%S", "\n",
+									"file = /var/log/cloud-init.log", "\n",
+									"log_stream_name = {instance_id}/var/log/cloud-init.log", "\n",
+									"log_group_name = ", {"Ref": "Logs"}, "\n",
+									"\n",
+									"[/var/log/cfn-init.log]", "\n",
+									"datetime_format = %Y-%m-%d %H:%M:%S", "\n",
+									"file = /var/log/cfn-init.log", "\n",
+									"log_stream_name = {instance_id}/var/log/cfn-init.log", "\n",
+									"log_group_name = ", {"Ref": "Logs"}, "\n",
+									"\n",
+									"[/var/log/cfn-hup.log]", "\n",
+									"datetime_format = %Y-%m-%d %H:%M:%S", "\n",
+									"file = /var/log/cfn-hup.log", "\n",
+									"log_stream_name = {instance_id}/var/log/cfn-hup.log", "\n",
+									"log_group_name = ", {"Ref": "Logs"}, "\n",
+									"\n",
+									"[/var/log/cfn-init-cmd.log]", "\n",
+									"datetime_format = %Y-%m-%d %H:%M:%S", "\n",
+									"file = /var/log/cfn-init-cmd.log", "\n",
+									"log_stream_name = {instance_id}/var/log/cfn-init-cmd.log", "\n",
+									"log_group_name = ", {"Ref": "Logs"}, "\n",
+									"\n",
+									"[/var/log/cloud-init-output.log]", "\n",
+									"file = /var/log/cloud-init-output.log", "\n",
+									"log_stream_name = {instance_id}/var/log/cloud-init-output.log", "\n",
+									"log_group_name = ", {"Ref": "Logs"}, "\n",
+									"\n",
+									"[/var/log/dmesg]", "\n",
+									"file = /var/log/dmesg", "\n",
+									"log_stream_name = {instance_id}/var/log/dmesg", "\n",
+									"log_group_name = ", {"Ref": "Logs"}, "\n",
+									"\n"
+								]]},
+								"mode": "000644",
+								"owner": "root",
+								"group": "root"
+							},
+							"/etc/cfn/cfn-hup.conf": {
+								"content": {"Fn::Join": ["", [
+									"[main]", "\n",
+									"stack=", {"Ref": "AWS::StackId"}, "\n",
+									"region=", {"Ref": "AWS::Region"}, "\n",
+									"interval=1", "\n"
+								]]},
+								"mode": "000400",
+								"owner": "root",
+								"group": "root"
+							},
+							"/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
+								"content": {"Fn::Join": ["", [
+									"[cfn-auto-reloader-hook]", "\n",
+									"triggers=post.update", "\n",
+									"path=Resources.VirtualMachine.Metadata.AWS::CloudFormation::Init", "\n",
+									"action=/opt/aws/bin/cfn-init --verbose --stack=", {"Ref": "AWS::StackName"}, " --region=", {"Ref": "AWS::Region"}, " --resource=VirtualMachine", "\n",
+									"runas=root", "\n"
+								]]}
+							}
+						},
+						"services": {
+							"sysvinit": {
+								"awslogs": {
+									"enabled": "true",
+									"ensureRunning": "true",
+									"packages": {
+										"yum": ["awslogs"]
+									},
+									"files": [
+										"/etc/awslogs/awslogs.conf",
+										"/etc/awslogs/awscli.conf"
+									]
+								},
+								"cfn-hup": {
+									"enabled": "true",
+									"ensureRunning": "true",
+									"files": [
+										"/etc/cfn/cfn-hup.conf",
+										"/etc/cfn/hooks.d/cfn-auto-reloader.conf"
+									]
+								}
+							}
+						}
+					}
+				}
+			},
 			"Properties": {
+				"IamInstanceProfile": {"Ref": "InstanceProfile"},
 				"ImageId": {"Fn::FindInMap": ["RegionMap", {"Ref": "AWS::Region"}, "AMI"]},
 				"InstanceType": {"Ref": "InstanceType"},
-				"KeyName": {"Ref": "KeyName"},
 				"SecurityGroupIds": [{"Ref": "SecurityGroup"}],
+				"KeyName": {"Fn::If": ["HasKeyName", {"Ref": "KeyName"}, {"Ref": "AWS::NoValue"}]},
+				"UserData": { "Fn::Base64": { "Fn::Join": ["", [
+					"#!/bin/bash -x", "\n",
+					"/opt/aws/bin/cfn-init -v --stack ", {"Ref": "AWS::StackName"}, " --resource VirtualMachine --region ", {"Ref": "AWS::Region"}, "\n",
+					"/opt/aws/bin/cfn-signal -e $? --region ", {"Ref": "AWS::Region"}, " --stack ", {"Ref": "AWS::StackName"}, " --resource VirtualMachine", "\n"
+				]]}},
 				"SubnetId": {"Ref": "Subnet"},
 				"Tags": [{
 					"Key": "Name",
 					"Value": {"Ref": "Name"}
 				}]
+			},
+			"CreationPolicy": {
+				"ResourceSignal": {
+					"Count": 1,
+					"Timeout": "PT10M"
+				}
 			}
 		},
 		"RecoveryAlarm": {

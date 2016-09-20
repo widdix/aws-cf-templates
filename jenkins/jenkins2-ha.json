@@ -14,9 +14,21 @@
       "Description": "Use SubnetBPublic or SubnetBPrivate output from vpc stack. If you choose SubnetAPrivate you need a NAT instance or a NAT gateway.",
       "Type": "AWS::EC2::Subnet::Id"
     },
+    "SSHBastionSecurityGroup": {
+      "Description": "Optional use SSHBastionSecurityGroup output from vpc-ssh-bastion stack.",
+      "Type": "String",
+      "Default": ""
+    },
     "KeyName": {
-      "Description": "The key pair to establish a SSH connection to the Jenkins master.",
-      "Type": "AWS::EC2::KeyPair::KeyName"
+      "Description": "Optional key pair of the ec2-user to establish a SSH connection to the Jenkins master.",
+      "Type": "String",
+      "Default": ""
+    },
+    "IAMUserSSHAccess": {
+      "Description": "Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).",
+      "Type": "String",
+      "AllowedValues": ["true", "false"],
+      "Default": "false"
     },
     "MasterELBScheme": {
       "Description": "Indicates whether the load balancer in front of the Jenkins master is Internet-facing or internal.",
@@ -59,6 +71,11 @@
       "us-west-1": {"AMI": "ami-31490d51"},
       "us-west-2": {"AMI": "ami-7172b611"}
     }
+  },
+  "Conditions": {
+    "HasKeyName": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "KeyName"}]}]},
+    "HasIAMUserSSHAccess": {"Fn::Equals": ["true", {"Ref": "IAMUserSSHAccess"}]},
+    "HasSSHBastionSecurityGroup": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "SSHBastionSecurityGroup"}]}]}
   },
   "Resources": {
     "MasterStorageSG": {
@@ -202,6 +219,35 @@
         }]
       }
     },
+    "MasterIAMPolicySSHAccess": {
+      "Type": "AWS::IAM::Policy",
+      "Condition": "HasIAMUserSSHAccess",
+      "Properties": { 
+        "Roles": [{"Ref": "MasterIAMRole"}],
+        "PolicyName": "iam",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Action": [
+              "iam:ListUsers"
+            ],
+            "Resource": [
+              "*"
+            ]
+          }, {
+            "Effect": "Allow",
+            "Action": [
+              "iam:ListSSHPublicKeys",
+              "iam:GetSSHPublicKey"
+            ],
+            "Resource": [
+              {"Fn::Join": ["", ["arn:aws:iam::", {"Ref": "AWS::AccountId"},":user/*"]]}
+            ]
+          }]
+        }
+      }
+    },
     "MasterSG": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
@@ -220,6 +266,17 @@
         }]
       }
     },
+    "MasterSGInSSHBastion": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Condition": "HasSSHBastionSecurityGroup",
+      "Properties": {
+        "GroupId": {"Ref": "MasterSG"},
+        "IpProtocol": "tcp",
+        "FromPort": 22,
+        "ToPort": 22,
+        "SourceSecurityGroupId": {"Ref": "SSHBastionSecurityGroup"}
+      }
+    },
     "MasterLogs": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
@@ -231,7 +288,73 @@
       "Metadata": {
         "AWS::CloudFormation::Init": {
           "configSets": {
-            "default": ["mount",  "install", "setup"]
+            "default": {"Fn::If": ["HasIAMUserSSHAccess", ["ssh-access", "mount",  "install", "setup"], ["mount",  "install", "setup"]]}
+          },
+          "ssh-access": {
+            "files": {
+              "/opt/authorized_keys_command.sh": {
+                "content": {"Fn::Join": ["", [
+                  "#!/bin/bash -e", "\n",
+                  "if [ -z \"$1\" ]; then", "\n",
+                  "  exit 1", "\n",
+                  "fi", "\n",
+                  "aws iam list-ssh-public-keys --user-name \"$1\" --query \"SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]\" --output text | while read KeyId; do", "\n",
+                  "  aws iam get-ssh-public-key --user-name \"$1\" --ssh-public-key-id \"$KeyId\" --encoding SSH --query \"SSHPublicKey.SSHPublicKeyBody\" --output text", "\n",
+                  "done", "\n"
+                ]]},
+                "mode": "000755",
+                "owner": "root",
+                "group": "root"
+              },
+              "/opt/import_users.sh": {
+                "content": {"Fn::Join": ["", [
+                  "#!/bin/bash", "\n",
+                  "aws iam list-users --query \"Users[].[UserName]\" --output text | while read User; do", "\n",
+                  "  if id -u \"$User\" >/dev/null 2>&1; then", "\n",
+                  "    echo \"$User exists\"", "\n",
+                  "  else", "\n",
+                  "    /usr/sbin/adduser \"$User\"", "\n",
+                  "    echo \"$User ALL=(ALL) NOPASSWD:ALL\" > \"/etc/sudoers.d/$User\"", "\n",
+                  "  fi", "\n",
+                  "done", "\n"
+                ]]},
+                "mode": "000755",
+                "owner": "root",
+                "group": "root"
+              },
+              "/etc/cron.d/import_users": {
+                "content": {"Fn::Join": ["", [
+                  "*/10 * * * * root /opt/import_users.sh", "\n"
+                ]]},
+                "mode": "000644",
+                "owner": "root",
+                "group": "root"
+              }
+            },
+            "commands": {
+              "a_configure_sshd_command": {
+                "command": "sed -i 's:#AuthorizedKeysCommand none:AuthorizedKeysCommand /opt/authorized_keys_command.sh:g' /etc/ssh/sshd_config"
+              },
+              "b_configure_sshd_commanduser": {
+                "command": "sed -i 's:#AuthorizedKeysCommandUser nobody:AuthorizedKeysCommandUser nobody:g' /etc/ssh/sshd_config"
+              },
+              "c_import_users": {
+                "command": "./import_users.sh",
+                "cwd": "/opt"
+              }
+            },
+            "services": {
+              "sysvinit": {
+                "sshd": {
+                  "enabled": "true",
+                  "ensureRunning": "true",
+                  "commands": [
+                    "a_configure_sshd_command",
+                    "b_configure_sshd_commanduser"
+                  ]
+                }
+              }
+            }
           },
           "mount": {
             "packages": {
@@ -474,7 +597,7 @@
         "IamInstanceProfile": {"Ref": "MasterIP"},
         "InstanceType": {"Ref": "MasterInstanceType"},
         "SecurityGroups": [{"Ref": "MasterSG"}],
-        "KeyName": {"Ref": "KeyName"},
+        "KeyName": {"Fn::If": ["HasKeyName", {"Ref": "KeyName"}, {"Ref": "AWS::NoValue"}]},
         "UserData": {"Fn::Base64": {"Fn::Join": ["", [
           "#!/bin/bash -x", "\n",
           "/opt/aws/bin/cfn-init -v --stack ", {"Ref": "AWS::StackName"}, " --resource MasterLC --region ", {"Ref": "AWS::Region"}, "\n",
@@ -490,7 +613,7 @@
         "MinSize": "1",
         "MaxSize": "1",
         "DesiredCapacity": "1",
-        "HealthCheckGracePeriod": 600,
+        "HealthCheckGracePeriod": 900,
         "HealthCheckType": "ELB",
         "VPCZoneIdentifier": [{"Ref": "SubnetA"}, {"Ref": "SubnetB"}],
         "TargetGroupARNs": [{"Ref": "MasterELBTargetGroup"}],
@@ -502,12 +625,12 @@
       },
       "CreationPolicy": {
         "ResourceSignal": {
-          "Timeout": "PT10M"
+          "Timeout": "PT15M"
         }
       },
       "UpdatePolicy": {
         "AutoScalingRollingUpdate": {
-          "PauseTime": "PT10M",
+          "PauseTime": "PT15M",
           "WaitOnResourceSignals": true
         }
       }
