@@ -1329,11 +1329,21 @@
       }
     },
     "AgentTerminatingLifecycleHookQueue": {
-       "Type": "AWS::SQS::Queue",
-       "Properties": {
-          "QueueName": {"Fn::Join": ["", [{"Ref": "AWS::StackName"}, "-terminating-lifecycle-hook"]]},
-          "VisibilityTimeout": {"Ref": "AgentMaxBuildWaitTimeInSeconds"}
-       }
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": {"Fn::Join": ["", [{"Ref": "AWS::StackName"}, "-terminating-lifecycle-hook"]]},
+        "VisibilityTimeout": {"Ref": "AgentMaxBuildWaitTimeInSeconds"},
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {"Fn::GetAtt": ["AgentTerminatingLifecycleHookDeadLetterQueue", "Arn"]},
+          "maxReceiveCount": 5
+        }
+      }
+    },
+    "AgentTerminatingLifecycleHookDeadLetterQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": {"Fn::Join": ["", [{"Ref": "AWS::StackName"}, "-terminating-lifecycle-hook-dlq"]]}
+      }
     },
     "AgentTerminatingLifecycleHookIAMRole": {
       "Type": "AWS::IAM::Role",
