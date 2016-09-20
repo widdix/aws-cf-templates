@@ -473,7 +473,7 @@
           "install": {
             "packages": {
               "rpm": {
-                "jenkins": "http://pkg.jenkins-ci.org/redhat-stable/jenkins-2.7.2-1.1.noarch.rpm"
+                "jenkins": "http://pkg.jenkins-ci.org/redhat-stable/jenkins-2.7.4-1.1.noarch.rpm"
               },
               "yum": {
                 "git": [],
