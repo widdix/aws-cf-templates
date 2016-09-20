@@ -6,7 +6,8 @@
 			"Description": "Class B of VPC (10.XXX.0.0/16)",
 			"Type": "String",
 			"MinLength": "1",
-			"MaxLength": "3"
+			"MaxLength": "3",
+			"Default": "0"
 		}
 	},
 	"Resources": {
@@ -252,6 +253,10 @@
 		}
 	},
 	"Outputs": {
+		"ClassB": {
+			"Description": "Class B.",
+			"Value": {"Ref": "ClassB"}
+		},
 		"VPC": {
 			"Description": "VPC.",
 			"Value": {"Ref": "VPC"}

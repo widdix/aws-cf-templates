@@ -1,6 +1,6 @@
 {
 	"AWSTemplateFormatVersion": "2010-09-09",
-	"Description": "VPC: highly available NAT instance for private subnets, a cloudonaut.io template",
+	"Description": "VPC: highly available SSH bastion host/instance, a cloudonaut.io template",
 	"Parameters": {
 		"VPC": {
 			"Description": "Use VPC output from vpc stack.",
@@ -16,15 +16,6 @@
 			"MinLength": "1",
 			"MaxLength": "3"
 		},
-		"RouteTablePrivate": {
-			"Description": "Use RouteTablePrivate output from vpc stack.",
-			"Type": "String"
-		},
-		"SSHBastionSecurityGroup": {
-			"Description": "Optional use SSHBastionSecurityGroup output from vpc-ssh-bastion stack.",
-			"Type": "String",
-			"Default": ""
-		},
 		"KeyName": {
 			"Description": "Optional key pair of the ec2-user to establish a SSH connection to the SSH bastion host/instance.",
 			"Type": "String",
@@ -36,10 +27,10 @@
 			"AllowedValues": ["true", "false"],
 			"Default": "false"
 		},
-		"NATInstanceType": {
+		"InstanceType": {
 			"Type": "String",
 			"Default": "t2.nano",
-			"Description": "Instance type of the NAT instance. Keep in mind that different instances come with different network capabilities."
+			"Description": "Instance type of the SSH bastion host/instance."
 		},
 		"LogsRetentionInDays": {
 			"Description": "Specifies the number of days you want to retain log events.",
@@ -50,23 +41,22 @@
 	},
 	"Mappings": {
 		"RegionMap": {
-			"ap-south-1": {"NATAMI": "ami-e2b9d38d"},
-			"eu-west-1": {"NATAMI": "ami-a8dd45db"},
-			"ap-southeast-1": {"NATAMI": "ami-a79b49c4"},
-			"ap-southeast-2": {"NATAMI": "ami-53371f30"},
-			"eu-central-1": {"NATAMI": "ami-5825cd37"},
-			"ap-northeast-2": {"NATAMI": "ami-d14388bf"},
-			"ap-northeast-1": {"NATAMI": "ami-2443b745"},
-			"us-east-1": {"NATAMI": "ami-4868ab25"},
-			"sa-east-1": {"NATAMI": "ami-9336bcff"},
-			"us-west-1": {"NATAMI": "ami-004b0f60"},
-			"us-west-2": {"NATAMI": "ami-a275b1c2"}
+			"ap-south-1": {"AMI": "ami-ffbdd790"},
+			"eu-west-1": {"AMI": "ami-f9dd458a"},
+			"ap-southeast-1": {"AMI": "ami-a59b49c6"},
+			"ap-southeast-2": {"AMI": "ami-dc361ebf"},
+			"eu-central-1": {"AMI": "ami-ea26ce85"},
+			"ap-northeast-2": {"AMI": "ami-2b408b45"},
+			"ap-northeast-1": {"AMI": "ami-374db956"},
+			"us-east-1": {"AMI": "ami-6869aa05"},
+			"sa-east-1": {"AMI": "ami-6dd04501"},
+			"us-west-1": {"AMI": "ami-31490d51"},
+			"us-west-2": {"AMI": "ami-7172b611"}
 		}
 	},
 	"Conditions": {
 		"HasKeyName": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "KeyName"}]}]},
-		"HasIAMUserSSHAccess": {"Fn::Equals": ["true", {"Ref": "IAMUserSSHAccess"}]},
-		"HasSSHBastionSecurityGroup": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "SSHBastionSecurityGroup"}]}]}
+		"HasIAMUserSSHAccess": {"Fn::Equals": ["true", {"Ref": "IAMUserSSHAccess"}]}
 	},
 	"Resources": {
 		"EIP": {
@@ -81,64 +71,27 @@
 				"RetentionInDays": {"Ref": "LogsRetentionInDays"}
 			}
 		},
-		"NATSecurityGroup": {
+		"SecurityGroup": {
 			"Type": "AWS::EC2::SecurityGroup",
 			"Properties": {
-				"GroupDescription": {"Fn::Join": ["", ["NAT instance 10.", {"Ref": "ClassB"}, ".0.0/16"]]},
-				"SecurityGroupEgress": [{
-					"IpProtocol": "udp",
-					"FromPort": 123,
-					"ToPort": 123,
-					"CidrIp": "0.0.0.0/0"
-				}, {
-					"IpProtocol": "tcp",
-					"FromPort": 80,
-					"ToPort": 80,
-					"CidrIp": "0.0.0.0/0"
-				}, {
-					"IpProtocol": "tcp",
-					"FromPort": 443,
-					"ToPort": 443,
-					"CidrIp": "0.0.0.0/0"
-				}],
+				"GroupDescription": {"Fn::Join": ["", ["SSH bastion host/instance 10.", {"Ref": "ClassB"}, ".0.0/16"]]},
 				"SecurityGroupIngress": [{
-					"IpProtocol": "udp",
-					"FromPort": 123,
-					"ToPort": 123,
-					"CidrIp": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".0.0/16"]]}
-				}, {
 					"IpProtocol": "tcp",
-					"FromPort": 80,
-					"ToPort": 80,
-					"CidrIp": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".0.0/16"]]}
-				}, {
-					"IpProtocol": "tcp",
-					"FromPort": 443,
-					"ToPort": 443,
-					"CidrIp": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".0.0/16"]]}
+					"FromPort": 22,
+					"ToPort": 22,
+					"CidrIp": "0.0.0.0/0"
 				}],
 				"VpcId": {"Ref": "VPC"}
 			}
 		},
-		"NATSecurityGroupInSSHBastion": {
-			"Type": "AWS::EC2::SecurityGroupIngress",
-			"Condition": "HasSSHBastionSecurityGroup",
-			"Properties": {
-				"GroupId": {"Ref": "NATSecurityGroup"},
-				"IpProtocol": "tcp",
-				"FromPort": 22,
-				"ToPort": 22,
-				"SourceSecurityGroupId": {"Ref": "SSHBastionSecurityGroup"}
-			}
-		},
-		"NATInstanceProfile": {
+		"InstanceProfile": {
 			"Type": "AWS::IAM::InstanceProfile",
 			"Properties": {
 				"Path": "/",
-				"Roles": [{"Ref": "NATIAMRole"}]
+				"Roles": [{"Ref": "IAMRole"}]
 			}
 		},
-		"NATIAMRole": {
+		"IAMRole": {
 			"Type": "AWS::IAM::Role",
 			"Properties": {
 				"AssumeRolePolicyDocument": {
@@ -157,13 +110,9 @@
 					"PolicyDocument": {
 						"Version": "2012-10-17",
 						"Statement": [{
-							"Sid": "Stmt1425023276000",
 							"Effect": "Allow",
 							"Action": [
-								"ec2:AssociateAddress",
-								"ec2:ModifyInstanceAttribute",
-								"ec2:CreateRoute",
-								"ec2:ReplaceRoute"
+								"ec2:AssociateAddress"
 							],
 							"Resource": [
 								"*"
@@ -194,7 +143,7 @@
 			"Type": "AWS::IAM::Policy",
 			"Condition": "HasIAMUserSSHAccess",
 			"Properties": { 
-				"Roles": [{"Ref": "NATIAMRole"}],
+				"Roles": [{"Ref": "IAMRole"}],
 				"PolicyName": "iam",
 				"PolicyDocument": {
 					"Version": "2012-10-17",
@@ -219,9 +168,9 @@
 				}
 			}
 		},
-		"NATLaunchConfiguration": {
+		"LaunchConfiguration": {
 			"Type": "AWS::AutoScaling::LaunchConfiguration",
-				"Metadata": {
+			"Metadata": {
 				"AWS::CloudFormation::Init": {
 					"configSets": {
 						"default": {"Fn::If": ["HasIAMUserSSHAccess", ["config", "ssh-access"], ["config"]]}
@@ -250,7 +199,6 @@
 									"    echo \"$User exists\"", "\n",
 									"  else", "\n",
 									"    /usr/sbin/adduser \"$User\"", "\n",
-									"    echo \"$User ALL=(ALL) NOPASSWD:ALL\" > \"/etc/sudoers.d/$User\"", "\n",
 									"  fi", "\n",
 									"done", "\n"
 								]]},
@@ -388,8 +336,8 @@
 								"content": {"Fn::Join": ["", [
 									"[cfn-auto-reloader-hook]", "\n",
 									"triggers=post.update", "\n",
-									"path=Resources.NATLaunchConfiguration.Metadata.AWS::CloudFormation::Init", "\n",
-									"action=/opt/aws/bin/cfn-init --verbose --stack=", {"Ref": "AWS::StackName"}, " --region=", {"Ref": "AWS::Region"}, " --resource=NATLaunchConfiguration", "\n",
+									"path=Resources.LaunchConfiguration.Metadata.AWS::CloudFormation::Init", "\n",
+									"action=/opt/aws/bin/cfn-init --verbose --stack=", {"Ref": "AWS::StackName"}, " --region=", {"Ref": "AWS::Region"}, " --resource=LaunchConfiguration", "\n",
 									"runas=root", "\n"
 								]]}
 							}
@@ -423,32 +371,30 @@
 			"Properties": {
 				"AssociatePublicIpAddress": true,
 				"EbsOptimized": false,
-				"IamInstanceProfile": {"Ref": "NATInstanceProfile"},
-				"ImageId": {"Fn::FindInMap": ["RegionMap", {"Ref": "AWS::Region"}, "NATAMI"]},
-				"InstanceType": {"Ref": "NATInstanceType"},
-				"SecurityGroups": [{"Ref": "NATSecurityGroup"}],
+				"IamInstanceProfile": {"Ref": "InstanceProfile"},
+				"ImageId": {"Fn::FindInMap": ["RegionMap", {"Ref": "AWS::Region"}, "AMI"]},
+				"InstanceType": {"Ref": "InstanceType"},
+				"SecurityGroups": [{"Ref": "SecurityGroup"}],
 				"KeyName": {"Fn::If": ["HasKeyName", {"Ref": "KeyName"}, {"Ref": "AWS::NoValue"}]},
 				"UserData": { "Fn::Base64": { "Fn::Join": ["", [
-					"#!/bin/bash -x","\n",
+					"#!/bin/bash -x", "\n",
 					"INSTANCEID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)", "\n",
 					"aws --region ", {"Ref": "AWS::Region"}, " ec2 associate-address --instance-id $INSTANCEID --allocation-id ", {"Fn::GetAtt": ["EIP" , "AllocationId"]},
-						" && aws --region ", {"Ref": "AWS::Region"}, " ec2 modify-instance-attribute --instance-id $INSTANCEID --source-dest-check \"{\\\"Value\\\": false}\"", 
-						" && (aws --region ", {"Ref": "AWS::Region"}, " ec2 replace-route --route-table-id ", {"Ref": "RouteTablePrivate"}, " --destination-cidr-block \"0.0.0.0/0\" --instance-id $INSTANCEID || aws --region ", {"Ref": "AWS::Region"}, " ec2 create-route --route-table-id ", {"Ref": "RouteTablePrivate"}," --destination-cidr-block \"0.0.0.0/0\" --instance-id $INSTANCEID)",
-						" && /opt/aws/bin/cfn-init -v --stack ", {"Ref": "AWS::StackName"}, " --resource NATLaunchConfiguration --region ", {"Ref": "AWS::Region"}, "\n",
-					"/opt/aws/bin/cfn-signal -e $? --region ", {"Ref": "AWS::Region"}, " --stack ", {"Ref": "AWS::StackName"}, " --resource NATAutoScalingGroup", "\n"
+						" && /opt/aws/bin/cfn-init -v --stack ", {"Ref": "AWS::StackName"}, " --resource LaunchConfiguration --region ", {"Ref": "AWS::Region"}, "\n",
+					"/opt/aws/bin/cfn-signal -e $? --stack ", {"Ref": "AWS::StackName"}, " --resource AutoScalingGroup --region ", {"Ref": "AWS::Region"}, "\n"
 				]]}}
 			}
 		},
-		"NATAutoScalingGroup": {
+		"AutoScalingGroup": {
 			"Type": "AWS::AutoScaling::AutoScalingGroup",
 			"Properties": {
 				"DesiredCapacity": "1",
-				"LaunchConfigurationName": { "Ref": "NATLaunchConfiguration" },
+				"LaunchConfigurationName": { "Ref": "LaunchConfiguration" },
 				"MaxSize": "1",
 				"MinSize": "1",
 				"Tags": [{
 					"Key": "Name",
-					"Value": {"Fn::Join": ["", ["NAT instance 10.", {"Ref": "ClassB"}, ".0.0/16"]]},
+					"Value": {"Fn::Join": ["", ["SSH bastion host/instance 10.", {"Ref": "ClassB"}, ".0.0/16"]]},
 					"PropagateAtLaunch": true
 				}],
 				"VPCZoneIdentifier": {"Ref": "PublicSubnets"}
@@ -468,5 +414,13 @@
 		}
 	},
 	"Outputs": {
+		"SSHBastionSecurityGroup": {
+			"Description": "Use this Security Group to reference incoming traffic from the SSH bastion host/instance.",
+			"Value": {"Ref": "SecurityGroup"}
+		},
+		"SSHBastionIPAddress": {
+			"Description": "The public IP address of the SSH bastion host/instance.",
+			"Value": {"Ref": "EIP"}
+		}
 	}
 }
