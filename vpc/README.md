@@ -58,7 +58,6 @@ This template describes a NAT Gateway that forwards HTTP, HTTPS and NTP traffic 
 
 ## NAT instance
 This template describes a **highly available** Network Address Translation (NAT) instance that forwards HTTP, HTTPS and NTP traffic from private subnets to the Internet.
-You can enable SSH access if you specify a SSH bastion host. You can use the ec2-user protected by the referenced EC2 KeyPair or personalized SSH access by using the IAM users and their configured public keys.
 
 ![Architecture](./vpc-nat-instance.png?raw=true "Architecture")
 ### Installation Guide
@@ -72,7 +71,7 @@ You can enable SSH access if you specify a SSH bastion host. You can use the ec2
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
 ## SSH bastion host/instance
-This template describes a **highly available** SSH bastion host/instance. SSH Port 22 is open to the world. You can enable the default ec2-user access protected by the referenced EC2 KeyPair. You can also enable personalized SSH access by using the IAM users and their configured public keys.
+This template describes a **highly available** SSH bastion host/instance. SSH Port 22 is open to the world. You can enable the default ec2-user access protected by the referenced EC2 KeyPair. You can also enable personalized SSH access by using the IAM users and their configured public keys. Use `ssh -A user@ip` to enable forwarding of the authentication agent connection when connection to the bastion host.
 
 ![Architecture](./vpc-ssh-bastion.png?raw=true "Architecture")
 ### Installation Guide

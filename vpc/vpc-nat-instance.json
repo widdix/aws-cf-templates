@@ -7,7 +7,7 @@
 			"Type": "AWS::EC2::VPC::Id"
 		},
 		"PublicSubnets": {
-			"Description": "Use SubnetAPublic, SubnetBPublic, [SubnetCPublic] output from vpc stack.",
+			"Description": "Use SubnetAPublic, SubnetBPublic [, SubnetCPublic[, SubnetDPublic]] output from vpc stack.",
 			"Type": "List<AWS::EC2::Subnet::Id>"
 		},
 		"ClassB": {
