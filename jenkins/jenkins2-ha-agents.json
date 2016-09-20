@@ -450,7 +450,8 @@
                 "content": {"Fn::Join": ["", [
                   "[main]", "\n",
                   "stack=", {"Ref": "AWS::StackId"}, "\n",
-                  "region=", {"Ref": "AWS::Region"}, "\n"
+                  "region=", {"Ref": "AWS::Region"}, "\n",
+                  "interval=1", "\n"
                 ]]},
                 "mode": "000400",
                 "owner": "root",
@@ -896,7 +897,8 @@
                 "content": {"Fn::Join": ["", [
                   "[main]", "\n",
                   "stack=", {"Ref": "AWS::StackId"}, "\n",
-                  "region=", {"Ref": "AWS::Region"}, "\n"
+                  "region=", {"Ref": "AWS::Region"}, "\n",
+                  "interval=1", "\n"
                 ]]},
                 "mode": "000400",
                 "owner": "root",
