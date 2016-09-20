@@ -173,7 +173,7 @@
 			"Metadata": {
 				"AWS::CloudFormation::Init": {
 					"configSets": {
-						"default": {"Fn::If": ["HasIAMUserSSHAccess", ["config", "ssh-access"], ["config"]]}
+						"default": {"Fn::If": ["HasIAMUserSSHAccess", ["ssh-access", "config"], ["config"]]}
 					},
 					"ssh-access": {
 						"files": {

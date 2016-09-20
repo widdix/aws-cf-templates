@@ -190,7 +190,7 @@
 				}]
 			}
 		},
-		"IAMPolicySSHAccess": {
+		"NATIAMPolicySSHAccess": {
 			"Type": "AWS::IAM::Policy",
 			"Condition": "HasIAMUserSSHAccess",
 			"Properties": { 
@@ -224,7 +224,7 @@
 				"Metadata": {
 				"AWS::CloudFormation::Init": {
 					"configSets": {
-						"default": {"Fn::If": ["HasIAMUserSSHAccess", ["config", "ssh-access"], ["config"]]}
+						"default": {"Fn::If": ["HasIAMUserSSHAccess", ["ssh-access", "config"], ["config"]]}
 					},
 					"ssh-access": {
 						"files": {
@@ -429,7 +429,7 @@
 				"SecurityGroups": [{"Ref": "NATSecurityGroup"}],
 				"KeyName": {"Fn::If": ["HasKeyName", {"Ref": "KeyName"}, {"Ref": "AWS::NoValue"}]},
 				"UserData": { "Fn::Base64": { "Fn::Join": ["", [
-					"#!/bin/bash -x","\n",
+					"#!/bin/bash -x", "\n",
 					"INSTANCEID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)", "\n",
 					"aws --region ", {"Ref": "AWS::Region"}, " ec2 associate-address --instance-id $INSTANCEID --allocation-id ", {"Fn::GetAtt": ["EIP" , "AllocationId"]},
 						" && aws --region ", {"Ref": "AWS::Region"}, " ec2 modify-instance-attribute --instance-id $INSTANCEID --source-dest-check \"{\\\"Value\\\": false}\"", 
