@@ -133,7 +133,6 @@
     "MasterELB": {
       "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
       "Properties": {
-        "Name": "jenkins-master",
         "Scheme": {"Ref": "MasterELBScheme"},
         "SecurityGroups": [{"Ref": "MasterELBSG"}],
         "Subnets": {"Ref": "MasterELBSubnets"},
@@ -156,7 +155,6 @@
         "Matcher": {
           "HttpCode": "200"
         },
-        "Name": "jenkins-master",
         "Port": 8080,
         "Protocol": "HTTP",
         "Tags": [{
