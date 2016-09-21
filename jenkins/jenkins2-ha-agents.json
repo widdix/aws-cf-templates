@@ -685,7 +685,7 @@
                   "PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin", "\n",
                   "MAILTO=root", "\n",
                   "HOME=/", "\n",
-                  "* * * * * root aws --region ", {"Ref": "AWS::Region"}, " cloudwatch put-metric-data --namespace ", {"Ref": "AWS::StackName"}, " --metric-name BuildQueue --value $(curl -s 'http://admin:", {"Ref": "MasterAdminPassword"}, "@localhost:8080/queue/api/xml' | grep -o '<item' | wc -l) --unit Count", "\n"
+                  "* * * * * root aws --region ", {"Ref": "AWS::Region"}, " cloudwatch put-metric-data --namespace ", {"Ref": "AWS::StackName"}, " --metric-name BuildQueue --value $(curl curl -s -u 'admin:", {"Ref": "MasterAdminPassword"}, "' 'http://@localhost:8080/queue/api/xml' | grep -o '<item' | wc -l) --unit Count", "\n"
                 ]]},
                 "mode": "000600",
                 "owner": "root",
@@ -1401,9 +1401,9 @@
       "Properties": {
         "EvaluationPeriods": "1",
         "Statistic": "Maximum",
-        "Threshold": "4",
+        "Threshold": "1",
         "AlarmDescription": "Alarm if Build Queue is high.",
-        "Period": "60",
+        "Period": "120",
         "AlarmActions": [{"Ref": "AgentScalingUpPolicy"}],
         "Namespace": {"Ref": "AWS::StackName"},
         "ComparisonOperator": "GreaterThanOrEqualToThreshold",
@@ -1422,11 +1422,11 @@
     "BuildQueueEmptyAlarm": {
       "Type": "AWS::CloudWatch::Alarm",
       "Properties": {
-        "EvaluationPeriods": "1",
+        "EvaluationPeriods": "5",
         "Statistic": "Maximum",
         "Threshold": "0",
         "AlarmDescription": "Alarm if Build Queue is empty.",
-        "Period": "60",
+        "Period": "120",
         "AlarmActions": [{"Ref": "AgentScalingDownPolicy"}],
         "Namespace": {"Ref": "AWS::StackName"},
         "ComparisonOperator": "LessThanOrEqualToThreshold",
