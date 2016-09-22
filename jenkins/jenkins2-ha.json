@@ -376,15 +376,19 @@
               "d_mountpoint_mount": {
                 "command": {"Fn::Join": ["", ["mount -t nfs4 -o vers=4.1 \"$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).", {"Ref": "MasterStorage"}, ".efs.", {"Ref": "AWS::Region"}, ".amazonaws.com:/\" /var/lib/jenkins"]]},
                 "test": "if mount | grep -q /var/lib/jenkins; then exit 1; else exit 0; fi"
+              },
+              "e_jenkins_repo": {
+                "command" : "wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo"
+              },
+              "f_jenkins_key": {
+                "command" : "rpm --import https://jenkins-ci.org/redhat/jenkins-ci.org.key"
               }
             }
           },
           "install": {
             "packages": {
-              "rpm": {
-                "jenkins": "http://pkg.jenkins-ci.org/redhat-stable/jenkins-2.7.4-1.1.noarch.rpm"
-              },
               "yum": {
+                "jenkins": [],
                 "git": [],
                 "awslogs": []
               }
