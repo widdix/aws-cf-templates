@@ -91,7 +91,7 @@
       "Type": "Number",
       "Default": "600",
       "MinValue": "600",
-      "MaxValue": "3600"
+      "MaxValue": "7200"
     },
     "AgentLogsRetentionInDays": {
       "Description": "Specifies the number of days you want to retain log events in the specified log group.",
