@@ -1094,11 +1094,9 @@
                   "log_stream_name = {instance_id}/var/log/dmesg", "\n",
                   "log_group_name = ", {"Ref": "AgentLogs"}, "\n",
                   "\n",
-                  "[/var/log/jenkins/jenkins.log]", "\n",
-                  "datetime_format = %d %b %Y %H:%M:%S", "\n",
-                  "multi_line_start_pattern = {datetime_format}", "\n",
-                  "file = /var/log/jenkins/jenkins.log", "\n",
-                  "log_stream_name = {instance_id}/var/log/jenkins/jenkins.log", "\n",
+                  "[/var/lib/jenkins/screenlog]", "\n",
+                  "file = /var/lib/jenkins/screenlog.*", "\n",
+                  "log_stream_name = {instance_id}/var/lib/jenkins/screenlog", "\n",
                   "log_group_name = ", {"Ref": "AgentLogs"}, "\n",
                   "\n"
                 ]]},
@@ -1255,7 +1253,7 @@
                 "test": "if /root/check-agent.sh; then exit 1; else exit 0; fi"
               },
               "g_start_agent": {
-                "command": "su - jenkins -c 'screen -m -d -S agent /var/lib/jenkins/start-agent.sh'",
+                "command": "su - jenkins -c 'screen -m -d -L -S agent /var/lib/jenkins/start-agent.sh'",
                 "cwd": "/var/lib/jenkins",
                 "test": "if su - jenkins -c 'screen -ls' | grep -q agent; then exit 1; else exit 0; fi"
               }
