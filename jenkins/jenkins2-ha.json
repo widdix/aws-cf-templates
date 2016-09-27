@@ -292,7 +292,31 @@
       "Metadata": {
         "AWS::CloudFormation::Init": {
           "configSets": {
-            "default": {"Fn::If": ["HasIAMUserSSHAccess", ["ssh-access", "mount",  "install", "setup"], ["mount",  "install", "setup"]]}
+            "default": {"Fn::If": ["HasIAMUserSSHAccess", ["ssh-access", "mount",  "install", "setup", "custom", "run"], ["mount",  "install", "setup", "custom", "run"]]}
+          },
+          "custom": {
+            "packages": {
+              "yum": {
+                "git": [],
+                "docker": []
+              }
+            },
+             "commands": {
+              "a_add_to_docker_group": {
+                "command": "usermod -a -G docker jenkins"
+              }
+            },
+            "services": {
+              "sysvinit": {
+                "docker": {
+                  "enabled": "true",
+                  "ensureRunning": "true",
+                  "packages": {
+                    "yum": ["docker"]
+                  }
+                }
+              }
+            }
           },
           "ssh-access": {
             "files": {
@@ -391,7 +415,6 @@
                 "jenkins": {"Fn::Join": ["", ["http://pkg.jenkins-ci.org/redhat-stable/jenkins-", {"Ref": "JenkinsVersion"}, "-1.1.noarch.rpm"]]}
               },
               "yum": {
-                "git": [],
                 "awslogs": []
               }
             },
@@ -511,13 +534,6 @@
                     "/etc/awslogs/awscli.conf"
                   ]
                 },
-                "jenkins": {
-                  "enabled": "true",
-                  "ensureRunning": "true",
-                  "packages": {
-                    "rpm": ["jenkins"]
-                  }
-                },
                 "cfn-hup": {
                   "enabled": "true",
                   "ensureRunning": "true",
@@ -530,25 +546,20 @@
             "files": {
               "/root/plugins.txt": {
                 "content": {"Fn::Join": ["", [
-                  "cloudbees-folder", "\n",
-                  "timestamper", "\n",
-                  "workflow-aggregator", "\n",
-                  "subversion", "\n",
-                  "ldap", "\n",
-                  "antisamy-markup-formatter", "\n",
-                  "ws-cleanup", "\n",
-                  "github-organization-folder", "\n",
-                  "ssh-slaves", "\n",
-                  "email-ext", "\n",
-                  "build-timeout", "\n",
                   "ant", "\n",
-                  "pipeline-stage-view", "\n",
-                  "matrix-auth", "\n",
-                  "mailer", "\n",
+                  "build-timeout", "\n",
+                  "docker-workflow", "\n",
                   "credentials-binding", "\n",
+                  "email-ext", "\n",
+                  "envinject", "\n",
+                  "github-organization-folder", "\n",
                   "gradle", "\n",
-                  "git", "\n",
-                  "pam-auth", "\n"
+                  "workflow-aggregator", "\n",
+                  "pipeline-maven", "\n",
+                  "ssh-slaves", "\n",
+                  "subversion", "\n",
+                  "timestamper", "\n",
+                  "ws-cleanup", "\n"
                 ]]},
                 "mode": "000400",
                 "owner": "root",
@@ -556,41 +567,62 @@
               }
             },
             "commands": {
-              "a_await_jenkins": {
+              "a_start_jenkins": {
+                "command":  "service jenkins start",
+                "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
+              },
+              "b_await_jenkins": {
                 "command": "until $(curl --output /dev/null --silent --head --fail --user \"admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)\" http://localhost:8080/cli/); do printf '.'; sleep 1; done",
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
-              "b_activate_slave_agent_port": {
+              "c_activate_slave_agent_port": {
                 "command": "sed -i -e \"s@<slaveAgentPort>.*</slaveAgentPort>@<slaveAgentPort>49817</slaveAgentPort>@\" /var/lib/jenkins/config.xml",
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
-              "c_restart_jenkins": {
+              "d_restart_jenkins": {
                 "command":  "service jenkins restart",
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
-              "d_await_jenkins": {
+              "e_await_jenkins": {
                 "command": "until $(curl --output /dev/null --silent --head --fail --user \"admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)\" http://localhost:8080/cli/); do printf '.'; sleep 1; done",
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
-              "e_install_plugins": {
+              "f_install_plugins": {
                 "command": "while read -r plugin; do java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s \"http://localhost:8080/\" -noKeyAuth install-plugin \"$plugin\" --username admin --password \"$(cat /var/lib/jenkins/secrets/initialAdminPassword)\"; done < /root/plugins.txt",
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
-              "f_restart_jenkins": {
+              "g_restart_jenkins": {
                 "command":  "service jenkins restart",
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
-              "g_await_jenkins": {
+              "h_await_jenkins": {
                 "command": "until $(curl --output /dev/null --silent --head --fail --user \"admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)\" http://localhost:8080/cli/); do printf '.'; sleep 1; done",
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
-              "h_set_admin_password": {
+              "i_set_admin_password": {
                 "command": {"Fn::Join": ["", ["echo 'jenkins.model.Jenkins.instance.securityRealm.createAccount(\"admin\", \"", {"Ref": "MasterAdminPassword"}, "\")' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s \"http://localhost:8080/\" -noKeyAuth groovy = --username admin --password \"$(cat /var/lib/jenkins/secrets/initialAdminPassword)\""]]},
+                "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
+              },
+              "j_stop_jenkins": {
+                "command":  "service jenkins stop",
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
               "z_create_setup_done_file": {
                 "command": "echo \"Setup done. Don not delete this file.\" > /var/lib/jenkins/setup_done.txt",
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
+              }
+            }
+          },
+          "run": {
+            "services": {
+              "sysvinit": {
+                "jenkins": {
+                  "enabled": "true",
+                  "ensureRunning": "true",
+                  "packages": {
+                    "rpm": ["jenkins"]
+                  }
+                }
               }
             }
           }
