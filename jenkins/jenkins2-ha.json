@@ -55,6 +55,12 @@
       "Type": "Number",
       "AllowedValues": [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653],
       "Default": 14
+    },
+    "JenkinsVersion": {
+      "Description": "Jenkins version number",
+      "Type": "String",
+      "AllowedPattern": "[0-9]+\\.[0-9]+\\.[0-9]+",
+      "Default": "2.7.4"
     }
   },
   "Mappings": {
@@ -382,7 +388,7 @@
           "install": {
             "packages": {
               "rpm": {
-                "jenkins": "http://pkg.jenkins-ci.org/redhat-stable/jenkins-2.7.4-1.1.noarch.rpm"
+                "jenkins": {"Fn::Join": ["", ["http://pkg.jenkins-ci.org/redhat-stable/jenkins-", {"Ref": "JenkinsVersion"}, "-1.1.noarch.rpm"]]}
               },
               "yum": {
                 "git": [],
