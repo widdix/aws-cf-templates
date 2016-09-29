@@ -1,6 +1,6 @@
 {
 	"AWSTemplateFormatVersion": "2010-09-09",
-	"Description": "VPC: public and private subnets in four availability zones, a cloudonaut.io template",
+	"Description": "VPC: public and private subnets in four availability zones",
 	"Parameters": {
 		"ClassB": {
 			"Description": "Class B of VPC (10.XXX.0.0/16)",
