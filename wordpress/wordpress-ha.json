@@ -224,7 +224,7 @@
 				},
 				"Path": "/",
 				"Policies": [{
-					"PolicyName": "UploadToS3",
+					"PolicyName": "s3",
 					"PolicyDocument": {
 						"Version": "2012-10-17",
 						"Statement": [{
@@ -234,6 +234,23 @@
 								{"Fn::Join": ["", ["arn:aws:s3:::", {"Ref": "BlogID"} ,"/*"]]}
 							]
 						}] 
+					}
+				}, {
+					"PolicyName": "logs",
+					"PolicyDocument":{
+						"Version": "2012-10-17",
+						"Statement": [{
+							"Effect": "Allow",
+							"Action": [
+								"logs:CreateLogGroup",
+								"logs:CreateLogStream",
+								"logs:PutLogEvents",
+								"logs:DescribeLogStreams"
+							],
+							"Resource": [
+								"arn:aws:logs:*:*:*"
+							]
+						}]
 					}
 				}]
 			}
@@ -351,7 +368,7 @@
 							}
 						},
 						"sources": {
-							"/var/www/html": "https://wordpress.org/wordpress-4.2.4.tar.gz"
+							"/var/www/html": "https://wordpress.org/wordpress-4.6.1.tar.gz"
 						},
 						"files": {
 							"/root/config.sh": {
@@ -368,8 +385,8 @@
 									"chmod -R 777 wp-content/ \n",									
 									"curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \n",
 									"php wp-cli.phar core install --url=\"", {"Fn::GetAtt": ["LoadBalancer", "DNSName"]}, "\" --title=\"", {"Ref": "BlogTitle"}, "\" --admin_user=\"", {"Ref": "BlogAdminUsername"}, "\" --admin_password=\"", {"Ref": "BlogAdminPassword"}, "\" --admin_email=\"", {"Ref": "BlogAdminEMail"}, "\" \n",
-									"php wp-cli.phar plugin install --activate amazon-web-services \n",
-									"php wp-cli.phar plugin install --activate amazon-s3-and-cloudfront \n",
+									"php wp-cli.phar plugin install --activate --version=1.0 amazon-web-services \n",
+									"php wp-cli.phar plugin install --activate --version=1.1 amazon-s3-and-cloudfront \n",
 									"CHARCOUNT=`printf \"",{"Ref": "BlogID"} ,"\" | wc -c` \n",
 									"php wp-cli.phar db query \"DELETE FROM wp_options WHERE option_name = 'tantan_wordpress_s3'; INSERT INTO wp_options (option_name, option_value, autoload) VALUES('tantan_wordpress_s3', 'a:15:{s:17:\\\"post_meta_version\\\";i:1;s:6:\\\"bucket\\\";s:", "$CHARCOUNT", ":\\\"", {"Ref": "BlogID"},"\\\";s:6:\\\"region\\\";s:0:\\\"\\\";s:6:\\\"domain\\\";s:9:\\\"subdomain\\\";s:7:\\\"expires\\\";s:1:\\\"0\\\";s:10:\\\"cloudfront\\\";s:0:\\\"\\\";s:13:\\\"object-prefix\\\";s:19:\\\"wp-content/uploads/\\\";s:10:\\\"copy-to-s3\\\";s:1:\\\"1\\\";s:13:\\\"serve-from-s3\\\";s:1:\\\"1\\\";s:17:\\\"remove-local-file\\\";s:1:\\\"0\\\";s:3:\\\"ssl\\\";s:7:\\\"request\\\";s:12:\\\"hidpi-images\\\";s:1:\\\"0\\\";s:17:\\\"object-versioning\\\";s:1:\\\"0\\\";s:21:\\\"use-yearmonth-folders\\\";s:1:\\\"1\\\";s:20:\\\"enable-object-prefix\\\";s:1:\\\"1\\\";}', 'yes');\" \n"
 								]]},
@@ -462,26 +479,6 @@
 								"mode": "000644",
 								"owner": "root",
 								"group": "root"
-							},
-							"/etc/cfn/cfn-hup.conf": {
-								"content": {"Fn::Join": ["", [
-									"[main]", "\n",
-									"stack=", {"Ref": "AWS::StackId"}, "\n",
-									"region=", {"Ref": "AWS::Region"}, "\n",
-									"interval=1", "\n"
-								]]},
-								"mode": "000400",
-								"owner": "root",
-								"group": "root"
-							},
-							"/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
-								"content": {"Fn::Join": ["", [
-									"[cfn-auto-reloader-hook]", "\n",
-									"triggers=post.update", "\n",
-									"path=Resources.LaunchConfiguration.Metadata.AWS::CloudFormation::Init", "\n",
-									"action=/opt/aws/bin/cfn-init --verbose --stack=", {"Ref": "AWS::StackName"}, " --region=", {"Ref": "AWS::Region"}, " --resource=LaunchConfiguration", "\n",
-									"runas=root", "\n"
-								]]}
 							}
 						},
 						"commands": {
@@ -509,14 +506,6 @@
 									"files": [
 										"/etc/awslogs/awslogs.conf",
 										"/etc/awslogs/awscli.conf"
-									]
-								},
-								"cfn-hup": {
-									"enabled": "true",
-									"ensureRunning": "true",
-									"files": [
-										"/etc/cfn/cfn-hup.conf",
-										"/etc/cfn/hooks.d/cfn-auto-reloader.conf"
 									]
 								}
 							}
