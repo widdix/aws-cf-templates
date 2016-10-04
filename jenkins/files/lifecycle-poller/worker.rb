@@ -48,6 +48,8 @@ def isAgentIdle(agent)
       $log.error "unexpected body: #{res.body}"
       return false
     end
+  elsif res.code == '404'
+    return true
   else
     $log.error "unexpected response code: #{res.code}"
     return false

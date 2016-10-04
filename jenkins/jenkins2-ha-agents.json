@@ -716,7 +716,7 @@
                   "PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin", "\n",
                   "MAILTO=root", "\n",
                   "HOME=/", "\n",
-                  "* * * * * root aws --region ", {"Ref": "AWS::Region"}, " cloudwatch put-metric-data --namespace ", {"Ref": "AWS::StackName"}, " --metric-name BuildQueue --value $(curl curl -s -u 'admin:", {"Ref": "MasterAdminPassword"}, "' 'http://@localhost:8080/queue/api/xml' | grep -o '<item' | wc -l) --unit Count", "\n"
+                  "* * * * * root aws --region ", {"Ref": "AWS::Region"}, " cloudwatch put-metric-data --namespace ", {"Ref": "AWS::StackName"}, " --metric-name BuildQueue --value $(curl -s -u 'admin:", {"Ref": "MasterAdminPassword"}, "' 'http://@localhost:8080/queue/api/xml' | grep -o '<item' | wc -l) --unit Count", "\n"
                 ]]},
                 "mode": "000600",
                 "owner": "root",
