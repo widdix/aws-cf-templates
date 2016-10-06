@@ -560,6 +560,7 @@
             "files": {
               "/root/plugins.txt": {
                 "content": {"Fn::Join": ["", [
+                  "jqs-monitoring", "\n",
                   "ant", "\n",
                   "build-timeout", "\n",
                   "docker-workflow", "\n",

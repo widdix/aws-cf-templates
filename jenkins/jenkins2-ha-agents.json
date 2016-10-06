@@ -691,6 +691,7 @@
             "files": {
               "/root/plugins.txt": {
                 "content": {"Fn::Join": ["", [
+                  "jqs-monitoring", "\n",
                   "ant", "\n",
                   "build-timeout", "\n",
                   "docker-workflow", "\n",
@@ -710,13 +711,25 @@
                 "owner": "root",
                 "group": "root"
               },
+              "/etc/cron.d/cloudwatch-build-active": {
+                "content": {"Fn::Join": ["", [
+                  "SHELL=/bin/bash", "\n",
+                  "PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin", "\n",
+                  "MAILTO=root", "\n",
+                  "HOME=/", "\n",
+                  "* * * * * root aws --region ", {"Ref": "AWS::Region"}, " cloudwatch put-metric-data --namespace ", {"Ref": "AWS::StackName"}, " --metric-name BuildActive --value $(curl -s -u 'admin:", {"Ref": "MasterAdminPassword"}, "' 'http://@localhost:8080/computer/api/xml?xpath=*/busyExecutors' | sed -r 's/<[/a-zA-Z]*>//g') --unit Count", "\n"
+                ]]},
+                "mode": "000600",
+                "owner": "root",
+                "group": "root"
+              },
               "/etc/cron.d/cloudwatch-build-queue": {
                 "content": {"Fn::Join": ["", [
                   "SHELL=/bin/bash", "\n",
                   "PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin", "\n",
                   "MAILTO=root", "\n",
                   "HOME=/", "\n",
-                  "* * * * * root aws --region ", {"Ref": "AWS::Region"}, " cloudwatch put-metric-data --namespace ", {"Ref": "AWS::StackName"}, " --metric-name BuildQueue --value $(curl -s -u 'admin:", {"Ref": "MasterAdminPassword"}, "' 'http://@localhost:8080/queue/api/xml' | grep -o '<item' | wc -l) --unit Count", "\n"
+                  "* * * * * root aws --region ", {"Ref": "AWS::Region"}, " cloudwatch put-metric-data --namespace ", {"Ref": "AWS::StackName"}, " --metric-name BuildQueue --value $(curl -s -u 'admin:", {"Ref": "MasterAdminPassword"}, "' 'http://@localhost:8080/jqs-monitoring/api/xml?xpath=/JQSMonitoring/buildQueue/numberOfJobs' | sed -r 's/<[/a-zA-Z]*>//g') --unit Count", "\n"
                 ]]},
                 "mode": "000600",
                 "owner": "root",
@@ -1510,7 +1523,7 @@
         "ScalingAdjustment": "-1"
       }
     },
-    "BuildQueueEmptyAlarm": {
+    "BuildActiveEmptyAlarm": {
       "Type": "AWS::CloudWatch::Alarm",
       "Properties": {
         "EvaluationPeriods": "5",
@@ -1521,7 +1534,7 @@
         "AlarmActions": [{"Ref": "AgentScalingDownPolicy"}],
         "Namespace": {"Ref": "AWS::StackName"},
         "ComparisonOperator": "LessThanOrEqualToThreshold",
-        "MetricName": "BuildQueue"
+        "MetricName": "BuildActive"
       }
     }
   },
