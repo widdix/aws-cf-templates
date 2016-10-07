@@ -46,6 +46,12 @@
 			"Type": "Number",
 			"AllowedValues": [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653],
 			"Default": 14
+		},
+		"NewRelicLicenseKey": {
+			"Description": "Optional New Relic License Key will install the New Relic Servers for Linux agent.",
+			"Type": "String",
+			"Default": "",
+			"NoEcho": "true"
 		}
 	},
 	"Mappings": {
@@ -66,7 +72,8 @@
 	"Conditions": {
 		"HasKeyName": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "KeyName"}]}]},
 		"HasIAMUserSSHAccess": {"Fn::Equals": ["true", {"Ref": "IAMUserSSHAccess"}]},
-		"HasSSHBastionSecurityGroup": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "SSHBastionSecurityGroup"}]}]}
+		"HasSSHBastionSecurityGroup": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "SSHBastionSecurityGroup"}]}]},
+		"HasNewRelic": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "NewRelicLicenseKey"}]}]}
 	},
 	"Resources": {
 		"EIP": {
@@ -224,7 +231,46 @@
 				"Metadata": {
 				"AWS::CloudFormation::Init": {
 					"configSets": {
-						"default": {"Fn::If": ["HasIAMUserSSHAccess", ["ssh-access", "config"], ["config"]]}
+						"default": {"Fn::If": ["HasNewRelic",
+							{"Fn::If": ["HasIAMUserSSHAccess",
+								["ssh-access", "newrelic", "config"],
+								["newrelic", "config"]]}, 
+							{"Fn::If": ["HasIAMUserSSHAccess",
+								["ssh-access", "config"],
+								["config"]]
+							}]
+						}
+					},
+					"newrelic": {
+						"packages": {
+							"rpm": {
+								"newrelic-sysmond": "https://download.newrelic.com/pub/newrelic/el5/x86_64/newrelic-sysmond-2.3.0.132-1.x86_64.rpm"
+							}
+						},
+						"files": {
+							"/etc/newrelic/nrsysmond.cfg": {
+								"content": {"Fn::Join": ["", [
+									"license_key=", {"Ref": "NewRelicLicenseKey"}, "\n",
+									"loglevel=info", "\n",
+									"logfile=/var/log/newrelic/nrsysmond.log", "\n",
+									"labels=StackName:", {"Ref": "AWS::StackName"}, ";AccountId:", {"Ref": "AWS::AccountId"}, ";Region:", {"Ref": "AWS::Region"}, "\n",
+								]]},
+								"mode": "000640",
+								"owner": "root",
+								"group": "newrelic"
+							}
+						},
+						"services": {
+							"sysvinit": {
+								"newrelic-sysmond": {
+									"enabled": "true",
+									"ensureRunning": "true",
+									"files": [
+										"/etc/newrelic/nrsysmond.cfg"
+									]
+								}
+							}
+						}
 					},
 					"ssh-access": {
 						"files": {

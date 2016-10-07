@@ -70,12 +70,19 @@
 			"Description": "The instance type of database server (e.g. db.t2.micro).",
 			"Type": "String",
 			"Default": "db.t2.micro"
+		},
+		"NewRelicLicenseKey": {
+			"Description": "Optional New Relic License Key will install the New Relic Servers for Linux agent.",
+			"Type": "String",
+			"Default": "",
+			"NoEcho": "true"
 		}
 	},
 	"Conditions": {
 		"HasKeyName": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "WebServerKeyName"}]}]},
 		"HasIAMUserSSHAccess": {"Fn::Equals": ["true", {"Ref": "WebServerIAMUserSSHAccess"}]},
-		"HasSSHBastionSecurityGroup": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "WebServerSSHBastionSecurityGroup"}]}]}
+		"HasSSHBastionSecurityGroup": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "WebServerSSHBastionSecurityGroup"}]}]},
+		"HasNewRelic": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "NewRelicLicenseKey"}]}]}
 	},
 	"Mappings": {
 		"EC2RegionMap": {
@@ -289,7 +296,46 @@
 			"Metadata": {
 				"AWS::CloudFormation::Init": {
 					"configSets": {
-						"default": {"Fn::If": ["HasIAMUserSSHAccess", ["ssh-access", "config"], ["config"]]}
+						"default": {"Fn::If": ["HasNewRelic",
+							{"Fn::If": ["HasIAMUserSSHAccess",
+								["ssh-access", "newrelic", "config"],
+								["newrelic", "config"]]}, 
+							{"Fn::If": ["HasIAMUserSSHAccess",
+								["ssh-access", "config"],
+								["config"]]
+							}]
+						}
+					},
+					"newrelic": {
+						"packages": {
+							"rpm": {
+								"newrelic-sysmond": "https://download.newrelic.com/pub/newrelic/el5/x86_64/newrelic-sysmond-2.3.0.132-1.x86_64.rpm"
+							}
+						},
+						"files": {
+							"/etc/newrelic/nrsysmond.cfg": {
+								"content": {"Fn::Join": ["", [
+									"license_key=", {"Ref": "NewRelicLicenseKey"}, "\n",
+									"loglevel=info", "\n",
+									"logfile=/var/log/newrelic/nrsysmond.log", "\n",
+									"labels=StackName:", {"Ref": "AWS::StackName"}, ";AccountId:", {"Ref": "AWS::AccountId"}, ";Region:", {"Ref": "AWS::Region"}, "\n",
+								]]},
+								"mode": "000640",
+								"owner": "root",
+								"group": "newrelic"
+							}
+						},
+						"services": {
+							"sysvinit": {
+								"newrelic-sysmond": {
+									"enabled": "true",
+									"ensureRunning": "true",
+									"files": [
+										"/etc/newrelic/nrsysmond.cfg"
+									]
+								}
+							}
+						}
 					},
 					"ssh-access": {
 						"files": {

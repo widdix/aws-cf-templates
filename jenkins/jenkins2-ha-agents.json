@@ -104,13 +104,20 @@
       "Type": "String",
       "AllowedPattern": "[0-9]+\\.[0-9]+\\.[0-9]+",
       "Default": "2.7.4"
+    },
+    "NewRelicLicenseKey": {
+      "Description": "Optional New Relic License Key will install the New Relic Servers for Linux agent.",
+      "Type": "String",
+      "Default": "",
+      "NoEcho": "true"
     }
   },
   "Conditions": {
     "ZeroAgents": {"Fn::Equals": ["0", {"Ref": "AgentDesiredCapacity"}]},
     "HasKeyName": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "KeyName"}]}]},
     "HasIAMUserSSHAccess": {"Fn::Equals": ["true", {"Ref": "IAMUserSSHAccess"}]},
-    "HasSSHBastionSecurityGroup": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "SSHBastionSecurityGroup"}]}]}
+    "HasSSHBastionSecurityGroup": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "SSHBastionSecurityGroup"}]}]},
+    "HasNewRelic": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "NewRelicLicenseKey"}]}]}
   },
   "Mappings": {
     "RegionMap": {
@@ -391,7 +398,15 @@
       "Metadata": {
         "AWS::CloudFormation::Init": {
           "configSets": {
-            "default": {"Fn::If": ["HasIAMUserSSHAccess", ["ssh-access", "mount",  "install", "setup", "custom", "run"], ["mount",  "install", "setup", "custom", "run"]]}
+            "default": {"Fn::If": ["HasNewRelic",
+              {"Fn::If": ["HasIAMUserSSHAccess",
+                ["ssh-access", "mount",  "install", "setup", "newrelic", "custom", "run"],
+                ["mount",  "install", "setup", "newrelic", "custom", "run"]]}, 
+              {"Fn::If": ["HasIAMUserSSHAccess",
+                ["ssh-access", "mount",  "install", "setup", "custom", "run"],
+                ["mount",  "install", "setup", "custom", "run"]]
+              }]
+            }
           },
           "custom": {
             "packages": {
@@ -413,6 +428,37 @@
                   "packages": {
                     "yum": ["docker"]
                   }
+                }
+              }
+            }
+          },
+          "newrelic": {
+            "packages": {
+              "rpm": {
+                "newrelic-sysmond": "https://download.newrelic.com/pub/newrelic/el5/x86_64/newrelic-sysmond-2.3.0.132-1.x86_64.rpm"
+              }
+            },
+            "files": {
+              "/etc/newrelic/nrsysmond.cfg": {
+                "content": {"Fn::Join": ["", [
+                  "license_key=", {"Ref": "NewRelicLicenseKey"}, "\n",
+                  "loglevel=info", "\n",
+                  "logfile=/var/log/newrelic/nrsysmond.log", "\n",
+                  "labels=StackName:", {"Ref": "AWS::StackName"}, ";AccountId:", {"Ref": "AWS::AccountId"}, ";Region:", {"Ref": "AWS::Region"}, "\n",
+                ]]},
+                "mode": "000640",
+                "owner": "root",
+                "group": "newrelic"
+              }
+            },
+            "services": {
+              "sysvinit": {
+                "newrelic-sysmond": {
+                  "enabled": "true",
+                  "ensureRunning": "true",
+                  "files": [
+                    "/etc/newrelic/nrsysmond.cfg"
+                  ]
                 }
               }
             }
@@ -1028,7 +1074,15 @@
       "Metadata": {
         "AWS::CloudFormation::Init": {
           "configSets": {
-            "default": {"Fn::If": ["HasIAMUserSSHAccess", ["ssh-access", "install", "setup", "custom", "run"], ["install", "setup", "custom", "run"]]}
+            "default": {"Fn::If": ["HasNewRelic",
+              {"Fn::If": ["HasIAMUserSSHAccess",
+                ["ssh-access", "install", "setup", "newrelic", "custom", "run"],
+                ["install", "setup", "newrelic", "custom", "run"]]}, 
+              {"Fn::If": ["HasIAMUserSSHAccess",
+                ["ssh-access",  "install", "setup", "custom", "run"],
+                ["install", "setup", "custom", "run"]]
+              }]
+            }
           },
           "custom": {
             "packages": {
@@ -1050,6 +1104,37 @@
                   "packages": {
                     "yum": ["docker"]
                   }
+                }
+              }
+            }
+          },
+          "newrelic": {
+            "packages": {
+              "rpm": {
+                "newrelic-sysmond": "https://download.newrelic.com/pub/newrelic/el5/x86_64/newrelic-sysmond-2.3.0.132-1.x86_64.rpm"
+              }
+            },
+            "files": {
+              "/etc/newrelic/nrsysmond.cfg": {
+                "content": {"Fn::Join": ["", [
+                  "license_key=", {"Ref": "NewRelicLicenseKey"}, "\n",
+                  "loglevel=info", "\n",
+                  "logfile=/var/log/newrelic/nrsysmond.log", "\n",
+                  "labels=StackName:", {"Ref": "AWS::StackName"}, ";AccountId:", {"Ref": "AWS::AccountId"}, ";Region:", {"Ref": "AWS::Region"}, "\n",
+                ]]},
+                "mode": "000640",
+                "owner": "root",
+                "group": "newrelic"
+              }
+            },
+            "services": {
+              "sysvinit": {
+                "newrelic-sysmond": {
+                  "enabled": "true",
+                  "ensureRunning": "true",
+                  "files": [
+                    "/etc/newrelic/nrsysmond.cfg"
+                  ]
                 }
               }
             }
