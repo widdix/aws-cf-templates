@@ -318,7 +318,7 @@
 									"license_key=", {"Ref": "NewRelicLicenseKey"}, "\n",
 									"loglevel=info", "\n",
 									"logfile=/var/log/newrelic/nrsysmond.log", "\n",
-									"labels=StackName:", {"Ref": "AWS::StackName"}, ";AccountId:", {"Ref": "AWS::AccountId"}, ";Region:", {"Ref": "AWS::Region"}, "\n",
+									"labels=StackName:", {"Ref": "AWS::StackName"}, ";AccountId:", {"Ref": "AWS::AccountId"}, ";Region:", {"Ref": "AWS::Region"}, "\n"
 								]]},
 								"mode": "000640",
 								"owner": "root",
