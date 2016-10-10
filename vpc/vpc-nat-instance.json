@@ -12,9 +12,9 @@
 		},
 		"ClassB": {
 			"Description": "Use ClassB output from vpc stack.",
-			"Type": "String",
-			"MinLength": "1",
-			"MaxLength": "3"
+			"Type": "Number",
+			"MinValue": "0",
+			"MaxValue": "255"
 		},
 		"RouteTablePrivate": {
 			"Description": "Use RouteTablePrivate output from vpc stack.",

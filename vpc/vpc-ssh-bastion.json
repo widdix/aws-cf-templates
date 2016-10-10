@@ -12,9 +12,9 @@
 		},
 		"ClassB": {
 			"Description": "Use ClassB output from vpc stack.",
-			"Type": "String",
-			"MinLength": "1",
-			"MaxLength": "3"
+			"Type": "Number",
+			"MinValue": "0",
+			"MaxValue": "255"
 		},
 		"KeyName": {
 			"Description": "Optional key pair of the ec2-user to establish a SSH connection to the SSH bastion host/instance.",

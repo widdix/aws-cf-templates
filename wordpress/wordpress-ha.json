@@ -17,7 +17,8 @@
 		"BlogID": {
 			"Description": "A unique identifier for your blog. For internal use only.",
 			"Type": "String",
-			"AllowedPattern": "[A-Za-z0-9\\-]+",
+			"AllowedPattern": "[a-z0-9\\-]+",
+			"MaxLength": 32,
 			"ConstraintDescription": "Only letters, digits or dash allowed."
 		},
 		"BlogTitle": {

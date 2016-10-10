@@ -4,10 +4,10 @@
 	"Parameters": {
 		"ClassB": {
 			"Description": "Class B of VPC (10.XXX.0.0/16)",
-			"Type": "String",
-			"MinLength": "1",
-			"MaxLength": "3",
-			"Default": "0"
+			"Type": "Number",
+			"Default": "0",
+			"MinValue": "0",
+			"MaxValue": "255"
 		}
 	},
 	"Resources": {
