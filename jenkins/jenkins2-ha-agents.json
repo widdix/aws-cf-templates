@@ -542,11 +542,11 @@
             "commands": {
               "a_groupadd": {
                 "command": "groupadd -g 497 jenkins",
-                "test": "if grep -q jenkins /etc/group; then exit 1; else exit 0; fi"
+                "test": "if grep -q jenkins: /etc/group; then exit 1; else exit 0; fi"
               },
               "b_useradd": {
                 "command": "adduser -u 498 -g 497 -s /bin/false -d /var/lib/jenkins -c 'Jenkins Continuous Integration Server' jenkins",
-                "test": "if grep -q jenkins /etc/passwd; then exit 1; else exit 0; fi"
+                "test": "if grep -q jenkins: /etc/passwd; then exit 1; else exit 0; fi"
               },
               "c_mountpoint_mkdir": {
                 "command": "mkdir /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins",
@@ -1315,11 +1315,11 @@
             "commands": {
               "a_groupadd": {
                 "command": "groupadd -g 497 jenkins",
-                "test": "if grep -q jenkins /etc/group; then exit 1; else exit 0; fi"
+                "test": "if grep -q jenkins: /etc/group; then exit 1; else exit 0; fi"
               },
               "b_useradd": {
                 "command": "adduser -u 498 -g 497 -s /bin/bash -d /var/lib/jenkins -c 'Jenkins Continuous Integration Server' jenkins",
-                "test": "if grep -q jenkins /etc/passwd; then exit 1; else exit 0; fi"
+                "test": "if grep -q jenkins: /etc/passwd; then exit 1; else exit 0; fi"
               },
               "c_mkdir": {
                 "command": "mkdir /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins",
