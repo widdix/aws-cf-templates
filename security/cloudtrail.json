@@ -29,7 +29,7 @@
               "Service": "cloudtrail.amazonaws.com"
             },
             "Action": "s3:GetBucketAcl",
-            "Resource": {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref": "TrailBucket"}]]}
+            "Resource": {"Fn::Sub": "arn:aws:s3:::${TrailBucket}"}
           }, {
             "Sid": "AWSCloudTrailWrite",
             "Effect": "Allow",
@@ -37,7 +37,7 @@
               "Service": "cloudtrail.amazonaws.com"
             },
             "Action": "s3:PutObject",
-            "Resource": {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref": "TrailBucket"}, "/AWSLogs/", {"Ref": "AWS::AccountId"}, "/*"]]},
+            "Resource": {"Fn::Sub": "arn:aws:s3:::${TrailBucket}/AWSLogs/${AWS::AccountId}/*"},
             "Condition": {
               "StringEquals": {
                 "s3:x-amz-acl": "bucket-owner-full-control"

@@ -3,19 +3,24 @@
   "Description": "Jenkins 2: highly available Jenkins master, a cloudonaut.io template",
   "Parameters": {
     "VPC": {
-      "Description": "Use VPC output from vpc stack.",
+      "Description": "Use VPC output from vpc/vpc-*azs stack.",
       "Type": "AWS::EC2::VPC::Id"
     },
     "SubnetA": {
-      "Description": "Use SubnetAPublic or SubnetAPrivate output from vpc stack. If you choose SubnetAPrivate you need a NAT instance or a NAT gateway.",
+      "Description": "Use SubnetAPublic or SubnetAPrivate output from vpc/vpc-*azs stack. If you choose SubnetAPrivate you need a NAT instance or a NAT gateway.",
       "Type": "AWS::EC2::Subnet::Id"
     },
     "SubnetB": {
-      "Description": "Use SubnetBPublic or SubnetBPrivate output from vpc stack. If you choose SubnetAPrivate you need a NAT instance or a NAT gateway.",
+      "Description": "Use SubnetBPublic or SubnetBPrivate output from vpc/vpc-*azs stack. If you choose SubnetAPrivate you need a NAT instance or a NAT gateway.",
       "Type": "AWS::EC2::Subnet::Id"
     },
     "SSHBastionSecurityGroup": {
-      "Description": "Optional use SSHBastionSecurityGroup output from vpc-ssh-bastion stack.",
+      "Description": "Optional use SSHBastionSecurityGroup output from vpc/vpc-ssh-bastion stack.",
+      "Type": "String",
+      "Default": ""
+    },
+    "AuthProxySecurityGroup": {
+      "Description": "Optional use AuthProxySecurityGroup output from security/auth-proxy-* stack.",
       "Type": "String",
       "Default": ""
     },
@@ -88,6 +93,8 @@
     "HasKeyName": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "KeyName"}]}]},
     "HasIAMUserSSHAccess": {"Fn::Equals": ["true", {"Ref": "IAMUserSSHAccess"}]},
     "HasSSHBastionSecurityGroup": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "SSHBastionSecurityGroup"}]}]},
+    "HasAuthProxySecurityGroup": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "AuthProxySecurityGroup"}]}]},
+    "HasNotAuthProxySecurityGroup": {"Fn::Equals": ["", {"Ref": "AuthProxySecurityGroup"}]},
     "HasNewRelic": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "NewRelicLicenseKey"}]}]}
   },
   "Resources": {
@@ -134,13 +141,29 @@
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "jenkins-elb-master",
-        "VpcId": {"Ref": "VPC"},
-        "SecurityGroupIngress": [{
-          "CidrIp": "0.0.0.0/0",
-          "FromPort": 80,
-          "ToPort": 80,
-          "IpProtocol": "tcp"
-        }]
+        "VpcId": {"Ref": "VPC"}
+      }
+    },
+    "MasterELBSGInWorld": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Condition": "HasNotAuthProxySecurityGroup",
+      "Properties": {
+        "GroupId": {"Ref": "MasterELBSG"},
+        "IpProtocol": "tcp",
+        "FromPort": 80,
+        "ToPort": 80,
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "MasterELBSGInAuthProxy": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Condition": "HasAuthProxySecurityGroup",
+      "Properties": {
+        "GroupId": {"Ref": "MasterELBSG"},
+        "IpProtocol": "tcp",
+        "FromPort": 80,
+        "ToPort": 80,
+        "SourceSecurityGroupId": {"Ref": "AuthProxySecurityGroup"}
       }
     },
     "MasterELB": {
@@ -267,7 +290,7 @@
               "iam:GetSSHPublicKey"
             ],
             "Resource": [
-              {"Fn::Join": ["", ["arn:aws:iam::", {"Ref": "AWS::AccountId"},":user/*"]]}
+              {"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:user/*"}
             ]
           }]
         }
@@ -412,9 +435,7 @@
                 "group": "root"
               },
               "/etc/cron.d/import_users": {
-                "content": {"Fn::Join": ["", [
-                  "*/10 * * * * root /opt/import_users.sh", "\n"
-                ]]},
+                "content": "*/10 * * * * root /opt/import_users.sh\n",
                 "mode": "000644",
                 "owner": "root",
                 "group": "root"
@@ -465,7 +486,7 @@
                 "test": "[ ! -d /var/lib/jenkins ]"
               },
               "d_mountpoint_mount": {
-                "command": {"Fn::Join": ["", ["mount -t nfs4 -o vers=4.1 \"$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).", {"Ref": "MasterStorage"}, ".efs.", {"Ref": "AWS::Region"}, ".amazonaws.com:/\" /var/lib/jenkins"]]},
+                "command": {"Fn::Sub": "mount -t nfs4 -o vers=4.1 \"$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).${MasterStorage}.efs.${AWS::Region}.amazonaws.com:/\" /var/lib/jenkins"},
                 "test": "if mount | grep -q /var/lib/jenkins; then exit 1; else exit 0; fi"
               }
             }
@@ -473,7 +494,7 @@
           "install": {
             "packages": {
               "rpm": {
-                "jenkins": {"Fn::Join": ["", ["http://pkg.jenkins-ci.org/redhat-stable/jenkins-", {"Ref": "JenkinsVersion"}, "-1.1.noarch.rpm"]]}
+                "jenkins": {"Fn::Sub": "http://pkg.jenkins-ci.org/redhat-stable/jenkins-${JenkinsVersion}-1.1.noarch.rpm"}
               },
               "yum": {
                 "awslogs": []
@@ -662,7 +683,7 @@
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
               "i_set_admin_password": {
-                "command": {"Fn::Join": ["", ["echo 'jenkins.model.Jenkins.instance.securityRealm.createAccount(\"admin\", \"", {"Ref": "MasterAdminPassword"}, "\")' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s \"http://localhost:8080/\" -noKeyAuth groovy = --username admin --password \"$(cat /var/lib/jenkins/secrets/initialAdminPassword)\""]]},
+                "command": {"Fn::Sub": "echo 'jenkins.model.Jenkins.instance.securityRealm.createAccount(\"admin\", \"${MasterAdminPassword}\")' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s \"http://localhost:8080/\" -noKeyAuth groovy = --username admin --password \"$(cat /var/lib/jenkins/secrets/initialAdminPassword)\""},
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
               "j_stop_jenkins": {
@@ -740,7 +761,7 @@
       "Description": "User name for the Jenkins admin."
     },
     "MasterEndpoint": {
-      "Value": {"Fn::Join": ["", ["http://", {"Fn::GetAtt": ["MasterELB", "DNSName"]}]]},
+      "Value": {"Fn::Sub": "http://${MasterELB.DNSName}"},
       "Description": "The DNS name for the Jenkins Master load balancer."
     }
   }

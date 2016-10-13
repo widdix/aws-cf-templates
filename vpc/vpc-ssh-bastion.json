@@ -3,15 +3,15 @@
 	"Description": "VPC: highly available SSH bastion host/instance, a cloudonaut.io template",
 	"Parameters": {
 		"VPC": {
-			"Description": "Use VPC output from vpc stack.",
+			"Description": "Use VPC output from vpc/vpc-*azs stack.",
 			"Type": "AWS::EC2::VPC::Id"
 		},
 		"PublicSubnets": {
-			"Description": "Use SubnetAPublic, SubnetBPublic [, SubnetCPublic[, SubnetDPublic]] output from vpc stack.",
+			"Description": "Use SubnetAPublic, SubnetBPublic [, SubnetCPublic[, SubnetDPublic]] output from vpc/vpc-*azs stack.",
 			"Type": "List<AWS::EC2::Subnet::Id>"
 		},
 		"ClassB": {
-			"Description": "Use ClassB output from vpc stack.",
+			"Description": "Use ClassB output from vpc/vpc-*azs stack.",
 			"Type": "Number",
 			"MinValue": "0",
 			"MaxValue": "255"
@@ -81,7 +81,7 @@
 		"SecurityGroup": {
 			"Type": "AWS::EC2::SecurityGroup",
 			"Properties": {
-				"GroupDescription": {"Fn::Join": ["", ["SSH bastion host/instance 10.", {"Ref": "ClassB"}, ".0.0/16"]]},
+				"GroupDescription": {"Fn::Sub": "SSH bastion host/instance 10.${ClassB}.0.0/16"},
 				"SecurityGroupIngress": [{
 					"IpProtocol": "tcp",
 					"FromPort": 22,
@@ -169,7 +169,7 @@
 							"iam:GetSSHPublicKey"
 						],
 						"Resource": [
-							{"Fn::Join": ["", ["arn:aws:iam::", {"Ref": "AWS::AccountId"},":user/*"]]}
+							{"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:user/*"}
 						]
 					}]
 				}
@@ -253,9 +253,7 @@
 								"group": "root"
 							},
 							"/etc/cron.d/import_users": {
-								"content": {"Fn::Join": ["", [
-									"*/10 * * * * root /opt/import_users.sh", "\n"
-								]]},
+								"content": "*/10 * * * * root /opt/import_users.sh\n",
 								"mode": "000644",
 								"owner": "root",
 								"group": "root"
@@ -440,7 +438,7 @@
 				"MinSize": "1",
 				"Tags": [{
 					"Key": "Name",
-					"Value": {"Fn::Join": ["", ["SSH bastion host/instance 10.", {"Ref": "ClassB"}, ".0.0/16"]]},
+					"Value": {"Fn::Sub": "SSH bastion host/instance 10.${ClassB}.0.0/16"},
 					"PropagateAtLaunch": true
 				}],
 				"VPCZoneIdentifier": {"Ref": "PublicSubnets"}

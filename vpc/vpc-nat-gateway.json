@@ -3,11 +3,11 @@
 	"Description": "VPC: NAT Gateway for private subnets, a cloudonaut.io template",
 	"Parameters": {
 		"PublicSubnet": {
-			"Description": "Use SubnetAPublic, SubnetBPublic, SubnetCPublic, or SubnetDPublic output from vpc stack.",
+			"Description": "Use SubnetAPublic, SubnetBPublic, SubnetCPublic, or SubnetDPublic output from vpc/vpc-*azs stack.",
 			"Type": "AWS::EC2::Subnet::Id"
 		},
 		"RouteTablePrivate": {
-			"Description": "Use RouteTablePrivate output from vpc stack.",
+			"Description": "Use RouteTablePrivate output from vpc/vpc-*azs stack.",
 			"Type": "String"
 		}
 	},

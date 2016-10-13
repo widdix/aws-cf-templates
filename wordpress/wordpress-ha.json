@@ -3,15 +3,15 @@
 	"Description": "Wordpress: fault tolerant and scalable, a cloudonaut.io template",
 	"Parameters": {
 		"VPC": {
-			"Description": "Use VPC output from vpc stack.",
+			"Description": "Use VPC output vpc/vpc-*azs vpc stack.",
 			"Type": "AWS::EC2::VPC::Id"
 		},
 		"PublicSubnets": {
-			"Description": "Use SubnetAPublic, SubnetBPublic [, SubnetCPublic[, SubnetDPublic]] output from vpc stack.",
+			"Description": "Use SubnetAPublic, SubnetBPublic [, SubnetCPublic[, SubnetDPublic]] output from vpc/vpc-*azs stack.",
 			"Type": "List<AWS::EC2::Subnet::Id>"
 		},
 		"PrivateSubnets": {
-			"Description": "Use SubnetAPrivate, SubnetBPrivate [, SubnetCPrivate[, SubnetDPrivate]] output from vpc stack.",
+			"Description": "Use SubnetAPrivate, SubnetBPrivate [, SubnetCPrivate[, SubnetDPrivate]] output from vpc/vpc-*azs stack.",
 			"Type": "List<AWS::EC2::Subnet::Id>"
 		},
 		"BlogID": {
@@ -41,7 +41,12 @@
 			"Type": "String"
 		},
 		"WebServerSSHBastionSecurityGroup": {
-			"Description": "Optional use SSHBastionSecurityGroup output from vpc-ssh-bastion stack.",
+			"Description": "Optional use SSHBastionSecurityGroup output from vpc/vpc-ssh-bastion stack.",
+			"Type": "String",
+			"Default": ""
+		},
+		"AuthProxySecurityGroup": {
+			"Description": "Optional use AuthProxySecurityGroup output from security/auth-proxy-* stack.",
 			"Type": "String",
 			"Default": ""
 		},
@@ -83,6 +88,8 @@
 		"HasKeyName": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "WebServerKeyName"}]}]},
 		"HasIAMUserSSHAccess": {"Fn::Equals": ["true", {"Ref": "WebServerIAMUserSSHAccess"}]},
 		"HasSSHBastionSecurityGroup": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "WebServerSSHBastionSecurityGroup"}]}]},
+		"HasAuthProxySecurityGroup": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "AuthProxySecurityGroup"}]}]},
+		"HasNotAuthProxySecurityGroup": {"Fn::Equals": ["", {"Ref": "AuthProxySecurityGroup"}]},
 		"HasNewRelic": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "NewRelicLicenseKey"}]}]}
 	},
 	"Mappings": {
@@ -111,13 +118,29 @@
 			"Type": "AWS::EC2::SecurityGroup",
 			"Properties": {
 				"GroupDescription": "wordpress-elb",
-				"VpcId": {"Ref": "VPC"},
-				"SecurityGroupIngress": [{
-					"CidrIp": "0.0.0.0/0",
-					"FromPort": 80,
-					"IpProtocol": "tcp",
-					"ToPort": 80
-				}]
+				"VpcId": {"Ref": "VPC"}
+			}
+		},
+		"LoadBalancerSecurityGroupInWorld": {
+			"Type": "AWS::EC2::SecurityGroupIngress",
+			"Condition": "HasNotAuthProxySecurityGroup",
+			"Properties": {
+				"GroupId": {"Ref": "LoadBalancerSecurityGroup"},
+				"IpProtocol": "tcp",
+				"FromPort": 80,
+				"ToPort": 80,
+				"CidrIp": "0.0.0.0/0"
+			}
+		},
+		"LoadBalancerSecurityGroupInAuthProxy": {
+			"Type": "AWS::EC2::SecurityGroupIngress",
+			"Condition": "HasAuthProxySecurityGroup",
+			"Properties": {
+				"GroupId": {"Ref": "LoadBalancerSecurityGroup"},
+				"IpProtocol": "tcp",
+				"FromPort": 80,
+				"ToPort": 80,
+				"SourceSecurityGroupId": {"Ref": "AuthProxySecurityGroup"}
 			}
 		},
 		"WebServerSecurityGroup": {
@@ -239,7 +262,7 @@
 							"Effect": "Allow",
 							"Action": ["s3:*"],
 							"Resource": [
-								{"Fn::Join": ["", ["arn:aws:s3:::", {"Ref": "BlogID"} ,"/*"]]}
+								{"Fn::Sub": "arn:aws:s3:::${BlogID}/*"}
 							]
 						}] 
 					}
@@ -286,7 +309,7 @@
 							"iam:GetSSHPublicKey"
 						],
 						"Resource": [
-							{"Fn::Join": ["", ["arn:aws:iam::", {"Ref": "AWS::AccountId"},":user/*"]]}
+							{"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:user/*"}
 						]
 					}]
 				}
@@ -371,9 +394,7 @@
 								"group": "root"
 							},
 							"/etc/cron.d/import_users": {
-								"content": {"Fn::Join": ["", [
-									"*/10 * * * * root /opt/import_users.sh", "\n"
-								]]},
+								"content": "*/10 * * * * root /opt/import_users.sh\n",
 								"mode": "000644",
 								"owner": "root",
 								"group": "root"
@@ -663,7 +684,7 @@
 	},
 	"Outputs": {
 		"URL": {
-			"Value": {"Fn::Join": ["", ["http://", {"Fn::GetAtt": ["LoadBalancer", "DNSName"]}]]},
+			"Value": {"Fn::Sub": "http://${LoadBalancer.DNSName}"},
 			"Description": "URL to Wordpress"
 		}
 	}

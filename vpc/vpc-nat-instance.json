@@ -3,25 +3,25 @@
 	"Description": "VPC: highly available NAT instance for private subnets, a cloudonaut.io template",
 	"Parameters": {
 		"VPC": {
-			"Description": "Use VPC output from vpc stack.",
+			"Description": "Use VPC output from vpc/vpc-*azs stack.",
 			"Type": "AWS::EC2::VPC::Id"
 		},
 		"PublicSubnets": {
-			"Description": "Use SubnetAPublic, SubnetBPublic [, SubnetCPublic[, SubnetDPublic]] output from vpc stack.",
+			"Description": "Use SubnetAPublic, SubnetBPublic [, SubnetCPublic[, SubnetDPublic]] output from vpc/vpc-*azs stack.",
 			"Type": "List<AWS::EC2::Subnet::Id>"
 		},
 		"ClassB": {
-			"Description": "Use ClassB output from vpc stack.",
+			"Description": "Use ClassB output from vpc/vpc-*azs stack.",
 			"Type": "Number",
 			"MinValue": "0",
 			"MaxValue": "255"
 		},
 		"RouteTablePrivate": {
-			"Description": "Use RouteTablePrivate output from vpc stack.",
+			"Description": "Use RouteTablePrivate output from vpc/vpc-*azs stack.",
 			"Type": "String"
 		},
 		"SSHBastionSecurityGroup": {
-			"Description": "Optional use SSHBastionSecurityGroup output from vpc-ssh-bastion stack.",
+			"Description": "Optional use SSHBastionSecurityGroup output from vpc/vpc-ssh-bastion stack.",
 			"Type": "String",
 			"Default": ""
 		},
@@ -91,7 +91,7 @@
 		"NATSecurityGroup": {
 			"Type": "AWS::EC2::SecurityGroup",
 			"Properties": {
-				"GroupDescription": {"Fn::Join": ["", ["NAT instance 10.", {"Ref": "ClassB"}, ".0.0/16"]]},
+				"GroupDescription": {"Fn::Sub": "NAT instance 10.${ClassB}.0.0/16"},
 				"SecurityGroupEgress": [{
 					"IpProtocol": "udp",
 					"FromPort": 123,
@@ -112,17 +112,17 @@
 					"IpProtocol": "udp",
 					"FromPort": 123,
 					"ToPort": 123,
-					"CidrIp": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".0.0/16"]]}
+					"CidrIp": {"Fn::Sub": "10.${ClassB}.0.0/16"}
 				}, {
 					"IpProtocol": "tcp",
 					"FromPort": 80,
 					"ToPort": 80,
-					"CidrIp": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".0.0/16"]]}
+					"CidrIp": {"Fn::Sub": "10.${ClassB}.0.0/16"}
 				}, {
 					"IpProtocol": "tcp",
 					"FromPort": 443,
 					"ToPort": 443,
-					"CidrIp": {"Fn::Join": ["", ["10.", {"Ref": "ClassB"}, ".0.0/16"]]}
+					"CidrIp": {"Fn::Sub": "10.${ClassB}.0.0/16"}
 				}],
 				"VpcId": {"Ref": "VPC"}
 			}
@@ -220,7 +220,7 @@
 							"iam:GetSSHPublicKey"
 						],
 						"Resource": [
-							{"Fn::Join": ["", ["arn:aws:iam::", {"Ref": "AWS::AccountId"},":user/*"]]}
+							{"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:user/*"}
 						]
 					}]
 				}
@@ -305,9 +305,7 @@
 								"group": "root"
 							},
 							"/etc/cron.d/import_users": {
-								"content": {"Fn::Join": ["", [
-									"*/10 * * * * root /opt/import_users.sh", "\n"
-								]]},
+								"content": "*/10 * * * * root /opt/import_users.sh\n",
 								"mode": "000644",
 								"owner": "root",
 								"group": "root"
@@ -494,7 +492,7 @@
 				"MinSize": "1",
 				"Tags": [{
 					"Key": "Name",
-					"Value": {"Fn::Join": ["", ["NAT instance 10.", {"Ref": "ClassB"}, ".0.0/16"]]},
+					"Value": {"Fn::Sub": "NAT instance 10.${ClassB}.0.0/16"},
 					"PropagateAtLaunch": true
 				}],
 				"VPCZoneIdentifier": {"Ref": "PublicSubnets"}

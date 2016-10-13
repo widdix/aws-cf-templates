@@ -53,7 +53,7 @@
             "Statement": [{
               "Effect": "Allow",
               "Action": "s3:PutObject",
-              "Resource": {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref": "ConfigBucket"}, "/*"]]},
+              "Resource": {"Fn::Sub": "arn:aws:s3:::${ConfigBucket}/*"},
               "Condition": {
                 "StringLike": {
                   "s3:x-amz-acl": "bucket-owner-full-control"
@@ -62,7 +62,7 @@
             }, {
               "Effect": "Allow",
               "Action": ["s3:GetBucketAcl"],
-              "Resource": {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref": "ConfigBucket"}]]}
+              "Resource": {"Fn::Sub": "arn:aws:s3:::${ConfigBucket}"}
             }]
           }
         }, {

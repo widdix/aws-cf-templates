@@ -3,7 +3,7 @@
 	"Description": "EC2: instance with auto-recovery, a cloudonaut.io template",
 	"Parameters": {
 		"SSHBastionSecurityGroup": {
-			"Description": "Optional use SSHBastionSecurityGroup output from vpc-ssh-bastion stack.",
+			"Description": "Optional use SSHBastionSecurityGroup output from vpc/vpc-ssh-bastion stack.",
 			"Type": "String",
 			"Default": ""
 		},
@@ -28,11 +28,11 @@
 			"Type": "String"
 		},
 		"VPC": {
-			"Description": "Use VPC output from vpc stack.",
+			"Description": "Use VPC output from vpc/vpc-*azs stack.",
 			"Type": "AWS::EC2::VPC::Id"
 		},
 		"Subnet": {
-			"Description": "Use SubnetAPublic, SubnetAPrivate, SubnetBPublic, SubnetBrivate [, SubnetCPublic, SubnetCPrivate [, SubnetDPublic, SubnetDPrivate]] output from vpc stack.",
+			"Description": "Use SubnetAPublic, SubnetAPrivate, SubnetBPublic, SubnetBrivate [, SubnetCPublic, SubnetCPrivate [, SubnetDPublic, SubnetDPrivate]] output from vpc/vpc-*azs stack.",
 			"Type": "AWS::EC2::Subnet::Id"
 		},
 		"LogsRetentionInDays": {
@@ -165,7 +165,7 @@
 							"iam:GetSSHPublicKey"
 						],
 						"Resource": [
-							{"Fn::Join": ["", ["arn:aws:iam::", {"Ref": "AWS::AccountId"},":user/*"]]}
+							{"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:user/*"}
 						]
 					}]
 				}
@@ -250,9 +250,7 @@
 								"group": "root"
 							},
 							"/etc/cron.d/import_users": {
-								"content": {"Fn::Join": ["", [
-									"*/10 * * * * root /opt/import_users.sh", "\n"
-								]]},
+								"content": "*/10 * * * * root /opt/import_users.sh\n",
 								"mode": "000644",
 								"owner": "root",
 								"group": "root"
@@ -446,7 +444,7 @@
 				"EvaluationPeriods": "5",
 				"ComparisonOperator": "GreaterThanThreshold",
 				"Threshold": "0",
-				"AlarmActions": [{"Fn::Join": ["", ["arn:aws:automate:", {"Ref": "AWS::Region"}, ":ec2:recover"]]}],
+				"AlarmActions": [{"Fn::Sub": "arn:aws:automate:${AWS::Region}:ec2:recover"}],
 				"Dimensions": [{"Name": "InstanceId", "Value": {"Ref": "VirtualMachine"}}]
 			}
 		 }

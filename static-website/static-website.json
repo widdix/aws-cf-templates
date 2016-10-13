@@ -37,7 +37,7 @@
 					"Statement": [{
 						"Action": ["s3:GetObject"],
 						"Effect": "Allow",
-						"Resource": {"Fn::Join": ["", ["arn:aws:s3:::", {"Ref": "S3Bucket"}, "/*" ]]},
+						"Resource": {"Fn::Sub": "arn:aws:s3:::${S3Bucket}/*"},
 						"Principal": "*"
 					}]
 				}
@@ -50,8 +50,8 @@
 					"Aliases": [{"Ref": "DomainName"}],
 					"Comment": {"Ref": "DomainName"},
 					"Origins": [{
-						"DomainName": {"Fn::Join": ["", [{"Ref": "S3Bucket"}, ".s3-website-", {"Ref": "AWS::Region"}, ".amazonaws.com"]]},
-						"Id" : "s3origin",
+						"DomainName": {"Fn::Sub": "${S3Bucket}.s3-website-${AWS::Region}.amazonaws.com"},
+						"Id": "s3origin",
 						"CustomOriginConfig": {"OriginProtocolPolicy": "http-only"}
 					}],
 					"DefaultCacheBehavior": {
@@ -106,8 +106,8 @@
 					"Aliases": [{"Ref": "RedirectDomainName"}],
 					"Comment": {"Ref": "RedirectDomainName"},
 					"Origins": [{
-						"DomainName": {"Fn::Join": ["", [{"Ref": "S3BucketRedirect"}, ".s3-website-", {"Ref": "AWS::Region"}, ".amazonaws.com"]]},
-						"Id" : "s3origin",
+						"DomainName": {"Fn::Sub": "${S3BucketRedirect}.s3-website-${AWS::Region}.amazonaws.com"},
+						"Id": "s3origin",
 						"CustomOriginConfig": {"OriginProtocolPolicy": "http-only"}
 					}],
 					"DefaultCacheBehavior": {
