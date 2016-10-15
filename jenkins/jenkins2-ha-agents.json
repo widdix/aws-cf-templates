@@ -210,6 +210,16 @@
         "SourceSecurityGroupId": {"Ref": "AuthProxySecurityGroup"}
       }
     },
+    "MasterELBSGInAgent": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {"Ref": "MasterELBSG"},
+        "IpProtocol": "tcp",
+        "FromPort": 80,
+        "ToPort": 80,
+        "SourceSecurityGroupId": {"Ref": "AgentSG"}
+      }
+    },
     "MasterELB": {
       "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
       "Properties": {
@@ -809,7 +819,7 @@
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
               "b_await_jenkins": {
-                "command": "until $(curl --output /dev/null --silent --head --fail --user \"admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)\" http://localhost:8080/cli/); do printf '.'; sleep 1; done",
+                "command": "until $(curl --output /dev/null --silent --head --fail -u \"admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)\" http://localhost:8080/cli/); do printf '.'; sleep 1; done",
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
               "c_activate_slave_agent_port": {
@@ -821,7 +831,7 @@
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
               "e_await_jenkins": {
-                "command": "until $(curl --output /dev/null --silent --head --fail --user \"admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)\" http://localhost:8080/cli/); do printf '.'; sleep 1; done",
+                "command": "until $(curl --output /dev/null --silent --head --fail -u \"admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)\" http://localhost:8080/cli/); do printf '.'; sleep 1; done",
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
               "f_install_plugins": {
@@ -833,7 +843,7 @@
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
               "h_await_jenkins": {
-                "command": "until $(curl --output /dev/null --silent --head --fail --user \"admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)\" http://localhost:8080/cli/); do printf '.'; sleep 1; done",
+                "command": "until $(curl --output /dev/null --silent --head --fail -u \"admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)\" http://localhost:8080/cli/); do printf '.'; sleep 1; done",
                 "test": "[ ! -f /var/lib/jenkins/setup_done.txt ]"
               },
               "i_set_admin_password": {
@@ -1444,12 +1454,12 @@
             },
             "commands": {
               "d_download_slave_jar": {
-                "command": {"Fn::Sub": "wget http://${MasterELB.DNSName}/jnlpJars/slave.jar"},
+                "command": {"Fn::Sub": "wget -q -T 60 http://${MasterELB.DNSName}/jnlpJars/slave.jar"},
                 "cwd": "/var/lib/jenkins",
                 "test": "[ ! -f /var/lib/jenkins/slave.jar ]"
               },
               "e_download_cli_jar": {
-                "command": {"Fn::Sub": "wget http://${MasterELB.DNSName}/jnlpJars/jenkins-cli.jar"},
+                "command": {"Fn::Sub": "wget -q -T 60 http://${MasterELB.DNSName}/jnlpJars/jenkins-cli.jar"},
                 "cwd": "/var/lib/jenkins",
                 "test": "[ ! -f /var/lib/jenkins/jenkins-cli.jar ]"
               },
