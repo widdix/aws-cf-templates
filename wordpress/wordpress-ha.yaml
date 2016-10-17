@@ -64,32 +64,32 @@ Parameters:
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
-      - Label:
-          default: 'Parent Stacks'
-        Parameters:
-        - ParentVPCStack
-        - ParentSSHBastionStack
-        - ParentAuthProxyStack
-      - Label:
-          default: 'Wordpress Parameters'
-        Parameters:
-        - BlogID
-        - BlogTitle
-        - BlogAdminUsername
-        - BlogAdminPassword
-        - BlogAdminEMail
-      - Label:
-          default: 'EC2 Parameters'
-        Parameters:
-        - WebServerKeyName
-        - WebServerIAMUserSSHAccess
-        - WebServerInstanceType
-        - WebServerLogsRetentionInDays
-        - NewRelicLicenseKey
-      - Label:
-          default: 'Database Parameters'
-        Parameters:
-        - DBServerInstanceType
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+      - ParentSSHBastionStack
+      - ParentAuthProxyStack
+    - Label:
+        default: 'Wordpress Parameters'
+      Parameters:
+      - BlogID
+      - BlogTitle
+      - BlogAdminUsername
+      - BlogAdminPassword
+      - BlogAdminEMail
+    - Label:
+        default: 'EC2 Parameters'
+      Parameters:
+      - WebServerKeyName
+      - WebServerIAMUserSSHAccess
+      - WebServerInstanceType
+      - WebServerLogsRetentionInDays
+      - NewRelicLicenseKey
+    - Label:
+        default: 'Database Parameters'
+      Parameters:
+      - DBServerInstanceType
 Conditions:
   HasKeyName: !Not [!Equals [!Ref WebServerKeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref WebServerIAMUserSSHAccess, 'true']

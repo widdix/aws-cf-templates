@@ -8,10 +8,10 @@ Parameters:
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
-      - Label:
-          default: 'Parent Stacks'
-        Parameters:
-        - ParentVPCStack
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
 Resources:
   EIP:
     Type: 'AWS::EC2::EIP'

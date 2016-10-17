@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'VPC: highly available NAT instance for private subnets, a cloudonaut.io template'
+Description: 'Security: highly available auth proxy using your GitHub Organization, a cloudonaut.io template'
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -8,8 +8,11 @@ Parameters:
   ParentSSHBastionStack:
     Description: 'Optional Stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
     Type: String
+  CertificateArn:
+    Description: 'The Amazon Resource Name (ARN) of the certificate to associate with the auth proxy endpoint.'
+    Type: String
   KeyName:
-    Description: 'Optional key pair of the ec2-user to establish a SSH connection to the NAT instance.'
+    Description: 'Optional key pair of the ec2-user to establish a SSH connection to the auth proxy.'
     Type: String
     Default: ''
   IAMUserSSHAccess:
@@ -19,10 +22,10 @@ Parameters:
     - true
     - false
     Default: false
-  NATInstanceType:
+  InstanceType:
     Type: String
     Default: 't2.nano'
-    Description: 'Instance type of the NAT instance. Keep in mind that different instances come with different network capabilities.'
+    Description: 'Instance type of the auth proxy.'
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain log events.'
     Type: Number
@@ -33,6 +36,23 @@ Parameters:
     Type: String
     Default: ''
     NoEcho: true
+  GitHubOrganization:
+    Description: 'GitHub organization name.'
+    Type: String
+  GitHubClientId:
+    Description: 'GitHub client id. Register a new application here: https://github.com/organizations/$YOUR_ORGANIZATION/settings/applications'
+    Type: String
+  GitHubClientSecret:
+    Description: 'GitHub client secret. Register a new application here: https://github.com/organizations/$YOUR_ORGANIZATION/settings/applications'
+    Type: String
+    NoEcho: true
+  Upstream:
+    Description: 'HTTP(S) upstream for the proxy to redirect requests.'
+    Type: String
+  CookieSecret:
+    Description: 'Seed string for secure cookies. Create one with python -c ''import os,base64; print base64.b64encode(os.urandom(16))'''
+    Type: String
+    NoEcho: true
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -42,9 +62,18 @@ Metadata:
       - ParentVPCStack
       - ParentSSHBastionStack
     - Label:
+        default: 'Proxy Parameters'
+      Parameters:
+      - GitHubOrganization
+      - GitHubClientId
+      - GitHubClientSecret
+      - CertificateArn
+      - Upstream
+      - CookieSecret
+    - Label:
         default: 'EC2 Parameters'
       Parameters:
-      - NATInstanceType
+      - InstanceType
       - KeyName
       - IAMUserSSHAccess
       - LogsRetentionInDays
@@ -52,102 +81,118 @@ Metadata:
 Mappings:
   RegionMap:
     'ap-south-1':
-      NATAMI: 'ami-c8c2b7a7'
+      AMI: 'ami-cacbbea5'
     'eu-west-1':
-      NATAMI: 'ami-362b6e45'
+      AMI: 'ami-d41d58a7'
     'ap-southeast-1':
-      NATAMI: 'ami-9c40e5ff'
+      AMI: 'ami-7243e611'
     'ap-southeast-2':
-      NATAMI: 'ami-addbebce'
+      AMI: 'ami-55d4e436'
     'eu-central-1':
-      NATAMI: 'ami-b646bbd9'
+      AMI: 'ami-0044b96f'
     'ap-northeast-2':
-      NATAMI: 'ami-844d98ea'
+      AMI: 'ami-a04297ce'
     'ap-northeast-1':
-      NATAMI: 'ami-831fcde2'
+      AMI: 'ami-1a15c77b'
     'us-east-1':
-      NATAMI: 'ami-d2ee95c5'
+      AMI: 'ami-c481fad3'
     'sa-east-1':
-      NATAMI: 'ami-9775e6fb'
+      AMI: 'ami-b777e4db'
     'us-west-1':
-      NATAMI: 'ami-90357bf0'
+      AMI: 'ami-de347abe'
     'us-west-2':
-      NATAMI: 'ami-c4469aa4'
+      AMI: 'ami-b04e92d0'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
 Resources:
-  EIP:
-    Type: 'AWS::EC2::EIP'
-    Properties:
-      Domain: vpc
   Logs:
     Type: 'AWS::Logs::LogGroup'
     Properties:
       RetentionInDays: !Ref LogsRetentionInDays
-  NATSecurityGroup:
+  LoadBalancerSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupDescription: !Sub
-      - 'NAT instance 10.${ClassB}.0.0/16'
-      - ClassB:
-          'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
-      SecurityGroupEgress:
-      - IpProtocol: udp
-        FromPort: 123
-        ToPort: 123
-        CidrIp: '0.0.0.0/0'
-      - IpProtocol: tcp
-        FromPort: 80
-        ToPort: 80
-        CidrIp: '0.0.0.0/0'
-      - IpProtocol: tcp
-        FromPort: 443
-        ToPort: 443
-        CidrIp: '0.0.0.0/0'
-      SecurityGroupIngress:
-      - IpProtocol: udp
-        FromPort: 123
-        ToPort: 123
-        CidrIp: !Sub
-        - '10.${ClassB}.0.0/16'
-        - ClassB:
-            'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
-      - IpProtocol: tcp
-        FromPort: 80
-        ToPort: 80
-        CidrIp: !Sub
-        - '10.${ClassB}.0.0/16'
-        - ClassB:
-            'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
-      - IpProtocol: tcp
-        FromPort: 443
-        ToPort: 443
-        CidrIp: !Sub
-        - '10.${ClassB}.0.0/16'
-        - ClassB:
-            'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
+      GroupDescription: 'Auth proxy'
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
-  NATSecurityGroupInSSHBastion:
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: '0.0.0.0/0'
+  LoadBalancer:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Scheme: 'internet-facing'
+      SecurityGroups:
+      - !Ref LoadBalancerSecurityGroup
+      Subnets:
+      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
+      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      Tags:
+      - Key: Name
+        Value: 'Auth proxy'
+  LoadBalancerTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckIntervalSeconds: 15
+      HealthCheckPath: '/ping'
+      HealthCheckPort: 4180
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 8
+      Matcher:
+        HttpCode: 200
+      Port: 4180
+      Protocol: HTTP
+      Tags:
+      - Key: Name
+        Value: 'Auth proxy'
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+  LoadBalancerListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      Certificates:
+      - CertificateArn: !Ref CertificateArn
+      DefaultActions:
+      - TargetGroupArn: !Ref LoadBalancerTargetGroup
+        Type: forward
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 443
+      Protocol: HTTPS
+  SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Auth proxy'
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 4180
+        ToPort: 4180
+        SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+  SecurityGroupInSSHBastion:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasSSHBastionSecurityGroup
     Properties:
-      GroupId: !Ref NATSecurityGroup
+      GroupId: !Ref SecurityGroup
       IpProtocol: tcp
       FromPort: 22
       ToPort: 22
       SourceSecurityGroupId:
         'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
-  NATInstanceProfile:
+  InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
       Path: '/'
       Roles:
-      - !Ref NATIAMRole
-  NATIAMRole:
+      - !Ref IAMRole
+  IAMRole:
     Type: 'AWS::IAM::Role'
     Properties:
       AssumeRolePolicyDocument:
@@ -159,21 +204,8 @@ Resources:
             - 'ec2.amazonaws.com'
           Action:
           - 'sts:AssumeRole'
-      Path: '/'
+      Path: /
       Policies:
-      - PolicyName: ec2
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Sid: Stmt1425023276000
-            Effect: Allow
-            Action:
-            - 'ec2:AssociateAddress'
-            - 'ec2:ModifyInstanceAttribute'
-            - 'ec2:CreateRoute'
-            - 'ec2:ReplaceRoute'
-            Resource:
-            - '*'
       - PolicyName: logs
         PolicyDocument:
           Version: '2012-10-17'
@@ -186,12 +218,12 @@ Resources:
             - 'logs:DescribeLogStreams'
             Resource:
             - 'arn:aws:logs:*:*:*'
-  NATIAMPolicySSHAccess:
+  IAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
     Condition: HasIAMUserSSHAccess
     Properties:
       Roles:
-      - !Ref NATIAMRole
+      - !Ref IAMRole
       PolicyName: iam
       PolicyDocument:
         Version: '2012-10-17'
@@ -206,11 +238,11 @@ Resources:
           - 'iam:ListSSHPublicKeys'
           - 'iam:GetSSHPublicKey'
           Resource:
-          - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
-  NATLaunchConfiguration:
+          - Fn::Sub: 'arn:aws:iam::${AWS::AccountId}:user/*'
+  LaunchConfiguration:
     Type: 'AWS::AutoScaling::LaunchConfiguration'
     Metadata:
-      'AWS::CloudFormation::Init':
+      AWS::CloudFormation::Init:
         configSets:
           default:
             !If
@@ -293,10 +325,140 @@ Resources:
                 - 'a_configure_sshd_command'
                 - 'b_configure_sshd_commanduser'
         config:
+          users:
+            oauth2_proxy: {}
+          sources:
+            /opt/oauth2_proxy: 'https://github.com/bitly/oauth2_proxy/releases/download/v2.1/oauth2_proxy-2.1.linux-amd64.go1.6.tar.gz'
           packages:
             yum:
               awslogs: []
           files:
+            '/etc/oauth2_proxy.cfg':
+              content:
+                !Sub |
+                  ## OAuth2 Proxy Config File
+                  ## https://github.com/bitly/oauth2_proxy
+                  http_address = "0.0.0.0:4180"
+                  upstreams = [
+                    "${Upstream}"
+                  ]
+                  request_logging = false
+                  pass_basic_auth = false
+                  email_domains = [
+                    "*"
+                  ]
+                  client_id = "${GitHubClientId}"
+                  client_secret = "${GitHubClientSecret}"
+                  cookie_secret = "${CookieSecret}"
+                  provider = "github"
+                  github-team = "${GitHubOrganization}"
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/init.d/oauth2_proxy':
+              content:
+                !Sub |
+                  #!/bin/sh
+                  ### BEGIN INIT INFO
+                  # Provides:
+                  # Required-Start:    $remote_fs $syslog
+                  # Required-Stop:     $remote_fs $syslog
+                  # Default-Start:     2 3 4 5
+                  # Default-Stop:      0 1 6
+                  # Short-Description: Start daemon at boot time
+                  # Description:       Enable service provided by daemon.
+                  ### END INIT INFO
+
+                  dir="/opt/oauth2_proxy/oauth2_proxy-2.1.linux-amd64.go1.6"
+                  cmd="./oauth2_proxy -config=/etc/oauth2_proxy.cfg"
+                  user="oauth2_proxy"
+
+                  name=`basename $0`
+                  pid_file="/var/run/$name.pid"
+                  stdout_log="/var/log/$name.log"
+                  stderr_log="/var/log/$name.err"
+
+                  get_pid() {
+                      cat "$pid_file"
+                  }
+
+                  is_running() {
+                      [ -f "$pid_file" ] && ps `get_pid` > /dev/null 2>&1
+                  }
+
+                  case "$1" in
+                      start)
+                      if is_running; then
+                          echo "Already started"
+                      else
+                          echo "Starting $name"
+                          cd "$dir"
+                          if [ -z "$user" ]; then
+                              sudo $cmd >> "$stdout_log" 2>> "$stderr_log" &
+                          else
+                              sudo -u "$user" $cmd >> "$stdout_log" 2>> "$stderr_log" &
+                          fi
+                          echo $! > "$pid_file"
+                          if ! is_running; then
+                              echo "Unable to start, see $stdout_log and $stderr_log"
+                              exit 1
+                          fi
+                      fi
+                      ;;
+                      stop)
+                      if is_running; then
+                          echo -n "Stopping $name.."
+                          kill `get_pid`
+                          for i in {1..10}
+                          do
+                              if ! is_running; then
+                                  break
+                              fi
+
+                              echo -n "."
+                              sleep 1
+                          done
+                          echo
+
+                          if is_running; then
+                              echo "Not stopped; may still be shutting down or shutdown may have failed"
+                              exit 1
+                          else
+                              echo "Stopped"
+                              if [ -f "$pid_file" ]; then
+                                  rm "$pid_file"
+                              fi
+                          fi
+                      else
+                          echo "Not running"
+                      fi
+                      ;;
+                      restart)
+                      $0 stop
+                      if is_running; then
+                          echo "Unable to stop, will not attempt to start"
+                          exit 1
+                      fi
+                      $0 start
+                      ;;
+                      status)
+                      if is_running; then
+                          echo "Running"
+                      else
+                          echo "Stopped"
+                          exit 1
+                      fi
+                      ;;
+                      *)
+                      echo "Usage: $0 {start|stop|restart|status}"
+                      exit 1
+                      ;;
+                  esac
+
+                  exit 0
+              mode: '000755'
+              owner: root
+              group: root
             '/etc/awslogs/awscli.conf':
               content:
                 !Sub |
@@ -355,6 +517,15 @@ Resources:
                   file = /var/log/dmesg
                   log_stream_name = {instance_id}/var/log/dmesg
                   log_group_name = ${Logs}
+                  [/var/log/oauth2_proxy.log]
+                  file = /var/log/oauth2_proxy.log
+                  log_stream_name = {instance_id}/var/log/oauth2_proxy.log
+                  log_group_name = ${Logs}
+                  [/var/log/oauth2_proxy.err]
+                  datetime_format = %Y/%m/%d %H:%M:%S
+                  file = /var/log/oauth2_proxy.err
+                  log_stream_name = {instance_id}/var/log/oauth2_proxy.err
+                  log_group_name = ${Logs}
               mode: '000644'
               owner: root
               group: root
@@ -373,8 +544,8 @@ Resources:
                 !Sub |
                   [cfn-auto-reloader-hook]
                   triggers=post.update
-                  path=Resources.NATLaunchConfiguration.Metadata.AWS::CloudFormation::Init
-                  action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=NATLaunchConfiguration
+                  path=Resources.LaunchConfiguration.Metadata.AWS::CloudFormation::Init
+                  action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=LaunchConfiguration
                   runas=root
           services:
             sysvinit:
@@ -387,6 +558,14 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
+              oauth2_proxy:
+                enabled: true
+                ensureRunning: true
+                sources:
+                - '/opt/oauth2_proxy'
+                files:
+                - '/etc/oauth2_proxy.cfg'
+                - '/etc/init.d/oauth2_proxy'
               cfn-hup:
                 enabled: true
                 ensureRunning: true
@@ -396,41 +575,33 @@ Resources:
     Properties:
       AssociatePublicIpAddress: true
       EbsOptimized: false
-      IamInstanceProfile: !Ref NATInstanceProfile
-      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', NATAMI]
-      InstanceType: !Ref NATInstanceType
+      IamInstanceProfile: !Ref InstanceProfile
+      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+      InstanceType: !Ref InstanceType
       SecurityGroups:
-      - !Ref NATSecurityGroup
+      - !Ref SecurityGroup
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
       UserData:
-        'Fn::Base64': !Sub
-          - |
+        Fn::Base64:
+          !Sub |
             #!/bin/bash -x
-            INSTANCEID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
-            aws --region ${Region} ec2 associate-address --instance-id $INSTANCEID --allocation-id ${EIPAllocationId} && aws --region ${Region} ec2 modify-instance-attribute --instance-id $INSTANCEID --source-dest-check "{\"Value\": false}" && (aws --region ${Region} ec2 replace-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID || aws --region ${Region} ec2 create-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID) && /opt/aws/bin/cfn-init -v --stack ${StackName} --resource NATLaunchConfiguration --region ${Region}
-            /opt/aws/bin/cfn-signal -e $? --region ${Region} --stack ${StackName} --resource NATAutoScalingGroup
-          - RouteTablePrivate:
-              'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablePrivate'
-            Region:
-              !Ref 'AWS::Region'
-            StackName:
-              !Ref 'AWS::StackName'
-            EIPAllocationId:
-              !Sub '${EIP.AllocationId}'
-  NATAutoScalingGroup:
+            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+  AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
       DesiredCapacity: 1
-      LaunchConfigurationName: !Ref NATLaunchConfiguration
+      LaunchConfigurationName: !Ref LaunchConfiguration
       MaxSize: 1
       MinSize: 1
+      HealthCheckGracePeriod: 120
+      HealthCheckType: ELB
       Tags:
       - Key: Name
-        Value: !Sub
-        - 'NAT instance 10.${ClassB}.0.0/16'
-        - ClassB:
-            'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
+        Value: 'Auth proxy'
         PropagateAtLaunch: true
+      TargetGroupARNs:
+      - !Ref LoadBalancerTargetGroup
       VPCZoneIdentifier:
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
@@ -443,8 +614,13 @@ Resources:
         PauseTime: PT10M
         WaitOnResourceSignals: true
 Outputs:
-  IPAddress:
-    Description: 'The public IP address of the NAT instance.'
-    Value: !Ref EIP
+  SecurityGroup:
+    Description: 'Use this Security Group to reference incoming traffic from the auth proxy.'
+    Value: !Ref SecurityGroup
     Export:
-      Name: !Sub '${AWS::StackName}-IPAddress'
+      Name: SecurityGroup
+  DNSName:
+    Description: 'The DNS name for the auth proxy load balancer.'
+    Value: !Sub '${LoadBalancer.DNSName}'
+    Export:
+      Name: DNSName

@@ -16,7 +16,7 @@ This template creates an account password policy for your IAM users. You can:
 Or just use the suggested defaults.
 
 ### Installation Guide
-1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=security-account-password-policy&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/security/account-password-policy.json">Launch Stack</a>
+1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=security-account-password-policy&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/security/account-password-policy.yaml">Launch Stack</a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -29,7 +29,7 @@ Or just use the suggested defaults.
 This template describes a **highly available** authentication proxy that forwards request to a upstream http(s) endpoint if the user is authenticated against your GitHub Organization.
 
 ### Installation Guide
-1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=security-auth-proxy-ha-github-orga&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/security/auth-proxy-ha-github-orga.json">Launch Stack</a>
+1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=security-auth-proxy-ha-github-orga&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/security/auth-proxy-ha-github-orga.yaml">Launch Stack</a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -42,7 +42,7 @@ This template describes a **highly available** authentication proxy that forward
 This template enables CloudTrail to records AWS API calls across all regions in your AWS account. API calls are archived in S3 and also pushed CloudWatch Logs. If new API calls are available in S3 a SNS topic is notified.
 
 ### Installation Guide
-1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=security-cloudtrail&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/security/cloudtrail.json">Launch Stack</a>
+1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=security-cloudtrail&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/security/cloudtrail.yaml">Launch Stack</a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -55,7 +55,7 @@ This template enables CloudTrail to records AWS API calls across all regions in 
 This template enables AWS Config to deliver a AWS resource inventory to S3. Allowing you to keep track of infrastructure changes for compliance and debugging of your cloud infrastructure. 
 
 ### Installation Guide
-1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=security-config&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/security/config.json">Launch Stack</a>
+1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=security-config&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/security/config.yaml">Launch Stack</a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.

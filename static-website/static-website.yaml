@@ -25,17 +25,17 @@ Parameters:
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
-      - Label:
-          default: 'DNS'
-        Parameters:
-        - DomainName
-        - RedirectDomainName
-        - HostedZoneId
-      - Label:
-          default: 'SSL/TLS'
-        Parameters:
-        - CertificateType
-        - ExistingCertificate
+    - Label:
+        default: 'DNS Parameters'
+      Parameters:
+      - DomainName
+      - RedirectDomainName
+      - HostedZoneId
+    - Label:
+        default: 'SSL/TLS Parameters'
+      Parameters:
+      - CertificateType
+      - ExistingCertificate
 Conditions:
   HasRedirectDomainName: !Not [!Equals [!Ref RedirectDomainName, '']]
   HasAcmCertificateArn: !Equals [!Ref CertificateType, 'AcmCertificateArn']

@@ -33,18 +33,18 @@ Parameters:
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
-      - Label:
-          default: 'Parent Stacks '
-        Parameters:
-        - ParentVPCStack
-      - Label:
-          default: 'EC2 Parameters'
-        Parameters:
-        - InstanceType
-        - KeyName
-        - IAMUserSSHAccess
-        - LogsRetentionInDays
-        - NewRelicLicenseKey
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+    - Label:
+        default: 'EC2 Parameters'
+      Parameters:
+      - InstanceType
+      - KeyName
+      - IAMUserSSHAccess
+      - LogsRetentionInDays
+      - NewRelicLicenseKey
 Mappings:
   RegionMap:
     'ap-south-1':

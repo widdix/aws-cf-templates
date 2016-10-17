@@ -12,10 +12,10 @@ Parameters:
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
-      - Label:
-          default: 'VPC Parameters'
-        Parameters:
-        - ClassB
+    - Label:
+        default: 'VPC Parameters'
+      Parameters:
+      - ClassB
 Resources:
   VPC:
     Type: 'AWS::EC2::VPC'
