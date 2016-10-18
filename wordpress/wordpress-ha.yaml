@@ -312,12 +312,11 @@ Resources:
               newrelic-sysmond: 'https://download.newrelic.com/pub/newrelic/el5/x86_64/newrelic-sysmond-2.3.0.132-1.x86_64.rpm'
           files:
             '/etc/newrelic/nrsysmond.cfg':
-              content:
-                !Sub |
-                  license_key=${NewRelicLicenseKey}
-                  loglevel=info
-                  logfile=/var/log/newrelic/nrsysmond.log
-                  labels=StackName:${AWS::StackName};AccountId:${AWS::AccountId};Region:${AWS::Region}
+              content: !Sub |
+                license_key=${NewRelicLicenseKey}
+                loglevel=info
+                logfile=/var/log/newrelic/nrsysmond.log
+                labels=StackName:${AWS::StackName};AccountId:${AWS::AccountId};Region:${AWS::Region}
               mode: '000640'
               owner: root
               group: newrelic
@@ -331,31 +330,29 @@ Resources:
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':
-              content:
-                !Sub |
-                  #!/bin/bash -e
-                  if [ -z "$1" ]; then
-                    exit 1
-                  fi
-                  aws iam list-ssh-public-keys --user-name "$1" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read KeyId;
-                  do
-                    aws iam get-ssh-public-key --user-name "$1" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
-                  done
+              content: !Sub |
+                #!/bin/bash -e
+                if [ -z "$1" ]; then
+                  exit 1
+                fi
+                aws iam list-ssh-public-keys --user-name "$1" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read KeyId;
+                do
+                  aws iam get-ssh-public-key --user-name "$1" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
+                done
               mode: '000755'
               owner: root
               group: root
             '/opt/import_users.sh':
-              content:
-                !Sub |
-                  #!/bin/bash
-                  aws iam list-users --query "Users[].[UserName]" --output text | while read User; do
-                    if id -u "$User" >/dev/null 2>&1; then
-                      echo "$User exists"
-                    else
-                      /usr/sbin/adduser "$User"
-                      echo "$User ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$User"
-                    fi
-                  done
+              content: !Sub |
+                #!/bin/bash
+                aws iam list-users --query "Users[].[UserName]" --output text | while read User; do
+                  if id -u "$User" >/dev/null 2>&1; then
+                    echo "$User exists"
+                  else
+                    /usr/sbin/adduser "$User"
+                    echo "$User ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$User"
+                  fi
+                done
               mode: '000755'
               owner: root
               group: root
@@ -393,95 +390,92 @@ Resources:
             '/var/www/html': 'https://wordpress.org/wordpress-4.6.1.tar.gz'
           files:
             '/root/config.sh':
-              content:
-                !Sub |
-                  #!/bin/bash -ex
-                  cp wp-config-sample.php wp-config.php
-                  sed -i "s/'database_name_here'/'wordpress'/g" wp-config.php
-                  sed -i "s/'username_here'/'wordpress'/g" wp-config.php
-                  sed -i "s/'password_here'/'wordpress'/g" wp-config.php
-                  sed -i "s/'localhost'/'${Database.Endpoint.Address}'/g" wp-config.php
-                  echo "define('AWS_USE_EC2_IAM_ROLE', true);" >> wp-config.php
-                  echo "define('DISALLOW_FILE_MODS', true);" >> wp-config.php
-                  echo "define('WP_AUTO_UPDATE_CORE', false);" >> wp-config.php
-                  chmod -R 777 wp-content/
-                  curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-                  php wp-cli.phar core install --url='${LoadBalancer.DNSName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}'
-                  php wp-cli.phar plugin install --activate --version=1.0 amazon-web-services
-                  php wp-cli.phar plugin install --activate --version=1.1 amazon-s3-and-cloudfront
-                  CHARCOUNT=`printf '${BlogID}' | wc -c`
-                  php wp-cli.phar db query "DELETE FROM wp_options WHERE option_name = 'tantan_wordpress_s3'; INSERT INTO wp_options (option_name, option_value, autoload) VALUES('tantan_wordpress_s3', 'a:15:{s:17:\"post_meta_version\";i:1;s:6:\"bucket\";s:$CHARCOUNT:\"${BlogID}\";s:6:\"region\";s:0:\"\";s:6:\"domain\";s:9:\"subdomain\";s:7:\"expires\";s:1:\"0\";s:10:\"cloudfront\";s:0:\"\";s:13:\"object-prefix\";s:19:\"wp-content/uploads/\";s:10:\"copy-to-s3\";s:1:\"1\";s:13:\"serve-from-s3\";s:1:\"1\";s:17:\"remove-local-file\";s:1:\"0\";s:3:\"ssl\";s:7:\"request\";s:12:\"hidpi-images\";s:1:\"0\";s:17:\"object-versioning\";s:1:\"0\";s:21:\"use-yearmonth-folders\";s:1:\"1\";s:20:\"enable-object-prefix\";s:1:\"1\";}', 'yes');"
+              content: !Sub |
+                #!/bin/bash -ex
+                cp wp-config-sample.php wp-config.php
+                sed -i "s/'database_name_here'/'wordpress'/g" wp-config.php
+                sed -i "s/'username_here'/'wordpress'/g" wp-config.php
+                sed -i "s/'password_here'/'wordpress'/g" wp-config.php
+                sed -i "s/'localhost'/'${Database.Endpoint.Address}'/g" wp-config.php
+                echo "define('AWS_USE_EC2_IAM_ROLE', true);" >> wp-config.php
+                echo "define('DISALLOW_FILE_MODS', true);" >> wp-config.php
+                echo "define('WP_AUTO_UPDATE_CORE', false);" >> wp-config.php
+                chmod -R 777 wp-content/
+                curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+                php wp-cli.phar core install --url='${LoadBalancer.DNSName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}'
+                php wp-cli.phar plugin install --activate --version=1.0 amazon-web-services
+                php wp-cli.phar plugin install --activate --version=1.1 amazon-s3-and-cloudfront
+                CHARCOUNT=`printf '${BlogID}' | wc -c`
+                php wp-cli.phar db query "DELETE FROM wp_options WHERE option_name = 'tantan_wordpress_s3'; INSERT INTO wp_options (option_name, option_value, autoload) VALUES('tantan_wordpress_s3', 'a:15:{s:17:\"post_meta_version\";i:1;s:6:\"bucket\";s:$CHARCOUNT:\"${BlogID}\";s:6:\"region\";s:0:\"\";s:6:\"domain\";s:9:\"subdomain\";s:7:\"expires\";s:1:\"0\";s:10:\"cloudfront\";s:0:\"\";s:13:\"object-prefix\";s:19:\"wp-content/uploads/\";s:10:\"copy-to-s3\";s:1:\"1\";s:13:\"serve-from-s3\";s:1:\"1\";s:17:\"remove-local-file\";s:1:\"0\";s:3:\"ssl\";s:7:\"request\";s:12:\"hidpi-images\";s:1:\"0\";s:17:\"object-versioning\";s:1:\"0\";s:21:\"use-yearmonth-folders\";s:1:\"1\";s:20:\"enable-object-prefix\";s:1:\"1\";}', 'yes');"
               mode: '000500'
               owner: root
               group: root
             '/etc/awslogs/awscli.conf':
-              content:
-                !Sub |
-                  [default]
-                  region = ${AWS::Region}
-                  [plugins]
-                  cwlogs = cwlogs
+              content: !Sub |
+                [default]
+                region = ${AWS::Region}
+                [plugins]
+                cwlogs = cwlogs
               mode: '000644'
               owner: root
               group: root
             '/etc/awslogs/awslogs.conf':
-              content:
-                !Sub |
-                  [general]
-                  state_file = /var/lib/awslogs/agent-state
-                  [/var/log/messages]
-                  datetime_format = %b %d %H:%M:%S
-                  file = /var/log/messages
-                  log_stream_name = {instance_id}/var/log/messages
-                  log_group_name = ${WebServerLogs}
-                  [/var/log/secure]
-                  datetime_format = %b %d %H:%M:%S
-                  file = /var/log/secure
-                  log_stream_name = {instance_id}/var/log/secure
-                  log_group_name = ${WebServerLogs}
-                  [/var/log/cron]
-                  datetime_format = %b %d %H:%M:%S
-                  file = /var/log/cron
-                  log_stream_name = {instance_id}/var/log/cron
-                  log_group_name = ${WebServerLogs}
-                  [/var/log/cloud-init.log]
-                  datetime_format = %b %d %H:%M:%S
-                  file = /var/log/cloud-init.log
-                  log_stream_name = {instance_id}/var/log/cloud-init.log
-                  log_group_name = ${WebServerLogs}
-                  [/var/log/cfn-init.log]
-                  datetime_format = %Y-%m-%d %H:%M:%S
-                  file = /var/log/cfn-init.log
-                  log_stream_name = {instance_id}/var/log/cfn-init.log
-                  log_group_name = ${WebServerLogs}
-                  [/var/log/cfn-hup.log]
-                  datetime_format = %Y-%m-%d %H:%M:%S
-                  file = /var/log/cfn-hup.log
-                  log_stream_name = {instance_id}/var/log/cfn-hup.log
-                  log_group_name = ${WebServerLogs}
-                  [/var/log/cfn-init-cmd.log]
-                  datetime_format = %Y-%m-%d %H:%M:%S
-                  file = /var/log/cfn-init-cmd.log
-                  log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
-                  log_group_name = ${WebServerLogs}
-                  [/var/log/cloud-init-output.log]
-                  file = /var/log/cloud-init-output.log
-                  log_stream_name = {instance_id}/var/log/cloud-init-output.log
-                  log_group_name = ${WebServerLogs}
-                  [/var/log/dmesg]
-                  file = /var/log/dmesg
-                  log_stream_name = {instance_id}/var/log/dmesg
-                  log_group_name = ${WebServerLogs}
-                  [/var/log/httpd/access_log]
-                  datetime_format = %b %d %H:%M:%S %Y
-                  file = /var/log/httpd/access_log
-                  log_stream_name = {instance_id}/var/log/httpd/access_log
-                  log_group_name = ${WebServerLogs}
-                  [/var/log/httpd/error_log]
-                  datetime_format = %d/%b/%Y:%H:%M:%S %z
-                  file = /var/log/httpd/error_log
-                  log_stream_name = {instance_id}/var/log/httpd/error_log
-                  log_group_name = ${WebServerLogs}
+              content: !Sub |
+                [general]
+                state_file = /var/lib/awslogs/agent-state
+                [/var/log/messages]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/messages
+                log_stream_name = {instance_id}/var/log/messages
+                log_group_name = ${WebServerLogs}
+                [/var/log/secure]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/secure
+                log_stream_name = {instance_id}/var/log/secure
+                log_group_name = ${WebServerLogs}
+                [/var/log/cron]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cron
+                log_stream_name = {instance_id}/var/log/cron
+                log_group_name = ${WebServerLogs}
+                [/var/log/cloud-init.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cloud-init.log
+                log_stream_name = {instance_id}/var/log/cloud-init.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/cfn-init.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init.log
+                log_stream_name = {instance_id}/var/log/cfn-init.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/cfn-hup.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-hup.log
+                log_stream_name = {instance_id}/var/log/cfn-hup.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/cfn-init-cmd.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init-cmd.log
+                log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/cloud-init-output.log]
+                file = /var/log/cloud-init-output.log
+                log_stream_name = {instance_id}/var/log/cloud-init-output.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/dmesg]
+                file = /var/log/dmesg
+                log_stream_name = {instance_id}/var/log/dmesg
+                log_group_name = ${WebServerLogs}
+                [/var/log/httpd/access_log]
+                datetime_format = %b %d %H:%M:%S %Y
+                file = /var/log/httpd/access_log
+                log_stream_name = {instance_id}/var/log/httpd/access_log
+                log_group_name = ${WebServerLogs}
+                [/var/log/httpd/error_log]
+                datetime_format = %d/%b/%Y:%H:%M:%S %z
+                file = /var/log/httpd/error_log
+                log_stream_name = {instance_id}/var/log/httpd/error_log
+                log_group_name = ${WebServerLogs}
               mode: '000644'
               owner: root
               group: root
