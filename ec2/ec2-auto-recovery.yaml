@@ -365,11 +365,10 @@ Resources:
       - !Ref SecurityGroup
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
       UserData:
-        Fn::Base64:
-          !Sub |
-            #!/bin/bash -x
-            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource VirtualMachine --region ${AWS::Region}
-            /opt/aws/bin/cfn-signal -e $? --region ${AWS::Region} --stack ${AWS::StackName} --resource VirtualMachine
+        'Fn::Base64': !Sub |
+           #!/bin/bash -x
+           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource VirtualMachine --region ${AWS::Region}
+           /opt/aws/bin/cfn-signal -e $? --region ${AWS::Region} --stack ${AWS::StackName} --resource VirtualMachine
       SubnetId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-${SubnetName}'
       Tags:

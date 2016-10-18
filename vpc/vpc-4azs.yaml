@@ -32,8 +32,7 @@ Resources:
     Properties:
       Tags:
       - Key: Name
-        Value:
-          Fn::Sub: 10.${ClassB}.0.0/16
+        Value: !Sub 10.${ClassB}.0.0/16
   VPCGatewayAttachment:
     Type: 'AWS::EC2::VPCGatewayAttachment'
     Properties:

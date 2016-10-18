@@ -240,7 +240,7 @@ Resources:
           - 'iam:ListSSHPublicKeys'
           - 'iam:GetSSHPublicKey'
           Resource:
-          - Fn::Sub: 'arn:aws:iam::${AWS::AccountId}:user/*'
+          - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
   LaunchConfiguration:
     Type: 'AWS::AutoScaling::LaunchConfiguration'
     Metadata:
@@ -567,11 +567,10 @@ Resources:
       - !Ref SecurityGroup
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
       UserData:
-        'Fn::Base64':
-          !Sub |
-            #!/bin/bash -x
-            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
-            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+        'Fn::Base64': !Sub |
+          #!/bin/bash -x
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
