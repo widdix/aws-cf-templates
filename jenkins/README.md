@@ -8,7 +8,7 @@ This template describes a Jenkins master in a highly available manner. If the ma
 ![Architecture](./jenkins2-ha.png?raw=true "Architecture")
 
 ### Installation Guide
-1. This templates depends on one of our [`vpc-*azs.yaml`](../vpc/) templates. Please create a VPC stack first: <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.yaml">Launch Stack</a>
+1. This templates depends on one of our [`vpc-*azs.yaml`](../vpc/) templates. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.yaml">Launch Stack</a>
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=jenkins2-ha&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/jenkins/jenkins2-ha.yaml">Launch Stack</a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
@@ -30,7 +30,7 @@ This template describes a Jenkins master in a highly available manner. If the ma
 ![Architecture](./jenkins2-ha-agents.png?raw=true "Architecture")
 
 ### Installation Guide
-1. This templates depends on one of our [`vpc-*azs.yaml`](../vpc/) templates. Please create a VPC stack first: <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.yaml">Launch Stack</a>
+1. This templates depends on one of our [`vpc-*azs.yaml`](../vpc/) templates. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.yaml">Launch Stack</a>
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=jenkins2-ha-agents&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/jenkins/jenkins2-ha-agents.yaml">Launch Stack</a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.

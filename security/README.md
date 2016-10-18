@@ -29,7 +29,7 @@ Or just use the suggested defaults.
 This template describes a **highly available** authentication proxy that forwards request to a upstream http(s) endpoint if the user is authenticated against your GitHub Organization.
 
 ### Installation Guide
-1. This templates depends on one of our [`vpc-*azs.yaml`](../vpc/) templates. Please create a VPC stack first: <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.yaml">Launch Stack</a>
+1. This templates depends on one of our [`vpc-*azs.yaml`](../vpc/) templates. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.yaml">Launch Stack</a>
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=security-auth-proxy-ha-github-orga&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/security/auth-proxy-ha-github-orga.yaml">Launch Stack</a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.

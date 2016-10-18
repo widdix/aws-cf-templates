@@ -48,7 +48,7 @@ This template describes a NAT Gateway that forwards HTTP, HTTPS and NTP traffic 
 ![Architecture](./vpc-nat-gateway.png?raw=true "Architecture")
 
 ### Installation Guide
-1. This templates depends on one of our `vpc-*azs.yaml` templates. Please create a VPC stack first: <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.yaml">Launch Stack</a>
+1. This templates depends on one of our `vpc-*azs.yaml` templates. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.yaml">Launch Stack</a>
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-nat-gateway&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-nat-gateway.yaml">Launch Stack</a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
@@ -65,7 +65,7 @@ This template describes a **highly available** Network Address Translation (NAT)
 
 ![Architecture](./vpc-nat-instance.png?raw=true "Architecture")
 ### Installation Guide
-1. This templates depends on one of our `vpc-*azs.yaml` templates. Please create a VPC stack first: <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.yaml">Launch Stack</a>
+1. This templates depends on one of our `vpc-*azs.yaml` templates. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.yaml">Launch Stack</a>
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-nat-instance&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-nat-instance.yaml">Launch Stack</a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
@@ -85,7 +85,7 @@ This template describes a **highly available** SSH bastion host/instance. SSH Po
 
 ![Architecture](./vpc-ssh-bastion.png?raw=true "Architecture")
 ### Installation Guide
-1. This templates depends on one of our `vpc-*azs.yaml` templates. Please create a VPC stack first: <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.yaml">Launch Stack</a>
+1. This templates depends on one of our `vpc-*azs.yaml` templates. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.yaml">Launch Stack</a>
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-ssh-bastion&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-ssh-bastion.yaml">Launch Stack</a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
