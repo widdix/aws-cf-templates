@@ -160,7 +160,7 @@ Resources:
         PriceClass: 'PriceClass_All'
         ViewerCertificate:
           AcmCertificateArn: !If [HasCreateAcmCertificate, !Ref Certificate, !If [HasAcmCertificateArn, !Ref ExistingCertificate, !Ref 'AWS::NoValue']] 
-          IamCertificateId: !If [HasIamCertificateId, !Ref Certificate, !Ref 'AWS::NoValue'] 
+          IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue'] 
           SslSupportMethod: 'sni-only'
           MinimumProtocolVersion: TLSv1
   Route53RecordRedirect:
