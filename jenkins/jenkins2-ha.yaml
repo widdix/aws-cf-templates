@@ -1,0 +1,654 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Jenkins 2: highly available Jenkins master, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+      - ParentSSHBastionStack
+      - ParentAuthProxyStack
+    - Label:
+        default: 'Jenkins Parameters'
+      Parameters:
+      - JenkinsVersion
+    - Label:
+        default: 'EC2 Parameters'
+      Parameters:
+      - KeyName
+      - IAMUserSSHAccess
+      - NewRelicLicenseKey
+    - Label:
+        default: 'Master Parameters'
+      Parameters:
+      - MasterSubnetsReach
+      - MasterELBScheme
+      - MasterInstanceType
+      - MasterAdminPassword
+      - MasterLogsRetentionInDays
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+  ParentSSHBastionStack:
+    Description: 'Optional Stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Type: String
+  ParentAuthProxyStack:
+    Description: 'Optional Stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
+    Type: String
+  KeyName:
+    Description: 'Optional key pair of the ec2-user to establish a SSH connection to the Jenkins master.'
+    Type: String
+    Default: ''
+  IAMUserSSHAccess:
+    Description: 'Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).'
+    Type: String
+    Default: false
+    AllowedValues:
+    - true
+    - false
+  MasterSubnetsReach:
+    Description: 'Should the master have direct access to the Internet or do you prefer private subnets with NAT?'
+    Type: String
+    Default: Public
+    AllowedValues:
+    - Public
+    - Private
+  MasterELBScheme:
+    Description: 'Indicates whether the load balancer in front of the Jenkins master is internet-facing or internal.'
+    Type: String
+    Default: 'internet-facing'
+    AllowedValues:
+    - 'internet-facing'
+    - internal
+  MasterInstanceType:
+    Description: 'The instance type of the Jenkins master.'
+    Type: String
+    Default: 't2.micro'
+  MasterAdminPassword:
+    Description: 'A password for the Jenkins master admin.'
+    Type: String
+    NoEcho: true
+  MasterLogsRetentionInDays:
+    Description: 'Specifies the number of days you want to retain log events in the specified log group.'
+    Type: Number
+    Default: 14
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  JenkinsVersion:
+    Description: 'Jenkins version number'
+    Type: String
+    Default: '2.7.4'
+    ConstraintDescription: 'x.y.z'
+    AllowedPattern: '[0-9]+\.[0-9]+\.[0-9]+'
+  NewRelicLicenseKey:
+    Description: 'Optional New Relic License Key will install the New Relic Servers for Linux agent.'
+    Type: String
+    Default: ''
+    NoEcho: true
+Mappings:
+  RegionMap:
+    'ap-south-1':
+      AMI: 'ami-cacbbea5'
+    'eu-west-1':
+      AMI: 'ami-d41d58a7'
+    'ap-northeast-2':
+      AMI: 'ami-a04297ce'
+    'ap-northeast-1':
+      AMI: 'ami-1a15c77b'
+    'sa-east-1':
+      AMI: 'ami-b777e4db'
+    'ap-southeast-1':
+      AMI: 'ami-7243e611'
+    'ap-southeast-2':
+      AMI: 'ami-55d4e436'
+    'eu-central-1':
+      AMI: 'ami-0044b96f'
+    'us-east-1':
+      AMI: 'ami-c481fad3'
+    'us-east-2':
+      AMI: 'ami-71ca9114'
+    'us-west-1':
+      AMI: 'ami-de347abe'
+    'us-west-2':
+      AMI: 'ami-b04e92d0'
+Conditions:
+  HasKeyName: !Not [!Equals [!Ref KeyName, '']]
+  HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
+  HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
+  HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
+  HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
+  HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
+  HasMasterELBSchemeInternal: !Equals [!Ref MasterELBScheme, 'internal']
+Resources:
+  MasterStorageSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'jenkins-master'
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      SecurityGroupIngress:
+      - SourceSecurityGroupId: !Ref MasterSG
+        FromPort: 2049
+        ToPort: 2049
+        IpProtocol: tcp
+  MasterStorage:
+    Type: 'AWS::EFS::FileSystem'
+    Properties:
+      FileSystemTags:
+      - Key: Name
+        Value: 'jenkins-master-storage'
+      PerformanceMode: generalPurpose
+  MasterStorageMountTargetA:
+    Type: 'AWS::EFS::MountTarget'
+    Properties:
+      FileSystemId: !Ref MasterStorage
+      SecurityGroups:
+      - !Ref MasterStorageSG
+      SubnetId: 
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetA${MasterSubnetsReach}'
+  MasterStorageMountTargetB:
+    Type: 'AWS::EFS::MountTarget'
+    Properties:
+      FileSystemId: !Ref MasterStorage
+      SecurityGroups:
+      - !Ref MasterStorageSG
+      SubnetId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetB${MasterSubnetsReach}'
+  MasterELBSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'jenkins-elb-master'
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+  MasterELBSGInWorld:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotAuthProxySecurityGroup
+    Properties:
+      GroupId: !Ref MasterELBSG
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      CidrIp: '0.0.0.0/0'
+  MasterELBSGInAuthProxy:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasAuthProxySecurityGroup
+    Properties:
+      GroupId: !Ref MasterELBSG
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      SourceSecurityGroupId:
+        'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'
+  MasterELB:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Scheme: !Ref MasterELBScheme
+      SecurityGroups:
+      - !Ref MasterELBSG
+      Subnets: !If
+      - HasMasterELBSchemeInternal
+      - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'
+        - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'
+      - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
+        - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      Tags:
+      - Key: Name
+        Value: 'jenkins-master'
+  MasterELBTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckIntervalSeconds: 15
+      HealthCheckPath: '/login'
+      HealthCheckPort: 8080
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 8
+      Matcher:
+        HttpCode: 200
+      Port: 8080
+      Protocol: HTTP
+      Tags:
+      - Key: Name
+        Value: 'jenkins-master'
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+  MasterELBListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+      - TargetGroupArn: !Ref MasterELBTargetGroup
+        Type: forward
+      LoadBalancerArn: !Ref MasterELB
+      Port: 80
+      Protocol: HTTP
+  MasterIP:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: '/'
+      Roles:
+      - !Ref MasterIAMRole
+  MasterIAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - 'ec2.amazonaws.com'
+          Action:
+          - 'sts:AssumeRole'
+      Path: '/'
+      Policies:
+      - PolicyName: logs
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'logs:CreateLogGroup'
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+            - 'logs:DescribeLogStreams'
+            Resource:
+            - 'arn:aws:logs:*:*:*'
+      - PolicyName: sts
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'sts:AssumeRole'
+            Resource:
+            - '*'
+  MasterIAMPolicySSHAccess:
+    Type: 'AWS::IAM::Policy'
+    Condition: HasIAMUserSSHAccess
+    Properties:
+      Roles:
+      - !Ref MasterIAMRole
+      PolicyName: iam
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - 'iam:ListUsers'
+          Resource:
+          - '*'
+        - Effect: Allow
+          Action:
+          - 'iam:ListSSHPublicKeys'
+          - 'iam:GetSSHPublicKey'
+          Resource:
+          - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
+  MasterSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'jenkins-master'
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      SecurityGroupIngress:
+      - SourceSecurityGroupId: !Ref MasterELBSG
+        FromPort: 8080
+        ToPort: 8080
+        IpProtocol: tcp
+  MasterSGInSSHBastion:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasSSHBastionSecurityGroup
+    Properties:
+      GroupId: !Ref MasterSG
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      SourceSecurityGroupId:
+        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+  MasterLogs:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      RetentionInDays: !Ref MasterLogsRetentionInDays
+  MasterLC:
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+    Metadata:
+      'AWS::CloudFormation::Init':
+        configSets:
+          default:
+            !If
+            - HasNewRelic
+            - !If [HasIAMUserSSHAccess, [ssh-access, mount, install, setup, newrelic, custom, run], [mount, install, setup, newrelic, custom, run]]
+            - !If [HasIAMUserSSHAccess, [ssh-access, mount, install, setup, custom, run], [mount, install, setup, custom, run]]
+        custom:
+          packages:
+            yum:
+              git: []
+              docker: []
+          commands:
+            'a_add_to_docker_group':
+              command: 'usermod -a -G docker jenkins'
+          services:
+            sysvinit:
+              docker:
+                enabled: true
+                ensureRunning: true
+                packages:
+                  yum:
+                  - docker
+        newrelic:
+          packages:
+            rpm:
+              newrelic-sysmond: 'https://download.newrelic.com/pub/newrelic/el5/x86_64/newrelic-sysmond-2.3.0.132-1.x86_64.rpm'
+          files:
+            '/etc/newrelic/nrsysmond.cfg':
+              content: !Sub |
+                license_key=${NewRelicLicenseKey}
+                loglevel=info
+                logfile=/var/log/newrelic/nrsysmond.log
+                labels=StackName:${AWS::StackName};AccountId:${AWS::AccountId};Region:${AWS::Region}
+              mode: '000640'
+              owner: root
+              group: newrelic
+          services:
+            sysvinit:
+              newrelic-sysmond:
+                enabled: true
+                ensureRunning: true
+                files:
+                - '/etc/newrelic/nrsysmond.cfg'
+        ssh-access:
+          files:
+            '/opt/authorized_keys_command.sh':
+              content: !Sub |
+                #!/bin/bash -e
+                if [ -z "$1" ]; then
+                  exit 1
+                fi
+                aws iam list-ssh-public-keys --user-name "$1" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read KeyId;
+                do
+                  aws iam get-ssh-public-key --user-name "$1" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
+                done
+              mode: '000755'
+              owner: root
+              group: root
+            '/opt/import_users.sh':
+              content: !Sub |
+                #!/bin/bash
+                aws iam list-users --query "Users[].[UserName]" --output text | while read User; do
+                  if id -u "$User" >/dev/null 2>&1; then
+                    echo "$User exists"
+                  else
+                    /usr/sbin/adduser "$User"
+                    echo "$User ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$User"
+                  fi
+                done
+              mode: '000755'
+              owner: root
+              group: root
+            '/etc/cron.d/import_users':
+              content: |
+                */10 * * * * root /opt/import_users.sh
+              mode: '000644'
+              owner: root
+              group: root
+          commands:
+            'a_configure_sshd_command':
+              command: 'sed -i "s:#AuthorizedKeysCommand none:AuthorizedKeysCommand /opt/authorized_keys_command.sh:g" /etc/ssh/sshd_config'
+            'b_configure_sshd_commanduser':
+              command: 'sed -i "s:#AuthorizedKeysCommandUser nobody:AuthorizedKeysCommandUser nobody:g" /etc/ssh/sshd_config'
+            'c_import_users':
+              command: './import_users.sh'
+              cwd: '/opt'
+          services:
+            sysvinit:
+              sshd:
+                enabled: true
+                ensureRunning: true
+                commands:
+                - 'a_configure_sshd_command'
+                - 'b_configure_sshd_commanduser'
+        mount:
+          packages:
+            yum:
+              'nfs-utils': []
+          commands:
+            'a_groupadd':
+              command: 'groupadd -g 497 jenkins'
+              test: 'if grep -q jenkins: /etc/group; then exit 1; else exit 0; fi'
+            'b_useradd':
+              command: 'adduser -u 498 -g 497 -s /bin/false -d /var/lib/jenkins -c ''Jenkins Continuous Integration Server'' jenkins'
+              test: 'if grep -q jenkins: /etc/passwd; then exit 1; else exit 0; fi'
+            'c_mountpoint_mkdir':
+              command: 'mkdir /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins'
+              test: '[ ! -d /var/lib/jenkins ]'
+            'd_mountpoint_mount':
+              command: !Sub 'mount -t nfs4 -o vers=4.1 "$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).${MasterStorage}.efs.${AWS::Region}.amazonaws.com:/" /var/lib/jenkins'
+              test: 'if mount | grep -q /var/lib/jenkins; then exit 1; else exit 0; fi'
+        install:
+          packages:
+            rpm:
+              jenkins: !Sub 'http://pkg.jenkins-ci.org/redhat-stable/jenkins-${JenkinsVersion}-1.1.noarch.rpm'
+            yum:
+              awslogs: []
+          files:
+            '/etc/awslogs/awscli.conf':
+              content: !Sub |
+                [default]
+                region = ${AWS::Region}
+                [plugins]
+                cwlogs = cwlogs
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/awslogs.conf':
+              content: !Sub |
+                [general]
+                state_file = /var/lib/awslogs/agent-state
+                [/var/log/messages]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/messages
+                log_stream_name = {instance_id}/var/log/messages
+                log_group_name = ${MasterLogs}
+                [/var/log/secure]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/secure
+                log_stream_name = {instance_id}/var/log/secure
+                log_group_name = ${MasterLogs}
+                [/var/log/cron]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cron
+                log_stream_name = {instance_id}/var/log/cron
+                log_group_name = ${MasterLogs}
+                [/var/log/cloud-init.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cloud-init.log
+                log_stream_name = {instance_id}/var/log/cloud-init.log
+                log_group_name = ${MasterLogs}
+                [/var/log/cfn-init.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init.log
+                log_stream_name = {instance_id}/var/log/cfn-init.log
+                log_group_name = ${MasterLogs}
+                [/var/log/cfn-hup.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-hup.log
+                log_stream_name = {instance_id}/var/log/cfn-hup.log
+                log_group_name = ${MasterLogs}
+                [/var/log/cfn-init-cmd.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init-cmd.log
+                log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
+                log_group_name = ${MasterLogs}
+                [/var/log/cloud-init-output.log]
+                file = /var/log/cloud-init-output.log
+                log_stream_name = {instance_id}/var/log/cloud-init-output.log
+                log_group_name = ${MasterLogs}
+                [/var/log/dmesg]
+                file = /var/log/dmesg
+                log_stream_name = {instance_id}/var/log/dmesg
+                log_group_name = ${MasterLogs}
+                [/var/log/jenkins/jenkins.log]
+                datetime_format = %d %b %Y %H:%M:%S
+                multi_line_start_pattern = {datetime_format}
+                file = /var/log/jenkins/jenkins.log
+                log_stream_name = {instance_id}/var/log/jenkins/jenkins.log
+                log_group_name = ${MasterLogs}
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/cfn/cfn-hup.conf':
+              content: !Sub |
+                [main]
+                stack=${AWS::StackId}
+                region=${AWS::Region}
+                interval=1
+              mode: '000400'
+              owner: root
+              group: root
+            '/etc/cfn/hooks.d/cfn-auto-reloader.conf':
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.MasterLC.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=MasterLC
+                runas=root
+          services:
+            sysvinit:
+              awslogs:
+                enabled: true
+                ensureRunning: true
+                packages:
+                  yum:
+                  - awslogs
+                files:
+                - '/etc/awslogs/awslogs.conf'
+                - '/etc/awslogs/awscli.conf'
+              cfn-hup:
+                enabled: true
+                ensureRunning: true
+                files:
+                - '/etc/cfn/cfn-hup.conf'
+                - '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
+        setup:
+          files:
+            '/root/plugins.txt':
+              content: |
+                jqs-monitoring
+                ant
+                build-timeout
+                docker-workflow
+                credentials-binding
+                email-ext
+                envinject
+                github-organization-folder
+                gradle
+                workflow-aggregator
+                pipeline-maven
+                ssh-slaves
+                subversion
+                timestamper
+                ws-cleanup
+              mode: '000400'
+              owner: root
+              group: root
+          commands:
+            'a_start_jenkins':
+              command: 'service jenkins start'
+              test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+            'b_await_jenkins':
+              command: 'until $(curl --output /dev/null --silent --head --fail -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+            'c_activate_slave_agent_port':
+              command: 'sed -i -e "s@<slaveAgentPort>.*</slaveAgentPort>@<slaveAgentPort>49817</slaveAgentPort>@" /var/lib/jenkins/config.xml'
+              test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+            'd_restart_jenkins':
+              command: 'service jenkins restart'
+              test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+            'e_await_jenkins':
+              command: 'until $(curl --output /dev/null --silent --head --fail -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+            'f_install_plugins':
+              command: 'while read -r plugin; do java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -noKeyAuth install-plugin "$plugin" --username admin --password "$(cat /var/lib/jenkins/secrets/initialAdminPassword)"; done < /root/plugins.txt'
+              test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+            'g_restart_jenkins':
+              command: 'service jenkins restart'
+              test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+            'h_await_jenkins':
+              command: 'until $(curl --output /dev/null --silent --head --fail -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+            'i_set_admin_password':
+              command: !Sub 'echo ''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", "${MasterAdminPassword}")'' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -noKeyAuth groovy = --username admin --password "$(cat /var/lib/jenkins/secrets/initialAdminPassword)"'
+              test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+            'j_stop_jenkins':
+              command: 'service jenkins stop'
+              test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+            'z_create_setup_done_file':
+              command: 'echo "Setup done. Don not delete this file." > /var/lib/jenkins/setup_done.txt'
+              test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+        run:
+          services:
+            sysvinit:
+              jenkins:
+                enabled: true
+                ensureRunning: true
+                packages:
+                  rpm:
+                  - jenkins
+    Properties:
+      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+      IamInstanceProfile: !Ref MasterIP
+      InstanceType: !Ref MasterInstanceType
+      SecurityGroups:
+      - !Ref MasterSG
+      KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+      UserData:
+        'Fn::Base64': !Sub |
+          #!/bin/bash -x
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource MasterLC --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource MasterASG --region ${AWS::Region}
+  MasterASG:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    DependsOn:
+    - MasterStorageMountTargetA
+    - MasterStorageMountTargetB
+    Properties:
+      LaunchConfigurationName: !Ref MasterLC
+      MinSize: 1
+      MaxSize: 1
+      DesiredCapacity: 1
+      HealthCheckGracePeriod: 900
+      HealthCheckType: ELB
+      VPCZoneIdentifier:
+      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetA${MasterSubnetsReach}'
+      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetB${MasterSubnetsReach}'
+      TargetGroupARNs:
+      - !Ref MasterELBTargetGroup
+      Tags:
+      - Key: Name
+        Value: 'jenkins-master'
+        PropagateAtLaunch: true
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        PauseTime: PT15M
+        WaitOnResourceSignals: true
+Outputs:
+  AdminUsername:
+    Description: 'User name for the Jenkins admin.'
+    Value: admin
+    Export:
+      Name: !Sub '${AWS::StackName}-AdminUsername'
+  DNSName:
+    Description: 'The DNS name for the Jenkins Master load balancer.'
+    Value: !Sub '${MasterELB.DNSName}'
+    Export:
+      Name: !Sub '${AWS::StackName}-DNSName'
+  URL:
+    Description: 'URL to the Jenkins Master.'
+    Value: !Sub 'http://${MasterELB.DNSName}'
+    Export:
+      Name: !Sub '${AWS::StackName}-URL'
