@@ -1,12 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Security: CloudTrail across all regions, a cloudonaut.io template'
-Parameters:
-  CloudWatchLogsRetentionInDays:
-    Description: 'The number of days log events are kept in CloudWatch Logs'
-    Type: Number
-    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
-    Default: 14
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -14,6 +8,12 @@ Metadata:
         default: 'CloudTrail Parameters'
       Parameters:
       - CloudWatchLogsRetentionInDays
+Parameters:
+  CloudWatchLogsRetentionInDays:
+    Description: 'The number of days log events are kept in CloudWatch Logs'
+    Type: Number
+    Default: 14
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
 Resources:
   TrailBucket:
     DeletionPolicy: Retain
@@ -22,8 +22,7 @@ Resources:
   TrailBucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
     Properties:
-      Bucket:
-        Ref: TrailBucket
+      Bucket: !Ref TrailBucket
       PolicyDocument:
         Version: '2012-10-17'
         Statement:

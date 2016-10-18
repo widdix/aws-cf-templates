@@ -1,6 +1,35 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Wordpress: fault tolerant and scalable, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+      - ParentSSHBastionStack
+      - ParentAuthProxyStack
+    - Label:
+        default: 'Wordpress Parameters'
+      Parameters:
+      - BlogID
+      - BlogTitle
+      - BlogAdminUsername
+      - BlogAdminPassword
+      - BlogAdminEMail
+    - Label:
+        default: 'EC2 Parameters'
+      Parameters:
+      - WebServerKeyName
+      - WebServerIAMUserSSHAccess
+      - WebServerInstanceType
+      - WebServerLogsRetentionInDays
+      - NewRelicLicenseKey
+    - Label:
+        default: 'Database Parameters'
+      Parameters:
+      - DBServerInstanceType
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -39,10 +68,10 @@ Parameters:
   WebServerIAMUserSSHAccess:
     Description: 'Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).'
     Type: String
+    Default: false
     AllowedValues:
     - true
     - false
-    Default: false
   WebServerInstanceType:
     Description: 'The instance type of web servers (e.g. t2.micro).'
     Type: String
@@ -50,8 +79,8 @@ Parameters:
   WebServerLogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain log events.'
     Type: Number
-    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
     Default: 14
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
   DBServerInstanceType:
     Description: 'The instance type of database server (e.g. db.t2.micro).'
     Type: String
@@ -61,42 +90,6 @@ Parameters:
     Type: String
     Default: ''
     NoEcho: true
-Metadata:
-  'AWS::CloudFormation::Interface':
-    ParameterGroups:
-    - Label:
-        default: 'Parent Stacks'
-      Parameters:
-      - ParentVPCStack
-      - ParentSSHBastionStack
-      - ParentAuthProxyStack
-    - Label:
-        default: 'Wordpress Parameters'
-      Parameters:
-      - BlogID
-      - BlogTitle
-      - BlogAdminUsername
-      - BlogAdminPassword
-      - BlogAdminEMail
-    - Label:
-        default: 'EC2 Parameters'
-      Parameters:
-      - WebServerKeyName
-      - WebServerIAMUserSSHAccess
-      - WebServerInstanceType
-      - WebServerLogsRetentionInDays
-      - NewRelicLicenseKey
-    - Label:
-        default: 'Database Parameters'
-      Parameters:
-      - DBServerInstanceType
-Conditions:
-  HasKeyName: !Not [!Equals [!Ref WebServerKeyName, '']]
-  HasIAMUserSSHAccess: !Equals [!Ref WebServerIAMUserSSHAccess, 'true']
-  HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
-  HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
-  HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
-  HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
 Mappings:
   RegionMap:
     'ap-south-1':
@@ -123,6 +116,13 @@ Mappings:
       AMI: 'ami-de347abe'
     'us-west-2':
       AMI: 'ami-b04e92d0'
+Conditions:
+  HasKeyName: !Not [!Equals [!Ref WebServerKeyName, '']]
+  HasIAMUserSSHAccess: !Equals [!Ref WebServerIAMUserSSHAccess, 'true']
+  HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
+  HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
+  HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
+  HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
 Resources:
   WebServerLogs:
     Type: 'AWS::Logs::LogGroup'
@@ -594,6 +594,13 @@ Resources:
       ComparisonOperator: LessThanThreshold
       MetricName: CPUUtilization
 Outputs:
+  DNSName:
+    Description: 'The DNS name for the Wordpress load balancer.'
+    Value: !Sub '${LoadBalancer.DNSName}'
+    Export:
+      Name: !Sub '${AWS::StackName}-DNSName'
   URL:
-    Value: !Sub 'http://${LoadBalancer.DNSName}'
     Description: 'URL to Wordpress'
+    Value: !Sub 'http://${LoadBalancer.DNSName}'
+    Export:
+      Name: !Sub '${AWS::StackName}-URL'

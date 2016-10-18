@@ -1,38 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'VPC: highly available NAT instance for private subnets, a cloudonaut.io template'
-Parameters:
-  ParentVPCStack:
-    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
-    Type: String
-  ParentSSHBastionStack:
-    Description: 'Optional Stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
-    Type: String
-  KeyName:
-    Description: 'Optional key pair of the ec2-user to establish a SSH connection to the NAT instance.'
-    Type: String
-    Default: ''
-  IAMUserSSHAccess:
-    Description: 'Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).'
-    Type: String
-    AllowedValues:
-    - true
-    - false
-    Default: false
-  NATInstanceType:
-    Type: String
-    Default: 't2.nano'
-    Description: 'Instance type of the NAT instance. Keep in mind that different instances come with different network capabilities.'
-  LogsRetentionInDays:
-    Description: 'Specifies the number of days you want to retain log events.'
-    Type: Number
-    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
-    Default: 14
-  NewRelicLicenseKey:
-    Description: 'Optional New Relic License Key will install the New Relic Servers for Linux agent.'
-    Type: String
-    Default: ''
-    NoEcho: true
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -49,6 +17,38 @@ Metadata:
       - IAMUserSSHAccess
       - LogsRetentionInDays
       - NewRelicLicenseKey
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+  ParentSSHBastionStack:
+    Description: 'Optional Stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Type: String
+  KeyName:
+    Description: 'Optional key pair of the ec2-user to establish a SSH connection to the NAT instance.'
+    Type: String
+    Default: ''
+  IAMUserSSHAccess:
+    Description: 'Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).'
+    Type: String
+    Default: false
+    AllowedValues:
+    - true
+    - false
+  NATInstanceType:
+    Description: 'Instance type of the NAT instance. Keep in mind that different instances come with different network capabilities.'
+    Type: String
+    Default: 't2.nano'
+  LogsRetentionInDays:
+    Description: 'Specifies the number of days you want to retain log events.'
+    Type: Number
+    Default: 14
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  NewRelicLicenseKey:
+    Description: 'Optional New Relic License Key will install the New Relic Servers for Linux agent.'
+    Type: String
+    Default: ''
+    NoEcho: true
 Mappings:
   RegionMap:
     'ap-south-1':

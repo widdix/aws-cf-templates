@@ -1,17 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Security: Config setup, a cloudonaut.io template'
-Parameters:
-  DeliveryFrequency:
-    Description: 'The frequency with which AWS Config delivers configuration snapshots'
-    Type: String
-    AllowedValues:
-    - One_Hour
-    - Three_Hours
-    - Six_Hours
-    - Twelve_Hours
-    - TwentyFour_Hours
-    Default: Six_Hours
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -19,6 +8,17 @@ Metadata:
         default: 'Config Parameters'
       Parameters:
       - DeliveryFrequency
+Parameters:
+  DeliveryFrequency:
+    Description: 'The frequency with which AWS Config delivers configuration snapshots'
+    Type: String
+    Default: Six_Hours
+    AllowedValues:
+    - One_Hour
+    - Three_Hours
+    - Six_Hours
+    - Twelve_Hours
+    - TwentyFour_Hours
 Resources:
   ConfigBucket:
     DeletionPolicy: Retain

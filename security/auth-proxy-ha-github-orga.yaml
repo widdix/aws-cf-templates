@@ -1,58 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Security: highly available auth proxy using your GitHub Organization, a cloudonaut.io template'
-Parameters:
-  ParentVPCStack:
-    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
-    Type: String
-  ParentSSHBastionStack:
-    Description: 'Optional Stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
-    Type: String
-  CertificateArn:
-    Description: 'The Amazon Resource Name (ARN) of the certificate to associate with the auth proxy endpoint.'
-    Type: String
-  KeyName:
-    Description: 'Optional key pair of the ec2-user to establish a SSH connection to the auth proxy.'
-    Type: String
-    Default: ''
-  IAMUserSSHAccess:
-    Description: 'Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).'
-    Type: String
-    AllowedValues:
-    - true
-    - false
-    Default: false
-  InstanceType:
-    Type: String
-    Default: 't2.nano'
-    Description: 'Instance type of the auth proxy.'
-  LogsRetentionInDays:
-    Description: 'Specifies the number of days you want to retain log events.'
-    Type: Number
-    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
-    Default: 14
-  NewRelicLicenseKey:
-    Description: 'Optional New Relic License Key will install the New Relic Servers for Linux agent.'
-    Type: String
-    Default: ''
-    NoEcho: true
-  GitHubOrganization:
-    Description: 'GitHub organization name.'
-    Type: String
-  GitHubClientId:
-    Description: 'GitHub client id. Register a new application here: https://github.com/organizations/$YOUR_ORGANIZATION/settings/applications'
-    Type: String
-  GitHubClientSecret:
-    Description: 'GitHub client secret. Register a new application here: https://github.com/organizations/$YOUR_ORGANIZATION/settings/applications'
-    Type: String
-    NoEcho: true
-  Upstream:
-    Description: 'HTTP(S) upstream for the proxy to redirect requests.'
-    Type: String
-  CookieSecret:
-    Description: 'Seed string for secure cookies. Create one with python -c ''import os,base64; print base64.b64encode(os.urandom(16))'''
-    Type: String
-    NoEcho: true
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -78,6 +26,58 @@ Metadata:
       - IAMUserSSHAccess
       - LogsRetentionInDays
       - NewRelicLicenseKey
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+  ParentSSHBastionStack:
+    Description: 'Optional Stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Type: String
+  CertificateArn:
+    Description: 'The Amazon Resource Name (ARN) of the certificate to associate with the auth proxy endpoint.'
+    Type: String
+  KeyName:
+    Description: 'Optional key pair of the ec2-user to establish a SSH connection to the auth proxy.'
+    Type: String
+    Default: ''
+  IAMUserSSHAccess:
+    Description: 'Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).'
+    Type: String
+    Default: false
+    AllowedValues:
+    - true
+    - false
+  InstanceType:
+    Description: 'Instance type of the auth proxy.'
+    Type: String
+    Default: 't2.nano'
+  LogsRetentionInDays:
+    Description: 'Specifies the number of days you want to retain log events.'
+    Type: Number
+    Default: 14
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  NewRelicLicenseKey:
+    Description: 'Optional New Relic License Key will install the New Relic Servers for Linux agent.'
+    Type: String
+    Default: ''
+    NoEcho: true
+  GitHubOrganization:
+    Description: 'GitHub organization name.'
+    Type: String
+  GitHubClientId:
+    Description: 'GitHub client id. Register a new application here: https://github.com/organizations/$YOUR_ORGANIZATION/settings/applications'
+    Type: String
+  GitHubClientSecret:
+    Description: 'GitHub client secret. Register a new application here: https://github.com/organizations/$YOUR_ORGANIZATION/settings/applications'
+    Type: String
+    NoEcho: true
+  Upstream:
+    Description: 'HTTP(S) upstream for the proxy to redirect requests.'
+    Type: String
+  CookieSecret:
+    Description: 'Seed string for secure cookies. Create one with python -c ''import os,base64; print base64.b64encode(os.urandom(16))'''
+    Type: String
+    NoEcho: true
 Mappings:
   RegionMap:
     'ap-south-1':
@@ -620,9 +620,14 @@ Outputs:
     Description: 'Use this Security Group to reference incoming traffic from the auth proxy.'
     Value: !Ref SecurityGroup
     Export:
-      Name: SecurityGroup
+      Name: !Sub '${AWS::StackName}-SecurityGroup'
   DNSName:
     Description: 'The DNS name for the auth proxy load balancer.'
     Value: !Sub '${LoadBalancer.DNSName}'
     Export:
-      Name: DNSName
+      Name: !Sub '${AWS::StackName}-DNSName'
+  URL:
+    Description: 'URL to the auth proxy.'
+    Value: !Sub 'https://${LoadBalancer.DNSName}'
+    Export:
+      Name: !Sub '${AWS::StackName}-URL'
