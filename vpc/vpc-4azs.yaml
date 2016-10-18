@@ -283,6 +283,11 @@ Resources:
       Egress: true
       CidrBlock: '0.0.0.0/0'
 Outputs:
+  AZs:
+    Description: 'AZs'
+    Value: 4
+    Export:
+      Name: !Sub '${AWS::StackName}-AZs'
   ClassB:
     Description: 'Class B.'
     Value: !Ref ClassB

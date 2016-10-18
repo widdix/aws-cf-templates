@@ -84,20 +84,22 @@ Mappings:
       AMI: 'ami-cacbbea5'
     'eu-west-1':
       AMI: 'ami-d41d58a7'
+    'ap-northeast-2':
+      AMI: 'ami-a04297ce'
+    'ap-northeast-1':
+      AMI: 'ami-1a15c77b'
+    'sa-east-1':
+      AMI: 'ami-b777e4db'
     'ap-southeast-1':
       AMI: 'ami-7243e611'
     'ap-southeast-2':
       AMI: 'ami-55d4e436'
     'eu-central-1':
       AMI: 'ami-0044b96f'
-    'ap-northeast-2':
-      AMI: 'ami-a04297ce'
-    'ap-northeast-1':
-      AMI: 'ami-1a15c77b'
     'us-east-1':
       AMI: 'ami-c481fad3'
-    'sa-east-1':
-      AMI: 'ami-b777e4db'
+    'us-east-2':
+      AMI: 'ami-71ca9114'
     'us-west-1':
       AMI: 'ami-de347abe'
     'us-west-2':
@@ -242,7 +244,7 @@ Resources:
   LaunchConfiguration:
     Type: 'AWS::AutoScaling::LaunchConfiguration'
     Metadata:
-      AWS::CloudFormation::Init:
+      'AWS::CloudFormation::Init':
         configSets:
           default:
             !If
@@ -582,7 +584,7 @@ Resources:
       - !Ref SecurityGroup
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
       UserData:
-        Fn::Base64:
+        'Fn::Base64':
           !Sub |
             #!/bin/bash -x
             /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}

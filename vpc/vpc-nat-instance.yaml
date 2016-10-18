@@ -55,20 +55,22 @@ Mappings:
       NATAMI: 'ami-c8c2b7a7'
     'eu-west-1':
       NATAMI: 'ami-362b6e45'
+    'ap-northeast-2':
+      NATAMI: 'ami-844d98ea'
+    'ap-northeast-1':
+      NATAMI: 'ami-831fcde2'
+    'sa-east-1':
+      NATAMI: 'ami-9775e6fb'
     'ap-southeast-1':
       NATAMI: 'ami-9c40e5ff'
     'ap-southeast-2':
       NATAMI: 'ami-addbebce'
     'eu-central-1':
       NATAMI: 'ami-b646bbd9'
-    'ap-northeast-2':
-      NATAMI: 'ami-844d98ea'
-    'ap-northeast-1':
-      NATAMI: 'ami-831fcde2'
     'us-east-1':
       NATAMI: 'ami-d2ee95c5'
-    'sa-east-1':
-      NATAMI: 'ami-9775e6fb'
+    'us-east-2':
+      NATAMI: 'ami-9fc299fa'
     'us-west-1':
       NATAMI: 'ami-90357bf0'
     'us-west-2':
