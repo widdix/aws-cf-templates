@@ -35,9 +35,11 @@ Parameters:
   ParentSSHBastionStack:
     Description: 'Optional Stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
     Type: String
+    Default: ''
   ParentAuthProxyStack:
     Description: 'Optional Stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
     Type: String
+    Default: ''
   KeyName:
     Description: 'Optional key pair of the ec2-user to establish a SSH connection to the Jenkins master.'
     Type: String

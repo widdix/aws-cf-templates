@@ -33,6 +33,7 @@ Parameters:
   ParentSSHBastionStack:
     Description: 'Optional Stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
     Type: String
+    Default: ''
   CertificateArn:
     Description: 'The Amazon Resource Name (ARN) of the certificate to associate with the auth proxy endpoint.'
     Type: String

@@ -37,9 +37,11 @@ Parameters:
   ParentSSHBastionStack:
     Description: 'Optional Stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
     Type: String
+    Default: ''
   ParentAuthProxyStack:
     Description: 'Optional Stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
     Type: String
+    Default: ''
   BlogID:
     Description: 'A unique identifier for your blog. For internal use only.'
     Type: String

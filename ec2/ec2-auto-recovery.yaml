@@ -26,6 +26,7 @@ Parameters:
   ParentSSHBastionStack:
     Description: 'Optional Stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
     Type: String
+    Default: ''
   KeyName:
     Description: 'Optional key pair of the ec2-user to establish a SSH connection to the EC2 instance.'
     Type: String
