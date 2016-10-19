@@ -6,7 +6,8 @@ This template describes an EC2 instance with auto-recovery. If the instance fail
 ![Architecture](./ec2-auto-recovery.png?raw=true "Architecture")
 
 ### Installation Guide
-1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=ec2-auto-recovery&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/ec2/ec2-auto-recovery.json">Launch Stack</a>
+1. This templates depends on one of our [`vpc-*azs.yaml`](../vpc/) templates. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.yaml">Launch Stack</a>
+1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=ec2-auto-recovery&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/ec2/ec2-auto-recovery.yaml">Launch Stack</a>
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -15,6 +16,10 @@ This template describes an EC2 instance with auto-recovery. If the instance fail
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 1. Grab the public IP address of the EC2 instance from the **Outputs** tab of your stack.
+
+### Dependencies
+* `vpc/vpc-*azs.yaml` (**required**)
+* `vpc/vpc-ssh-bastion.yaml`
 
 ## Support
 We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)

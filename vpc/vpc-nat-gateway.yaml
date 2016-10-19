@@ -1,0 +1,51 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'VPC: NAT Gateway for private subnets, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+    - Label:
+        default: 'NatGateway Parameters'
+      Parameters:
+      - SubnetName
+Parameters:
+  ParentVPCStack:
+    Description: Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.
+    Type: String
+  SubnetName:
+    Description: 'Subnet name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+    Default: SubnetAPublic
+    AllowedValues:
+    - SubnetAPublic
+    - SubnetBPublic
+    - SubnetCPublic
+    - SubnetDPublic
+Resources:
+  EIP:
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      Domain: vpc
+  NatGateway:
+    Type: 'AWS::EC2::NatGateway'
+    Properties:
+      AllocationId: !Sub '${EIP.AllocationId}'
+      SubnetId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-${SubnetName}'
+  Route:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablePrivate'
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NatGateway
+Outputs:
+  IPAddress:
+    Description: 'The public IP address of the NAT gateway.'
+    Value: !Ref EIP
+    Export:
+      Name: !Sub '${AWS::StackName}-IPAddress'
