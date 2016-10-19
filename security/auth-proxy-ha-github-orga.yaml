@@ -123,6 +123,10 @@ Resources:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
       SecurityGroupIngress:
       - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: '0.0.0.0/0'
+      - IpProtocol: tcp
         FromPort: 443
         ToPort: 443
         CidrIp: '0.0.0.0/0'
@@ -157,6 +161,25 @@ Resources:
         Value: 'Auth proxy'
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+  LoadBalancerTargetGroupHttpRedirect:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckIntervalSeconds: 15
+      HealthCheckPath: '/'
+      HealthCheckPort: 80
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 8
+      Matcher:
+        HttpCode: 200
+      Port: 8080
+      Protocol: HTTP
+      Tags:
+      - Key: Name
+        Value: 'Auth proxy http redirect'
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
   LoadBalancerListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
@@ -168,6 +191,15 @@ Resources:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 443
       Protocol: HTTPS
+  LoadBalancerListenerHttpRedirect:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+      - TargetGroupArn: !Ref LoadBalancerTargetGroupHttpRedirect
+        Type: forward
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
   SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -176,6 +208,14 @@ Resources:
       - IpProtocol: tcp
         FromPort: 4180
         ToPort: 4180
+        SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+      - IpProtocol: tcp
+        FromPort: 8080
+        ToPort: 8080
+        SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
         SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
@@ -332,7 +372,18 @@ Resources:
           packages:
             yum:
               awslogs: []
+              nginx: []
           files:
+            '/etc/nginx/conf.d/http2https.conf':
+              content: !Sub |
+                server {
+                  listen 8080 default_server;
+                  server_name _;
+                  return 301 https://$host$request_uri;
+                }
+              mode: '000644'
+              owner: root
+              group: root
             '/etc/oauth2_proxy.cfg':
               content: !Sub |
                 ## OAuth2 Proxy Config File
@@ -544,6 +595,14 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
+              nginx:
+                enabled: true
+                ensureRunning: true
+                packages:
+                  yum:
+                  - nginx
+                files:
+                - '/etc/nginx/conf.d/http2https.conf'
               oauth2_proxy:
                 enabled: true
                 ensureRunning: true
@@ -587,6 +646,7 @@ Resources:
         PropagateAtLaunch: true
       TargetGroupARNs:
       - !Ref LoadBalancerTargetGroup
+      - !Ref LoadBalancerTargetGroupHttpRedirect
       VPCZoneIdentifier:
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
