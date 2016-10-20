@@ -243,14 +243,6 @@ Resources:
       ToPort: 80
       SourceSecurityGroupId:
         'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'
-  MasterELBSGInAgent:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Properties:
-      GroupId: !Ref MasterELBSG
-      IpProtocol: tcp
-      FromPort: 80
-      ToPort: 80
-      SourceSecurityGroupId: !Ref AgentSG
   MasterELB:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
@@ -1315,12 +1307,24 @@ Resources:
             '/var/lib/jenkins/start-agent.sh':
               content: !Sub |
                 #!/bin/bash -ex
+                instanceId=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
                 masterInstanceId=$(aws --region ${AWS::Region} autoscaling describe-auto-scaling-groups --auto-scaling-group-names ${MasterASG} --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)
                 masterIP=$(aws --region ${AWS::Region} ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
-                java -jar slave.jar -jnlpUrl http://$masterIP:8080/computer/$(curl -s http://169.254.169.254/latest/meta-data/instance-id)/slave-agent.jnlp -jnlpCredentials 'admin:${MasterAdminPassword}'
+                secret=$(curl -s -u 'admin:${MasterAdminPassword}' http://$masterIP:8080/computer/$instanceId/slave-agent.jnlp | xmllint --xpath '//argument[1]/text()' -)
+                java -classpath remoting.jar hudson.remoting.jnlp.Main $secret $instanceId -url http://$masterIP:8080/ -headless
               mode: '000500'
               owner: jenkins
               group: jenkins
+            '/root/download.sh':
+              content: !Sub |
+                #!/bin/bash -ex
+                masterInstanceId=$(aws --region ${AWS::Region} autoscaling describe-auto-scaling-groups --auto-scaling-group-names ${MasterASG} --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)
+                masterIP=$(aws --region ${AWS::Region} ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
+                wget -q -T 60 http://$masterIP:8080/jnlpJars/remoting.jar
+                wget -q -T 60 http://$masterIP:8080/jnlpJars/jenkins-cli.jar
+              mode: '000500'
+              owner: root
+              group: root
             '/etc/init.d/agent-healthcheck':
               content: |
                 #!/usr/bin/env ruby
@@ -1424,15 +1428,11 @@ Resources:
               owner: root
               group: root
           commands:
-            'd_download_slave_jar':
-              command: !Sub 'wget -q -T 60 http://${MasterELB.DNSName}/jnlpJars/slave.jar'
+            'a_download_remoting_jar':
+              command: '/root/download.sh'
               cwd: '/var/lib/jenkins'
-              test: '[ ! -f /var/lib/jenkins/slave.jar ]'
-            'e_download_cli_jar':
-              command: !Sub 'wget -q -T 60 http://${MasterELB.DNSName}/jnlpJars/jenkins-cli.jar'
-              cwd: '/var/lib/jenkins'
-              test: '[ ! -f /var/lib/jenkins/jenkins-cli.jar ]'
-            'f_create_agent':
+              test: '[ ! -f /var/lib/jenkins/remoting.jar ]'
+            'b_create_agent':
               command: '/root/create-agent.sh'
               cwd: '/var/lib/jenkins'
               test: 'if /root/check-agent.sh; then exit 1; else exit 0; fi'
