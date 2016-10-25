@@ -1,0 +1,112 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ECS: service that runs on a cluster, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentClusterStack
+    - Label:
+        default: 'Task Parameters'
+      Parameters:
+      - Priority
+      - PathPattern
+      - Family
+Parameters:
+  ParentClusterStack:
+    Description: 'Stack name of parent Cluster stack based on ecs/cluster.yaml template.'
+    Type: String
+  Priority:
+    Description: 'The priority for the rule. Elastic Load Balancing evaluates rules in priority order, from the lowest value to the highest value. If a request satisfies a rule, Elastic Load Balancing ignores all subsequent rules. A target group can have only one rule with a given priority.'
+    Type: Number
+    Default: 1
+    ConstraintDescription: 'Must be in the range [1-99999]'
+    MinValue: 1
+    MaxValue: 99999
+  PathPattern:
+    Description: 'A path pattern is case sensitive.'
+    Type: String
+    Default: '/service/*'
+    ConstraintDescription: 'Must not be longer than 255'
+    MaxLength: 255
+  Image:
+    Description: 'The image to use for a container, which is passed directly to the Docker daemon. This template assumes that the container listens on port 80.'
+    Type: String
+    Default: 'nginx:1.11.5'
+Mappings: {}
+Conditions: {}
+Resources:
+  TargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckIntervalSeconds: 15
+      HealthCheckPath: '/'
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 2
+      Matcher:
+        HttpCode: '200'
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 4
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentClusterStack}-VPC'
+  ListenerRule:
+    Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn: !Ref TargetGroup
+      Conditions:
+      - Field: path-pattern
+        Values:
+        - !Ref PathPattern
+      ListenerArn:
+        'Fn::ImportValue': !Sub '${ParentClusterStack}-Listener'
+      Priority: !Ref Priority
+  Role:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      ManagedPolicyArns:
+      - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole'
+      AssumeRolePolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'ecs.amazonaws.com'
+          Action: 'sts:AssumeRole'
+  TaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      ContainerDefinitions:
+      - Image: !Ref Image
+        Memory: 128
+        Name: !Ref 'AWS::StackName'
+        PortMappings:
+        - ContainerPort: 80
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            awslogs-region: !Ref AWS::Region
+            awslogs-group:
+              'Fn::ImportValue': !Sub '${ParentClusterStack}-LogGroup'
+            awslogs-stream-prefix: !Ref 'AWS::StackName'
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster:
+        'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
+      DesiredCount: 2
+      LoadBalancers:
+      - ContainerName: !Ref 'AWS::StackName'
+        ContainerPort: 80
+        TargetGroupArn: !Ref TargetGroup
+      Role: !Sub ${Role.Arn}
+      TaskDefinition: !Ref TaskDefinition
+Outputs: {}

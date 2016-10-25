@@ -120,7 +120,7 @@ Parameters:
     ConstraintDescription: 'Must be >= 0'
     MinValue: 0
   AgentDesiredCapacity:
-    Description: 'The desired start size of the agents Auto Scaling group. We need one agent during startup for technical reasons.'
+    Description: 'The desired start size of the agents Auto Scaling group.'
     Type: Number
     Default: 0
     ConstraintDescription: 'Must be >= 0'
