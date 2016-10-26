@@ -13,7 +13,6 @@ Metadata:
     - Label:
         default: 'Wordpress Parameters'
       Parameters:
-      - BlogID
       - BlogTitle
       - BlogAdminUsername
       - BlogAdminPassword
@@ -42,12 +41,6 @@ Parameters:
     Description: 'Optional Stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
     Type: String
     Default: ''
-  BlogID:
-    Description: 'A unique identifier for your blog. For internal use only.'
-    Type: String
-    ConstraintDescription: 'Only allows [a-z0-9\-] and must not be longer than 32'
-    AllowedPattern: '[a-z0-9\-]+'
-    MaxLength: 32
   BlogTitle:
     Description: 'The title of the Wordpress blog.'
     Type: String
@@ -203,7 +196,6 @@ Resources:
       Subnets:
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
-      LoadBalancerName: !Ref BlogID
       Listeners:
       - InstancePort: 80
         InstanceProtocol: HTTP
@@ -232,7 +224,6 @@ Resources:
       AllocatedStorage: 5
       BackupRetentionPeriod: 0
       DBInstanceClass: !Ref DBServerInstanceType
-      DBInstanceIdentifier: !Ref BlogID
       DBName: wordpress
       Engine: MySQL
       MasterUsername: wordpress
@@ -242,10 +233,6 @@ Resources:
       DBSubnetGroupName: !Ref DBSubnetGroup
       MultiAZ: true
       StorageType: gp2
-  S3Bucket:
-    Type: 'AWS::S3::Bucket'
-    Properties:
-      BucketName: !Ref BlogID
   WebServerInstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
@@ -266,15 +253,6 @@ Resources:
           - 'sts:AssumeRole'
       Path: '/'
       Policies:
-      - PolicyName: s3
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action:
-            - 's3:*'
-            Resource:
-            - !Sub 'arn:aws:s3:::${BlogID}/*'
       - PolicyName: logs
         PolicyDocument:
           Version: '2012-10-17'
