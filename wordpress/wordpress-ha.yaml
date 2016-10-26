@@ -122,6 +122,7 @@ Conditions:
   HasKeyName: !Not [!Equals [!Ref WebServerKeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref WebServerIAMUserSSHAccess, 'true']
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
+  HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
   HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
@@ -176,6 +177,15 @@ Resources:
       ToPort: 22
       SourceSecurityGroupId:
         'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+  WebServerSecurityGroupInAll:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotSSHBastionSecurityGroup
+    Properties:
+      GroupId: !Ref WebServerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: '0.0.0.0/0'
   DatabaseSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -383,32 +393,27 @@ Resources:
         config:
           packages:
             yum:
-              php: []
-              php-mysql: []
-              mysql: []
-              httpd: []
+              php70: []
+              php70-opcache: []
+              php70-mysqlnd: []
+              mysql56: []
+              httpd24: []
               awslogs: []
-          sources:
-            '/var/www/html': 'https://wordpress.org/wordpress-4.6.1.tar.gz'
           files:
-            '/root/config.sh':
+            '/root/wordpress.sh':
               content: !Sub |
                 #!/bin/bash -ex
-                cp wp-config-sample.php wp-config.php
-                sed -i "s/'database_name_here'/'wordpress'/g" wp-config.php
-                sed -i "s/'username_here'/'wordpress'/g" wp-config.php
-                sed -i "s/'password_here'/'wordpress'/g" wp-config.php
-                sed -i "s/'localhost'/'${Database.Endpoint.Address}'/g" wp-config.php
-                echo "define('AWS_USE_EC2_IAM_ROLE', true);" >> wp-config.php
-                echo "define('DISALLOW_FILE_MODS', true);" >> wp-config.php
-                echo "define('WP_AUTO_UPDATE_CORE', false);" >> wp-config.php
-                chmod -R 777 wp-content/
+                sed -i 's/;opcache.revalidate_freq=2/opcache.revalidate_freq=300/g' /etc/php-7.0.d/10-opcache.ini
+                cd /var/www/html
                 curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-                php wp-cli.phar core install --url='${LoadBalancer.DNSName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}'
-                php wp-cli.phar plugin install --activate --version=1.0 amazon-web-services
-                php wp-cli.phar plugin install --activate --version=1.1 amazon-s3-and-cloudfront
-                CHARCOUNT=`printf '${BlogID}' | wc -c`
-                php wp-cli.phar db query "DELETE FROM wp_options WHERE option_name = 'tantan_wordpress_s3'; INSERT INTO wp_options (option_name, option_value, autoload) VALUES('tantan_wordpress_s3', 'a:15:{s:17:\"post_meta_version\";i:1;s:6:\"bucket\";s:$CHARCOUNT:\"${BlogID}\";s:6:\"region\";s:0:\"\";s:6:\"domain\";s:9:\"subdomain\";s:7:\"expires\";s:1:\"0\";s:10:\"cloudfront\";s:0:\"\";s:13:\"object-prefix\";s:19:\"wp-content/uploads/\";s:10:\"copy-to-s3\";s:1:\"1\";s:13:\"serve-from-s3\";s:1:\"1\";s:17:\"remove-local-file\";s:1:\"0\";s:3:\"ssl\";s:7:\"request\";s:12:\"hidpi-images\";s:1:\"0\";s:17:\"object-versioning\";s:1:\"0\";s:21:\"use-yearmonth-folders\";s:1:\"1\";s:20:\"enable-object-prefix\";s:1:\"1\";}', 'yes');"
+                if ! $(php wp-cli.phar core is-installed); then
+                  php wp-cli.phar core download
+                  php wp-cli.phar core config --dbname=wordpress --dbuser=wordpress --dbpass=wordpress --dbhost=", {"Fn::GetAtt": ["Database", "Endpoint.Address"]}, "
+                  php wp-cli.phar core install --url='", {"Ref": "BlogURL"} ,"' --title='", {"Ref": "BlogTitle"} ,"' --admin_user='", {"Ref": "BlogAdminUsername"} ,"' --admin_password='", {"Ref": "BlogAdminPassword"} ,"' --admin_email='", {"Ref": "BlogAdminEMail"} ,"' --skip-email
+                fi
+                rm wp-cli.phar
+                chown -R apache:apache /var/www/html/wp-content 
+                chmod u+wrx /var/www/html/wp-content/*
               mode: '000500'
               owner: root
               group: root
@@ -482,11 +487,8 @@ Resources:
               owner: root
               group: root
           commands:
-            01_mv:
-              command: 'mv * ../'
-              cwd: '/var/www/html/wordpress'
-            02_config:
-              command: '/root/config.sh'
+            01_wordpress:
+              command: '/root/wordpress.sh'
               cwd: '/var/www/html'
           services:
             sysvinit:
@@ -513,8 +515,11 @@ Resources:
       UserData:
         'Fn::Base64': !Sub |
           #!/bin/bash -x
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+          mkdir /var/www
+          mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com:/ /var/www/
+          #/opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+          #/opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
@@ -526,7 +531,7 @@ Resources:
       DesiredCapacity: 2
       Cooldown: 60
       HealthCheckGracePeriod: 120
-      HealthCheckType: ELB
+      HealthCheckType: EC2
       VPCZoneIdentifier:
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
@@ -541,6 +546,39 @@ Resources:
       AutoScalingRollingUpdate:
         PauseTime: PT10M
         WaitOnResourceSignals: true
+  EFSFileSystem:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      FileSystemTags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-efs'
+  EFSMountTargetA:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref EFSFileSystem
+      SubnetId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
+      SecurityGroups:
+      - !Ref EFSSecurityGroup
+  EFSMountTargetB:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref EFSFileSystem
+      SubnetId: 
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      SecurityGroups:
+      - !Ref EFSSecurityGroup
+  EFSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allowing access to EFS
+      VpcId: 
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 2049
+        ToPort: 2049
+        SourceSecurityGroupId: !Ref WebServerSecurityGroup
   ScalingUpPolicy:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
