@@ -29,6 +29,7 @@ Metadata:
       - WebServerKeyName
       - WebServerIAMUserSSHAccess
       - WebServerInstanceType
+      - WebServerInstanceCapacity
       - WebServerLogsRetentionInDays
       - NewRelicLicenseKey
     - Label:
@@ -86,6 +87,10 @@ Parameters:
     Description: 'The instance type of web servers (e.g. t2.micro).'
     Type: String
     Default: 't2.micro'
+  WebServerInstanceCapacity:
+    Description: 'The number of instances running a web server.'
+    Type: Number
+    Default: 2
   WebServerLogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain log events.'
     Type: Number
@@ -546,9 +551,9 @@ Resources:
       LoadBalancerNames:
       - !Ref LoadBalancer
       LaunchConfigurationName: !Ref LaunchConfiguration
-      MinSize: 2
-      MaxSize: 4
-      DesiredCapacity: 2
+      MinSize: !Ref WebServerInstanceCapacity
+      MaxSize: !Ref WebServerInstanceCapacity
+      DesiredCapacity: !Ref WebServerInstanceCapacity
       Cooldown: 60
       HealthCheckGracePeriod: 120
       HealthCheckType: EC2
@@ -677,62 +682,14 @@ Resources:
           AcmCertificateArn: !Ref CloudFrontAcmCertificate
           SslSupportMethod: 'sni-only'
           MinimumProtocolVersion: TLSv1
-  ScalingUpPolicy:
-    Type: 'AWS::AutoScaling::ScalingPolicy'
-    Properties:
-      AdjustmentType: PercentChangeInCapacity
-      MinAdjustmentStep: 1
-      AutoScalingGroupName: !Ref AutoScalingGroup
-      Cooldown: 300
-      ScalingAdjustment: 25
-  CPUHighAlarm:
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      EvaluationPeriods: 1
-      Statistic: Average
-      Threshold: 75
-      AlarmDescription: 'Alarm if CPU load is high.'
-      Period: 60
-      AlarmActions:
-      - !Ref ScalingUpPolicy
-      Namespace: 'AWS/EC2'
-      Dimensions:
-      - Name: AutoScalingGroupName
-        Value: !Ref AutoScalingGroup
-      ComparisonOperator: GreaterThanThreshold
-      MetricName: CPUUtilization
-  ScalingDownPolicy:
-    Type: 'AWS::AutoScaling::ScalingPolicy'
-    Properties:
-      AdjustmentType: PercentChangeInCapacity
-      MinAdjustmentStep: 1
-      AutoScalingGroupName: !Ref AutoScalingGroup
-      Cooldown: 300
-      ScalingAdjustment: -25
-  CPULowAlarm:
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      EvaluationPeriods: 1
-      Statistic: Average
-      Threshold: 25
-      AlarmDescription: 'Alarm if CPU load is low.'
-      Period: 60
-      AlarmActions:
-      - !Ref ScalingDownPolicy
-      Namespace: 'AWS/EC2'
-      Dimensions:
-      - Name: AutoScalingGroupName
-        Value: !Ref AutoScalingGroup
-      ComparisonOperator: LessThanThreshold
-      MetricName: CPUUtilization
 Outputs:
-  DNSName:
-    Description: 'The DNS name for the Wordpress load balancer.'
-    Value: !Sub '${LoadBalancer.DNSName}'
+  CloudFrontID:
+    Description: 'The ID of the CloudFront distribution.'
+    Value: !Ref CloudFront
     Export:
-      Name: !Sub '${AWS::StackName}-DNSName'
-  URL:
-    Description: 'URL to Wordpress'
-    Value: !Sub 'http://${LoadBalancer.DNSName}'
+      Name: !Sub '${AWS::StackName}-CloudFrontARN'
+  CloudFrontDomainName:
+    Description: 'The domain name of the CloudFront distribution.'
+    Value: !Sub ${CloudFront.DomainName}
     Export:
-      Name: !Sub '${AWS::StackName}-URL'
+      Name: !Sub '${AWS::StackName}-CloudFrontDomainName'
