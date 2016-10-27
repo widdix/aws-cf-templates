@@ -409,7 +409,6 @@ Resources:
             '/etc/httpd/conf.d/wordpress.conf':
               content: !Sub |
                 <Directory "/var/www/html">
-                MultiViews
                 Options Indexes FollowSymLinks
                 AllowOverride All
                 Require all granted
@@ -428,7 +427,7 @@ Resources:
                 php wp-cli.phar core download --allow-root
                 php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='wordpress' --dbhost='${Database.Endpoint.Address}' --allow-root
                 php wp-cli.phar core install --url='https://${DomainName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}' --skip-email --allow-root
-                echo "$_SERVER['HTTPS'] = 'on';" >> wp-config.php
+                echo "\$_SERVER['HTTPS'] = 'on';" >> wp-config.php
                 fi
                 chown -R apache:apache /var/www/html
                 chmod u+wrx /var/www/html/wp-content/*
@@ -540,8 +539,7 @@ Resources:
         'Fn::Base64': !Sub |
           #!/bin/bash -x
           mkdir /var/www && mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com:/ /var/www/ && /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
-          /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
-          #/opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     DependsOn:
