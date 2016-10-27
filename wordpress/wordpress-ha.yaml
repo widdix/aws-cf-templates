@@ -554,7 +554,7 @@ Resources:
       DesiredCapacity: !Ref WebServerInstanceCapacity
       Cooldown: 60
       HealthCheckGracePeriod: 120
-      HealthCheckType: EC2
+      HealthCheckType: ELB
       VPCZoneIdentifier:
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
