@@ -11,6 +11,12 @@ Metadata:
       - ParentSSHBastionStack
       - ParentAuthProxyStack
     - Label:
+        default: 'Domain Name and SSL certificates'
+      Parameters:
+      - DomainName
+      - CloudFrontAcmCertificate
+      - ElbAcmCertificate
+    - Label:
         default: 'Wordpress Parameters'
       Parameters:
       - BlogTitle
@@ -41,6 +47,15 @@ Parameters:
     Description: 'Optional Stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
     Type: String
     Default: ''
+  DomainName:
+    Description: 'The primary domain name of the blog.'
+    Type: String
+  CloudFrontAcmCertificate:
+    Description: 'The ACM Certificate ARN of certificate for the CloudFront distribution.'
+    Type: String
+  ElbAcmCertificate:
+    Description: 'The ACM Certificate ARN of certificate for the ELB.'
+    Type: String
   BlogTitle:
     Description: 'The title of the Wordpress blog.'
     Type: String
@@ -136,8 +151,8 @@ Resources:
     Properties:
       GroupId: !Ref LoadBalancerSecurityGroup
       IpProtocol: tcp
-      FromPort: 80
-      ToPort: 80
+      FromPort: 443
+      ToPort: 443
       CidrIp: '0.0.0.0/0'
   LoadBalancerSecurityGroupInAuthProxy:
     Type: 'AWS::EC2::SecurityGroupIngress'
@@ -199,8 +214,9 @@ Resources:
       Listeners:
       - InstancePort: 80
         InstanceProtocol: HTTP
-        LoadBalancerPort: 80
-        Protocol: HTTP
+        LoadBalancerPort: 443
+        Protocol: HTTPS
+        SSLCertificateId: !Ref ElbAcmCertificate
       HealthCheck:
         HealthyThreshold: 2
         Interval: 5
@@ -378,20 +394,42 @@ Resources:
               httpd24: []
               awslogs: []
           files:
-            '/root/wordpress.sh':
+            '/root/php.sh':
               content: !Sub |
                 #!/bin/bash -ex
                 sed -i 's/;opcache.revalidate_freq=2/opcache.revalidate_freq=300/g' /etc/php-7.0.d/10-opcache.ini
-                cd /var/www/html
+              mode: '000500'
+              owner: root
+              group: root
+            '/etc/httpd/conf.d/wordpress.conf':
+              content: !Sub |
+                <Directory "/var/www/html">
+                MultiViews
+                Options Indexes FollowSymLinks
+                AllowOverride All
+                Require all granted
+                </Directory>
+              mode: '000500'
+              owner: root
+              group: root
+            '/root/wordpress.sh':
+              content: !Sub |
+                #!/bin/bash -ex
+                mkdir -p /var/www/html && cd /var/www/html                
+                if [ ! -f wordpress.lock ]; then
+                touch wordpress.lock
                 curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-                if ! $(php wp-cli.phar core is-installed); then
-                  php wp-cli.phar core download
-                  php wp-cli.phar core config --dbname=wordpress --dbuser=wordpress --dbpass=wordpress --dbhost=", {"Fn::GetAtt": ["Database", "Endpoint.Address"]}, "
-                  php wp-cli.phar core install --url='", {"Ref": "BlogURL"} ,"' --title='", {"Ref": "BlogTitle"} ,"' --admin_user='", {"Ref": "BlogAdminUsername"} ,"' --admin_password='", {"Ref": "BlogAdminPassword"} ,"' --admin_email='", {"Ref": "BlogAdminEMail"} ,"' --skip-email
+                if ! $(php wp-cli.phar core is-installed --allow-root); then
+                php wp-cli.phar core download --allow-root
+                php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='wordpress' --dbhost='${Database.Endpoint.Address}' --allow-root
+                php wp-cli.phar core install --url='https://${DomainName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}' --skip-email --allow-root
+                echo "$_SERVER['HTTPS'] = 'on';" >> wp-config.php
                 fi
-                rm wp-cli.phar
-                chown -R apache:apache /var/www/html/wp-content 
+                chown -R apache:apache /var/www/html
                 chmod u+wrx /var/www/html/wp-content/*
+                rm wp-cli.phar
+                rm wordpress.lock
+                fi
               mode: '000500'
               owner: root
               group: root
@@ -465,7 +503,10 @@ Resources:
               owner: root
               group: root
           commands:
-            01_wordpress:
+            01_php:
+              command: '/root/php.sh'
+              cwd: '/var/www/html'
+            02_wordpress:
               command: '/root/wordpress.sh'
               cwd: '/var/www/html'
           services:
@@ -493,13 +534,14 @@ Resources:
       UserData:
         'Fn::Base64': !Sub |
           #!/bin/bash -x
-          mkdir /var/www
-          mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com:/ /var/www/
-          #/opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
-          #/opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+          mkdir /var/www && mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com:/ /var/www/ && /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
           /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+          #/opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
+    DependsOn:
+    - EFSMountTargetA
+    - EFSMountTargetB
     Properties:
       LoadBalancerNames:
       - !Ref LoadBalancer
@@ -557,6 +599,84 @@ Resources:
         FromPort: 2049
         ToPort: 2049
         SourceSecurityGroupId: !Ref WebServerSecurityGroup
+  CloudFrontDistribution:
+    Type: 'AWS::CloudFront::Distribution'
+    Properties:
+      DistributionConfig:
+        Aliases:
+        - !Ref DomainName
+        Comment: !Ref DomainName
+        Origins:
+        - DomainName: !Sub '${LoadBalancer.DNSName}'
+          Id: elb
+          CustomOriginConfig:
+            OriginProtocolPolicy: 'https-only'
+        DefaultCacheBehavior:
+          AllowedMethods:
+          - DELETE
+          - GET
+          - HEAD
+          - OPTIONS
+          - PATCH
+          - POST
+          - PUT
+          DefaultTTL: 0
+          MaxTTL: 0
+          MinTTL: 0
+          ForwardedValues:
+            QueryString: true
+            Headers:
+            - '*'
+            Cookies:
+              Forward: all
+          TargetOriginId: elb
+          ViewerProtocolPolicy: 'redirect-to-https'
+          Compress: true
+        CacheBehaviors:
+        - PathPattern: wp-includes/*
+          AllowedMethods:
+          - DELETE
+          - GET
+          - HEAD
+          - OPTIONS
+          - PATCH
+          - POST
+          - PUT
+          DefaultTTL: 900
+          MaxTTL: 900
+          MinTTL: 900
+          ForwardedValues:
+            QueryString: true
+            Headers:
+            - 'Host'
+          TargetOriginId: elb
+          ViewerProtocolPolicy: 'redirect-to-https'
+          Compress: true
+        - PathPattern: wp-content/*
+          AllowedMethods:
+          - DELETE
+          - GET
+          - HEAD
+          - OPTIONS
+          - PATCH
+          - POST
+          - PUT
+          DefaultTTL: 900
+          MaxTTL: 900
+          MinTTL: 900
+          ForwardedValues:
+            QueryString: true
+            Headers:
+            - 'Host'
+          TargetOriginId: elb
+          ViewerProtocolPolicy: 'redirect-to-https'
+          Compress: true
+        Enabled: true
+        PriceClass: 'PriceClass_100'
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CloudFrontAcmCertificate
+          SslSupportMethod: 'sni-only'
+          MinimumProtocolVersion: TLSv1
   ScalingUpPolicy:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
