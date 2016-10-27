@@ -427,7 +427,7 @@ Resources:
                 php wp-cli.phar core download --allow-root
                 php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='wordpress' --dbhost='${Database.Endpoint.Address}' --allow-root
                 php wp-cli.phar core install --url='https://${DomainName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}' --skip-email --allow-root
-                echo "\$_SERVER['HTTPS'] = 'on';" >> wp-config.php
+                sed -i "/$table_prefix = 'wp_';/a\$_SERVER['HTTPS'] = 'on';" /var/www/html/wp-config.php 
                 fi
                 chown -R apache:apache /var/www/html
                 chmod u+wrx /var/www/html/wp-content/*
@@ -683,11 +683,11 @@ Resources:
 Outputs:
   CloudFrontID:
     Description: 'The ID of the CloudFront distribution.'
-    Value: !Ref CloudFront
+    Value: !Ref CloudFrontDistribution
     Export:
       Name: !Sub '${AWS::StackName}-CloudFrontARN'
   CloudFrontDomainName:
     Description: 'The domain name of the CloudFront distribution.'
-    Value: !Sub ${CloudFront.DomainName}
+    Value: !Sub ${CloudFrontDistribution.DomainName}
     Export:
       Name: !Sub '${AWS::StackName}-CloudFrontDomainName'
