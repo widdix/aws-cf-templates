@@ -20,7 +20,7 @@ This template combines the following services:
 ![Architecture](./wordpress-ha.png?raw=true "Architecture")
 
 ## Installation Guide
-1. This templates depends on our [`vpc-2azs.yaml`](../vpc/) template. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.yaml">Launch Stack</a>
+1. This templates depends on our [`vpc-*azs.yaml`](../vpc/) template. Wordpress will use 2 AZs only. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.yaml">Launch Stack</a>
 1. Create an ACM certificate for your domain name within the region you want to launch your stack in. Copy the ARN of the certificate.
 1. Create another ACM certificate for your domain in region `us-east-1`. Copy the ARN of the certificate.
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=wordpress-ha&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/wordpress/wordpress-ha.yaml">Launch Stack</a>
