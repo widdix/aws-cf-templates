@@ -11,9 +11,14 @@ Metadata:
       - ParentSSHBastionStack
       - ParentAuthProxyStack
     - Label:
+        default: 'Domain Name and SSL certificates'
+      Parameters:
+      - DomainName
+      - CloudFrontAcmCertificate
+      - ElbAcmCertificate
+    - Label:
         default: 'Wordpress Parameters'
       Parameters:
-      - BlogID
       - BlogTitle
       - BlogAdminUsername
       - BlogAdminPassword
@@ -42,12 +47,15 @@ Parameters:
     Description: 'Optional Stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
     Type: String
     Default: ''
-  BlogID:
-    Description: 'A unique identifier for your blog. For internal use only.'
+  DomainName:
+    Description: 'The primary domain name of the blog.'
     Type: String
-    ConstraintDescription: 'Only allows [a-z0-9\-] and must not be longer than 32'
-    AllowedPattern: '[a-z0-9\-]+'
-    MaxLength: 32
+  CloudFrontAcmCertificate:
+    Description: 'The ACM Certificate ARN of certificate for the CloudFront distribution.'
+    Type: String
+  ElbAcmCertificate:
+    Description: 'The ACM Certificate ARN of certificate for the ELB.'
+    Type: String
   BlogTitle:
     Description: 'The title of the Wordpress blog.'
     Type: String
@@ -122,6 +130,7 @@ Conditions:
   HasKeyName: !Not [!Equals [!Ref WebServerKeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref WebServerIAMUserSSHAccess, 'true']
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
+  HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
   HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
@@ -142,8 +151,8 @@ Resources:
     Properties:
       GroupId: !Ref LoadBalancerSecurityGroup
       IpProtocol: tcp
-      FromPort: 80
-      ToPort: 80
+      FromPort: 443
+      ToPort: 443
       CidrIp: '0.0.0.0/0'
   LoadBalancerSecurityGroupInAuthProxy:
     Type: 'AWS::EC2::SecurityGroupIngress'
@@ -176,6 +185,15 @@ Resources:
       ToPort: 22
       SourceSecurityGroupId:
         'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+  WebServerSecurityGroupInAll:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotSSHBastionSecurityGroup
+    Properties:
+      GroupId: !Ref WebServerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: '0.0.0.0/0'
   DatabaseSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -193,12 +211,12 @@ Resources:
       Subnets:
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
-      LoadBalancerName: !Ref BlogID
       Listeners:
       - InstancePort: 80
         InstanceProtocol: HTTP
-        LoadBalancerPort: 80
-        Protocol: HTTP
+        LoadBalancerPort: 443
+        Protocol: HTTPS
+        SSLCertificateId: !Ref ElbAcmCertificate
       HealthCheck:
         HealthyThreshold: 2
         Interval: 5
@@ -222,7 +240,6 @@ Resources:
       AllocatedStorage: 5
       BackupRetentionPeriod: 0
       DBInstanceClass: !Ref DBServerInstanceType
-      DBInstanceIdentifier: !Ref BlogID
       DBName: wordpress
       Engine: MySQL
       MasterUsername: wordpress
@@ -232,10 +249,6 @@ Resources:
       DBSubnetGroupName: !Ref DBSubnetGroup
       MultiAZ: true
       StorageType: gp2
-  S3Bucket:
-    Type: 'AWS::S3::Bucket'
-    Properties:
-      BucketName: !Ref BlogID
   WebServerInstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
@@ -256,15 +269,6 @@ Resources:
           - 'sts:AssumeRole'
       Path: '/'
       Policies:
-      - PolicyName: s3
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action:
-            - 's3:*'
-            Resource:
-            - !Sub 'arn:aws:s3:::${BlogID}/*'
       - PolicyName: logs
         PolicyDocument:
           Version: '2012-10-17'
@@ -383,32 +387,48 @@ Resources:
         config:
           packages:
             yum:
-              php: []
-              php-mysql: []
-              mysql: []
-              httpd: []
+              php70: []
+              php70-opcache: []
+              php70-mysqlnd: []
+              mysql56: []
+              httpd24: []
               awslogs: []
-          sources:
-            '/var/www/html': 'https://wordpress.org/wordpress-4.6.1.tar.gz'
           files:
-            '/root/config.sh':
+            '/root/php.sh':
               content: !Sub |
                 #!/bin/bash -ex
-                cp wp-config-sample.php wp-config.php
-                sed -i "s/'database_name_here'/'wordpress'/g" wp-config.php
-                sed -i "s/'username_here'/'wordpress'/g" wp-config.php
-                sed -i "s/'password_here'/'wordpress'/g" wp-config.php
-                sed -i "s/'localhost'/'${Database.Endpoint.Address}'/g" wp-config.php
-                echo "define('AWS_USE_EC2_IAM_ROLE', true);" >> wp-config.php
-                echo "define('DISALLOW_FILE_MODS', true);" >> wp-config.php
-                echo "define('WP_AUTO_UPDATE_CORE', false);" >> wp-config.php
-                chmod -R 777 wp-content/
+                sed -i 's/;opcache.revalidate_freq=2/opcache.revalidate_freq=300/g' /etc/php-7.0.d/10-opcache.ini
+              mode: '000500'
+              owner: root
+              group: root
+            '/etc/httpd/conf.d/wordpress.conf':
+              content: !Sub |
+                <Directory "/var/www/html">
+                Options Indexes FollowSymLinks
+                AllowOverride All
+                Require all granted
+                </Directory>
+              mode: '000500'
+              owner: root
+              group: root
+            '/root/wordpress.sh':
+              content: !Sub |
+                #!/bin/bash -ex
+                mkdir -p /var/www/html && cd /var/www/html                
+                if [ ! -f wordpress.lock ]; then
+                touch wordpress.lock
                 curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-                php wp-cli.phar core install --url='${LoadBalancer.DNSName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}'
-                php wp-cli.phar plugin install --activate --version=1.0 amazon-web-services
-                php wp-cli.phar plugin install --activate --version=1.1 amazon-s3-and-cloudfront
-                CHARCOUNT=`printf '${BlogID}' | wc -c`
-                php wp-cli.phar db query "DELETE FROM wp_options WHERE option_name = 'tantan_wordpress_s3'; INSERT INTO wp_options (option_name, option_value, autoload) VALUES('tantan_wordpress_s3', 'a:15:{s:17:\"post_meta_version\";i:1;s:6:\"bucket\";s:$CHARCOUNT:\"${BlogID}\";s:6:\"region\";s:0:\"\";s:6:\"domain\";s:9:\"subdomain\";s:7:\"expires\";s:1:\"0\";s:10:\"cloudfront\";s:0:\"\";s:13:\"object-prefix\";s:19:\"wp-content/uploads/\";s:10:\"copy-to-s3\";s:1:\"1\";s:13:\"serve-from-s3\";s:1:\"1\";s:17:\"remove-local-file\";s:1:\"0\";s:3:\"ssl\";s:7:\"request\";s:12:\"hidpi-images\";s:1:\"0\";s:17:\"object-versioning\";s:1:\"0\";s:21:\"use-yearmonth-folders\";s:1:\"1\";s:20:\"enable-object-prefix\";s:1:\"1\";}', 'yes');"
+                if ! $(php wp-cli.phar core is-installed --allow-root); then
+                php wp-cli.phar core download --allow-root
+                php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='wordpress' --dbhost='${Database.Endpoint.Address}' --allow-root
+                php wp-cli.phar core install --url='https://${DomainName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}' --skip-email --allow-root
+                sed -i "/$table_prefix = 'wp_';/a\$_SERVER['HTTPS'] = 'on';" /var/www/html/wp-config.php 
+                fi
+                chown -R apache:apache /var/www/html
+                chmod u+wrx /var/www/html/wp-content/*
+                rm wp-cli.phar
+                rm wordpress.lock
+                fi
               mode: '000500'
               owner: root
               group: root
@@ -482,11 +502,11 @@ Resources:
               owner: root
               group: root
           commands:
-            01_mv:
-              command: 'mv * ../'
-              cwd: '/var/www/html/wordpress'
-            02_config:
-              command: '/root/config.sh'
+            01_php:
+              command: '/root/php.sh'
+              cwd: '/var/www/html'
+            02_wordpress:
+              command: '/root/wordpress.sh'
               cwd: '/var/www/html'
           services:
             sysvinit:
@@ -513,10 +533,13 @@ Resources:
       UserData:
         'Fn::Base64': !Sub |
           #!/bin/bash -x
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+          mkdir /var/www && mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com:/ /var/www/ && /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
+    DependsOn:
+    - EFSMountTargetA
+    - EFSMountTargetB
     Properties:
       LoadBalancerNames:
       - !Ref LoadBalancer
@@ -547,12 +570,12 @@ Resources:
       AdjustmentType: PercentChangeInCapacity
       MinAdjustmentStep: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
-      Cooldown: 300
+      Cooldown: 900
       ScalingAdjustment: 25
   CPUHighAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      EvaluationPeriods: 1
+      EvaluationPeriods: 5
       Statistic: Average
       Threshold: 75
       AlarmDescription: 'Alarm if CPU load is high.'
@@ -576,7 +599,7 @@ Resources:
   CPULowAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      EvaluationPeriods: 1
+      EvaluationPeriods: 15
       Statistic: Average
       Threshold: 25
       AlarmDescription: 'Alarm if CPU load is low.'
@@ -589,14 +612,125 @@ Resources:
         Value: !Ref AutoScalingGroup
       ComparisonOperator: LessThanThreshold
       MetricName: CPUUtilization
+  EFSFileSystem:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      FileSystemTags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-efs'
+  EFSMountTargetA:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref EFSFileSystem
+      SubnetId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
+      SecurityGroups:
+      - !Ref EFSSecurityGroup
+  EFSMountTargetB:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref EFSFileSystem
+      SubnetId: 
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      SecurityGroups:
+      - !Ref EFSSecurityGroup
+  EFSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allowing access to EFS
+      VpcId: 
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 2049
+        ToPort: 2049
+        SourceSecurityGroupId: !Ref WebServerSecurityGroup
+  CloudFrontDistribution:
+    Type: 'AWS::CloudFront::Distribution'
+    Properties:
+      DistributionConfig:
+        Aliases:
+        - !Ref DomainName
+        Comment: !Ref DomainName
+        Origins:
+        - DomainName: !Sub '${LoadBalancer.DNSName}'
+          Id: elb
+          CustomOriginConfig:
+            OriginProtocolPolicy: 'https-only'
+        DefaultCacheBehavior:
+          AllowedMethods:
+          - DELETE
+          - GET
+          - HEAD
+          - OPTIONS
+          - PATCH
+          - POST
+          - PUT
+          DefaultTTL: 0
+          MaxTTL: 0
+          MinTTL: 0
+          ForwardedValues:
+            QueryString: true
+            Headers:
+            - '*'
+            Cookies:
+              Forward: all
+          TargetOriginId: elb
+          ViewerProtocolPolicy: 'redirect-to-https'
+          Compress: true
+        CacheBehaviors:
+        - PathPattern: wp-includes/*
+          AllowedMethods:
+          - DELETE
+          - GET
+          - HEAD
+          - OPTIONS
+          - PATCH
+          - POST
+          - PUT
+          DefaultTTL: 900
+          MaxTTL: 900
+          MinTTL: 900
+          ForwardedValues:
+            QueryString: true
+            Headers:
+            - 'Host'
+          TargetOriginId: elb
+          ViewerProtocolPolicy: 'redirect-to-https'
+          Compress: true
+        - PathPattern: wp-content/*
+          AllowedMethods:
+          - DELETE
+          - GET
+          - HEAD
+          - OPTIONS
+          - PATCH
+          - POST
+          - PUT
+          DefaultTTL: 900
+          MaxTTL: 900
+          MinTTL: 900
+          ForwardedValues:
+            QueryString: true
+            Headers:
+            - 'Host'
+          TargetOriginId: elb
+          ViewerProtocolPolicy: 'redirect-to-https'
+          Compress: true
+        Enabled: true
+        PriceClass: 'PriceClass_100'
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CloudFrontAcmCertificate
+          SslSupportMethod: 'sni-only'
+          MinimumProtocolVersion: TLSv1
 Outputs:
-  DNSName:
-    Description: 'The DNS name for the Wordpress load balancer.'
-    Value: !Sub '${LoadBalancer.DNSName}'
+  CloudFrontID:
+    Description: 'The ID of the CloudFront distribution.'
+    Value: !Ref CloudFrontDistribution
     Export:
-      Name: !Sub '${AWS::StackName}-DNSName'
-  URL:
-    Description: 'URL to Wordpress'
-    Value: !Sub 'http://${LoadBalancer.DNSName}'
+      Name: !Sub '${AWS::StackName}-CloudFrontARN'
+  CloudFrontDomainName:
+    Description: 'The domain name of the CloudFront distribution.'
+    Value: !Sub ${CloudFrontDistribution.DomainName}
     Export:
-      Name: !Sub '${AWS::StackName}-URL'
+      Name: !Sub '${AWS::StackName}-CloudFrontDomainName'
