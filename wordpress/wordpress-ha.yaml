@@ -29,7 +29,6 @@ Metadata:
       - WebServerKeyName
       - WebServerIAMUserSSHAccess
       - WebServerInstanceType
-      - WebServerInstanceCapacity
       - WebServerLogsRetentionInDays
       - NewRelicLicenseKey
     - Label:
@@ -87,10 +86,6 @@ Parameters:
     Description: 'The instance type of web servers (e.g. t2.micro).'
     Type: String
     Default: 't2.micro'
-  WebServerInstanceCapacity:
-    Description: 'The number of instances running a web server.'
-    Type: Number
-    Default: 2
   WebServerLogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain log events.'
     Type: Number
@@ -549,9 +544,9 @@ Resources:
       LoadBalancerNames:
       - !Ref LoadBalancer
       LaunchConfigurationName: !Ref LaunchConfiguration
-      MinSize: !Ref WebServerInstanceCapacity
-      MaxSize: !Ref WebServerInstanceCapacity
-      DesiredCapacity: !Ref WebServerInstanceCapacity
+      MinSize: 2
+      MaxSize: 4
+      DesiredCapacity: 2
       Cooldown: 60
       HealthCheckGracePeriod: 120
       HealthCheckType: ELB
@@ -569,6 +564,54 @@ Resources:
       AutoScalingRollingUpdate:
         PauseTime: PT10M
         WaitOnResourceSignals: true
+  ScalingUpPolicy:
+    Type: 'AWS::AutoScaling::ScalingPolicy'
+    Properties:
+      AdjustmentType: PercentChangeInCapacity
+      MinAdjustmentStep: 1
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      Cooldown: 900
+      ScalingAdjustment: 25
+  CPUHighAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      EvaluationPeriods: 5
+      Statistic: Average
+      Threshold: 75
+      AlarmDescription: 'Alarm if CPU load is high.'
+      Period: 60
+      AlarmActions:
+      - !Ref ScalingUpPolicy
+      Namespace: 'AWS/EC2'
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value: !Ref AutoScalingGroup
+      ComparisonOperator: GreaterThanThreshold
+      MetricName: CPUUtilization
+  ScalingDownPolicy:
+    Type: 'AWS::AutoScaling::ScalingPolicy'
+    Properties:
+      AdjustmentType: PercentChangeInCapacity
+      MinAdjustmentStep: 1
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      Cooldown: 300
+      ScalingAdjustment: -25
+  CPULowAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      EvaluationPeriods: 15
+      Statistic: Average
+      Threshold: 25
+      AlarmDescription: 'Alarm if CPU load is low.'
+      Period: 60
+      AlarmActions:
+      - !Ref ScalingDownPolicy
+      Namespace: 'AWS/EC2'
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value: !Ref AutoScalingGroup
+      ComparisonOperator: LessThanThreshold
+      MetricName: CPUUtilization
   EFSFileSystem:
     Type: AWS::EFS::FileSystem
     Properties:

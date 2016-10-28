@@ -41,6 +41,7 @@ This template combines the following services:
 ## Limitations
 * PHP files are cached for 300 seconds on the web servers.
 * Static files `wp-includes` and `wp-content` are cached for 15 minutes on the CDN.
+* Pre-defined auto-scaling might not be able to cover your requirements and needs load and performance testing.
 
 ## Support
 We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
