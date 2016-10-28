@@ -34,7 +34,7 @@ This template combines the following services:
 1. Grab the `URL` of the Wordpress environment from the **Outputs** tab of your stack.
 
 ## Dependencies
-* `vpc/vpc-2azs.yaml` (**required**)
+* `vpc/vpc-*azs.yaml` (**required, Wordpress will use 2 AZs only**)
 * `vpc/vpc-ssh-bastion.yaml` (optional)
 * `security/auth-proxy-*.yaml` (optional)
 
