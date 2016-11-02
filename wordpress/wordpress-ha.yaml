@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Wordpress: fault tolerant and scalable, a cloudonaut.io template'
+Description: 'WordPress: fault tolerant and scalable, a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -17,7 +17,7 @@ Metadata:
       - CloudFrontAcmCertificate
       - ElbAcmCertificate
     - Label:
-        default: 'Wordpress Parameters'
+        default: 'WordPress Parameters'
       Parameters:
       - BlogTitle
       - BlogAdminUsername
@@ -57,19 +57,19 @@ Parameters:
     Description: 'The ACM Certificate ARN of certificate for the ELB.'
     Type: String
   BlogTitle:
-    Description: 'The title of the Wordpress blog.'
+    Description: 'The title of the WordPress blog.'
     Type: String
-    Default: 'Just another Wordpress blog'
+    Default: 'Just another WordPress blog'
   BlogAdminUsername:
-    Description: 'A username for the Wordpress admin.'
+    Description: 'A username for the WordPress admin.'
     Type: String
     Default: admin
   BlogAdminPassword:
-    Description: 'A password for the Wordpress admin.'
+    Description: 'A password for the WordPress admin.'
     Type: String
     NoEcho: true
   BlogAdminEMail:
-    Description: 'The email address of the Wordpress admin.'
+    Description: 'The email address of the WordPress admin.'
     Type: String
   WebServerKeyName:
     Description: 'Optional key pair of the ec2-user to establish a SSH connection to the web server.'

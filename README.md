@@ -14,7 +14,7 @@ We are offering the following templates:
 * [Security](./security/)
 * [Static website](./static-website/)
 * [VPC](./vpc/)
-* [Wordpress](./wordpress/)
+* [WordPress](./wordpress/)
 
 We are interested in your requirements. [Please use the following survey to upvote and add templates you are impatiently waiting for](https://docs.google.com/forms/d/e/1FAIpQLSerhIuMuCWrHai639FoUOt8ffmMqWr0PWzLhCn3VN29VUi8TA/viewform?usp=send_form)
 
