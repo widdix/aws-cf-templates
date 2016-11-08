@@ -909,25 +909,6 @@ Resources:
       AutoScalingRollingUpdate:
         PauseTime: PT15M
         WaitOnResourceSignals: true
-  AgentELBSG:
-    Type: 'AWS::EC2::SecurityGroup'
-    Properties:
-      GroupDescription: 'jenkins-elb-agent'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
-      SecurityGroupIngress: []
-  AgentELB:
-    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
-    Properties:
-      Scheme: internal
-      SecurityGroups:
-      - !Ref AgentELBSG
-      Subnets:
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetA${AgentSubnetsReach}'
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetB${AgentSubnetsReach}'
-      Tags:
-      - Key: Name
-        Value: 'jenkins-agent'
   AgentELBTargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
@@ -953,7 +934,7 @@ Resources:
       DefaultActions:
       - TargetGroupArn: !Ref AgentELBTargetGroup
         Type: forward
-      LoadBalancerArn: !Ref AgentELB
+      LoadBalancerArn: !Ref MasterELB
       Port: 8080
       Protocol: HTTP
   AgentIP:
@@ -1035,7 +1016,7 @@ Resources:
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
       SecurityGroupIngress:
-      - SourceSecurityGroupId: !Ref AgentELBSG
+      - SourceSecurityGroupId: !Ref MasterELBSG
         FromPort: 8080
         ToPort: 8080
         IpProtocol: tcp
