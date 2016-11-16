@@ -1,0 +1,30 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'VPC: Endpoint to S3 for private subnets, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+Parameters:
+  ParentVPCStack:
+    Description: Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.
+    Type: String
+Resources:
+  EndpointS3:
+    Type: "AWS::EC2::VPCEndpoint"
+    Properties:
+      RouteTableIds:
+        -
+          'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablePrivate'
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.s3"
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+Outputs:
+  Endpoint:
+    Description: 'The VPC endpoint to S3.'
+    Value: !Ref EndpointS3
+    Export:
+      Name: !Sub '${AWS::StackName}-EndpointS3'

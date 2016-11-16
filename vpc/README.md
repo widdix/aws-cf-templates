@@ -98,6 +98,20 @@ This template describes a **highly available** SSH bastion host/instance. SSH Po
 ### Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
 
+## VPC Endpoint to S3
+This template describes a VPC endpoint to securely route traffic within a VPC for private instances to access S3 without the need of a NAT Gateway, NAT instance, or public internet. Refer to [AWS VPC endpoint](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-endpoints.html) documentation if this is necessary for your stack. By default, access to all S3 actions and buckets is allowed, but may be constrained with a policy document.
+
+1. This templates depends on one of our `vpc-*azs.yaml` templates. [Launch Stack](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.yaml)
+1. [Launch Stack](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-nat-gateway&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-endpoint-s3.yaml) for this VPC endpoint to S3.
+1. Click **Next** to proceed with the next step of the wizard.
+1. Specify a name and all parameters for the stack.
+1. Click **Next** to proceed with the next step of the wizard.
+1. Click **Next** to skip the **Options** step of the wizard.
+1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
+1. Click **Create** to start the creation of the stack.
+1. Wait until the stack reaches the state **CREATE_COMPLETE**
+![Architecture](./vpc-endpoint-s3.png?raw=true "Architecture")
+
 ## Support
 We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
 
