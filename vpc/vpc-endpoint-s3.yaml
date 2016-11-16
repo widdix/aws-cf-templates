@@ -14,12 +14,11 @@ Parameters:
     Type: String
 Resources:
   EndpointS3:
-    Type: "AWS::EC2::VPCEndpoint"
+    Type: 'AWS::EC2::VPCEndpoint'
     Properties:
       RouteTableIds:
-        -
-          'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablePrivate'
-      ServiceName: !Sub "com.amazonaws.${AWS::Region}.s3"
+      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablePrivate'
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
 Outputs:
