@@ -525,7 +525,7 @@ Resources:
               command: 'mkdir /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins'
               test: '[ ! -d /var/lib/jenkins ]'
             'd_mountpoint_mount':
-              command: !Sub 'mount -t nfs4 -o vers=4.1 "$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).${MasterStorage}.efs.${AWS::Region}.amazonaws.com:/" /var/lib/jenkins'
+              command: !Sub 'mount -t nfs4 -o vers=4.1 "$(curl -s -m 60 http://169.254.169.254/latest/meta-data/placement/availability-zone).${MasterStorage}.efs.${AWS::Region}.amazonaws.com:/" /var/lib/jenkins'
               test: 'if mount | grep -q /var/lib/jenkins; then exit 1; else exit 0; fi'
         install:
           packages:
@@ -812,7 +812,7 @@ Resources:
                 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin
                 MAILTO=root
                 HOME=/
-                * * * * * root aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildActive --value $(curl -s -u 'admin:${MasterAdminPassword}' 'http://@localhost:8080/computer/api/xml?xpath=*/busyExecutors' | sed -r 's/<[/a-zA-Z]*>//g') --unit Count
+                * * * * * root aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildActive --value $(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://@localhost:8080/computer/api/xml?xpath=*/busyExecutors' | sed -r 's/<[/a-zA-Z]*>//g') --unit Count
               mode: '000600'
               owner: root
               group: root
@@ -822,7 +822,7 @@ Resources:
                 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin
                 MAILTO=root
                 HOME=/
-                * * * * * root aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildQueue --value $(curl -s -u 'admin:${MasterAdminPassword}' 'http://@localhost:8080/jqs-monitoring/api/xml?xpath=/JQSMonitoring/buildQueue/numberOfJobs' | sed -r 's/<[/a-zA-Z]*>//g') --unit Count
+                * * * * * root aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildQueue --value $(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://@localhost:8080/jqs-monitoring/api/xml?xpath=/JQSMonitoring/buildQueue/numberOfJobs' | sed -r 's/<[/a-zA-Z]*>//g') --unit Count
               mode: '000600'
               owner: root
               group: root
@@ -831,7 +831,7 @@ Resources:
               command: 'service jenkins start'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'b_await_jenkins':
-              command: 'until $(curl --output /dev/null --silent --head --fail -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'c_activate_slave_agent_port':
               command: 'sed -i -e "s@<slaveAgentPort>.*</slaveAgentPort>@<slaveAgentPort>49817</slaveAgentPort>@" /var/lib/jenkins/config.xml'
@@ -840,7 +840,7 @@ Resources:
               command: 'service jenkins restart'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'e_await_jenkins':
-              command: 'until $(curl --output /dev/null --silent --head --fail -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'f_install_plugins':
               command: 'while read -r plugin; do java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -noKeyAuth install-plugin "$plugin" --username admin --password "$(cat /var/lib/jenkins/secrets/initialAdminPassword)"; done < /root/plugins.txt'
@@ -849,7 +849,7 @@ Resources:
               command: 'service jenkins restart'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'h_await_jenkins':
-              command: 'until $(curl --output /dev/null --silent --head --fail -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'i_set_admin_password':
               command: !Sub 'echo ''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", "${MasterAdminPassword}")'' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -noKeyAuth groovy = --username admin --password "$(cat /var/lib/jenkins/secrets/initialAdminPassword)"'
@@ -1272,7 +1272,7 @@ Resources:
                 #!/bin/bash -ex
                 masterInstanceId=$(aws --region ${AWS::Region} autoscaling describe-auto-scaling-groups --auto-scaling-group-names ${MasterASG} --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)
                 masterIP=$(aws --region ${AWS::Region} ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
-                java -jar jenkins-cli.jar -s http://$masterIP:8080 -noKeyAuth get-node $(curl -s http://169.254.169.254/latest/meta-data/instance-id) --username admin --password '${MasterAdminPassword}'
+                java -jar jenkins-cli.jar -s http://$masterIP:8080 -noKeyAuth get-node $(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id) --username admin --password '${MasterAdminPassword}'
               mode: '000500'
               owner: root
               group: root
@@ -1281,17 +1281,17 @@ Resources:
                 #!/bin/bash -ex
                 masterInstanceId=$(aws --region ${AWS::Region} autoscaling describe-auto-scaling-groups --auto-scaling-group-names ${MasterASG} --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)
                 masterIP=$(aws --region ${AWS::Region} ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
-                cat /root/agent.xml | java -jar jenkins-cli.jar -s http://$masterIP:8080 -noKeyAuth create-node $(curl -s http://169.254.169.254/latest/meta-data/instance-id) --username admin --password '${MasterAdminPassword}'
+                cat /root/agent.xml | java -jar jenkins-cli.jar -s http://$masterIP:8080 -noKeyAuth create-node $(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id) --username admin --password '${MasterAdminPassword}'
               mode: '000500'
               owner: root
               group: root
             '/var/lib/jenkins/start-agent.sh':
               content: !Sub |
                 #!/bin/bash -ex
-                instanceId=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+                instanceId=$(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
                 masterInstanceId=$(aws --region ${AWS::Region} autoscaling describe-auto-scaling-groups --auto-scaling-group-names ${MasterASG} --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)
                 masterIP=$(aws --region ${AWS::Region} ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
-                secret=$(curl -s -u 'admin:${MasterAdminPassword}' http://$masterIP:8080/computer/$instanceId/slave-agent.jnlp | xmllint --xpath '//argument[1]/text()' -)
+                secret=$(curl -s -m 60 -u 'admin:${MasterAdminPassword}' http://$masterIP:8080/computer/$instanceId/slave-agent.jnlp | xmllint --xpath '//argument[1]/text()' -)
                 java -classpath remoting.jar hudson.remoting.jnlp.Main $secret $instanceId -url http://$masterIP:8080/ -headless
               mode: '000500'
               owner: jenkins
@@ -1362,7 +1362,7 @@ Resources:
                 $conf = YAML::load_file(__dir__ + '/healthcheck.conf')
                 Aws.config.update(region: $conf['region'])
                 $log.info 'server started'
-                $instanceId = `curl -s http://169.254.169.254/latest/meta-data/instance-id`
+                $instanceId = `curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id`
                 def isHealthy(agent)
                   autoscaling = Aws::AutoScaling::Client.new()
                   ec2 = Aws::EC2::Client.new()

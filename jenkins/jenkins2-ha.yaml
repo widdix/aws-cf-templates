@@ -426,7 +426,7 @@ Resources:
               command: 'mkdir /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins'
               test: '[ ! -d /var/lib/jenkins ]'
             'd_mountpoint_mount':
-              command: !Sub 'mount -t nfs4 -o vers=4.1 "$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).${MasterStorage}.efs.${AWS::Region}.amazonaws.com:/" /var/lib/jenkins'
+              command: !Sub 'mount -t nfs4 -o vers=4.1 "$(curl -s -m 60 http://169.254.169.254/latest/meta-data/placement/availability-zone).${MasterStorage}.efs.${AWS::Region}.amazonaws.com:/" /var/lib/jenkins'
               test: 'if mount | grep -q /var/lib/jenkins; then exit 1; else exit 0; fi'
         install:
           packages:
@@ -560,7 +560,7 @@ Resources:
               command: 'service jenkins start'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'b_await_jenkins':
-              command: 'until $(curl --output /dev/null --silent --head --fail -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'c_activate_slave_agent_port':
               command: 'sed -i -e "s@<slaveAgentPort>.*</slaveAgentPort>@<slaveAgentPort>49817</slaveAgentPort>@" /var/lib/jenkins/config.xml'
@@ -569,7 +569,7 @@ Resources:
               command: 'service jenkins restart'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'e_await_jenkins':
-              command: 'until $(curl --output /dev/null --silent --head --fail -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'f_install_plugins':
               command: 'while read -r plugin; do java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -noKeyAuth install-plugin "$plugin" --username admin --password "$(cat /var/lib/jenkins/secrets/initialAdminPassword)"; done < /root/plugins.txt'
@@ -578,7 +578,7 @@ Resources:
               command: 'service jenkins restart'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'h_await_jenkins':
-              command: 'until $(curl --output /dev/null --silent --head --fail -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'i_set_admin_password':
               command: !Sub 'echo ''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", "${MasterAdminPassword}")'' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -noKeyAuth groovy = --username admin --password "$(cat /var/lib/jenkins/secrets/initialAdminPassword)"'
