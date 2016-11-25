@@ -1,5 +1,20 @@
 # Security Templates for AWS CloudFormation
 
+## S3 VirusScan
+This template creates a Antivirus cluster for S3 buckets. You can connect as many buckets as you like by using [S3 Event Notifications](http://docs.aws.amazon.com/AmazonS3/latest/dev/NotificationHowTo.html). The template has it's own repository: [aws-s3-virusscan](https://github.com/widdix/aws-s3-virusscan)
+
+### Features
+
+* Uses ClamAV to scan newly added files on S3 buckets
+* Updates ClamAV database every 3 hours automatically
+* Scales EC2 instance workers to distribute workload
+* Publishes a message to SNS in case of a finding
+* Can optionally delete compromised files automatically
+* Logs to CloudWatch Logs
+
+### Installation Guide
+Visit the template's repository for installation instructions: [aws-s3-virusscan](https://github.com/widdix/aws-s3-virusscan)
+
 ## Account Password Policy
 This template creates an account password policy for your IAM users. You can:
 
