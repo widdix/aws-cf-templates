@@ -194,7 +194,7 @@ Resources:
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':
-              content: !Sub |
+              content: |
                 #!/bin/bash -e
                 if [ -z "$1" ]; then
                   exit 1
@@ -211,7 +211,7 @@ Resources:
               owner: root
               group: root
             '/opt/import_users.sh':
-              content: !Sub |
+              content: |
                 #!/bin/bash
                 aws iam list-users --query "Users[].[UserName]" --output text | while read User; do
                   SaveUserName="$User"
