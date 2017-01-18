@@ -335,7 +335,7 @@ Resources:
             Action:
             - 'sqs:DeleteMessage'
             - 'sqs:ReceiveMessage'
-            Resource: !Sub '${AgentTerminatingLifecycleHookQueue.Arn}'
+            Resource: !GetAtt 'AgentTerminatingLifecycleHookQueue.Arn'
       - PolicyName: logs
         PolicyDocument:
           Version: '2012-10-17'
@@ -1509,7 +1509,7 @@ Resources:
       QueueName: !Sub '${AWS::StackName}-terminating-lifecycle-hook'
       VisibilityTimeout: !Ref AgentMaxBuildWaitTimeInSeconds
       RedrivePolicy:
-        deadLetterTargetArn: !Sub '${AgentTerminatingLifecycleHookDeadLetterQueue.Arn}'
+        deadLetterTargetArn: !GetAtt 'AgentTerminatingLifecycleHookDeadLetterQueue.Arn'
         maxReceiveCount: 5
   AgentTerminatingLifecycleHookDeadLetterQueue:
     Type: 'AWS::SQS::Queue'
@@ -1538,7 +1538,7 @@ Resources:
             Action:
             - 'sqs:SendMessage'
             - 'sqs:GetQueueUrl'
-            Resource: !Sub '${AgentTerminatingLifecycleHookQueue.Arn}'
+            Resource: !GetAtt 'AgentTerminatingLifecycleHookQueue.Arn'
   AgentTerminatingLifecycleHook:
     Type: 'AWS::AutoScaling::LifecycleHook'
     Properties:
@@ -1546,8 +1546,8 @@ Resources:
       DefaultResult: CONTINUE
       AutoScalingGroupName: !Ref AgentASG
       LifecycleTransition: 'autoscaling:EC2_INSTANCE_TERMINATING'
-      NotificationTargetARN: !Sub '${AgentTerminatingLifecycleHookQueue.Arn}'
-      RoleARN: !Sub '${AgentTerminatingLifecycleHookIAMRole.Arn}'
+      NotificationTargetARN: !GetAtt 'AgentTerminatingLifecycleHookQueue.Arn'
+      RoleARN: !GetAtt 'AgentTerminatingLifecycleHookIAMRole.Arn'
   AgentScalingUpPolicy:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
@@ -1596,7 +1596,7 @@ Outputs:
       Name: !Sub '${AWS::StackName}-AdminUsername'
   DNSName:
     Description: 'The DNS name for the Jenkins Master load balancer.'
-    Value: !Sub '${MasterELB.DNSName}'
+    Value: !GetAtt 'MasterELB.DNSName'
     Export:
       Name: !Sub '${AWS::StackName}-DNSName'
   URL:

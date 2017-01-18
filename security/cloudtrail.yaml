@@ -64,11 +64,11 @@ Resources:
           - Sid: AWSCloudTrailCreateLogStream2014110
             Effect: Allow
             Action: 'logs:CreateLogStream'
-            Resource: !Sub '${TrailLogGroup.Arn}'
+            Resource: !GetAtt 'TrailLogGroup.Arn'
           - Sid: AWSCloudTrailPutLogEvents20141101
             Effect: Allow
             Action: 'logs:PutLogEvents'
-            Resource: !Sub '${TrailLogGroup.Arn}'
+            Resource: !GetAtt 'TrailLogGroup.Arn'
   TrailTopic:
     Type: 'AWS::SNS::Topic'
     Properties: {}
@@ -96,6 +96,6 @@ Resources:
       IsLogging: true
       IsMultiRegionTrail: true
       S3BucketName: !Ref TrailBucket
-      CloudWatchLogsLogGroupArn: !Sub '${TrailLogGroup.Arn}'
-      CloudWatchLogsRoleArn: !Sub '${TrailLogGroupRole.Arn}'
-      SnsTopicName: !Sub '${TrailTopic.TopicName}'
+      CloudWatchLogsLogGroupArn: !GetAtt 'TrailLogGroup.Arn'
+      CloudWatchLogsRoleArn: !GetAtt 'TrailLogGroupRole.Arn'
+      SnsTopicName: !GetAtt 'TrailTopic.TopicName'

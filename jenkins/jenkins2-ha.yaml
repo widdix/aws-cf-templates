@@ -661,7 +661,7 @@ Outputs:
       Name: !Sub '${AWS::StackName}-AdminUsername'
   DNSName:
     Description: 'The DNS name for the Jenkins Master load balancer.'
-    Value: !Sub '${MasterELB.DNSName}'
+    Value: !GetAtt 'MasterELB.DNSName'
     Export:
       Name: !Sub '${AWS::StackName}-DNSName'
   URL:
