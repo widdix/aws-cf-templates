@@ -73,6 +73,43 @@ This template enables CloudTrail to records AWS API calls across all regions in 
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
+If you want to use an external S3 bucket, the bucket needs to have the following S3 bucket policy:
+
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "AWSCloudTrailAclCheck",
+    "Effect": "Allow",
+    "Principal": {
+      "Service": "cloudtrail.amazonaws.com"
+    },
+    "Action": "s3:GetBucketAcl",
+    "Resource": "arn:aws:s3:::$ExternalTrailBucket"
+  }, {
+    "Sid": "AWSCloudTrailWrite",
+    "Effect": "Allow",
+    "Principal": {
+      "Service": "cloudtrail.amazonaws.com"
+    },
+    "Action": "s3:PutObject",
+    "Resource": [
+      "arn:aws:s3:::$ExternalTrailBucket/AWSLogs/$AccountId[0]/*",
+      "arn:aws:s3:::$ExternalTrailBucket/AWSLogs/$AccountId[1]/*",
+      "arn:aws:s3:::$ExternalTrailBucket/AWSLogs/$AccountId[2]/*"
+    ],
+    "Condition": {
+      "StringEquals": {
+        "s3:x-amz-acl": "bucket-owner-full-control"
+      }
+    }
+  }]
+}
+
+```
+
+Replace `$ExternalTrailBucket` with the name of your bucket, and add a row for every account you want to write from `$AccountId[*]`.
+
 ## AWS Config setup
 This template enables AWS Config to deliver a AWS resource inventory to S3. Allowing you to keep track of infrastructure changes for compliance and debugging of your cloud infrastructure. 
 
@@ -87,6 +124,50 @@ This template enables AWS Config to deliver a AWS resource inventory to S3. Allo
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 ## Support needed?
 We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments.
+
+If you want to use an external S3 bucket, the bucket needs to have the following S3 bucket policy:
+
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AWSConfigBucketPermissionsCheck",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": [
+         "config.amazonaws.com"
+        ]
+      },
+      "Action": "s3:GetBucketAcl",
+      "Resource": "arn:aws:s3:::$ExternalTrailBucket"
+    },
+    {
+      "Sid": " AWSConfigBucketDelivery",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": [
+         "config.amazonaws.com"    
+        ]
+      },
+      "Action": "s3:PutObject",
+      "Resource": [
+        "arn:aws:s3:::$ExternalTrailBucket/AWSLogs/$AccountId[0]/Config/*",
+        "arn:aws:s3:::$ExternalTrailBucket/AWSLogs/$AccountId[0]/Config/*",
+        "arn:aws:s3:::$ExternalTrailBucket/AWSLogs/$AccountId[2]/Config/*"
+      ],
+      "Condition": { 
+        "StringEquals": { 
+          "s3:x-amz-acl": "bucket-owner-full-control" 
+        }
+      }
+    }
+  ]
+}
+
+```
+
+Replace `$ExternalTrailBucket` with the name of your bucket, and add a row for every account you want to write from `$AccountId[*]`.
 
 ## Support
 We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
