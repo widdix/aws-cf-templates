@@ -2,7 +2,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'ECS: cluster, a cloudonaut.io template'
 # TODO Certificate parameter to support 443
-# TODO auto scaling
+# TODO auto scaling of EC2 instances
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -498,7 +498,7 @@ Outputs:
       Name: !Sub '${AWS::StackName}-LogGroup'
   DNSName:
     Description: 'The DNS name for the ECS cluster load balancer.'
-    Value: !Sub '${LoadBalancer.DNSName}'
+    Value: !GetAtt 'LoadBalancer.DNSName'
     Export:
       Name: !Sub '${AWS::StackName}-DNSName'
   URL:

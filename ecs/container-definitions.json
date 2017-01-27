@@ -1,0 +1,22 @@
+[
+  {
+    "name": "main",
+    "image": "nginx:1.11.5",
+    "memory": 128,
+    "portMappings": [
+      {
+        "containerPort": 80,
+        "protocol": "tcp"
+      }
+    ],
+    "essential": true,
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-region": "$AWS_DEFAULT_REGION",
+        "awslogs-group": "$ClusterLogGroup",
+        "awslogs-stream-prefix": "$ServiceName"
+      }
+    }
+  }
+]
