@@ -8,18 +8,27 @@ Metadata:
         default: 'CloudTrail Parameters'
       Parameters:
       - CloudWatchLogsRetentionInDays
+      - ExternalTrailBucket
 Parameters:
   CloudWatchLogsRetentionInDays:
     Description: 'The number of days log events are kept in CloudWatch Logs'
     Type: Number
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  ExternalTrailBucket:
+    Description: 'Optional The name of the Amazon S3 bucket where CloudTrail publishes log files. If you leave this empty, the Amazon S3 bucket is created for you.'
+    Type: String
+Conditions:
+  InternalBucket: !Equals [!Ref ExternalTrailBucket, '']
+  ExternalBucket: !Not [!Equals [!Ref ExternalTrailBucket, '']]
 Resources:
   TrailBucket:
+    Condition: InternalBucket
     DeletionPolicy: Retain
     Type: 'AWS::S3::Bucket'
     Properties: {}
   TrailBucketPolicy:
+    Condition: InternalBucket
     Type: 'AWS::S3::BucketPolicy'
     Properties:
       Bucket: !Ref TrailBucket
@@ -87,6 +96,7 @@ Resources:
       Topics:
       - !Ref TrailTopic
   Trail:
+    Condition: InternalBucket
     DependsOn:
     - TrailBucketPolicy
     - TrailTopicPolicy
@@ -96,6 +106,19 @@ Resources:
       IsLogging: true
       IsMultiRegionTrail: true
       S3BucketName: !Ref TrailBucket
+      CloudWatchLogsLogGroupArn: !GetAtt 'TrailLogGroup.Arn'
+      CloudWatchLogsRoleArn: !GetAtt 'TrailLogGroupRole.Arn'
+      SnsTopicName: !GetAtt 'TrailTopic.TopicName'
+  ExternalTrail:
+    Condition: ExternalBucket
+    DependsOn:
+    - TrailTopicPolicy
+    Type: 'AWS::CloudTrail::Trail'
+    Properties:
+      IncludeGlobalServiceEvents: true
+      IsLogging: true
+      IsMultiRegionTrail: true
+      S3BucketName: !Ref ExternalTrailBucket
       CloudWatchLogsLogGroupArn: !GetAtt 'TrailLogGroup.Arn'
       CloudWatchLogsRoleArn: !GetAtt 'TrailLogGroupRole.Arn'
       SnsTopicName: !GetAtt 'TrailTopic.TopicName'
