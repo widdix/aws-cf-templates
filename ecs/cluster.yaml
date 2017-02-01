@@ -3,6 +3,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'ECS: cluster, a cloudonaut.io template'
 # TODO Certificate parameter to support 443
 # TODO auto scaling of EC2 instances
+# TODO Use ASG lifecycle to drain ECS instances when scaling down
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
