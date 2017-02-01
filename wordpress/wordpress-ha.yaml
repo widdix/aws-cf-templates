@@ -71,6 +71,12 @@ Parameters:
   BlogAdminEMail:
     Description: 'The email address of the WordPress admin.'
     Type: String
+  BlogVersion:
+    Description: 'WordPress version number'
+    Type: String
+    Default: '4.7.2'
+    ConstraintDescription: 'x.y.z'
+    AllowedPattern: '[0-9]+\.[0-9]+\.[0-9]+'
   WebServerKeyName:
     Description: 'Optional key pair of the ec2-user to establish a SSH connection to the web server.'
     Type: String
@@ -434,7 +440,7 @@ Resources:
                 touch wordpress.lock
                 wget -q -T 60 https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
                 if ! $(php wp-cli.phar core is-installed --allow-root); then
-                php wp-cli.phar core download --allow-root
+                php wp-cli.phar core download --allow-root --version=${BlogVersion}
                 php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='wordpress' --dbhost='${Database.Endpoint.Address}' --allow-root
                 php wp-cli.phar core install --url='https://${DomainName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}' --skip-email --allow-root
                 sed -i "/$table_prefix = 'wp_';/a\$_SERVER['HTTPS'] = 'on';" /var/www/html/wp-config.php 
