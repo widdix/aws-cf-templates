@@ -223,10 +223,9 @@ Resources:
                   SaveUserName=${SaveUserName//"="/".equal."}
                   SaveUserName=${SaveUserName//","/".comma."}
                   SaveUserName=${SaveUserName//"@"/".at."}
-                  if id -u "$SaveUserName" >/dev/null 2>&1; then
-                    echo "$SaveUserName exists"
-                  else
-                    /usr/sbin/adduser "$SaveUserName"
+                  if ! id -u "$SaveUserName" >/dev/null 2>&1; then
+                    # don't grant sudo rights on bastion host!
+                    /usr/sbin/useradd "$SaveUserName"
                   fi
                 done
               mode: '000755'
