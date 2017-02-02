@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'VPC: Dummy for public and private subnets in two availability zones, a cloudonaut.io template'
+Description: 'VPC: Legacy public and private subnets in three availability zones, a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -9,12 +9,15 @@ Metadata:
       Parameters:
       - AZA
       - AZB
+      - AZC
       - ClassB
       - VPC
       - SubnetAPublic
       - SubnetBPublic
+      - SubnetCPublic
       - SubnetAPrivate
       - SubnetBPrivate
+      - SubnetCPrivate
       - RouteTablePublic
       - RouteTablePrivate
 Parameters:
@@ -23,6 +26,9 @@ Parameters:
     Type: 'AWS::EC2::AvailabilityZone::Name'
   AZB:
     Description: 'AZ of B'
+    Type: 'AWS::EC2::AvailabilityZone::Name'
+  AZC:
+    Description: 'AZ of C'
     Type: 'AWS::EC2::AvailabilityZone::Name'
   ClassB:
     Description: 'Class B of VPC (10.XXX.0.0/16)'
@@ -40,11 +46,17 @@ Parameters:
   SubnetBPublic:
     Description: 'Subnet B public.'
     Type: 'AWS::EC2::Subnet::Id'
+  SubnetCPublic:
+    Description: 'Subnet C public.'
+    Type: 'AWS::EC2::Subnet::Id'
   SubnetAPrivate:
     Description: 'Subnet A private.'
     Type: 'AWS::EC2::Subnet::Id'
   SubnetBPrivate:
     Description: 'Subnet B private.'
+    Type: 'AWS::EC2::Subnet::Id'
+  SubnetCPrivate:
+    Description: 'Subnet C private.'
     Type: 'AWS::EC2::Subnet::Id'
   RouteTablePublic:
     Description: 'Route table public.'
@@ -60,7 +72,7 @@ Resources:
 Outputs:
   AZs:
     Description: 'AZs'
-    Value: 2
+    Value: 3
     Export:
       Name: !Sub '${AWS::StackName}-AZs'
   AZA:
@@ -73,6 +85,11 @@ Outputs:
     Value: !Ref AZB
     Export:
       Name: !Sub '${AWS::StackName}-AZB'
+  AZC:
+    Description: 'AZ of C'
+    Value: !Ref AZC
+    Export:
+      Name: !Sub '${AWS::StackName}-AZC'
   ClassB:
     Description: 'Class B.'
     Value: !Ref ClassB
@@ -85,12 +102,12 @@ Outputs:
       Name: !Sub '${AWS::StackName}-VPC'
   SubnetsPublic:
     Description: 'Subnets public.'
-    Value: !Join [',', [!Ref SubnetAPublic, !Ref SubnetBPublic]]
+    Value: !Join [',', [!Ref SubnetAPublic, !Ref SubnetBPublic, !Ref SubnetCPublic]]
     Export:
       Name: !Sub '${AWS::StackName}-SubnetsPublic'
   SubnetsPrivate:
     Description: 'Subnets private.'
-    Value: !Join [',', [!Ref SubnetAPrivate, !Ref SubnetBPrivate]]
+    Value: !Join [',', [!Ref SubnetAPrivate, !Ref SubnetBPrivate, !Ref SubnetCPrivate]]
     Export:
       Name: !Sub '${AWS::StackName}-SubnetsPrivate'
   RouteTablePrivate:
@@ -123,3 +140,13 @@ Outputs:
     Value: !Ref SubnetBPrivate
     Export:
       Name: !Sub '${AWS::StackName}-SubnetBPrivate'
+  SubnetCPublic:
+    Description: 'Subnet C public.'
+    Value: !Ref SubnetCPublic
+    Export:
+      Name: !Sub '${AWS::StackName}-SubnetCPublic'
+  SubnetCPrivate:
+    Description: 'Subnet C private.'
+    Value: !Ref SubnetCPrivate
+    Export:
+      Name: !Sub '${AWS::StackName}-SubnetCPrivate'

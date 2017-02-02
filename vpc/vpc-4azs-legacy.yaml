@@ -1,0 +1,179 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'VPC: Legacy public and private subnets in four availability zones, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'VPC Parameters'
+      Parameters:
+      - AZA
+      - AZB
+      - AZC
+      - AZD
+      - ClassB
+      - VPC
+      - SubnetAPublic
+      - SubnetBPublic
+      - SubnetCPublic
+      - SubnetDPublic
+      - SubnetAPrivate
+      - SubnetBPrivate
+      - SubnetCPrivate
+      - SubnetDPrivate
+      - RouteTablePublic
+      - RouteTablePrivate
+Parameters:
+  AZA:
+    Description: 'AZ of A'
+    Type: 'AWS::EC2::AvailabilityZone::Name'
+  AZB:
+    Description: 'AZ of B'
+    Type: 'AWS::EC2::AvailabilityZone::Name'
+  AZC:
+    Description: 'AZ of C'
+    Type: 'AWS::EC2::AvailabilityZone::Name'
+  AZD:
+    Description: 'AZ of D'
+    Type: 'AWS::EC2::AvailabilityZone::Name'
+  ClassB:
+    Description: 'Class B of VPC (10.XXX.0.0/16)'
+    Type: Number
+    Default: 0
+    ConstraintDescription: 'Must be in the range [0-255]'
+    MinValue: 0
+    MaxValue: 255
+  VPC:
+    Description: 'VPC'
+    Type: 'AWS::EC2::VPC::Id'
+  SubnetAPublic:
+    Description: 'Subnet A public.'
+    Type: 'AWS::EC2::Subnet::Id'
+  SubnetBPublic:
+    Description: 'Subnet B public.'
+    Type: 'AWS::EC2::Subnet::Id'
+  SubnetCPublic:
+    Description: 'Subnet C public.'
+    Type: 'AWS::EC2::Subnet::Id'
+  SubnetDPublic:
+    Description: 'Subnet D public.'
+    Type: 'AWS::EC2::Subnet::Id'
+  SubnetAPrivate:
+    Description: 'Subnet A private.'
+    Type: 'AWS::EC2::Subnet::Id'
+  SubnetBPrivate:
+    Description: 'Subnet B private.'
+    Type: 'AWS::EC2::Subnet::Id'
+  SubnetCPrivate:
+    Description: 'Subnet C private.'
+    Type: 'AWS::EC2::Subnet::Id'
+  SubnetDPrivate:
+    Description: 'Subnet D private.'
+    Type: 'AWS::EC2::Subnet::Id'
+  RouteTablePublic:
+    Description: 'Route table public.'
+    Type: String
+  RouteTablePrivate:
+    Description: 'Route table private.'
+    Type: String
+Resources:
+  Dummy:
+    Type: 'AWS::S3::Bucket'
+    Properties: 
+      BucketName: !Ref 'AWS::StackName'
+Outputs:
+  AZs:
+    Description: 'AZs'
+    Value: 4
+    Export:
+      Name: !Sub '${AWS::StackName}-AZs'
+  AZA:
+    Description: 'AZ of A'
+    Value: !Ref AZA
+    Export:
+      Name: !Sub '${AWS::StackName}-AZA'
+  AZB:
+    Description: 'AZ of B'
+    Value: !Ref AZB
+    Export:
+      Name: !Sub '${AWS::StackName}-AZB'
+  AZC:
+    Description: 'AZ of C'
+    Value: !Ref AZC
+    Export:
+      Name: !Sub '${AWS::StackName}-AZC'
+  AZD:
+    Description: 'AZ of D'
+    Value: !Ref AZD
+    Export:
+      Name: !Sub '${AWS::StackName}-AZD'
+  ClassB:
+    Description: 'Class B.'
+    Value: !Ref ClassB
+    Export:
+      Name: !Sub '${AWS::StackName}-ClassB'
+  VPC:
+    Description: 'VPC.'
+    Value: !Ref VPC
+    Export:
+      Name: !Sub '${AWS::StackName}-VPC'
+  SubnetsPublic:
+    Description: 'Subnets public.'
+    Value: !Join [',', [!Ref SubnetAPublic, !Ref SubnetBPublic, !Ref SubnetCPublic, !Ref SubnetDPublic]]
+    Export:
+      Name: !Sub '${AWS::StackName}-SubnetsPublic'
+  SubnetsPrivate:
+    Description: 'Subnets private.'
+    Value: !Join [',', [!Ref SubnetAPrivate, !Ref SubnetBPrivate, !Ref SubnetCPrivate, !Ref SubnetDPrivate]]
+    Export:
+      Name: !Sub '${AWS::StackName}-SubnetsPrivate'
+  RouteTablePrivate:
+    Description: 'Route table private.'
+    Value: !Ref RouteTablePrivate
+    Export:
+      Name: !Sub '${AWS::StackName}-RouteTablePrivate'
+  RouteTablePublic:
+    Description: 'Route table public.'
+    Value: !Ref RouteTablePublic
+    Export:
+      Name: !Sub '${AWS::StackName}-RouteTablePublic'
+  SubnetAPublic:
+    Description: 'Subnet A public.'
+    Value: !Ref SubnetAPublic
+    Export:
+      Name: !Sub '${AWS::StackName}-SubnetAPublic'
+  SubnetAPrivate:
+    Description: 'Subnet A private.'
+    Value: !Ref SubnetAPrivate
+    Export:
+      Name: !Sub '${AWS::StackName}-SubnetAPrivate'
+  SubnetBPublic:
+    Description: 'Subnet B public.'
+    Value: !Ref SubnetBPublic
+    Export:
+      Name: !Sub '${AWS::StackName}-SubnetBPublic'
+  SubnetBPrivate:
+    Description: 'Subnet B private.'
+    Value: !Ref SubnetBPrivate
+    Export:
+      Name: !Sub '${AWS::StackName}-SubnetBPrivate'
+  SubnetCPublic:
+    Description: 'Subnet C public.'
+    Value: !Ref SubnetCPublic
+    Export:
+      Name: !Sub '${AWS::StackName}-SubnetCPublic'
+  SubnetCPrivate:
+    Description: 'Subnet C private.'
+    Value: !Ref SubnetCPrivate
+    Export:
+      Name: !Sub '${AWS::StackName}-SubnetCPrivate'
+  SubnetDPublic:
+    Description: 'Subnet D public.'
+    Value: !Ref SubnetDPublic
+    Export:
+      Name: !Sub '${AWS::StackName}-SubnetDPublic'
+  SubnetDPrivate:
+    Description: 'Subnet D private.'
+    Value: !Ref SubnetDPrivate
+    Export:
+      Name: !Sub '${AWS::StackName}-SubnetDPrivate'

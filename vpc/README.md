@@ -16,6 +16,8 @@ This template describes a VPC with two private and two public subnets.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
+If you have an existing VPC you can wrap it into our required form using a legacy VPC wrapper: <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs-legacy.yaml">Launch Stack</a> 
+
 ## VPC with private and public subnets in three Availability Zones
 This template describes a VPC with three private and three public subnets.
 
@@ -30,6 +32,8 @@ This template describes a VPC with three private and three public subnets.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
+If you have an existing VPC you can wrap it into our required form using a legacy VPC wrapper: <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-3azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-3azs-legacy.yaml">Launch Stack</a> 
+
 ## VPC with private and public subnets in four Availability Zones
 This template describes a VPC with four private and four public subnets.
 
@@ -41,6 +45,8 @@ This template describes a VPC with four private and four public subnets.
 1. Click **Next** to skip the **Options** step of the wizard.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
+If you have an existing VPC you can wrap it into our required form using a legacy VPC wrapper: <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-4azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-4azs-legacy.yaml">Launch Stack</a> 
 
 ## NAT Gateway
 This template describes a NAT Gateway that forwards HTTP, HTTPS and NTP traffic from private subnets to the Internet.
