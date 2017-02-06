@@ -81,7 +81,7 @@ Parameters:
   JenkinsVersion:
     Description: 'Jenkins version number'
     Type: String
-    Default: '2.7.4'
+    Default: '2.32.2'
     ConstraintDescription: 'x.y.z'
     AllowedPattern: '[0-9]+\.[0-9]+\.[0-9]+'
   NewRelicLicenseKey:
@@ -92,29 +92,33 @@ Parameters:
 Mappings:
   RegionMap:
     'ap-south-1':
-      AMI: 'ami-cacbbea5'
+      AMI: 'ami-9fc7b0f0'
+    'eu-west-2':
+      AMI: 'ami-bfe0eadb'
     'eu-west-1':
-      AMI: 'ami-d41d58a7'
+      AMI: 'ami-c51e3eb6'
     'ap-northeast-2':
-      AMI: 'ami-a04297ce'
+      AMI: 'ami-94bb6dfa'
     'ap-northeast-1':
-      AMI: 'ami-1a15c77b'
+      AMI: 'ami-9f0c67f8'
     'sa-east-1':
-      AMI: 'ami-b777e4db'
+      AMI: 'ami-bb40d8d7'
+    'ca-central-1':
+      AMI: 'ami-eb20928f'
     'ap-southeast-1':
-      AMI: 'ami-7243e611'
+      AMI: 'ami-4dd6782e'
     'ap-southeast-2':
-      AMI: 'ami-55d4e436'
+      AMI: 'ami-28cff44b'
     'eu-central-1':
-      AMI: 'ami-0044b96f'
+      AMI: 'ami-211ada4e'
     'us-east-1':
-      AMI: 'ami-c481fad3'
+      AMI: 'ami-9be6f38c'
     'us-east-2':
-      AMI: 'ami-71ca9114'
+      AMI: 'ami-38cd975d'
     'us-west-1':
-      AMI: 'ami-de347abe'
+      AMI: 'ami-b73d6cd7'
     'us-west-2':
-      AMI: 'ami-b04e92d0'
+      AMI: 'ami-1e299d7e'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -363,27 +367,36 @@ Resources:
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':
-              content: !Sub |
+              content: |
                 #!/bin/bash -e
                 if [ -z "$1" ]; then
                   exit 1
                 fi
-                aws iam list-ssh-public-keys --user-name "$1" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read KeyId;
-                do
-                  aws iam get-ssh-public-key --user-name "$1" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
+                SaveUserName="$1"
+                SaveUserName=${SaveUserName//"+"/".plus."}
+                SaveUserName=${SaveUserName//"="/".equal."}
+                SaveUserName=${SaveUserName//","/".comma."}
+                SaveUserName=${SaveUserName//"@"/".at."}
+                aws iam list-ssh-public-keys --user-name "$SaveUserName" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read KeyId; do
+                  aws iam get-ssh-public-key --user-name "$SaveUserName" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
                 done
               mode: '000755'
               owner: root
               group: root
             '/opt/import_users.sh':
-              content: !Sub |
+              content: |
                 #!/bin/bash
                 aws iam list-users --query "Users[].[UserName]" --output text | while read User; do
-                  if id -u "$User" >/dev/null 2>&1; then
-                    echo "$User exists"
-                  else
-                    /usr/sbin/adduser "$User"
-                    echo "$User ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$User"
+                  SaveUserName="$User"
+                  SaveUserName=${SaveUserName//"+"/".plus."}
+                  SaveUserName=${SaveUserName//"="/".equal."}
+                  SaveUserName=${SaveUserName//","/".comma."}
+                  SaveUserName=${SaveUserName//"@"/".at."}
+                  if ! id -u "$SaveUserName" >/dev/null 2>&1; then
+                    #sudo will read each file in /etc/sudoers.d, skipping file names that end in ‘~’ or contain a ‘.’ character to avoid causing problems with package manager or editor temporary/backup files.
+                    SaveUserFileName=$(echo "$SaveUserName" | tr "." " ")
+                    /usr/sbin/useradd "$SaveUserName"
+                    echo "$SaveUserName ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$SaveUserFileName"
                   fi
                 done
               mode: '000755'
@@ -426,7 +439,7 @@ Resources:
               command: 'mkdir /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins'
               test: '[ ! -d /var/lib/jenkins ]'
             'd_mountpoint_mount':
-              command: !Sub 'mount -t nfs4 -o vers=4.1 "$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone).${MasterStorage}.efs.${AWS::Region}.amazonaws.com:/" /var/lib/jenkins'
+              command: !Sub 'mount -t nfs4 -o vers=4.1 "${MasterStorage}.efs.${AWS::Region}.amazonaws.com:/" /var/lib/jenkins'
               test: 'if mount | grep -q /var/lib/jenkins; then exit 1; else exit 0; fi'
         install:
           packages:
@@ -560,7 +573,7 @@ Resources:
               command: 'service jenkins start'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'b_await_jenkins':
-              command: 'until $(curl --output /dev/null --silent --head --fail -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'c_activate_slave_agent_port':
               command: 'sed -i -e "s@<slaveAgentPort>.*</slaveAgentPort>@<slaveAgentPort>49817</slaveAgentPort>@" /var/lib/jenkins/config.xml'
@@ -569,7 +582,7 @@ Resources:
               command: 'service jenkins restart'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'e_await_jenkins':
-              command: 'until $(curl --output /dev/null --silent --head --fail -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'f_install_plugins':
               command: 'while read -r plugin; do java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -noKeyAuth install-plugin "$plugin" --username admin --password "$(cat /var/lib/jenkins/secrets/initialAdminPassword)"; done < /root/plugins.txt'
@@ -578,7 +591,7 @@ Resources:
               command: 'service jenkins restart'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'h_await_jenkins':
-              command: 'until $(curl --output /dev/null --silent --head --fail -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'i_set_admin_password':
               command: !Sub 'echo ''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", "${MasterAdminPassword}")'' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -noKeyAuth groovy = --username admin --password "$(cat /var/lib/jenkins/secrets/initialAdminPassword)"'
@@ -646,7 +659,7 @@ Outputs:
       Name: !Sub '${AWS::StackName}-AdminUsername'
   DNSName:
     Description: 'The DNS name for the Jenkins Master load balancer.'
-    Value: !Sub '${MasterELB.DNSName}'
+    Value: !GetAtt 'MasterELB.DNSName'
     Export:
       Name: !Sub '${AWS::StackName}-DNSName'
   URL:

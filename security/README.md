@@ -1,5 +1,20 @@
 # Security Templates for AWS CloudFormation
 
+## S3 VirusScan
+This template creates a Antivirus cluster for S3 buckets. You can connect as many buckets as you like by using [S3 Event Notifications](http://docs.aws.amazon.com/AmazonS3/latest/dev/NotificationHowTo.html). The template has it's own repository: [aws-s3-virusscan](https://github.com/widdix/aws-s3-virusscan)
+
+### Features
+
+* Uses ClamAV to scan newly added files on S3 buckets
+* Updates ClamAV database every 3 hours automatically
+* Scales EC2 instance workers to distribute workload
+* Publishes a message to SNS in case of a finding
+* Can optionally delete compromised files automatically
+* Logs to CloudWatch Logs
+
+### Installation Guide
+Visit the template's repository for installation instructions: [aws-s3-virusscan](https://github.com/widdix/aws-s3-virusscan)
+
 ## Account Password Policy
 This template creates an account password policy for your IAM users. You can:
 
@@ -58,6 +73,43 @@ This template enables CloudTrail to records AWS API calls across all regions in 
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
+If you want to use an external S3 bucket, the bucket needs to have the following S3 bucket policy:
+
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "AWSCloudTrailAclCheck",
+    "Effect": "Allow",
+    "Principal": {
+      "Service": "cloudtrail.amazonaws.com"
+    },
+    "Action": "s3:GetBucketAcl",
+    "Resource": "arn:aws:s3:::$ExternalTrailBucket"
+  }, {
+    "Sid": "AWSCloudTrailWrite",
+    "Effect": "Allow",
+    "Principal": {
+      "Service": "cloudtrail.amazonaws.com"
+    },
+    "Action": "s3:PutObject",
+    "Resource": [
+      "arn:aws:s3:::$ExternalTrailBucket/AWSLogs/$AccountId[0]/*",
+      "arn:aws:s3:::$ExternalTrailBucket/AWSLogs/$AccountId[1]/*",
+      "arn:aws:s3:::$ExternalTrailBucket/AWSLogs/$AccountId[2]/*"
+    ],
+    "Condition": {
+      "StringEquals": {
+        "s3:x-amz-acl": "bucket-owner-full-control"
+      }
+    }
+  }]
+}
+
+```
+
+Replace `$ExternalTrailBucket` with the name of your bucket, and add a row for every account you want to write from `$AccountId[*]`.
+
 ## AWS Config setup
 This template enables AWS Config to deliver a AWS resource inventory to S3. Allowing you to keep track of infrastructure changes for compliance and debugging of your cloud infrastructure. 
 
@@ -73,11 +125,55 @@ This template enables AWS Config to deliver a AWS resource inventory to S3. Allo
 ## Support needed?
 We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments.
 
+If you want to use an external S3 bucket, the bucket needs to have the following S3 bucket policy:
+
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AWSConfigBucketPermissionsCheck",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": [
+         "config.amazonaws.com"
+        ]
+      },
+      "Action": "s3:GetBucketAcl",
+      "Resource": "arn:aws:s3:::$ExternalTrailBucket"
+    },
+    {
+      "Sid": " AWSConfigBucketDelivery",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": [
+         "config.amazonaws.com"    
+        ]
+      },
+      "Action": "s3:PutObject",
+      "Resource": [
+        "arn:aws:s3:::$ExternalTrailBucket/AWSLogs/$AccountId[0]/Config/*",
+        "arn:aws:s3:::$ExternalTrailBucket/AWSLogs/$AccountId[0]/Config/*",
+        "arn:aws:s3:::$ExternalTrailBucket/AWSLogs/$AccountId[2]/Config/*"
+      ],
+      "Condition": { 
+        "StringEquals": { 
+          "s3:x-amz-acl": "bucket-owner-full-control" 
+        }
+      }
+    }
+  ]
+}
+
+```
+
+Replace `$ExternalTrailBucket` with the name of your bucket, and add a row for every account you want to write from `$AccountId[*]`.
+
 ## Support
 We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
 
 ## Feedback
-We are looking forward to your feedback. Mail to [team@widdix.de](mailto:team@widdix.de).
+We are looking forward to your feedback. Mail to [hello@widdix.de](mailto:hello@widdix.de).
 
 ## About
 A [cloudonaut.io](https://cloudonaut.io/templates-for-aws-cloudformation/) project. Engineered by [widdix](https://widdix.net).

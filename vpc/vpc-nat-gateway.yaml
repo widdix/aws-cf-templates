@@ -33,7 +33,7 @@ Resources:
   NatGateway:
     Type: 'AWS::EC2::NatGateway'
     Properties:
-      AllocationId: !Sub '${EIP.AllocationId}'
+      AllocationId: !GetAtt 'EIP.AllocationId'
       SubnetId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-${SubnetName}'
   Route:

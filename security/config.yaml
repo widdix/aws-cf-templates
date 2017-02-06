@@ -8,6 +8,7 @@ Metadata:
         default: 'Config Parameters'
       Parameters:
       - DeliveryFrequency
+      - ExternalConfigBucket
 Parameters:
   DeliveryFrequency:
     Description: 'The frequency with which AWS Config delivers configuration snapshots'
@@ -19,8 +20,15 @@ Parameters:
     - Six_Hours
     - Twelve_Hours
     - TwentyFour_Hours
+  ExternalConfigBucket:
+    Description: 'Optional The name of an S3 bucket where you want to store configuration history for the delivery channel. If you leave this empty, the Amazon S3 bucket is created for you.'
+    Type: String
+Conditions:
+  InternalBucket: !Equals [!Ref ExternalConfigBucket, '']
+  ExternalBucket: !Not [!Equals [!Ref ExternalConfigBucket, '']]
 Resources:
   ConfigBucket:
+    Condition: InternalBucket
     DeletionPolicy: Retain
     Type: 'AWS::S3::Bucket'
     Properties: {}
@@ -32,9 +40,10 @@ Resources:
     Properties:
       ConfigSnapshotDeliveryProperties:
         DeliveryFrequency: !Ref DeliveryFrequency
-      S3BucketName: !Ref ConfigBucket
+      S3BucketName: !If [InternalBucket, !Ref ConfigBucket, !Ref ExternalConfigBucket]
       SnsTopicARN: !Ref ConfigTopic
   ConfigurationRecorderRole:
+    Condition: InternalBucket
     Type: 'AWS::IAM::Role'
     Properties:
       ManagedPolicyArns:
@@ -68,10 +77,24 @@ Resources:
           - Effect: Allow
             Action: 'sns:Publish'
             Resource: !Ref ConfigTopic
+  ExternalConfigurationRecorderRole:
+    Condition: ExternalBucket
+    Type: 'AWS::IAM::Role'
+    Properties:
+      ManagedPolicyArns:
+      - 'arn:aws:iam::aws:policy/service-role/AWSConfigRole'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: AssumeRole1
+          Effect: Allow
+          Principal:
+            Service: 'config.amazonaws.com'
+          Action: 'sts:AssumeRole'
   ConfigurationRecorder:
     Type: 'AWS::Config::ConfigurationRecorder'
     Properties:
       RecordingGroup:
         AllSupported: true
         IncludeGlobalResourceTypes: true
-      RoleARN: !Sub '${ConfigurationRecorderRole.Arn}'
+      RoleARN: !If [InternalBucket, !GetAtt 'ConfigurationRecorderRole.Arn', !GetAtt 'ExternalConfigurationRecorderRole.Arn']

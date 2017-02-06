@@ -118,7 +118,7 @@ Resources:
         AliasTarget:
           # Magic AWS number:  For CloudFront, use Z2FDTNDATAQYW2.
           HostedZoneId: Z2FDTNDATAQYW2
-          DNSName: !Sub '${CloudFrontDistribution.DomainName}'
+          DNSName: !GetAtt 'CloudFrontDistribution.DomainName'
   S3BucketRedirect:
     Condition: HasRedirectDomainName
     Type: 'AWS::S3::Bucket'
@@ -174,7 +174,7 @@ Resources:
         AliasTarget:
           # Magic AWS number:  For CloudFront, use Z2FDTNDATAQYW2.
           HostedZoneId: Z2FDTNDATAQYW2
-          DNSName: !Sub '${CloudFrontDistributionRedirect.DomainName}'
+          DNSName: !GetAtt 'CloudFrontDistributionRedirect.DomainName'
 Outputs:
   URL:
     Description: 'URL to static website.'

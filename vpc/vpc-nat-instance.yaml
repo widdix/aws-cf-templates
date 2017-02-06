@@ -53,29 +53,33 @@ Parameters:
 Mappings:
   RegionMap:
     'ap-south-1':
-      NATAMI: 'ami-c8c2b7a7'
+      NATAMI: 'ami-9bd8aff4'
+    'eu-west-2':
+      NATAMI: 'ami-a7e2e8c3'
     'eu-west-1':
-      NATAMI: 'ami-362b6e45'
+      NATAMI: 'ami-d51b3ba6'
     'ap-northeast-2':
-      NATAMI: 'ami-844d98ea'
+      NATAMI: 'ami-9da670f3'
     'ap-northeast-1':
-      NATAMI: 'ami-831fcde2'
+      NATAMI: 'ami-2f0f6448'
     'sa-east-1':
-      NATAMI: 'ami-9775e6fb'
+      NATAMI: 'ami-d94ed6b5'
+    'ca-central-1':
+      NATAMI: 'ami-fd209299'
     'ap-southeast-1':
-      NATAMI: 'ami-9c40e5ff'
+      NATAMI: 'ami-71d57b12'
     'ap-southeast-2':
-      NATAMI: 'ami-addbebce'
+      NATAMI: 'ami-16c8f375'
     'eu-central-1':
-      NATAMI: 'ami-b646bbd9'
+      NATAMI: 'ami-ba18d8d5'
     'us-east-1':
-      NATAMI: 'ami-d2ee95c5'
+      NATAMI: 'ami-f8e7f2ef'
     'us-east-2':
-      NATAMI: 'ami-9fc299fa'
+      NATAMI: 'ami-36c29853'
     'us-west-1':
-      NATAMI: 'ami-90357bf0'
+      NATAMI: 'ami-653d6c05'
     'us-west-2':
-      NATAMI: 'ami-c4469aa4'
+      NATAMI: 'ami-1c2a9e7c'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -244,27 +248,36 @@ Resources:
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':
-              content: !Sub |
+              content: |
                 #!/bin/bash -e
                 if [ -z "$1" ]; then
                   exit 1
                 fi
-                aws iam list-ssh-public-keys --user-name "$1" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read KeyId;
-                do
-                  aws iam get-ssh-public-key --user-name "$1" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
+                SaveUserName="$1"
+                SaveUserName=${SaveUserName//"+"/".plus."}
+                SaveUserName=${SaveUserName//"="/".equal."}
+                SaveUserName=${SaveUserName//","/".comma."}
+                SaveUserName=${SaveUserName//"@"/".at."}
+                aws iam list-ssh-public-keys --user-name "$SaveUserName" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read KeyId; do
+                  aws iam get-ssh-public-key --user-name "$SaveUserName" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
                 done
               mode: '000755'
               owner: root
               group: root
             '/opt/import_users.sh':
-              content: !Sub |
+              content: |
                 #!/bin/bash
                 aws iam list-users --query "Users[].[UserName]" --output text | while read User; do
-                  if id -u "$User" >/dev/null 2>&1; then
-                    echo "$User exists"
-                  else
-                    /usr/sbin/adduser "$User"
-                    echo "$User ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$User"
+                  SaveUserName="$User"
+                  SaveUserName=${SaveUserName//"+"/".plus."}
+                  SaveUserName=${SaveUserName//"="/".equal."}
+                  SaveUserName=${SaveUserName//","/".comma."}
+                  SaveUserName=${SaveUserName//"@"/".at."}
+                  if ! id -u "$SaveUserName" >/dev/null 2>&1; then
+                    #sudo will read each file in /etc/sudoers.d, skipping file names that end in ‘~’ or contain a ‘.’ character to avoid causing problems with package manager or editor temporary/backup files.
+                    SaveUserFileName=$(echo "$SaveUserName" | tr "." " ")
+                    /usr/sbin/useradd "$SaveUserName"
+                    echo "$SaveUserName ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$SaveUserFileName"
                   fi
                 done
               mode: '000755'
@@ -402,7 +415,7 @@ Resources:
         'Fn::Base64': !Sub
           - |
             #!/bin/bash -x
-            INSTANCEID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+            INSTANCEID=$(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
             aws --region ${Region} ec2 associate-address --instance-id $INSTANCEID --allocation-id ${EIPAllocationId} && aws --region ${Region} ec2 modify-instance-attribute --instance-id $INSTANCEID --source-dest-check "{\"Value\": false}" && (aws --region ${Region} ec2 replace-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID || aws --region ${Region} ec2 create-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID) && /opt/aws/bin/cfn-init -v --stack ${StackName} --resource NATLaunchConfiguration --region ${Region}
             /opt/aws/bin/cfn-signal -e $? --region ${Region} --stack ${StackName} --resource NATAutoScalingGroup
           - RouteTablePrivate:
