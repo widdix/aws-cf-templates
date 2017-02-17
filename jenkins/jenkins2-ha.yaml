@@ -652,6 +652,9 @@ Resources:
         PauseTime: PT15M
         WaitOnResourceSignals: true
 Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'jenkins/jenkins2-ha'
   AdminUsername:
     Description: 'User name for the Jenkins admin.'
     Value: admin

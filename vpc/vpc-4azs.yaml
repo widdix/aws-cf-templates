@@ -282,6 +282,9 @@ Resources:
       Egress: true
       CidrBlock: '0.0.0.0/0'
 Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'vpc/vpc-4azs'
   AZs:
     Description: 'AZs'
     Value: 4

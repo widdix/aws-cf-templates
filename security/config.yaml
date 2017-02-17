@@ -98,3 +98,7 @@ Resources:
         AllSupported: true
         IncludeGlobalResourceTypes: true
       RoleARN: !If [InternalBucket, !GetAtt 'ConfigurationRecorderRole.Arn', !GetAtt 'ExternalConfigurationRecorderRole.Arn']
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'security/config'

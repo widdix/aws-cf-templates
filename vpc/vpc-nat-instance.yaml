@@ -452,6 +452,9 @@ Resources:
         PauseTime: PT10M
         WaitOnResourceSignals: true
 Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'vpc/vpc-nat-instance'
   IPAddress:
     Description: 'The public IP address of the NAT instance.'
     Value: !Ref EIP

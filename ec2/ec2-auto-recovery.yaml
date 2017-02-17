@@ -409,6 +409,9 @@ Resources:
       - Name: InstanceId
         Value: !Ref VirtualMachine
 Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'ec2/ec2-auto-recovery'
   IPAddress:
     Description: 'The public IP address of the EC2 instance.'
     Value: !Ref ElasticIP

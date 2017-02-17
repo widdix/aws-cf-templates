@@ -743,6 +743,9 @@ Resources:
           SslSupportMethod: 'sni-only'
           MinimumProtocolVersion: TLSv1
 Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'wordpress/wordpress-ha'
   CloudFrontID:
     Description: 'The ID of the CloudFront distribution.'
     Value: !Ref CloudFrontDistribution

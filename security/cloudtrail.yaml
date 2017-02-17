@@ -122,3 +122,7 @@ Resources:
       CloudWatchLogsLogGroupArn: !GetAtt 'TrailLogGroup.Arn'
       CloudWatchLogsRoleArn: !GetAtt 'TrailLogGroupRole.Arn'
       SnsTopicName: !GetAtt 'TrailTopic.TopicName'
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'security/cloudtrail'

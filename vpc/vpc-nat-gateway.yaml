@@ -44,6 +44,9 @@ Resources:
       DestinationCidrBlock: '0.0.0.0/0'
       NatGatewayId: !Ref NatGateway
 Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'vpc/vpc-nat-gateway'
   IPAddress:
     Description: 'The public IP address of the NAT gateway.'
     Value: !Ref EIP
