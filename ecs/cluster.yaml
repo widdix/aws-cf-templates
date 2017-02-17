@@ -477,6 +477,9 @@ Resources:
         PauseTime: PT15M
         WaitOnResourceSignals: true
 Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'ecs/cluster'
   Cluster:
     Description: 'ECS cluster.'
     Value: !Ref Cluster

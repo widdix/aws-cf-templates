@@ -22,6 +22,9 @@ Resources:
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
 Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'vpc/vpc-endpoint-s3'
   Endpoint:
     Description: 'The VPC endpoint to S3.'
     Value: !Ref EndpointS3

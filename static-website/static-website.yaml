@@ -176,6 +176,9 @@ Resources:
           HostedZoneId: Z2FDTNDATAQYW2
           DNSName: !GetAtt 'CloudFrontDistributionRedirect.DomainName'
 Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'static-website/static-website'
   URL:
     Description: 'URL to static website.'
     Value: !Sub 'https://${DomainName}'

@@ -192,6 +192,9 @@ Resources:
       Role: !GetAtt 'ServiceRole.Arn'
       TaskDefinition: !Ref TaskDefinitionArn
 Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'ecs/service'
   DNSName:
     Description: 'The DNS name for the ECS cluster/service load balancer.'
     Value: !If

@@ -58,6 +58,9 @@ Resources:
     Properties: 
       BucketName: !Ref 'AWS::StackName'
 Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'vpc/vpc-2azs-legacy'
   AZs:
     Description: 'AZs'
     Value: 2
