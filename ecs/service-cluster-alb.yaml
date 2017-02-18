@@ -1,0 +1,131 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ECS: service that runs on an ECS cluster and uses the cluster ALB based on ecs/cluster.yaml, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentClusterStack
+    - Label:
+        default: 'Load Balancer Parameters'
+      Parameters:
+      - ClusterLoadBalancerPriority
+      - ClusterLoadBalancerPathPattern
+    - Label:
+        default: 'Task Parameters'
+      Parameters:
+      - TaskDefinitionArn
+      - DesiredCount
+      - ContainerPort
+Parameters:
+  ParentClusterStack:
+    Description: 'Stack name of parent Cluster stack based on ecs/cluster.yaml template.'
+    Type: String
+  ClusterLoadBalancerPriority:
+    Description: 'The priority for the rule. Elastic Load Balancing evaluates rules in priority order, from the lowest value to the highest value. If a request satisfies a rule, Elastic Load Balancing ignores all subsequent rules. A target group can have only one rule with a given priority.'
+    Type: Number
+    Default: 1
+    ConstraintDescription: 'Must be in the range [1-99999]'
+    MinValue: 1
+    MaxValue: 99999
+  ClusterLoadBalancerPathPattern:
+    Description: 'A path pattern is case sensitive.'
+    Type: String
+    Default: '/service/*'
+    ConstraintDescription: 'Must not be longer than 255'
+    MaxLength: 255
+  TaskDefinitionArn:
+    Description: 'The ARN of the task definition (including the revision number) that you want to run on the cluster, such as arn:aws:ecs:us-east-1:123456789012:task-definition/mytask:3.'
+    Type: String
+  DesiredCount:
+    Description: 'The number of simultaneous tasks, which you specify by using the TaskDefinition property, that you want to run on the cluster.'
+    Type: Number
+    Default: 1
+    ConstraintDescription: 'Must be >= 1'
+    MinValue: 1
+  ContainerPort:
+    Description: 'The port number on the container to direct load balancer traffic to. Your container instances must allow ingress traffic on this port.'
+    Type: Number
+    Default: 80
+    ConstraintDescription: 'Must be in the range [0-65535]'
+    MinValue: 0
+    MaxValue: 65535
+Mappings: {}
+Conditions: {}
+Resources:
+  ClusterLoadBalancerTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckIntervalSeconds: 15
+      HealthCheckPath: '/'
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 2
+      Matcher:
+        HttpCode: '200'
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 4
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentClusterStack}-VPC'
+  ClusterLoadBalancerListenerRule:
+    Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn: !Ref ClusterLoadBalancerTargetGroup
+      Conditions:
+      - Field: path-pattern
+        Values:
+        - !Ref ClusterLoadBalancerPathPattern
+      ListenerArn:
+        'Fn::ImportValue': !Sub '${ParentClusterStack}-Listener'
+      Priority: !Ref ClusterLoadBalancerPriority
+  ServiceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      ManagedPolicyArns:
+      - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole'
+      AssumeRolePolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'ecs.amazonaws.com'
+          Action: 'sts:AssumeRole'
+  Service:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      Cluster:
+        'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
+      DesiredCount: !Ref DesiredCount
+      LoadBalancers:
+      - ContainerName: main
+        ContainerPort: !Ref ContainerPort
+        TargetGroupArn: !Ref ClusterLoadBalancerTargetGroup
+      Role: !GetAtt 'ServiceRole.Arn'
+      TaskDefinition: !Ref TaskDefinitionArn
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'ecs/service-cluster-alb'
+  DNSName:
+    Description: 'The DNS name for the ECS cluster/service load balancer.'
+    Value:
+      'Fn::ImportValue': !Sub '${ParentClusterStack}-DNSName'
+    Export:
+      Name: !Sub '${AWS::StackName}-DNSName'
+  URL:
+    Description: 'URL to the ECS service.'
+    Value: !Sub
+    - '${ClusterURL}${ClusterLoadBalancerPathPattern}'
+    - ClusterURL: 
+        'Fn::ImportValue': !Sub '${ParentClusterStack}-URL'
+      ClusterLoadBalancerPathPattern: !Ref ClusterLoadBalancerPathPattern
+    Export:
+      Name: !Sub '${AWS::StackName}-URL'

@@ -1,7 +1,8 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'ECS: service that runs on an ECS cluster based on ecs/cluster.yaml, a cloudonaut.io template'
+Description: 'ECS: service that runs on an ECS cluster based on ecs/cluster.yaml and uses a dedicated ALB, a cloudonaut.io template'
 # TODO Certificate parameter to support 443
+# TODO support auth proxy
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -13,9 +14,6 @@ Metadata:
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
-      - LoadBalancerMode
-      - ClusterLoadBalancerPriority
-      - ClusterLoadBalancerPathPattern
       - ServiceLoadBalancerELBScheme
     - Label:
         default: 'Task Parameters'
@@ -30,26 +28,6 @@ Parameters:
   ParentClusterStack:
     Description: 'Stack name of parent Cluster stack based on ecs/cluster.yaml template.'
     Type: String
-  LoadBalancerMode:
-    Description: 'Register the service with the cluster load balancer? Or create a new load balancer for this service.'
-    Type: String
-    Default: Cluster
-    AllowedValues:
-    - Cluster
-    - Service
-  ClusterLoadBalancerPriority:
-    Description: 'The priority for the rule. Elastic Load Balancing evaluates rules in priority order, from the lowest value to the highest value. If a request satisfies a rule, Elastic Load Balancing ignores all subsequent rules. A target group can have only one rule with a given priority.'
-    Type: Number
-    Default: 1
-    ConstraintDescription: 'Must be in the range [1-99999]'
-    MinValue: 1
-    MaxValue: 99999
-  ClusterLoadBalancerPathPattern:
-    Description: 'A path pattern is case sensitive.'
-    Type: String
-    Default: '/service/*'
-    ConstraintDescription: 'Must not be longer than 255'
-    MaxLength: 255
   ServiceLoadBalancerELBScheme:
     Description: 'Indicates whether the load balancer in front of the ECS cluster is internet-facing or internal.'
     Type: String
@@ -75,49 +53,15 @@ Parameters:
     MaxValue: 65535
 Mappings: {}
 Conditions:
-  LoadBalancerModeCluster: !Equals [!Ref LoadBalancerMode, Cluster]
-  LoadBalancerModeService: !Equals [!Ref LoadBalancerMode, Service]
   HasServiceLoadBalancerELBSchemeInternal: !Equals [!Ref ServiceLoadBalancerELBScheme, 'internal']
 Resources:
-  ClusterLoadBalancerTargetGroup:
-    Condition: LoadBalancerModeCluster
-    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
-    Properties:
-      HealthCheckIntervalSeconds: 15
-      HealthCheckPath: '/'
-      HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 10
-      HealthyThresholdCount: 2
-      Matcher:
-        HttpCode: '200'
-      Port: 80
-      Protocol: HTTP
-      UnhealthyThresholdCount: 4
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentClusterStack}-VPC'
-  ClusterLoadBalancerListenerRule:
-    Condition: LoadBalancerModeCluster
-    Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
-    Properties:
-      Actions:
-      - Type: forward
-        TargetGroupArn: !Ref ClusterLoadBalancerTargetGroup
-      Conditions:
-      - Field: path-pattern
-        Values:
-        - !Ref ClusterLoadBalancerPathPattern
-      ListenerArn:
-        'Fn::ImportValue': !Sub '${ParentClusterStack}-Listener'
-      Priority: !Ref ClusterLoadBalancerPriority
   ALBSecurityGroup:
-    Condition: LoadBalancerModeService
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: 'ecs-cluster-alb'
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
   ALBSecurityGroupInWorld:
-    Condition: LoadBalancerModeService
     Type: 'AWS::EC2::SecurityGroupIngress'
     Properties:
       GroupId: !Ref ALBSecurityGroup
@@ -126,7 +70,6 @@ Resources:
       ToPort: 80
       CidrIp: '0.0.0.0/0'
   ServiceLoadBalancerTargetGroup:
-    Condition: LoadBalancerModeService
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
       HealthCheckIntervalSeconds: 15
@@ -142,7 +85,6 @@ Resources:
       VpcId:
         'Fn::ImportValue': !Sub '${ParentClusterStack}-VPC'
   ServiceLoadBalancer:
-    Condition: LoadBalancerModeService
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
       Scheme: !Ref ServiceLoadBalancerELBScheme
@@ -155,7 +97,6 @@ Resources:
       - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
         - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
   ServiceLoadBalancerListener:
-    Condition: LoadBalancerModeService
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
       DefaultActions:
@@ -176,8 +117,9 @@ Resources:
           Principal:
             Service: 'ecs.amazonaws.com'
           Action: 'sts:AssumeRole'
-  Service: # TODO race condition, must wait for ServiceLoadBalancerListener when LoadBalancerModeService
+  Service:
     Type: 'AWS::ECS::Service'
+    DependsOn: ServiceLoadBalancerListener
     Properties:
       Cluster:
         'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'
@@ -188,30 +130,20 @@ Resources:
       LoadBalancers:
       - ContainerName: main
         ContainerPort: !Ref ContainerPort
-        TargetGroupArn: !If [LoadBalancerModeCluster, !Ref ClusterLoadBalancerTargetGroup, !Ref ServiceLoadBalancerTargetGroup]
+        TargetGroupArn: !Ref ServiceLoadBalancerTargetGroup
       Role: !GetAtt 'ServiceRole.Arn'
       TaskDefinition: !Ref TaskDefinitionArn
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
-    Value: 'ecs/service'
+    Value: 'ecs/service-dedicated-alb'
   DNSName:
     Description: 'The DNS name for the ECS cluster/service load balancer.'
-    Value: !If
-    - LoadBalancerModeCluster
-    - 'Fn::ImportValue': !Sub '${ParentClusterStack}-DNSName'
-    - !GetAtt 'ServiceLoadBalancer.DNSName'
+    Value: !GetAtt 'ServiceLoadBalancer.DNSName'
     Export:
       Name: !Sub '${AWS::StackName}-DNSName'
   URL:
     Description: 'URL to the ECS service.'
-    Value: !If
-    - LoadBalancerModeCluster
-    - !Sub
-      - '${ClusterURL}${ClusterLoadBalancerPathPattern}'
-      - ClusterURL: 
-          'Fn::ImportValue': !Sub '${ParentClusterStack}-URL'
-        ClusterLoadBalancerPathPattern: !Ref ClusterLoadBalancerPathPattern
-    - !Sub 'http://${ServiceLoadBalancer.DNSName}'
+    Value: !Sub 'http://${ServiceLoadBalancer.DNSName}'
     Export:
       Name: !Sub '${AWS::StackName}-URL'
