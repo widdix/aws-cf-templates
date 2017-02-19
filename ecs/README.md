@@ -24,7 +24,7 @@ export ClusterLogGroup=$(aws cloudformation describe-stacks --stack-name $Cluste
 ### Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
 * `vpc/vpc-ssh-bastion.yaml`
-* `security/auth-proxy-*.yaml` (optional)
+* `security/auth-proxy-*.yaml`
 
 ## ECS service
 This template describes TODO description

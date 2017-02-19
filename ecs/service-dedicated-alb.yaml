@@ -2,7 +2,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'ECS: service that runs on an ECS cluster based on ecs/cluster.yaml and uses a dedicated ALB, a cloudonaut.io template'
 # TODO Certificate parameter to support 443
-# TODO support auth proxy
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -11,6 +10,7 @@ Metadata:
       Parameters:
       - ParentVPCStack
       - ParentClusterStack
+      - ParentAuthProxyStack
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
@@ -30,6 +30,10 @@ Parameters:
   ParentClusterStack:
     Description: 'Stack name of parent Cluster stack based on ecs/cluster.yaml template.'
     Type: String
+  ParentAuthProxyStack:
+    Description: 'Optional Stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
+    Type: String
+    Default: ''
   ServiceLoadBalancerELBScheme:
     Description: 'Indicates whether the load balancer in front of the ECS cluster is internet-facing or internal.'
     Type: String
@@ -67,6 +71,8 @@ Parameters:
     MaxValue: 65535
 Mappings: {}
 Conditions:
+  HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
+  HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
   HasServiceLoadBalancerELBSchemeInternal: !Equals [!Ref ServiceLoadBalancerELBScheme, 'internal']
 Resources:
   ALBSecurityGroup:
@@ -77,12 +83,23 @@ Resources:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
   ALBSecurityGroupInWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotAuthProxySecurityGroup
     Properties:
       GroupId: !Ref ALBSecurityGroup
       IpProtocol: tcp
       FromPort: 80
       ToPort: 80
       CidrIp: '0.0.0.0/0'
+  ALBSecurityGroupInAuthProxy:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasAuthProxySecurityGroup
+    Properties:
+      GroupId: !Ref ALBSecurityGroup
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      SourceSecurityGroupId:
+        'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'
   ServiceLoadBalancerTargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
