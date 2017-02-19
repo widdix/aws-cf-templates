@@ -1,7 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'ECS: service that runs on an ECS cluster based on ecs/cluster.yaml and uses a dedicated ALB, a cloudonaut.io template'
-# TODO Certificate parameter to support 443
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -14,7 +13,8 @@ Metadata:
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
-      - ServiceLoadBalancerELBScheme
+      - LoadBalancerScheme
+      - LoadBalancerCertificateArn
     - Label:
         default: 'Task Parameters'
       Parameters:
@@ -34,13 +34,17 @@ Parameters:
     Description: 'Optional Stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
     Type: String
     Default: ''
-  ServiceLoadBalancerELBScheme:
+  LoadBalancerScheme:
     Description: 'Indicates whether the load balancer in front of the ECS cluster is internet-facing or internal.'
     Type: String
     Default: 'internet-facing'
     AllowedValues:
     - 'internet-facing'
     - internal
+  LoadBalancerCertificateArn:
+    Description: 'Optional Amazon Resource Name (ARN) of the certificate to associate with the load balancer.'
+    Type: String
+    Default: ''
   TaskDefinitionArn:
     Description: 'The ARN of the task definition (including the revision number) that you want to run on the cluster, such as arn:aws:ecs:us-east-1:123456789012:task-definition/mytask:3.'
     Type: String
@@ -73,7 +77,10 @@ Mappings: {}
 Conditions:
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
-  HasServiceLoadBalancerELBSchemeInternal: !Equals [!Ref ServiceLoadBalancerELBScheme, 'internal']
+  HasLoadBalancerSchemeInternal: !Equals [!Ref LoadBalancerScheme, 'internal']
+  HasLoadBalancerCertificateArn: !Not [!Equals [!Ref LoadBalancerCertificateArn, '']]
+  HasAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
+  HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasNotAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
 Resources:
   ALBSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -81,7 +88,7 @@ Resources:
       GroupDescription: 'ecs-cluster-alb'
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
-  ALBSecurityGroupInWorld:
+  ALBSecurityGroupInHttpWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasNotAuthProxySecurityGroup
     Properties:
@@ -90,7 +97,16 @@ Resources:
       FromPort: 80
       ToPort: 80
       CidrIp: '0.0.0.0/0'
-  ALBSecurityGroupInAuthProxy:
+  ALBSecurityGroupInHttpsWorld:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn
+    Properties:
+      GroupId: !Ref ALBSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      CidrIp: '0.0.0.0/0'
+  ALBSecurityGroupInHttpAuthProxy:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasAuthProxySecurityGroup
     Properties:
@@ -100,7 +116,26 @@ Resources:
       ToPort: 80
       SourceSecurityGroupId:
         'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'
-  ServiceLoadBalancerTargetGroup:
+  ALBSecurityGroupInHttpsAuthProxy:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasAuthProxySecurityGroupAndLoadBalancerCertificateArn
+    Properties:
+      GroupId: !Ref ALBSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourceSecurityGroupId:
+        'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'
+  SecurityGroupInALB:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId:
+        'Fn::ImportValue': !Sub '${ParentClusterStack}-SecurityGroup'
+      IpProtocol: tcp
+      FromPort: 0
+      ToPort: 65535
+      SourceSecurityGroupId: !Ref ALBSecurityGroup
+  DefaultTargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
       HealthCheckIntervalSeconds: 15
@@ -114,28 +149,40 @@ Resources:
       Protocol: HTTP
       UnhealthyThresholdCount: 4
       VpcId:
-        'Fn::ImportValue': !Sub '${ParentClusterStack}-VPC'
-  ServiceLoadBalancer:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+  LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
-      Scheme: !Ref ServiceLoadBalancerELBScheme
+      Scheme: !Ref LoadBalancerScheme
       SecurityGroups:
       - !Ref ALBSecurityGroup
       Subnets: !If
-      - HasServiceLoadBalancerELBSchemeInternal
+      - HasLoadBalancerSchemeInternal
       - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'
         - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'
       - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
         - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
-  ServiceLoadBalancerListener:
+  HttpListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
       DefaultActions:
-      - TargetGroupArn: !Ref ServiceLoadBalancerTargetGroup
+      - TargetGroupArn: !Ref DefaultTargetGroup
         Type: forward
-      LoadBalancerArn: !Ref ServiceLoadBalancer
+      LoadBalancerArn: !Ref LoadBalancer
       Port: 80
       Protocol: HTTP
+  HttpsListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Condition: HasLoadBalancerCertificateArn
+    Properties:
+      Certificates:
+      - CertificateArn: !Ref LoadBalancerCertificateArn
+      DefaultActions:
+      - TargetGroupArn: !Ref DefaultTargetGroup
+        Type: forward
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 443
+      Protocol: HTTPS
   ServiceRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -150,7 +197,7 @@ Resources:
           Action: 'sts:AssumeRole'
   Service:
     Type: 'AWS::ECS::Service'
-    DependsOn: ServiceLoadBalancerListener
+    DependsOn: HttpListener
     Properties:
       Cluster:
         'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'
@@ -161,7 +208,7 @@ Resources:
       LoadBalancers:
       - ContainerName: main
         ContainerPort: !Ref ContainerPort
-        TargetGroupArn: !Ref ServiceLoadBalancerTargetGroup
+        TargetGroupArn: !Ref DefaultTargetGroup
       Role: !GetAtt 'ServiceRole.Arn'
       TaskDefinition: !Ref TaskDefinitionArn
   ScalableTargetRole: # based on http://docs.aws.amazon.com/AmazonECS/latest/developerguide/autoscale_IAM_role.html
@@ -276,11 +323,11 @@ Outputs:
     Value: 'ecs/service-dedicated-alb'
   DNSName:
     Description: 'The DNS name for the ECS cluster/service load balancer.'
-    Value: !GetAtt 'ServiceLoadBalancer.DNSName'
+    Value: !GetAtt 'LoadBalancer.DNSName'
     Export:
       Name: !Sub '${AWS::StackName}-DNSName'
   URL:
     Description: 'URL to the ECS service.'
-    Value: !Sub 'http://${ServiceLoadBalancer.DNSName}'
+    Value: !Sub 'http://${LoadBalancer.DNSName}'
     Export:
       Name: !Sub '${AWS::StackName}-URL'

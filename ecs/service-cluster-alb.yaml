@@ -11,8 +11,9 @@ Metadata:
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
-      - ClusterLoadBalancerPriority
-      - ClusterLoadBalancerPathPattern
+      - LoadBalancerPriority
+      - LoadBalancerPathPattern
+      - LoadBalancerHttps
     - Label:
         default: 'Task Parameters'
       Parameters:
@@ -25,19 +26,26 @@ Parameters:
   ParentClusterStack:
     Description: 'Stack name of parent Cluster stack based on ecs/cluster.yaml template.'
     Type: String
-  ClusterLoadBalancerPriority:
+  LoadBalancerPriority:
     Description: 'The priority for the rule. Elastic Load Balancing evaluates rules in priority order, from the lowest value to the highest value. If a request satisfies a rule, Elastic Load Balancing ignores all subsequent rules. A target group can have only one rule with a given priority.'
     Type: Number
     Default: 1
     ConstraintDescription: 'Must be in the range [1-99999]'
     MinValue: 1
     MaxValue: 99999
-  ClusterLoadBalancerPathPattern:
+  LoadBalancerPathPattern:
     Description: 'A path pattern is case sensitive.'
     Type: String
     Default: '/service/*'
     ConstraintDescription: 'Must not be longer than 255'
     MaxLength: 255
+  LoadBalancerHttps:
+    Description: 'If the cluster suppirts HTTPS (LoadBalancerCertificateArn is set) you can enable HTTPS for the service'
+    Type: String
+    Default: false
+    AllowedValues:
+    - true
+    - false
   TaskDefinitionArn:
     Description: 'The ARN of the task definition (including the revision number) that you want to run on the cluster, such as arn:aws:ecs:us-east-1:123456789012:task-definition/mytask:3.'
     Type: String
@@ -67,9 +75,10 @@ Parameters:
     MinValue: 0
     MaxValue: 65535
 Mappings: {}
-Conditions: {}
+Conditions:
+  HasLoadBalancerHttps: !Equals [!Ref LoadBalancerHttps, 'true']
 Resources:
-  ClusterLoadBalancerTargetGroup:
+  LoadBalancerTargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
       HealthCheckIntervalSeconds: 15
@@ -84,19 +93,33 @@ Resources:
       UnhealthyThresholdCount: 4
       VpcId:
         'Fn::ImportValue': !Sub '${ParentClusterStack}-VPC'
-  ClusterLoadBalancerListenerRule:
+  LoadBalancerHttpListenerRule:
     Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
     Properties:
       Actions:
       - Type: forward
-        TargetGroupArn: !Ref ClusterLoadBalancerTargetGroup
+        TargetGroupArn: !Ref LoadBalancerTargetGroup
       Conditions:
       - Field: path-pattern
         Values:
-        - !Ref ClusterLoadBalancerPathPattern
+        - !Ref LoadBalancerPathPattern
       ListenerArn:
-        'Fn::ImportValue': !Sub '${ParentClusterStack}-Listener'
-      Priority: !Ref ClusterLoadBalancerPriority
+        'Fn::ImportValue': !Sub '${ParentClusterStack}-HttpListener'
+      Priority: !Ref LoadBalancerPriority
+  LoadBalancerHttpsListenerRule:
+    Condition: HasLoadBalancerHttps
+    Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn: !Ref LoadBalancerTargetGroup
+      Conditions:
+      - Field: path-pattern
+        Values:
+        - !Ref LoadBalancerPathPattern
+      ListenerArn:
+        'Fn::ImportValue': !Sub '${ParentClusterStack}-HttpsListener'
+      Priority: !Ref LoadBalancerPriority
   ServiceRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -121,7 +144,7 @@ Resources:
       LoadBalancers:
       - ContainerName: main
         ContainerPort: !Ref ContainerPort
-        TargetGroupArn: !Ref ClusterLoadBalancerTargetGroup
+        TargetGroupArn: !Ref LoadBalancerTargetGroup
       Role: !GetAtt 'ServiceRole.Arn'
       TaskDefinition: !Ref TaskDefinitionArn
   ScalableTargetRole: # based on http://docs.aws.amazon.com/AmazonECS/latest/developerguide/autoscale_IAM_role.html
@@ -243,9 +266,9 @@ Outputs:
   URL:
     Description: 'URL to the ECS service.'
     Value: !Sub
-    - '${ClusterURL}${ClusterLoadBalancerPathPattern}'
+    - '${ClusterURL}${LoadBalancerPathPattern}'
     - ClusterURL: 
         'Fn::ImportValue': !Sub '${ParentClusterStack}-URL'
-      ClusterLoadBalancerPathPattern: !Ref ClusterLoadBalancerPathPattern
+      LoadBalancerPathPattern: !Ref LoadBalancerPathPattern
     Export:
       Name: !Sub '${AWS::StackName}-URL'

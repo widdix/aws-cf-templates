@@ -57,7 +57,7 @@ TODO description
 #### Installation Guide
 TODO using simple buttons
 ```
-aws cloudformation create-stack --stack-name $ClusterName-$ServiceName --template-body file://service-cluster-alb.yaml --parameters ParameterKey=ParentClusterStack,ParameterValue=$ClusterName "ParameterKey=ClusterLoadBalancerPathPattern,ParameterValue=/$ServiceName/*" ParameterKey=TaskDefinitionArn,ParameterValue=$TaskDefinitionArn --capabilities CAPABILITY_IAM
+aws cloudformation create-stack --stack-name $ClusterName-$ServiceName --template-body file://service-cluster-alb.yaml --parameters ParameterKey=ParentClusterStack,ParameterValue=$ClusterName "ParameterKey=LoadBalancerPathPattern,ParameterValue=/$ServiceName/*" ParameterKey=TaskDefinitionArn,ParameterValue=$TaskDefinitionArn --capabilities CAPABILITY_IAM
 aws cloudformation wait stack-create-complete --stack-name $ClusterName-$ServiceName
 ```
 
@@ -66,7 +66,7 @@ aws cloudformation wait stack-create-complete --stack-name $ClusterName-$Service
 If you want to release a new task definition, this is the way to go:
 
 ```
-aws cloudformation update-stack --stack-name $ClusterName-$ServiceName --template-body file://service-cluster-alb.yaml --parameters ParameterKey=ParentClusterStack,UsePreviousValue=true ParameterKey=ClusterLoadBalancerPriority,UsePreviousValue=true ParameterKey=ClusterLoadBalancerPathPattern,UsePreviousValue=true ParameterKey=TaskDefinitionArn,ParameterValue=$TaskDefinitionArn ParameterKey=DesiredCount,UsePreviousValue=true ParameterKey=ContainerPort,UsePreviousValue=true --capabilities CAPABILITY_IAM
+aws cloudformation update-stack --stack-name $ClusterName-$ServiceName --template-body file://service-cluster-alb.yaml --parameters ParameterKey=ParentClusterStack,UsePreviousValue=true ParameterKey=LoadBalancerPriority,UsePreviousValue=true ParameterKey=LoadBalancerPathPattern,UsePreviousValue=true ParameterKey=LoadBalancerHttps,UsePreviousValue=true ParameterKey=TaskDefinitionArn,ParameterValue=$TaskDefinitionArn ParameterKey=DesiredCount,UsePreviousValue=true ParameterKey=ContainerPort,UsePreviousValue=true --capabilities CAPABILITY_IAM
 # The next command can take up to 5 minutes because of instance draining (http://docs.aws.amazon.com/AmazonECS/latest/developerguide/container-instance-draining.html)
 aws cloudformation wait stack-update-complete --stack-name $ClusterName-$ServiceName
 ```
@@ -89,7 +89,7 @@ aws cloudformation wait stack-create-complete --stack-name $ClusterName-$Service
 If you want to release a new task definition, this is the way to go:
 
 ```
-aws cloudformation update-stack --stack-name $ClusterName-$ServiceName --template-body file://service-dedicated-alb.yaml --parameters ParameterKey=ParentVPCStack,UsePreviousValue=true ParameterKey=ParentClusterStack,UsePreviousValue=true ParameterKey=ServiceLoadBalancerELBScheme,UsePreviousValue=true ParameterKey=TaskDefinitionArn,ParameterValue=$TaskDefinitionArn ParameterKey=DesiredCount,UsePreviousValue=true ParameterKey=ContainerPort,UsePreviousValue=true --capabilities CAPABILITY_IAM
+aws cloudformation update-stack --stack-name $ClusterName-$ServiceName --template-body file://service-dedicated-alb.yaml --parameters ParameterKey=ParentVPCStack,UsePreviousValue=true ParameterKey=ParentClusterStack,UsePreviousValue=true ParameterKey=LoadBalancerScheme,UsePreviousValue=true ParameterKey=LoadBalancerCertificateArn,UsePreviousValue=true ParameterKey=TaskDefinitionArn,ParameterValue=$TaskDefinitionArn ParameterKey=DesiredCount,UsePreviousValue=true ParameterKey=ContainerPort,UsePreviousValue=true --capabilities CAPABILITY_IAM
 # The next command can take up to 5 minutes because of instance draining (http://docs.aws.amazon.com/AmazonECS/latest/developerguide/container-instance-draining.html)
 aws cloudformation wait stack-update-complete --stack-name $ClusterName-$ServiceName
 ```
