@@ -1,6 +1,7 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'ECS: service that runs on an ECS cluster based on ecs/cluster.yaml and uses a dedicated ALB, a cloudonaut.io template'
+# TODO auto scaling for service
 # TODO Certificate parameter to support 443
 # TODO support auth proxy
 Metadata:

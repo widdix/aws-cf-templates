@@ -2,7 +2,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'ECS: cluster, a cloudonaut.io template'
 # TODO Certificate parameter to support 443
-# TODO auto scaling of EC2 instances
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -101,9 +100,9 @@ Parameters:
   DrainingTimeoutInSeconds:
     Description: 'Maximum time in seconds an EC2 instance waits when terminating until all containers are moved to another EC2 instance (draining).'
     Type: Number
-    Default: 600
-    ConstraintDescription: 'Must be in the range [600-7200]'
-    MinValue: 600
+    Default: 60
+    ConstraintDescription: 'Must be in the range [60-7200]'
+    MinValue: 60
     MaxValue: 7200
 Mappings:
   RegionMap:
@@ -729,6 +728,86 @@ Resources:
       LifecycleTransition: 'autoscaling:EC2_INSTANCE_TERMINATING'
       NotificationTargetARN: !GetAtt 'AutoScalingGroupLifecycleHookQueue.Arn'
       RoleARN: !GetAtt 'AutoScalingGroupLifecycleHookIAMRole.Arn'
+  ScaleUpPolicy:
+    Type: 'AWS::AutoScaling::ScalingPolicy'
+    Properties:
+      AdjustmentType: PercentChangeInCapacity
+      MinAdjustmentStep: 1
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      Cooldown: 300
+      ScalingAdjustment: 25
+  ScaleDownPolicy:
+    Type: 'AWS::AutoScaling::ScalingPolicy'
+    Properties:
+      AdjustmentType: PercentChangeInCapacity
+      MinAdjustmentStep: 1
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      Cooldown: 300
+      ScalingAdjustment: -25
+  CPUReservationHighAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Cluster is running out of CPU (reservation)'
+      Namespace: 'AWS/ECS'
+      Dimensions:
+      - Name: ClusterName
+        Value: !Ref Cluster
+      MetricName: CPUReservation
+      ComparisonOperator: GreaterThanThreshold
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 80
+      AlarmActions:
+      - !Ref ScaleUpPolicy
+  MemoryReservationHighAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Cluster is running out of memory (reservation)'
+      Namespace: 'AWS/ECS'
+      Dimensions:
+      - Name: ClusterName
+        Value: !Ref Cluster
+      MetricName: MemoryReservation
+      ComparisonOperator: GreaterThanThreshold
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 80
+      AlarmActions:
+      - !Ref ScaleUpPolicy
+  CPUReservationLowAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Cluster is wasting CPU (reservation)'
+      Namespace: 'AWS/ECS'
+      Dimensions:
+      - Name: ClusterName
+        Value: !Ref Cluster
+      MetricName: CPUReservation
+      ComparisonOperator: LessThanThreshold
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 20
+      AlarmActions:
+      - !Ref ScaleDownPolicy
+  MemoryReservationLowAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Cluster is wasting memory (reservation)'
+      Namespace: 'AWS/ECS'
+      Dimensions:
+      - Name: ClusterName
+        Value: !Ref Cluster
+      MetricName: MemoryReservation
+      ComparisonOperator: LessThanThreshold
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 20
+      AlarmActions:
+      - !Ref ScaleDownPolicy
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
