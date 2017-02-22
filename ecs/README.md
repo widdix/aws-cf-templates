@@ -9,7 +9,7 @@
 We provide you templates for the ECS cluster and the service. We also provide you with a way to create a task definition. You need to publish the Docker image.
 
 ## ECS cluster
-This template describes a fault tolerant and scalable ECS cluster on AWS.
+This template describes a fault tolerant and scalable ECS cluster on AWS. The cluster scales the underlying EC2 instances based on memory and CPU reservation. In case of a scale down, the instance drains all containers before it is terminated.
 
 ![Architecture](./cluster.png?raw=true "Architecture")
 
@@ -30,7 +30,7 @@ This template describes a fault tolerant and scalable ECS cluster on AWS.
 * `security/auth-proxy-*.yaml`
 
 ## ECS service
-This template describes a fault tolerant and scalable ECS service on AWS.
+This template describes a fault tolerant and scalable ECS service on AWS. The service scales based on CPU utilization.
 
 ### Creating an ECS task definition
 Before you can start with the ECS service, you need to create a task definition. The task definition references your Docker image from Docker Hub or ECR.
@@ -41,7 +41,7 @@ In the [container-definitions.json](./container-definitions.json) file, replace:
 * `$ClusterLogGroup` with the `LogGroup` output from the `ecs-cluster` stack (e.g. via the CLI `aws cloudformation describe-stacks --stack-name $ClusterName --query "Stacks[0].Outputs[?OutputKey=='LogGroup'].OutputValue" --output text`)
 * `$ServiceName` with the name of the service (e.g. `demo`)
 
-Other options can be found in the AWS docs: http://docs.aws.amazon.com/cli/latest/reference/ecs/
+Other options can be found in the AWS docs: http://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
 
 The following CLI command creates a task definition and outputs the unique ARN that you will need later when you create the service:
 
