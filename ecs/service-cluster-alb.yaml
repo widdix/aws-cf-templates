@@ -22,6 +22,7 @@ Metadata:
       - MaxCapacity
       - MinCapacity
       - ContainerPort
+      - ContainerName
 Parameters:
   ParentClusterStack:
     Description: 'Stack name of parent Cluster stack based on ecs/cluster.yaml template.'
@@ -68,12 +69,16 @@ Parameters:
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
   ContainerPort:
-    Description: 'The port number on the container to direct load balancer traffic to. Your container instances must allow ingress traffic on this port.'
+    Description: 'The port number on the container to direct load balancer traffic to. Your container instances must allow ingress traffic on this port. The container definition must match with this value.'
     Type: Number
     Default: 80
     ConstraintDescription: 'Must be in the range [0-65535]'
     MinValue: 0
     MaxValue: 65535
+  ContainerName:
+    Description: 'The name of a container to use with the load balancer. The container definition must match with this value.'
+    Type: String
+    Default: main
 Mappings: {}
 Conditions:
   HasLoadBalancerHttps: !Equals [!Ref LoadBalancerHttps, 'true']
@@ -142,7 +147,7 @@ Resources:
         MinimumHealthyPercent: 50
       DesiredCount: !Ref DesiredCount
       LoadBalancers:
-      - ContainerName: main
+      - ContainerName: !Ref ContainerName
         ContainerPort: !Ref ContainerPort
         TargetGroupArn: !Ref LoadBalancerTargetGroup
       Role: !GetAtt 'ServiceRole.Arn'

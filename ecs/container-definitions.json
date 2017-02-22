@@ -1,7 +1,7 @@
 [
   {
     "name": "main",
-    "image": "nginx:1.11.5",
+    "image": "$Image",
     "memory": 128,
     "portMappings": [
       {
@@ -13,7 +13,7 @@
     "logConfiguration": {
       "logDriver": "awslogs",
       "options": {
-        "awslogs-region": "$AWS_DEFAULT_REGION",
+        "awslogs-region": "$AWSRegion",
         "awslogs-group": "$ClusterLogGroup",
         "awslogs-stream-prefix": "$ServiceName"
       }
