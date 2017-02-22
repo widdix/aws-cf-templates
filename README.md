@@ -9,11 +9,12 @@ Using our Infrastructure as Code templates will help you to bootstrap common set
 ## Templates
 We are offering the following templates:
 
-* [EC2](./ec2/)
+* [Elastic Compute Cloud (EC2)](./ec2/)
+* [EC2 Container Service (ECS)](./ecs/)
 * [Jenkins ](./jenkins/)
 * [Security](./security/)
 * [Static website](./static-website/)
-* [VPC](./vpc/)
+* [Virtual Private Cloud (VPC)](./vpc/)
 * [WordPress](./wordpress/)
 
 We are interested in your requirements. [Please use the following survey to upvote and add templates you are impatiently waiting for](https://docs.google.com/forms/d/e/1FAIpQLSerhIuMuCWrHai639FoUOt8ffmMqWr0PWzLhCn3VN29VUi8TA/viewform?usp=send_form)

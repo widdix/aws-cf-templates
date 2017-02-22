@@ -35,7 +35,7 @@ This template describes a fault tolerant and scalable ECS service on AWS.
 ### Creating an ECS task definition
 Before you can start with the ECS service, you need to create a task definition. The task definition references your Docker image from Docker Hub or ECR.
 
-In `container-definitions.json` replace
+In the [container-definitions.json](./container-definitions.json) file, replace:
 * `$Image` with your published Docker image (e.g. `nginx:1.11.5` or `123456789012.dkr.ecr.us-east-1.amazonaws.com/demo:1.0.0`)
 * `$AWSRegion` with the region your ECS cluster runs in (e.g. `eu-west-1`)
 * `$ClusterLogGroup` with the `LogGroup` output from the `ecs-cluster` stack (e.g. via the CLI `aws cloudformation describe-stacks --stack-name $ClusterName --query "Stacks[0].Outputs[?OutputKey=='LogGroup'].OutputValue" --output text`)
@@ -56,11 +56,11 @@ If you want to update your task definition because you want to deploy a new vers
 
 ### Choosing a service template flavour
 We provide two service templates.
-The first one (`service-cluster-alb.yaml`) uses the cluster's load balancer and bath based routing. If you want to run multiple services on the same cluster they all will use the same domain name but start with different paths (e.g. `https://yourdomain.com/service1/` and `https://yourdomain.com/service2/`).
+The first one (`service-cluster-alb.yaml`) uses the cluster's load balancer and path based routing. If you want to run multiple services on the same cluster they all will use the same domain name but start with different paths (e.g. `https://yourdomain.com/service1/` and `https://yourdomain.com/service2/`).
 The second one (`service-dedicated-alb.yaml`) includes a dedicated load balancer (ALB). You can then use a separate domain name for each service.
 
-### Using the cluster's load balancer and bath based routing
-This template describes a fault tolerant and scalable ECS service that uses the cluster's load balancer and bath based routing.
+### Using the cluster's load balancer and path based routing
+This template describes a fault tolerant and scalable ECS service that uses the cluster's load balancer and path based routing.
 
 ![Architecture](./service-cluster-alb.png?raw=true "Architecture")
 
@@ -93,7 +93,6 @@ This template describes a fault tolerant and scalable ECS service that uses a de
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
-```
 
 #### Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
