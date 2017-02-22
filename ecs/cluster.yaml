@@ -89,13 +89,13 @@ Parameters:
   MaxSize:
     Description: 'The maximum size of the Auto Scaling group.'
     Type: Number
-    Default: 2
+    Default: 4
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
   MinSize:
     Description: 'The minimum size of the Auto Scaling group.'
     Type: Number
-    Default: 1
+    Default: 2
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
   DesiredCapacity:

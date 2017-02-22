@@ -53,7 +53,7 @@ Parameters:
   DesiredCount:
     Description: 'The number of simultaneous tasks, that you want to run on the cluster.'
     Type: Number
-    Default: 1
+    Default: 2
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
   MaxCapacity:
@@ -65,7 +65,7 @@ Parameters:
   MinCapacity:
     Description: 'The minimum number of simultaneous tasks, that you want to run on the cluster.'
     Type: Number
-    Default: 1
+    Default: 2
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
   ContainerPort:
