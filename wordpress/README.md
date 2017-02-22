@@ -35,8 +35,8 @@ This template combines the following services:
 
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required, WordPress will use 2 AZs only**)
-* `vpc/vpc-ssh-bastion.yaml` (optional)
-* `security/auth-proxy-*.yaml` (optional)
+* `vpc/vpc-ssh-bastion.yaml`
+* `security/auth-proxy-*.yaml`
 
 ## Limitations
 * PHP files are cached for 300 seconds on the web servers.
