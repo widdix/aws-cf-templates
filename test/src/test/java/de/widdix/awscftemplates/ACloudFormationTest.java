@@ -43,8 +43,7 @@ public abstract class ACloudFormationTest extends AAWSTest {
             if (Config.has(Config.Key.BUCKET)) {
                 final String bucket = Config.get(Config.Key.BUCKET);
                 final String bucketLocation = this.s3.getBucketLocation(bucket);
-                final AmazonS3 s3local = AmazonS3ClientBuilder.standard().withCredentials(this.credentialsProvider).withRegion(bucketLocation).build();
-                s3local.putObject(bucket, stackName, new File(dir + template));
+                this.s3.putObject(bucket, stackName, new File(dir + template));
                 req = req.withTemplateURL("https://s3-" + bucketLocation + ".amazonaws.com/" + bucket + "/" + stackName);
             } else {
                 final String body = readFile(dir + template, Charset.forName("UTF-8"));
@@ -165,9 +164,7 @@ public abstract class ACloudFormationTest extends AAWSTest {
         this.cf.deleteStack(new DeleteStackRequest().withStackName(stackName));
         if (Config.has(Config.Key.BUCKET)) {
             final String bucket = Config.get(Config.Key.BUCKET);
-            final String bucketLocation = this.s3.getBucketLocation(bucket);
-            final AmazonS3 s3local = AmazonS3ClientBuilder.standard().withCredentials(this.credentialsProvider).withRegion(bucketLocation).build();
-            s3local.deleteObject(bucket, stackName);
+            s3.deleteObject(bucket, stackName);
         }
     }
 
