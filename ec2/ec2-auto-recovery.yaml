@@ -103,6 +103,7 @@ Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
+  HasNotSSHBastionSecurityGroup: [!Equals [!Ref ParentSSHBastionStack, '']]
   HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
 Resources:
   ElasticIP:
@@ -130,6 +131,15 @@ Resources:
       ToPort: 22
       SourceSecurityGroupId:
         'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+  SecurityGroupInSSHWorld:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotSSHBastionSecurityGroup
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: '0.0.0.0/0'
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
