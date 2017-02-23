@@ -1,7 +1,6 @@
 package de.widdix.awscftemplates;
 
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudformation.AmazonCloudFormation;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClientBuilder;
 import com.amazonaws.services.cloudformation.model.*;
@@ -43,8 +42,9 @@ public abstract class ACloudFormationTest extends AAWSTest {
             final String dir = Config.get(Config.Key.TEMPLATE_DIR);
             if (Config.has(Config.Key.BUCKET)) {
                 final String bucket = Config.get(Config.Key.BUCKET);
-                final String bucketLocation = s3.getBucketLocation(bucket);
-                s3.putObject(bucket, stackName, new File(dir + template));
+                final String bucketLocation = this.s3.getBucketLocation(bucket);
+                final AmazonS3 s3local = AmazonS3ClientBuilder.standard().withCredentials(this.credentialsProvider).withRegion(bucketLocation).build();
+                s3local.putObject(bucket, stackName, new File(dir + template));
                 req = req.withTemplateURL("https://s3-" + bucketLocation + ".amazonaws.com/" + bucket + "/" + stackName);
             } else {
                 final String body = readFile(dir + template, Charset.forName("UTF-8"));
@@ -165,7 +165,9 @@ public abstract class ACloudFormationTest extends AAWSTest {
         this.cf.deleteStack(new DeleteStackRequest().withStackName(stackName));
         if (Config.has(Config.Key.BUCKET)) {
             final String bucket = Config.get(Config.Key.BUCKET);
-            s3.deleteObject(bucket, stackName);
+            final String bucketLocation = this.s3.getBucketLocation(bucket);
+            final AmazonS3 s3local = AmazonS3ClientBuilder.standard().withCredentials(this.credentialsProvider).withRegion(bucketLocation).build();
+            s3local.deleteObject(bucket, stackName);
         }
     }
 
