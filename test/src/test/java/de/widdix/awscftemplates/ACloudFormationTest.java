@@ -25,9 +25,7 @@ public abstract class ACloudFormationTest extends AAWSTest {
         }
     }
 
-    private AmazonCloudFormation cf = AmazonCloudFormationClientBuilder.standard().withCredentials(this.credentialsProvider).build();
-
-    private AmazonS3 s3 = AmazonS3ClientBuilder.standard().withCredentials(this.credentialsProvider).build();
+    private final AmazonCloudFormation cf = AmazonCloudFormationClientBuilder.standard().withCredentials(this.credentialsProvider).build();
 
     public ACloudFormationTest() {
         super();
@@ -40,11 +38,12 @@ public abstract class ACloudFormationTest extends AAWSTest {
                 .withCapabilities(Capability.CAPABILITY_IAM);
         if (Config.has(Config.Key.TEMPLATE_DIR)) {
             final String dir = Config.get(Config.Key.TEMPLATE_DIR);
-            if (Config.has(Config.Key.BUCKET)) {
-                final String bucket = Config.get(Config.Key.BUCKET);
-                final String bucketLocation = this.s3.getBucketLocation(bucket);
-                this.s3.putObject(bucket, stackName, new File(dir + template));
-                req = req.withTemplateURL("https://s3-" + bucketLocation + ".amazonaws.com/" + bucket + "/" + stackName);
+            if (Config.has(Config.Key.BUCKET_NAME)) {
+                final String bucketName = Config.get(Config.Key.BUCKET_NAME);
+                final String bucketRegion = Config.get(Config.Key.BUCKET_REGION);
+                final AmazonS3 s3local = AmazonS3ClientBuilder.standard().withCredentials(this.credentialsProvider).withRegion(bucketRegion).build();
+                s3local.putObject(bucketName, stackName, new File(dir + template));
+                req = req.withTemplateURL("https://s3-" + bucketRegion + ".amazonaws.com/" + bucketName + "/" + stackName);
             } else {
                 final String body = readFile(dir + template, Charset.forName("UTF-8"));
                 req = req.withTemplateBody(body);
@@ -162,9 +161,9 @@ public abstract class ACloudFormationTest extends AAWSTest {
 
     protected final void deleteStack(final String stackName) {
         this.cf.deleteStack(new DeleteStackRequest().withStackName(stackName));
-        if (Config.has(Config.Key.BUCKET)) {
-            final String bucket = Config.get(Config.Key.BUCKET);
-            s3.deleteObject(bucket, stackName);
+        if (Config.has(Config.Key.BUCKET_NAME)) {
+            final AmazonS3 s3local = AmazonS3ClientBuilder.standard().withCredentials(this.credentialsProvider).withRegion(Config.get(Config.Key.BUCKET_REGION)).build();
+            s3local.deleteObject(Config.get(Config.Key.BUCKET_NAME), stackName);
         }
     }
 

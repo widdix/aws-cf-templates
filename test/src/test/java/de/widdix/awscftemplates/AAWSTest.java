@@ -1,7 +1,6 @@
 package de.widdix.awscftemplates;
 
 import com.amazonaws.auth.*;
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.*;
@@ -28,7 +27,7 @@ public abstract class AAWSTest extends ATest {
         super();
         if (Config.has(Config.Key.IAM_ROLE_ARN)) {
             final AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.standard().withCredentials(new DefaultAWSCredentialsProviderChain()).build();
-            this.credentialsProvider = new AWSCredentialsProviderChain(new STSAssumeRoleSessionCredentialsProvider.Builder(Config.get(Config.Key.IAM_ROLE_ARN), IAM_SESSION_NAME).withStsClient(sts).build(), new EnvironmentVariableCredentialsProvider(), new SystemPropertiesCredentialsProvider(), new ProfileCredentialsProvider(), new EC2ContainerCredentialsProviderWrapper());
+            this.credentialsProvider = new STSAssumeRoleSessionCredentialsProvider.Builder(Config.get(Config.Key.IAM_ROLE_ARN), IAM_SESSION_NAME).withStsClient(sts).build();
         } else {
             this.credentialsProvider = new DefaultAWSCredentialsProviderChain();
         }

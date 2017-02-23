@@ -21,8 +21,9 @@ To run this tests you need:
 * `CLOUDFRONT_ACM_CERTIFICATE_ARN` **required** A wildcard ACM certificate in `us-east-1`
 * `ACM_CERTIFICATE_ARN` **required** A wildcard ACM certificate in the region where the tests run
 * `IAM_ROLE_ARN` if the tests should assume an IAM role before they run supply the ARN of the IAM role
-* `TEMPLATE_DIR` Load templates from local disk (instead of S3 bucket `widdix-aws-cf-templates`). Must end with an `/`. See `BUCKET` as well.
-* `BUCKET` Some templates are to big to be passed as a string from local disk, therefore you need to supply the name of the bucket that is used to upload templates.
+* `TEMPLATE_DIR` Load templates from local disk (instead of S3 bucket `widdix-aws-cf-templates`). Must end with an `/`. See `BUCKET_NAME` as well.
+* `BUCKET_NAME` Some templates are to big to be passed as a string from local disk, therefore you need to supply the name of the bucket that is used to upload templates.
+* `BUCKET_REGION` **required if BUCKET_NAME is set** Region of the bucket
 
 ## Usage
 
@@ -61,7 +62,7 @@ AWS_REGION="us-east-1" HOSTED_ZONE_ID="..." DOMAIN_SUFFIX="..." CLOUDFRONT_ACM_C
 ### Load templates from local file system
 
 ```
-AWS_REGION="us-east-1" HOSTED_ZONE_ID="..." DOMAIN_SUFFIX="..." CLOUDFRONT_ACM_CERTIFICATE_ARN="..." ACM_CERTIFICATE_ARN="..." BUCKET="..." TEMPLATE_DIR="/path/to/widdix-aws-cf-templates/" mvn test
+AWS_REGION="us-east-1" HOSTED_ZONE_ID="..." DOMAIN_SUFFIX="..." CLOUDFRONT_ACM_CERTIFICATE_ARN="..." ACM_CERTIFICATE_ARN="..." BUCKET_REGION="..." BUCKET_NAME="..." TEMPLATE_DIR="/path/to/widdix-aws-cf-templates/" mvn test
 ```
 
 ### Assume role

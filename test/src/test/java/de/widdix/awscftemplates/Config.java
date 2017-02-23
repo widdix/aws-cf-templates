@@ -4,7 +4,8 @@ public final class Config {
 
     public enum Key {
         TEMPLATE_DIR("TEMPLATE_DIR"),
-        BUCKET("BUCKET"),
+        BUCKET_NAME("BUCKET_NAME"),
+        BUCKET_REGION("BUCKET_REGION"),
         IAM_ROLE_ARN("IAM_ROLE_ARN"),
         HOSTED_ZONE_ID("HOSTED_ZONE_ID"),
         DOMAIN_SUFFIX("DOMAIN_SUFFIX"),
