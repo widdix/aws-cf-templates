@@ -51,10 +51,10 @@ Parameters:
     Description: 'The primary domain name of the blog.'
     Type: String
   CloudFrontAcmCertificate:
-    Description: 'The ACM Certificate ARN of certificate for the CloudFront distribution.'
+    Description: 'The ACM Certificate ARN of certificate for the CloudFront distribution.Must be created in the us-east-1 region!'
     Type: String
   ElbAcmCertificate:
-    Description: 'The ACM Certificate ARN of certificate for the ELB.'
+    Description: 'The ACM Certificate ARN of certificate for the ELB. Must be created in the same region as this stack!'
     Type: String
   BlogTitle:
     Description: 'The title of the WordPress blog.'

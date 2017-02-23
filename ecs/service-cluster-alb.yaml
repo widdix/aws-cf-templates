@@ -12,7 +12,7 @@ Metadata:
         default: 'Load Balancer Parameters'
       Parameters:
       - LoadBalancerPriority
-      - LoadBalancerPathPattern
+      - LoadBalancerPath
       - LoadBalancerHttps
     - Label:
         default: 'Task Parameters'
@@ -34,14 +34,14 @@ Parameters:
     ConstraintDescription: 'Must be in the range [1-99999]'
     MinValue: 1
     MaxValue: 99999
-  LoadBalancerPathPattern:
-    Description: 'A path pattern is case sensitive.'
+  LoadBalancerPath:
+    Description: 'The path part of the path pattern. E.g., for service, the path pattern will be /service/*'
     Type: String
-    Default: '/service/*'
+    Default: 'service'
     ConstraintDescription: 'Must not be longer than 255'
     MaxLength: 255
   LoadBalancerHttps:
-    Description: 'If the cluster suppirts HTTPS (LoadBalancerCertificateArn is set) you can enable HTTPS for the service'
+    Description: 'If the cluster supports HTTPS (LoadBalancerCertificateArn is set) you can enable HTTPS for the service'
     Type: String
     Default: false
     AllowedValues:
@@ -107,7 +107,7 @@ Resources:
       Conditions:
       - Field: path-pattern
         Values:
-        - !Ref LoadBalancerPathPattern
+        - !Sub '/${LoadBalancerPath}/*'
       ListenerArn:
         'Fn::ImportValue': !Sub '${ParentClusterStack}-HttpListener'
       Priority: !Ref LoadBalancerPriority
@@ -121,7 +121,7 @@ Resources:
       Conditions:
       - Field: path-pattern
         Values:
-        - !Ref LoadBalancerPathPattern
+        - !Sub '/${LoadBalancerPath}/*'
       ListenerArn:
         'Fn::ImportValue': !Sub '${ParentClusterStack}-HttpsListener'
       Priority: !Ref LoadBalancerPriority
@@ -271,9 +271,9 @@ Outputs:
   URL:
     Description: 'URL to the ECS service.'
     Value: !Sub
-    - '${ClusterURL}${LoadBalancerPathPattern}'
+    - '${ClusterURL}/${LoadBalancerPath}/'
     - ClusterURL: 
         'Fn::ImportValue': !Sub '${ParentClusterStack}-URL'
-      LoadBalancerPathPattern: !Ref LoadBalancerPathPattern
+      LoadBalancerPath: !Ref LoadBalancerPath
     Export:
       Name: !Sub '${AWS::StackName}-URL'

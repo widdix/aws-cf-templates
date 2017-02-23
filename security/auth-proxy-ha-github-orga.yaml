@@ -35,7 +35,7 @@ Parameters:
     Type: String
     Default: ''
   CertificateArn:
-    Description: 'The Amazon Resource Name (ARN) of the certificate to associate with the auth proxy endpoint.'
+    Description: 'The Amazon Resource Name (ARN) of the certificate to associate with the auth proxy endpoint. Must be created in the same region as this stack!'
     Type: String
   KeyName:
     Description: 'Optional key pair of the ec2-user to establish a SSH connection to the auth proxy.'
