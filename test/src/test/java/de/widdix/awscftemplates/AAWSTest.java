@@ -4,9 +4,9 @@ import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2AsyncClientBuilder;
+import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.*;
-import com.amazonaws.services.route53.AmazonRoute53AsyncClientBuilder;
+import com.amazonaws.services.route53.AmazonRoute53ClientBuilder;
 import com.amazonaws.services.route53.model.*;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
@@ -33,8 +33,8 @@ public abstract class AAWSTest extends ATest {
         } else {
             this.credentialsProvider = new DefaultAWSCredentialsProviderChain();
         }
-        this.ec2 = AmazonEC2AsyncClientBuilder.standard().withCredentials(this.credentialsProvider).build();
-        this.route53 = AmazonRoute53AsyncClientBuilder.standard().withCredentials(this.credentialsProvider).build();
+        this.ec2 = AmazonEC2ClientBuilder.standard().withCredentials(this.credentialsProvider).build();
+        this.route53 = AmazonRoute53ClientBuilder.standard().withCredentials(this.credentialsProvider).build();
     }
 
     protected final KeyPair createKey(final String keyName) {
