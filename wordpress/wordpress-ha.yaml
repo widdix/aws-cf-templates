@@ -433,20 +433,19 @@ Resources:
             '/root/wordpress.sh':
               content: !Sub |
                 #!/bin/bash -ex
-                mkdir -p /var/www/html && cd /var/www/html                
-                if [ ! -f wordpress.lock ]; then
-                touch wordpress.lock
-                wget -q -T 60 https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-                if ! $(php wp-cli.phar core is-installed --allow-root); then
-                php wp-cli.phar core download --allow-root --version=${BlogVersion}
-                php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='wordpress' --dbhost='${Database.Endpoint.Address}' --allow-root
-                php wp-cli.phar core install --url='https://${DomainName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}' --skip-email --allow-root
-                sed -i "/$table_prefix = 'wp_';/a\$_SERVER['HTTPS'] = 'on';" /var/www/html/wp-config.php 
-                fi
-                chown -R apache:apache /var/www/html
-                chmod u+wrx /var/www/html/wp-content/*
-                rm wp-cli.phar
-                rm wordpress.lock
+                # ensure than only one machine installs wp
+                if mkdir /var/www/html; then
+                  cd /var/www/html
+                  wget -q -T 60 https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+                  if ! $(php wp-cli.phar core is-installed --allow-root); then
+                    php wp-cli.phar core download --allow-root --version=${BlogVersion}
+                    php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='wordpress' --dbhost='${Database.Endpoint.Address}' --allow-root
+                    php wp-cli.phar core install --url='https://${DomainName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}' --skip-email --allow-root
+                    sed -i "/$table_prefix = 'wp_';/a\$_SERVER['HTTPS'] = 'on';" /var/www/html/wp-config.php 
+                  fi
+                  chown -R apache:apache /var/www/html
+                  chmod u+wrx /var/www/html/wp-content/*
+                  rm wp-cli.phar
                 fi
               mode: '000500'
               owner: root
