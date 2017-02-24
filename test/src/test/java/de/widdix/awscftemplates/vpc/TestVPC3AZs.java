@@ -14,11 +14,9 @@ public class TestVPC3AZs extends ACloudFormationTest {
                     "vpc/vpc-3azs.yaml",
                     new Parameter().withParameterKey("ClassB").withParameterValue("10")
             );
-            this.waitForStack(stackName, FinalStatus.CREATE_COMPLETE);
             // TODO how can we check if this stack works?  launch an EC2 instance into a public subnet and open google from the instance?
         } finally {
             this.deleteStack(stackName);
-            this.waitForStack(stackName, FinalStatus.DELETE_COMPLETE);
         }
     }
 

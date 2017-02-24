@@ -6,7 +6,7 @@ If you run this tests, many AWS CloudFormation tests are created and **charges w
 
 [widdix GmbH](https://widdix.net) sponsors the test runs on every push and once per week to ensure that everything is working as expected.
 
-## Prerequisits
+## Prerequisites
 
 To run this tests you need:
 * A resolvable Route 53 hosted zone where record sets can be added automatically (**NOT** your production environment!)
@@ -24,6 +24,7 @@ To run this tests you need:
 * `TEMPLATE_DIR` Load templates from local disk (instead of S3 bucket `widdix-aws-cf-templates`). Must end with an `/`. See `BUCKET_NAME` as well.
 * `BUCKET_NAME` Some templates are to big to be passed as a string from local disk, therefore you need to supply the name of the bucket that is used to upload templates.
 * `BUCKET_REGION` **required if BUCKET_NAME is set** Region of the bucket
+* `DELETION_POLICY` (default `delete`, allowed values [`delete`, `retain`]) should resources be deleted?
 
 ## Usage
 

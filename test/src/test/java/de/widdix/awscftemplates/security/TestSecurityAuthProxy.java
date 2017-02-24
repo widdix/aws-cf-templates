@@ -25,7 +25,6 @@ public class TestSecurityAuthProxy extends ACloudFormationTest {
                         "vpc/vpc-2azs.yaml",
                         new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                 );
-                this.waitForStack(vpcStackName, FinalStatus.CREATE_COMPLETE);
                 try {
                     this.createStack(proxyStackName,
                             "security/auth-proxy-ha-github-orga.yaml",
@@ -38,7 +37,6 @@ public class TestSecurityAuthProxy extends ACloudFormationTest {
                             new Parameter().withParameterKey("Upstream").withParameterValue("https://widdix.net/"),
                             new Parameter().withParameterKey("CookieSecret").withParameterValue("ylLjZRVNRlzW7sqyQeERBQ==") // fake value
                     );
-                    this.waitForStack(proxyStackName, FinalStatus.CREATE_COMPLETE);
                     try {
                         final String domain = this.createDomain(proxyStackName, this.getStackOutputValue(proxyStackName, "DNSName"));
                         final String url = "https://" + domain;
@@ -58,11 +56,9 @@ public class TestSecurityAuthProxy extends ACloudFormationTest {
                     }
                 } finally {
                     this.deleteStack(proxyStackName);
-                    this.waitForStack(proxyStackName, FinalStatus.DELETE_COMPLETE);
                 }
             } finally {
                 this.deleteStack(vpcStackName);
-                this.waitForStack(vpcStackName, FinalStatus.DELETE_COMPLETE);
             }
         } finally {
             this.deleteKey(keyName);

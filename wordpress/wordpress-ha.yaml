@@ -434,10 +434,10 @@ Resources:
               content: !Sub |
                 #!/bin/bash -ex
                 # ensure than only one machine installs wp
-                if mkdir /var/www/html; then
+                if mkdir /var/www/lock; then
                   cd /var/www/html
                   wget -q -T 60 https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-                  if ! $(php wp-cli.phar core is-installed --allow-root); then
+                  if ! php wp-cli.phar core is-installed --allow-root; then
                     php wp-cli.phar core download --allow-root --version=${BlogVersion}
                     php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='wordpress' --dbhost='${Database.Endpoint.Address}' --allow-root
                     php wp-cli.phar core install --url='https://${DomainName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}' --skip-email --allow-root
@@ -566,7 +566,7 @@ Resources:
       MaxSize: 4
       DesiredCapacity: 2
       Cooldown: 60
-      HealthCheckGracePeriod: 120
+      HealthCheckGracePeriod: 300
       HealthCheckType: ELB
       VPCZoneIdentifier:
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'

@@ -20,23 +20,19 @@ public class TestVPCSshBastion extends ACloudFormationTest {
                         "vpc/vpc-2azs.yaml",
                         new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                 );
-                this.waitForStack(vpcStackName, FinalStatus.CREATE_COMPLETE);
                 try {
                     this.createStack(bastionStackName,
                             "vpc/vpc-ssh-bastion.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
                     );
-                    this.waitForStack(bastionStackName, FinalStatus.CREATE_COMPLETE);
                     final String host = this.getStackOutputValue(bastionStackName, "IPAddress");
                     this.probeSSH(host, key);
                 } finally {
                     this.deleteStack(bastionStackName);
-                    this.waitForStack(bastionStackName, FinalStatus.DELETE_COMPLETE);
                 }
             } finally {
                 this.deleteStack(vpcStackName);
-                this.waitForStack(vpcStackName, FinalStatus.DELETE_COMPLETE);
             }
         } finally {
             this.deleteKey(keyName);

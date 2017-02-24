@@ -20,23 +20,19 @@ public class TestEC2AutoRecovery extends ACloudFormationTest {
                         "vpc/vpc-2azs.yaml",
                         new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                 );
-                this.waitForStack(vpcStackName, FinalStatus.CREATE_COMPLETE);
                 try {
                     this.createStack(stackName,
                             "ec2/ec2-auto-recovery.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
                     );
-                    this.waitForStack(stackName, FinalStatus.CREATE_COMPLETE);
                     final String host = this.getStackOutputValue(stackName, "IPAddress");
                     this.probeSSH(host, key);
                 } finally {
                     this.deleteStack(stackName);
-                    this.waitForStack(stackName, FinalStatus.DELETE_COMPLETE);
                 }
             } finally {
                 this.deleteStack(vpcStackName);
-                this.waitForStack(vpcStackName, FinalStatus.DELETE_COMPLETE);
             }
         } finally {
             this.deleteKey(keyName);

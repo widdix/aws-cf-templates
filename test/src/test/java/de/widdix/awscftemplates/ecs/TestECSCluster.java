@@ -30,14 +30,12 @@ public class TestECSCluster extends ACloudFormationTest {
                         "vpc/vpc-2azs.yaml",
                         new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                 );
-                this.waitForStack(vpcStackName, FinalStatus.CREATE_COMPLETE);
                 try {
                     this.createStack(stackName,
                             "ecs/cluster.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
                     );
-                    this.waitForStack(stackName, FinalStatus.CREATE_COMPLETE);
                     final String cluster = this.getStackOutputValue(stackName, "Cluster");
                     final Callable<Boolean> callable = () -> {
                         final ListContainerInstancesResult res1 = this.ecs.listContainerInstances(new ListContainerInstancesRequest().withCluster(cluster));
@@ -63,11 +61,9 @@ public class TestECSCluster extends ACloudFormationTest {
                     Assert.assertTrue(this.retry(callable));
                 } finally {
                     this.deleteStack(stackName);
-                    this.waitForStack(stackName, FinalStatus.DELETE_COMPLETE);
                 }
             } finally {
                 this.deleteStack(vpcStackName);
-                this.waitForStack(vpcStackName, FinalStatus.DELETE_COMPLETE);
             }
         } finally {
             this.deleteKey(keyName);

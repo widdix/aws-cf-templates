@@ -28,7 +28,6 @@ public class TestWordpressHA extends ACloudFormationTest {
                         "vpc/vpc-2azs.yaml",
                         new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                 );
-                this.waitForStack(vpcStackName, FinalStatus.CREATE_COMPLETE);
                 try {
                     this.createStack(stackName,
                             "wordpress/wordpress-ha.yaml",
@@ -40,9 +39,8 @@ public class TestWordpressHA extends ACloudFormationTest {
                             new Parameter().withParameterKey("BlogTitle").withParameterValue(blogTitle),
                             new Parameter().withParameterKey("BlogAdminUsername").withParameterValue("admin"),
                             new Parameter().withParameterKey("BlogAdminPassword").withParameterValue(blogPassword),
-                            new Parameter().withParameterKey("BlogAdminEMail").withParameterValue("wordpress@localhost")
+                            new Parameter().withParameterKey("BlogAdminEMail").withParameterValue("no-reply@widdix.de")
                     );
-                    this.waitForStack(stackName, FinalStatus.CREATE_COMPLETE);
                     try {
                         final String domain = this.createDomain(stackName, this.getStackOutputValue(stackName, "CloudFrontDomainName"));
                         final String url = "https://" + domain;
@@ -62,11 +60,9 @@ public class TestWordpressHA extends ACloudFormationTest {
                     }
                 } finally {
                     this.deleteStack(stackName);
-                    this.waitForStack(stackName, FinalStatus.DELETE_COMPLETE);
                 }
             } finally {
                 this.deleteStack(vpcStackName);
-                this.waitForStack(vpcStackName, FinalStatus.DELETE_COMPLETE);
             }
         } finally {
             this.deleteKey(keyName);

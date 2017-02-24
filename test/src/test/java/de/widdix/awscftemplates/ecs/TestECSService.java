@@ -6,6 +6,7 @@ import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.ecs.model.*;
 import de.taimos.httputils.WS;
 import de.widdix.awscftemplates.ACloudFormationTest;
+import de.widdix.awscftemplates.Config;
 import org.apache.http.HttpResponse;
 import org.junit.Assert;
 import org.junit.Test;
@@ -24,7 +25,9 @@ public class TestECSService extends ACloudFormationTest {
     }
 
     private void deleteTaskDefinition(final String taskDefinitionArn) {
-        this.ecs.deregisterTaskDefinition(new DeregisterTaskDefinitionRequest().withTaskDefinition(taskDefinitionArn));
+        if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
+            this.ecs.deregisterTaskDefinition(new DeregisterTaskDefinitionRequest().withTaskDefinition(taskDefinitionArn));
+        }
     }
 
     @Test
@@ -43,14 +46,12 @@ public class TestECSService extends ACloudFormationTest {
                             "vpc/vpc-2azs.yaml",
                             new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                     );
-                    this.waitForStack(vpcStackName, ACloudFormationTest.FinalStatus.CREATE_COMPLETE);
                     try {
                         this.createStack(clusterStackName,
                                 "ecs/cluster.yaml",
                                 new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                                 new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
                         );
-                        this.waitForStack(clusterStackName, ACloudFormationTest.FinalStatus.CREATE_COMPLETE);
                         final String cluster = this.getStackOutputValue(clusterStackName, "Cluster");
                         try {
                             this.createStack(stackName,
@@ -58,7 +59,6 @@ public class TestECSService extends ACloudFormationTest {
                                     new Parameter().withParameterKey("ParentClusterStack").withParameterValue(clusterStackName),
                                     new Parameter().withParameterKey("TaskDefinitionArn").withParameterValue(taskDefinitionArn)
                             );
-                            this.waitForStack(stackName, ACloudFormationTest.FinalStatus.CREATE_COMPLETE);
                             final String url = this.getStackOutputValue(stackName, "URL");
                             final Callable<Boolean> callable = () -> {
                                 final HttpResponse response = WS.url(url).timeout(10000).get();
@@ -71,15 +71,12 @@ public class TestECSService extends ACloudFormationTest {
                             Assert.assertTrue(this.retry(callable));
                         } finally {
                             this.deleteStack(stackName);
-                            this.waitForStack(stackName, ACloudFormationTest.FinalStatus.DELETE_COMPLETE);
                         }
                     } finally {
                         this.deleteStack(clusterStackName);
-                        this.waitForStack(clusterStackName, ACloudFormationTest.FinalStatus.DELETE_COMPLETE);
                     }
                 } finally {
                     this.deleteStack(vpcStackName);
-                    this.waitForStack(vpcStackName, ACloudFormationTest.FinalStatus.DELETE_COMPLETE);
                 }
             } finally {
                 this.deleteKey(keyName);
@@ -105,14 +102,12 @@ public class TestECSService extends ACloudFormationTest {
                             "vpc/vpc-2azs.yaml",
                             new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                     );
-                    this.waitForStack(vpcStackName, ACloudFormationTest.FinalStatus.CREATE_COMPLETE);
                     try {
                         this.createStack(clusterStackName,
                                 "ecs/cluster.yaml",
                                 new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                                 new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
                         );
-                        this.waitForStack(clusterStackName, ACloudFormationTest.FinalStatus.CREATE_COMPLETE);
                         final String cluster = this.getStackOutputValue(clusterStackName, "Cluster");
                         try {
                             this.createStack(stackName,
@@ -121,7 +116,6 @@ public class TestECSService extends ACloudFormationTest {
                                     new Parameter().withParameterKey("ParentClusterStack").withParameterValue(clusterStackName),
                                     new Parameter().withParameterKey("TaskDefinitionArn").withParameterValue(taskDefinitionArn)
                             );
-                            this.waitForStack(stackName, ACloudFormationTest.FinalStatus.CREATE_COMPLETE);
                             final String url = this.getStackOutputValue(stackName, "URL");
                             final Callable<String> callable = () -> {
                                 final HttpResponse response = WS.url(url).timeout(10000).get();
@@ -136,15 +130,12 @@ public class TestECSService extends ACloudFormationTest {
                             Assert.assertTrue(response.contains("Welcome to nginx!"));
                         } finally {
                             this.deleteStack(stackName);
-                            this.waitForStack(stackName, ACloudFormationTest.FinalStatus.DELETE_COMPLETE);
                         }
                     } finally {
                         this.deleteStack(clusterStackName);
-                        this.waitForStack(clusterStackName, ACloudFormationTest.FinalStatus.DELETE_COMPLETE);
                     }
                 } finally {
                     this.deleteStack(vpcStackName);
-                    this.waitForStack(vpcStackName, ACloudFormationTest.FinalStatus.DELETE_COMPLETE);
                 }
             } finally {
                 this.deleteKey(keyName);

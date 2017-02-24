@@ -52,6 +52,7 @@ public abstract class ACloudFormationTest extends AAWSTest {
             req = req.withTemplateURL("https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/" + template);
         }
         this.cf.createStack(req);
+        this.waitForStack(stackName, FinalStatus.CREATE_COMPLETE);
     }
 
     protected enum FinalStatus {
@@ -91,7 +92,7 @@ public abstract class ACloudFormationTest extends AAWSTest {
         return events;
     }
 
-    protected final void waitForStack(final String stackName, final FinalStatus finalStackStatus) {
+    private void waitForStack(final String stackName, final FinalStatus finalStackStatus) {
         System.out.println("waitForStack[" + stackName + "]: to reach status " + finalStackStatus.finalStatus);
         final List<StackEvent> eventsDisplayed = new ArrayList<>();
         while (true) {
@@ -160,10 +161,13 @@ public abstract class ACloudFormationTest extends AAWSTest {
     }
 
     protected final void deleteStack(final String stackName) {
-        this.cf.deleteStack(new DeleteStackRequest().withStackName(stackName));
-        if (Config.has(Config.Key.BUCKET_NAME)) {
-            final AmazonS3 s3local = AmazonS3ClientBuilder.standard().withCredentials(this.credentialsProvider).withRegion(Config.get(Config.Key.BUCKET_REGION)).build();
-            s3local.deleteObject(Config.get(Config.Key.BUCKET_NAME), stackName);
+        if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
+            this.cf.deleteStack(new DeleteStackRequest().withStackName(stackName));
+            if (Config.has(Config.Key.BUCKET_NAME)) {
+                final AmazonS3 s3local = AmazonS3ClientBuilder.standard().withCredentials(this.credentialsProvider).withRegion(Config.get(Config.Key.BUCKET_REGION)).build();
+                s3local.deleteObject(Config.get(Config.Key.BUCKET_NAME), stackName);
+            }
+            this.waitForStack(stackName, FinalStatus.DELETE_COMPLETE);
         }
     }
 

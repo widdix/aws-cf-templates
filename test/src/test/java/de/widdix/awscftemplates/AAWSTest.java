@@ -37,11 +37,15 @@ public abstract class AAWSTest extends ATest {
 
     protected final KeyPair createKey(final String keyName) {
         final CreateKeyPairResult res = this.ec2.createKeyPair(new CreateKeyPairRequest().withKeyName(keyName));
+        System.out.println("keypair[" + keyName + "] created: " + res.getKeyPair().getKeyMaterial());
         return res.getKeyPair();
     }
 
     protected final void deleteKey(final String keyName) {
-        this.ec2.deleteKeyPair(new DeleteKeyPairRequest().withKeyName(keyName));
+        if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
+            this.ec2.deleteKeyPair(new DeleteKeyPairRequest().withKeyName(keyName));
+            System.out.println("keypair[" + keyName + "] deleted");
+        }
     }
 
     private void waitForDomain(final String name, final String changeId, final ChangeStatus finalStatus) {
@@ -80,14 +84,16 @@ public abstract class AAWSTest extends ATest {
     }
 
     protected final void deleteDomain(final String prefix) {
-        final String name = this.generateDomain(prefix);
-        final ListResourceRecordSetsResult res1 = this.route53.listResourceRecordSets(new ListResourceRecordSetsRequest().withHostedZoneId(Config.get(Config.Key.HOSTED_ZONE_ID)).withStartRecordName(name));
-        final ResourceRecordSet rrs = res1.getResourceRecordSets().get(0);
-        final Change delete = new Change().withAction(ChangeAction.DELETE).withResourceRecordSet(rrs);
-        final ChangeBatch changeBatch = new ChangeBatch().withChanges(delete);
-        final ChangeResourceRecordSetsRequest req = new ChangeResourceRecordSetsRequest().withHostedZoneId(Config.get(Config.Key.HOSTED_ZONE_ID)).withChangeBatch(changeBatch);
-        final ChangeResourceRecordSetsResult res2 = this.route53.changeResourceRecordSets(req);
-        this.waitForDomain(name, res2.getChangeInfo().getId(), ChangeStatus.INSYNC);
+        if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
+            final String name = this.generateDomain(prefix);
+            final ListResourceRecordSetsResult res1 = this.route53.listResourceRecordSets(new ListResourceRecordSetsRequest().withHostedZoneId(Config.get(Config.Key.HOSTED_ZONE_ID)).withStartRecordName(name));
+            final ResourceRecordSet rrs = res1.getResourceRecordSets().get(0);
+            final Change delete = new Change().withAction(ChangeAction.DELETE).withResourceRecordSet(rrs);
+            final ChangeBatch changeBatch = new ChangeBatch().withChanges(delete);
+            final ChangeResourceRecordSetsRequest req = new ChangeResourceRecordSetsRequest().withHostedZoneId(Config.get(Config.Key.HOSTED_ZONE_ID)).withChangeBatch(changeBatch);
+            final ChangeResourceRecordSetsResult res2 = this.route53.changeResourceRecordSets(req);
+            this.waitForDomain(name, res2.getChangeInfo().getId(), ChangeStatus.INSYNC);
+        }
     }
 
     protected final Vpc getDefaultVPC() {

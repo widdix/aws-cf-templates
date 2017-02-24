@@ -25,7 +25,6 @@ public class TestJenkins extends ACloudFormationTest {
                         "vpc/vpc-2azs.yaml",
                         new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                 );
-                this.waitForStack(vpcStackName, FinalStatus.CREATE_COMPLETE);
                 try {
                     this.createStack(stackName,
                             "jenkins/jenkins2-ha.yaml",
@@ -33,7 +32,6 @@ public class TestJenkins extends ACloudFormationTest {
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName),
                             new Parameter().withParameterKey("MasterAdminPassword").withParameterValue(masterAdminPassword)
                     );
-                    this.waitForStack(stackName, FinalStatus.CREATE_COMPLETE);
                     final String url = this.getStackOutputValue(stackName, "URL");
                     final Callable<String> callable = () -> {
                         final HttpResponse response = WS.url(url).authBasic("admin", masterAdminPassword).timeout(10000).get();
@@ -48,11 +46,9 @@ public class TestJenkins extends ACloudFormationTest {
                     Assert.assertTrue(response.contains("Jenkins"));
                 } finally {
                     this.deleteStack(stackName);
-                    this.waitForStack(stackName, FinalStatus.DELETE_COMPLETE);
                 }
             } finally {
                 this.deleteStack(vpcStackName);
-                this.waitForStack(vpcStackName, FinalStatus.DELETE_COMPLETE);
             }
         } finally {
             this.deleteKey(keyName);
@@ -73,7 +69,6 @@ public class TestJenkins extends ACloudFormationTest {
                         "vpc/vpc-2azs.yaml",
                         new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                 );
-                this.waitForStack(vpcStackName, FinalStatus.CREATE_COMPLETE);
                 try {
                     this.createStack(stackName,
                             "jenkins/jenkins2-ha-agents.yaml",
@@ -81,7 +76,6 @@ public class TestJenkins extends ACloudFormationTest {
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName),
                             new Parameter().withParameterKey("MasterAdminPassword").withParameterValue(masterAdminPassword)
                     );
-                    this.waitForStack(stackName, FinalStatus.CREATE_COMPLETE);
                     final String url = this.getStackOutputValue(stackName, "URL");
                     final Callable<String> callable = () -> {
                         final HttpResponse response = WS.url(url).authBasic("admin", masterAdminPassword).timeout(10000).get();
@@ -96,11 +90,9 @@ public class TestJenkins extends ACloudFormationTest {
                     Assert.assertTrue(response.contains("Jenkins"));
                 } finally {
                     this.deleteStack(stackName);
-                    this.waitForStack(stackName, FinalStatus.DELETE_COMPLETE);
                 }
             } finally {
                 this.deleteStack(vpcStackName);
-                this.waitForStack(vpcStackName, FinalStatus.DELETE_COMPLETE);
             }
         } finally {
             this.deleteKey(keyName);
