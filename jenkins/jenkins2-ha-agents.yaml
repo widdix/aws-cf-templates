@@ -835,7 +835,7 @@ Resources:
                 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin
                 MAILTO=root
                 HOME=/
-                * * * * * root aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildActive --value $(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://@localhost:8080/computer/api/xml?xpath=*/busyExecutors' | sed -r 's/<[/a-zA-Z]*>//g') --unit Count
+                * * * * * root aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildActive --value $(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/computer/api/xml?xpath=*/busyExecutors' | sed -r 's/<[/a-zA-Z]*>//g') --unit Count
               mode: '000600'
               owner: root
               group: root
@@ -845,7 +845,7 @@ Resources:
                 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin
                 MAILTO=root
                 HOME=/
-                * * * * * root aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildQueue --value $(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://@localhost:8080/jqs-monitoring/api/xml?xpath=/JQSMonitoring/buildQueue/numberOfJobs' | sed -r 's/<[/a-zA-Z]*>//g') --unit Count
+                * * * * * root aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildQueue --value $(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/jqs-monitoring/api/xml?xpath=/JQSMonitoring/buildQueue/numberOfJobs' | sed -r 's/<[/a-zA-Z]*>//g') --unit Count
               mode: '000600'
               owner: root
               group: root
