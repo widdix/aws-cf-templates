@@ -15,21 +15,6 @@ import java.util.concurrent.Callable;
 
 public class TestECSService extends ACloudFormationTest {
 
-    private final AmazonECS ecs = AmazonECSClientBuilder.standard().withCredentials(this.credentialsProvider).build();
-
-    private String createTaskDefinition(final String family) {
-        final PortMapping pm = new PortMapping().withContainerPort(80).withProtocol("tcp");
-        final ContainerDefinition cd = new ContainerDefinition().withName("main").withImage("nginx:1.11.5").withMemory(128).withPortMappings(pm).withEssential(true);
-        final RegisterTaskDefinitionResult res = this.ecs.registerTaskDefinition(new RegisterTaskDefinitionRequest().withFamily(family).withNetworkMode("bridge").withContainerDefinitions(cd));
-        return res.getTaskDefinition().getTaskDefinitionArn();
-    }
-
-    private void deleteTaskDefinition(final String taskDefinitionArn) {
-        if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
-            this.ecs.deregisterTaskDefinition(new DeregisterTaskDefinitionRequest().withTaskDefinition(taskDefinitionArn));
-        }
-    }
-
     @Test
     public void testClusterAlb() {
         final String vpcStackName = "vpc-2azs-" + this.random8String();
@@ -37,52 +22,47 @@ public class TestECSService extends ACloudFormationTest {
         final String stackName = "ecs-service-" + this.random8String();
         final String classB = "10";
         final String keyName = "key-" + this.random8String();
-        final String taskDefinitionArn = this.createTaskDefinition(stackName);
         try {
+            this.createKey(keyName);
             try {
-                this.createKey(keyName);
+                this.createStack(vpcStackName,
+                        "vpc/vpc-2azs.yaml",
+                        new Parameter().withParameterKey("ClassB").withParameterValue(classB)
+                );
                 try {
-                    this.createStack(vpcStackName,
-                            "vpc/vpc-2azs.yaml",
-                            new Parameter().withParameterKey("ClassB").withParameterValue(classB)
+                    this.createStack(clusterStackName,
+                            "ecs/cluster.yaml",
+                            new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
+                            new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
                     );
+                    final String cluster = this.getStackOutputValue(clusterStackName, "Cluster");
                     try {
-                        this.createStack(clusterStackName,
-                                "ecs/cluster.yaml",
-                                new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
-                                new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
+                        this.createStack(stackName,
+                                "ecs/service-cluster-alb.yaml",
+                                new Parameter().withParameterKey("ParentClusterStack").withParameterValue(clusterStackName),
+                                new Parameter().withParameterKey("Image").withParameterValue("nginx:1.11.5")
                         );
-                        final String cluster = this.getStackOutputValue(clusterStackName, "Cluster");
-                        try {
-                            this.createStack(stackName,
-                                    "ecs/service-cluster-alb.yaml",
-                                    new Parameter().withParameterKey("ParentClusterStack").withParameterValue(clusterStackName),
-                                    new Parameter().withParameterKey("TaskDefinitionArn").withParameterValue(taskDefinitionArn)
-                            );
-                            final String url = this.getStackOutputValue(stackName, "URL");
-                            final Callable<Boolean> callable = () -> {
-                                final HttpResponse response = WS.url(url).timeout(10000).get();
-                                // check HTTP response code
-                                if (WS.getStatus(response) != 404) {
-                                    throw new RuntimeException("404 expected, but saw " + WS.getStatus(response));
-                                }
-                                return true;
-                            };
-                            Assert.assertTrue(this.retry(callable));
-                        } finally {
-                            this.deleteStack(stackName);
-                        }
+                        final String url = this.getStackOutputValue(stackName, "URL");
+                        final Callable<Boolean> callable = () -> {
+                            final HttpResponse response = WS.url(url).timeout(10000).get();
+                            // check HTTP response code
+                            if (WS.getStatus(response) != 404) {
+                                throw new RuntimeException("404 expected, but saw " + WS.getStatus(response));
+                            }
+                            return true;
+                        };
+                        Assert.assertTrue(this.retry(callable));
                     } finally {
-                        this.deleteStack(clusterStackName);
+                        this.deleteStack(stackName);
                     }
                 } finally {
-                    this.deleteStack(vpcStackName);
+                    this.deleteStack(clusterStackName);
                 }
             } finally {
-                this.deleteKey(keyName);
+                this.deleteStack(vpcStackName);
             }
         } finally {
-            this.deleteTaskDefinition(taskDefinitionArn);
+            this.deleteKey(keyName);
         }
     }
 
@@ -93,55 +73,50 @@ public class TestECSService extends ACloudFormationTest {
         final String stackName = "ecs-service-" + this.random8String();
         final String classB = "10";
         final String keyName = "key-" + this.random8String();
-        final String taskDefinitionArn = this.createTaskDefinition(stackName);
         try {
+            this.createKey(keyName);
             try {
-                this.createKey(keyName);
+                this.createStack(vpcStackName,
+                        "vpc/vpc-2azs.yaml",
+                        new Parameter().withParameterKey("ClassB").withParameterValue(classB)
+                );
                 try {
-                    this.createStack(vpcStackName,
-                            "vpc/vpc-2azs.yaml",
-                            new Parameter().withParameterKey("ClassB").withParameterValue(classB)
+                    this.createStack(clusterStackName,
+                            "ecs/cluster.yaml",
+                            new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
+                            new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
                     );
+                    final String cluster = this.getStackOutputValue(clusterStackName, "Cluster");
                     try {
-                        this.createStack(clusterStackName,
-                                "ecs/cluster.yaml",
+                        this.createStack(stackName,
+                                "ecs/service-dedicated-alb.yaml",
                                 new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
-                                new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
+                                new Parameter().withParameterKey("ParentClusterStack").withParameterValue(clusterStackName),
+                                new Parameter().withParameterKey("Image").withParameterValue("nginx:1.11.5")
                         );
-                        final String cluster = this.getStackOutputValue(clusterStackName, "Cluster");
-                        try {
-                            this.createStack(stackName,
-                                    "ecs/service-dedicated-alb.yaml",
-                                    new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
-                                    new Parameter().withParameterKey("ParentClusterStack").withParameterValue(clusterStackName),
-                                    new Parameter().withParameterKey("TaskDefinitionArn").withParameterValue(taskDefinitionArn)
-                            );
-                            final String url = this.getStackOutputValue(stackName, "URL");
-                            final Callable<String> callable = () -> {
-                                final HttpResponse response = WS.url(url).timeout(10000).get();
-                                // check HTTP response code
-                                if (WS.getStatus(response) != 200) {
-                                    throw new RuntimeException("200 expected, but saw " + WS.getStatus(response));
-                                }
-                                return WS.getResponseAsString(response);
-                            };
-                            final String response = this.retry(callable);
-                            // check if nginx page appears
-                            Assert.assertTrue(response.contains("Welcome to nginx!"));
-                        } finally {
-                            this.deleteStack(stackName);
-                        }
+                        final String url = this.getStackOutputValue(stackName, "URL");
+                        final Callable<String> callable = () -> {
+                            final HttpResponse response = WS.url(url).timeout(10000).get();
+                            // check HTTP response code
+                            if (WS.getStatus(response) != 200) {
+                                throw new RuntimeException("200 expected, but saw " + WS.getStatus(response));
+                            }
+                            return WS.getResponseAsString(response);
+                        };
+                        final String response = this.retry(callable);
+                        // check if nginx page appears
+                        Assert.assertTrue(response.contains("Welcome to nginx!"));
                     } finally {
-                        this.deleteStack(clusterStackName);
+                        this.deleteStack(stackName);
                     }
                 } finally {
-                    this.deleteStack(vpcStackName);
+                    this.deleteStack(clusterStackName);
                 }
             } finally {
-                this.deleteKey(keyName);
+                this.deleteStack(vpcStackName);
             }
         } finally {
-            this.deleteTaskDefinition(taskDefinitionArn);
+            this.deleteKey(keyName);
         }
     }
 

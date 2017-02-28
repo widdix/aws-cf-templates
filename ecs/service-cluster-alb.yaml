@@ -17,12 +17,10 @@ Metadata:
     - Label:
         default: 'Task Parameters'
       Parameters:
-      - TaskDefinitionArn
+      - Image
       - DesiredCount
       - MaxCapacity
       - MinCapacity
-      - ContainerPort
-      - ContainerName
 Parameters:
   ParentClusterStack:
     Description: 'Stack name of parent Cluster stack based on ecs/cluster.yaml template.'
@@ -47,8 +45,8 @@ Parameters:
     AllowedValues:
     - true
     - false
-  TaskDefinitionArn:
-    Description: 'The ARN of the task definition (including the revision number) that you want to run on the cluster, such as arn:aws:ecs:us-east-1:123456789012:task-definition/mytask:3.'
+  Image:
+    Description: 'The image to use for a container, which is passed directly to the Docker daemon. You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag).'
     Type: String
   DesiredCount:
     Description: 'The number of simultaneous tasks, that you want to run on the cluster.'
@@ -68,21 +66,30 @@ Parameters:
     Default: 2
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
-  ContainerPort:
-    Description: 'The port number on the container to direct load balancer traffic to. Your container instances must allow ingress traffic on this port. The container definition must match with this value.'
-    Type: Number
-    Default: 80
-    ConstraintDescription: 'Must be in the range [0-65535]'
-    MinValue: 0
-    MaxValue: 65535
-  ContainerName:
-    Description: 'The name of a container to use with the load balancer. The container definition must match with this value.'
-    Type: String
-    Default: main
 Mappings: {}
 Conditions:
   HasLoadBalancerHttps: !Equals [!Ref LoadBalancerHttps, 'true']
 Resources:
+  TaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties: 
+      Family: !Ref 'AWS::StackName'
+      NetworkMode: bridge
+      ContainerDefinitions:
+      - Name: main # if you change this, you also must change the AWS::ECS::Service
+        Image: !Ref Image
+        Memory: 128
+        PortMappings:
+        - ContainerPort: 80 # if you change this, you also must change the AWS::ECS::Service
+          Protocol: tcp
+        Essential: true
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            'awslogs-region': !Ref 'AWS::Region'
+            'awslogs-group':
+              'Fn::ImportValue': !Sub '${ParentClusterStack}-LogGroup'
+            'awslogs-stream-prefix': !Ref 'AWS::StackName'
   LoadBalancerTargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
@@ -147,11 +154,11 @@ Resources:
         MinimumHealthyPercent: 50
       DesiredCount: !Ref DesiredCount
       LoadBalancers:
-      - ContainerName: !Ref ContainerName
-        ContainerPort: !Ref ContainerPort
+      - ContainerName: main
+        ContainerPort: 80
         TargetGroupArn: !Ref LoadBalancerTargetGroup
       Role: !GetAtt 'ServiceRole.Arn'
-      TaskDefinition: !Ref TaskDefinitionArn
+      TaskDefinition: !Ref TaskDefinition
   ScalableTargetRole: # based on http://docs.aws.amazon.com/AmazonECS/latest/developerguide/autoscale_IAM_role.html
     Type: 'AWS::IAM::Role'
     Properties:

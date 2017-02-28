@@ -18,12 +18,10 @@ Metadata:
     - Label:
         default: 'Task Parameters'
       Parameters:
-      - TaskDefinitionArn
+      - Image
       - DesiredCount
       - MaxCapacity
       - MinCapacity
-      - ContainerPort
-      - ContainerName
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -46,8 +44,8 @@ Parameters:
     Description: 'Optional Amazon Resource Name (ARN) of the certificate to associate with the load balancer.'
     Type: String
     Default: ''
-  TaskDefinitionArn:
-    Description: 'The ARN of the task definition (including the revision number) that you want to run on the cluster, such as arn:aws:ecs:us-east-1:123456789012:task-definition/mytask:3.'
+  Image:
+    Description: 'The image to use for a container, which is passed directly to the Docker daemon. You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag).'
     Type: String
   DesiredCount:
     Description: 'The number of simultaneous tasks, which you specify by using the TaskDefinition property, that you want to run on the cluster.'
@@ -67,17 +65,6 @@ Parameters:
     Default: 2
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
-  ContainerPort:
-    Description: 'The port number on the container to direct load balancer traffic to. Your container instances must allow ingress traffic on this port. The container definition must match with this value.'
-    Type: Number
-    Default: 80
-    ConstraintDescription: 'Must be in the range [0-65535]'
-    MinValue: 0
-    MaxValue: 65535
-  ContainerName:
-    Description: 'The name of a container to use with the load balancer. The container definition must match with this value.'
-    Type: String
-    Default: main
 Mappings: {}
 Conditions:
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
@@ -87,6 +74,26 @@ Conditions:
   HasAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
   HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasNotAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
 Resources:
+  TaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties: 
+      Family: !Ref 'AWS::StackName'
+      NetworkMode: bridge
+      ContainerDefinitions:
+      - Name: main # if you change this, you also must change the AWS::ECS::Service
+        Image: !Ref Image
+        Memory: 128
+        PortMappings:
+        - ContainerPort: 80 # if you change this, you also must change the AWS::ECS::Service
+          Protocol: tcp
+        Essential: true
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            'awslogs-region': !Ref 'AWS::Region'
+            'awslogs-group':
+              'Fn::ImportValue': !Sub '${ParentClusterStack}-LogGroup'
+            'awslogs-stream-prefix': !Ref 'AWS::StackName'
   ALBSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -211,11 +218,11 @@ Resources:
         MinimumHealthyPercent: 50
       DesiredCount: !Ref DesiredCount
       LoadBalancers:
-      - ContainerName: !Ref ContainerName
-        ContainerPort: !Ref ContainerPort
+      - ContainerName: main
+        ContainerPort: 80
         TargetGroupArn: !Ref DefaultTargetGroup
       Role: !GetAtt 'ServiceRole.Arn'
-      TaskDefinition: !Ref TaskDefinitionArn
+      TaskDefinition: !Ref TaskDefinition
   ScalableTargetRole: # based on http://docs.aws.amazon.com/AmazonECS/latest/developerguide/autoscale_IAM_role.html
     Type: 'AWS::IAM::Role'
     Properties:
