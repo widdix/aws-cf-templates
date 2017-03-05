@@ -4,9 +4,9 @@
 
 * Docker image published to [Docker Hub](https://hub.docker.com/) or [EC2 Container Registry (ECR)](https://aws.amazon.com/ecr/)
 * ECS cluster
-* ECS service referencing an ECS task definition
+* ECS service
 
-We provide you templates for the ECS cluster and the service. We also provide you with a way to create a task definition. You need to publish the Docker image.
+We provide you templates for the ECS cluster and the service. You need to publish the Docker image.
 
 ## ECS cluster
 This template describes a fault tolerant and scalable ECS cluster on AWS. The cluster scales the underlying EC2 instances based on memory and CPU reservation. In case of a scale down, the instance drains all containers before it is terminated.
