@@ -35,11 +35,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-ecs</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>de.taimos</groupId>
             <artifactId>httputils</artifactId>
             <version>1.10</version>
