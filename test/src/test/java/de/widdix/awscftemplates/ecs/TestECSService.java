@@ -1,12 +1,8 @@
 package de.widdix.awscftemplates.ecs;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.ecs.AmazonECS;
-import com.amazonaws.services.ecs.AmazonECSClientBuilder;
-import com.amazonaws.services.ecs.model.*;
 import de.taimos.httputils.WS;
 import de.widdix.awscftemplates.ACloudFormationTest;
-import de.widdix.awscftemplates.Config;
 import org.apache.http.HttpResponse;
 import org.junit.Assert;
 import org.junit.Test;
