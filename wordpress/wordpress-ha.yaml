@@ -736,7 +736,8 @@ Resources:
           ViewerProtocolPolicy: 'redirect-to-https'
           Compress: true
         Enabled: true
-        PriceClass: 'PriceClass_100'
+        HttpVersion: http2
+        PriceClass: 'PriceClass_All'
         ViewerCertificate:
           AcmCertificateArn: !Ref CloudFrontAcmCertificate
           SslSupportMethod: 'sni-only'
