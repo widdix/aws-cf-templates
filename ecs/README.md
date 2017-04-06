@@ -35,11 +35,11 @@ This template describes a fault tolerant and scalable ECS service on AWS. The se
 > The image needs to expose port 80 or the `AWS::ECS::TaskDefinition` needs to be adjusted!
 
 We provide two service templates:
-* `service-cluster-alb.yaml` uses the cluster's load balancer and path based routing. If you want to run multiple services on the same cluster they all will use the same domain name but start with different paths (e.g. `https://yourdomain.com/service1/` and `https://yourdomain.com/service2/`).
-* `service-dedicated-alb.yaml` includes a dedicated load balancer (ALB). You can then use a separate domain name for each service.
+* `service-cluster-alb.yaml` uses the cluster's load balancer and path and/or host based routing.
+* `service-dedicated-alb.yaml` includes a dedicated load balancer (ALB).
 
-### Using the cluster's load balancer and path based routing
-This template describes a fault tolerant and scalable ECS service that uses the cluster's load balancer and path based routing.
+### Using the cluster's load balancer and path and/or host based routing
+This template describes a fault tolerant and scalable ECS service that uses the cluster's load balancer and path and/or host based routing.
 
 ![Architecture](./service-cluster-alb.png?raw=true "Architecture")
 

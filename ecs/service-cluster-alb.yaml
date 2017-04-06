@@ -12,6 +12,7 @@ Metadata:
         default: 'Load Balancer Parameters'
       Parameters:
       - LoadBalancerPriority
+      - LoadBalancerHostPattern
       - LoadBalancerPath
       - LoadBalancerHttps
     - Label:
@@ -32,8 +33,14 @@ Parameters:
     ConstraintDescription: 'Must be in the range [1-99999]'
     MinValue: 1
     MaxValue: 99999
+  LoadBalancerHostPattern:
+    Description: 'Optional host pattern. Specify LoadBalancerPath and/or LoadBalancerHostPattern.'
+    Type: String
+    Default: ''
+    ConstraintDescription: 'Must not be longer than 255'
+    MaxLength: 255
   LoadBalancerPath:
-    Description: 'The path part of the path pattern. E.g., for service, the path pattern will be /service/*'
+    Description: 'Optional path part of the path pattern. E.g., for service, the path pattern will be /service/*.  Specify LoadBalancerPath and/or LoadBalancerHostPattern.'
     Type: String
     Default: 'service'
     ConstraintDescription: 'Must not be longer than 255'
@@ -69,6 +76,8 @@ Parameters:
 Mappings: {}
 Conditions:
   HasLoadBalancerHttps: !Equals [!Ref LoadBalancerHttps, 'true']
+  HasLoadBalancerPath: !Not [!Equals [!Ref LoadBalancerPath, '']]
+  HasLoadBalancerHostPattern: !Not [!Equals [!Ref LoadBalancerHostPattern, '']]
 Resources:
   TaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
@@ -111,10 +120,25 @@ Resources:
       Actions:
       - Type: forward
         TargetGroupArn: !Ref LoadBalancerTargetGroup
-      Conditions:
-      - Field: path-pattern
-        Values:
-        - !Sub '/${LoadBalancerPath}/*'
+      Conditions: !If
+      - HasLoadBalancerPath
+      - !If
+        - HasLoadBalancerHostPattern
+        - - Field: host-header
+            Values:
+            - !Ref LoadBalancerHostPattern
+          - Field: path-pattern
+            Values:
+            - !Sub '/${LoadBalancerPath}/*'
+        - - Field: path-pattern
+            Values:
+            - !Sub '/${LoadBalancerPath}/*'
+      - !If
+        - HasLoadBalancerHostPattern
+        - - Field: host-header
+            Values:
+            - !Ref LoadBalancerHostPattern
+        - [] # neither LoadBalancerHostPattern nor LoadBalancerPath specified
       ListenerArn:
         'Fn::ImportValue': !Sub '${ParentClusterStack}-HttpListener'
       Priority: !Ref LoadBalancerPriority
@@ -276,7 +300,7 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-DNSName'
   URL:
-    Description: 'URL to the ECS service.'
+    Description: 'URL to the ECS service.' # TODO does not work with LoadBalancerHostPattern
     Value: !Sub
     - '${ClusterURL}/${LoadBalancerPath}/'
     - ClusterURL: 
