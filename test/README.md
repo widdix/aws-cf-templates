@@ -32,7 +32,7 @@ To run this tests you need:
 
 The AWS credentials are passed in as defined by the AWS SDK for Java: http://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html
 
-One addition is, that you can supply the env variable `IAM_ROLE_ARN` which let's the tests assume a role before they start with the default credentials.
+One addition: you can supply the env variable `IAM_ROLE_ARN` which let's the tests assume a role with the default credentials before running the tests.
 
 ### Region selection
 
