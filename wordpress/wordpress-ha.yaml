@@ -74,7 +74,7 @@ Parameters:
   BlogVersion:
     Description: 'WordPress version number'
     Type: String
-    Default: '4.7.3'
+    Default: '4.7.4'
     ConstraintDescription: 'x.y.z'
     AllowedPattern: '[0-9]+\.[0-9]+\.[0-9]+'
   WebServerKeyName:
