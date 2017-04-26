@@ -9,6 +9,7 @@ Metadata:
       Parameters:
       - ParentVPCStack
       - ParentSSHBastionStack
+      - ParentAlertStack
     - Label:
         default: 'EC2 Parameters'
       Parameters:
@@ -22,7 +23,11 @@ Parameters:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
   ParentSSHBastionStack:
-    Description: 'Optional Stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Type: String
+    Default: ''
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
   KeyName:
@@ -86,6 +91,7 @@ Conditions:
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
   HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
 Resources:
   EIP:
     Type: 'AWS::EC2::EIP'
@@ -461,6 +467,23 @@ Resources:
       AutoScalingRollingUpdate:
         PauseTime: PT10M
         WaitOnResourceSignals: true
+  CPUTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
+      Namespace: 'AWS/EC2'
+      MetricName: CPUUtilization
+      Statistic: Average
+      Period: 600
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value: !Ref NATAutoScalingGroup
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'

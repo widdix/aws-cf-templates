@@ -26,8 +26,9 @@ This template describes a fault tolerant and scalable ECS cluster on AWS. The cl
 
 ### Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
-* `vpc/vpc-ssh-bastion.yaml`
+* `vpc/vpc-ssh-bastion.yaml` (recommended)
 * `security/auth-proxy-*.yaml`
+* `operations/alert.yaml` (recommended)
 
 ## ECS service
 This template describes a fault tolerant and scalable ECS service on AWS. The service scales based on CPU utilization.
@@ -56,6 +57,7 @@ This template describes a fault tolerant and scalable ECS service that uses the 
 
 #### Dependencies
 * `ecs/cluster.yaml` (**required**)
+* `operations/alert.yaml` (recommended)
 
 ### Using a dedicated load balancer for the service
 This template describes a fault tolerant and scalable ECS service that uses a dedicated load balancer for the service.
@@ -76,6 +78,7 @@ This template describes a fault tolerant and scalable ECS service that uses a de
 #### Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
 * `ecs/cluster.yaml` (**required**)
+* `operations/alert.yaml` (recommended)
 
 ## Support
 We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)

@@ -10,6 +10,7 @@ Metadata:
       - ParentVPCStack
       - ParentSSHBastionStack
       - ParentAuthProxyStack
+      - ParentAlertStack
     - Label:
         default: 'EC2 Parameters'
       Parameters:
@@ -36,11 +37,15 @@ Parameters:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
   ParentSSHBastionStack:
-    Description: 'Optional Stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
     Type: String
     Default: ''
   ParentAuthProxyStack:
-    Description: 'Optional Stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
+    Description: 'Optional stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
+    Type: String
+    Default: ''
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
   KeyName:
@@ -147,6 +152,7 @@ Conditions:
   HasLoadBalancerCertificateArn: !Not [!Equals [!Ref LoadBalancerCertificateArn, '']]
   HasAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
   HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasNotAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
 Resources:
   Cluster:
     Type: 'AWS::ECS::Cluster'
@@ -323,6 +329,40 @@ Resources:
       FromPort: 22
       ToPort: 22
       CidrIp: '0.0.0.0/0'
+  HTTPCodeELB5XXTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer returns 5XX HTTP status codes'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: HTTPCode_ELB_5XX_Count
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt LoadBalancer.LoadBalancerFullName
+  HTTPCodeTarget5XXTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: HTTPCode_Target_5XX_Count
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt LoadBalancer.LoadBalancerFullName
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
@@ -804,12 +844,46 @@ Resources:
         Value: !Ref Cluster
       MetricName: CPUReservation
       ComparisonOperator: GreaterThanThreshold
-      Statistic: Average
+      Statistic: Average # special rule because we scale on reservations and not utilization
       Period: 60
       EvaluationPeriods: 1
       Threshold: 80
       AlarmActions:
       - !Ref ScaleUpPolicy
+  CPUReservationTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average CPU reservation over last 10 minutes higher than 90%'
+      Namespace: 'AWS/ECS'
+      Dimensions:
+      - Name: ClusterName
+        Value: !Ref Cluster
+      MetricName: CPUReservation
+      ComparisonOperator: GreaterThanThreshold
+      Statistic: Average # special rule because we scale on reservations and not utilization
+      Period: 600
+      EvaluationPeriods: 1
+      Threshold: 90
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+  CPUUtilizationTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
+      Namespace: 'AWS/ECS'
+      Dimensions:
+      - Name: ClusterName
+        Value: !Ref Cluster
+      MetricName: CPUUtilization
+      ComparisonOperator: GreaterThanThreshold
+      Statistic: Average
+      Period: 600
+      EvaluationPeriods: 1
+      Threshold: 80
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
   MemoryReservationHighAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -820,12 +894,29 @@ Resources:
         Value: !Ref Cluster
       MetricName: MemoryReservation
       ComparisonOperator: GreaterThanThreshold
-      Statistic: Average
+      Statistic: Average # special rule because we scale on reservations and not utilization
       Period: 60
       EvaluationPeriods: 1
       Threshold: 80
       AlarmActions:
       - !Ref ScaleUpPolicy
+  MemoryReservationTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average memory reservation over last 10 minutes higher than 90%'
+      Namespace: 'AWS/ECS'
+      Dimensions:
+      - Name: ClusterName
+        Value: !Ref Cluster
+      MetricName: MemoryReservation
+      ComparisonOperator: GreaterThanThreshold
+      Statistic: Average # special rule because we scale on reservations and not utilization
+      Period: 600
+      EvaluationPeriods: 1
+      Threshold: 90
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
   CPUReservationLowAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -836,7 +927,7 @@ Resources:
         Value: !Ref Cluster
       MetricName: CPUReservation
       ComparisonOperator: LessThanThreshold
-      Statistic: Average
+      Statistic: Average # special rule because we scale on reservations and not utilization
       Period: 60
       EvaluationPeriods: 1
       Threshold: 20
@@ -852,7 +943,7 @@ Resources:
         Value: !Ref Cluster
       MetricName: MemoryReservation
       ComparisonOperator: LessThanThreshold
-      Statistic: Average
+      Statistic: Average # special rule because we scale on reservations and not utilization
       Period: 60
       EvaluationPeriods: 1
       Threshold: 20

@@ -8,6 +8,7 @@ Metadata:
         default: 'Parent Stacks'
       Parameters:
       - ParentClusterStack
+      - ParentAlertStack
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
@@ -26,6 +27,10 @@ Parameters:
   ParentClusterStack:
     Description: 'Stack name of parent Cluster stack based on ecs/cluster.yaml template.'
     Type: String
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
   LoadBalancerPriority:
     Description: 'The priority for the rule. Elastic Load Balancing evaluates rules in priority order, from the lowest value to the highest value. If a request satisfies a rule, Elastic Load Balancing ignores all subsequent rules. A target group can have only one rule with a given priority.'
     Type: Number
@@ -78,6 +83,7 @@ Conditions:
   HasLoadBalancerHttps: !Equals [!Ref LoadBalancerHttps, 'true']
   HasLoadBalancerPath: !Not [!Equals [!Ref LoadBalancerPath, '']]
   HasLoadBalancerHostPattern: !Not [!Equals [!Ref LoadBalancerHostPattern, '']]
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
 Resources:
   TaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
@@ -251,6 +257,26 @@ Resources:
         StepAdjustments:
         - MetricIntervalLowerBound: 0
           ScalingAdjustment: -25
+  CPUUtilizationTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
+      Namespace: 'AWS/ECS'
+      Dimensions:
+      - Name: ClusterName
+        Value:
+          'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'
+      - Name: ServiceName
+        Value: !GetAtt 'Service.Name'
+      MetricName: CPUUtilization
+      ComparisonOperator: GreaterThanThreshold
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 80
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
   CPUUtilizationHighAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -265,9 +291,9 @@ Resources:
       MetricName: CPUUtilization
       ComparisonOperator: GreaterThanThreshold
       Statistic: Average
-      Period: 60
+      Period: 300
       EvaluationPeriods: 1
-      Threshold: 80
+      Threshold: 60
       AlarmActions:
       - !Ref ScaleUpPolicy
   CPUUtilizationLowAlarm:
@@ -284,9 +310,9 @@ Resources:
       MetricName: CPUUtilization
       ComparisonOperator: LessThanThreshold
       Statistic: Average
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 20
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 30
       AlarmActions:
       - !Ref ScaleDownPolicy
 Outputs:

@@ -10,6 +10,7 @@ Metadata:
       - ParentVPCStack
       - ParentClusterStack
       - ParentAuthProxyStack
+      - ParentAlertStack
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
@@ -30,7 +31,11 @@ Parameters:
     Description: 'Stack name of parent Cluster stack based on ecs/cluster.yaml template.'
     Type: String
   ParentAuthProxyStack:
-    Description: 'Optional Stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
+    Description: 'Optional stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
+    Type: String
+    Default: ''
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
   LoadBalancerScheme:
@@ -73,6 +78,7 @@ Conditions:
   HasLoadBalancerCertificateArn: !Not [!Equals [!Ref LoadBalancerCertificateArn, '']]
   HasAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
   HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasNotAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
 Resources:
   TaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
@@ -162,6 +168,40 @@ Resources:
       UnhealthyThresholdCount: 4
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+  HTTPCodeELB5XXTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer returns 5XX HTTP status codes'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: HTTPCode_ELB_5XX_Count
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt LoadBalancer.LoadBalancerFullName
+  HTTPCodeTarget5XXTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: HTTPCode_Target_5XX_Count
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt LoadBalancer.LoadBalancerFullName
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
@@ -291,6 +331,26 @@ Resources:
         StepAdjustments:
         - MetricIntervalLowerBound: 0
           ScalingAdjustment: -25
+  CPUUtilizationTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
+      Namespace: 'AWS/ECS'
+      Dimensions:
+      - Name: ClusterName
+        Value:
+          'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'
+      - Name: ServiceName
+        Value: !GetAtt 'Service.Name'
+      MetricName: CPUUtilization
+      ComparisonOperator: GreaterThanThreshold
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 80
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
   CPUUtilizationHighAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -305,9 +365,9 @@ Resources:
       MetricName: CPUUtilization
       ComparisonOperator: GreaterThanThreshold
       Statistic: Average
-      Period: 60
+      Period: 300
       EvaluationPeriods: 1
-      Threshold: 80
+      Threshold: 60
       AlarmActions:
       - !Ref ScaleUpPolicy
   CPUUtilizationLowAlarm:
@@ -324,9 +384,9 @@ Resources:
       MetricName: CPUUtilization
       ComparisonOperator: LessThanThreshold
       Statistic: Average
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 20
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 30
       AlarmActions:
       - !Ref ScaleDownPolicy
 Outputs:

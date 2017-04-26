@@ -10,6 +10,7 @@ Metadata:
       - ParentVPCStack
       - ParentSSHBastionStack
       - ParentAuthProxyStack
+      - ParentAlertStack
     - Label:
         default: 'Jenkins Parameters'
       Parameters:
@@ -44,11 +45,15 @@ Parameters:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
   ParentSSHBastionStack:
-    Description: 'Optional Stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
     Type: String
     Default: ''
   ParentAuthProxyStack:
-    Description: 'Optional Stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
+    Description: 'Optional stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
+    Type: String
+    Default: ''
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
   KeyName:
@@ -188,6 +193,7 @@ Conditions:
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
   HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
   HasMasterELBSchemeInternal: !Equals [!Ref MasterELBScheme, 'internal']
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
 Resources:
   MasterStorageSG:
     Type: 'AWS::EC2::SecurityGroup'
@@ -200,6 +206,23 @@ Resources:
         FromPort: 2049
         ToPort: 2049
         IpProtocol: tcp
+  PercentIOLimitTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average IO utilization over last 10 minutes higher than 80%'
+      Namespace: 'AWS/EFS'
+      MetricName: PercentIOLimit
+      Statistic: Average
+      Period: 600
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: FileSystemId
+        Value: !Ref MasterStorage
   MasterStorage:
     Type: 'AWS::EFS::FileSystem'
     Properties:
@@ -248,6 +271,40 @@ Resources:
       ToPort: 80
       SourceSecurityGroupId:
         'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'
+  MasterHTTPCodeELB5XXTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer returns 5XX HTTP status codes'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: HTTPCode_ELB_5XX_Count
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt MasterELB.LoadBalancerFullName
+  MasterHTTPCodeTarget5XXTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: HTTPCode_Target_5XX_Count
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt MasterELB.LoadBalancerFullName
   MasterELB:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
@@ -1574,7 +1631,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       EvaluationPeriods: 1
-      Statistic: Maximum
+      Statistic: Maximum  # special rule because we scale on build queue length
       Threshold: 1
       AlarmDescription: 'Alarm if Build Queue is high.'
       Period: 120
@@ -1594,7 +1651,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       EvaluationPeriods: 5
-      Statistic: Maximum
+      Statistic: Maximum  # special rule because we scale on build queue length
       Threshold: 0
       AlarmDescription: 'Alarm if Build Queue is empty.'
       Period: 120

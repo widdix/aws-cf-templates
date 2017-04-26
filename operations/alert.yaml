@@ -1,0 +1,60 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Operations: Alert topic, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Alert Parameters'
+      Parameters:
+      - Email
+      - HttpEndpoint
+      - HttpsEndpoint
+Parameters:
+  Email:
+    Description: 'Optional email address that will receive alerts'
+    Type: String
+  HttpEndpoint:
+    Description: 'Optional HTTP endpoint that will receive alerts via POST requests'
+    Type: String
+  HttpsEndpoint:
+    Description: 'Optional HTTPS endpoint that will receive alerts via POST requests  (can be marbot.io)'
+    Type: String
+Conditions:
+  HasEmail: !Not [!Equals [!Ref Email, '']]
+  HasHttpEndpoint: !Not [!Equals [!Ref HttpEndpoint, '']]
+  HasHttpsEndpoint: !Not [!Equals [!Ref HttpsEndpoint, '']]
+Resources:
+  Topic:
+    Type: 'AWS::SNS::Topic'
+    Properties: {}
+  EmailSubscription:
+    Condition: HasEmail
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !Ref Email
+      Protocol: email
+      TopicArn: !Ref Topic
+  HttpEndpointSubscription:
+    Condition: HasHttpEndpoint
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !Ref HttpEndpoint
+      Protocol: http
+      TopicArn: !Ref Topic
+  HttpsEndpointSubscription:
+    Condition: HasHttpsEndpoint
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !Ref HttpsEndpoint
+      Protocol: https
+      TopicArn: !Ref Topic
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'operations/alert'
+  TopicARN:
+    Description: 'The ARN of the alert topic.'
+    Value: !Ref Topic
+    Export:
+      Name: !Sub '${AWS::StackName}-TopicARN'

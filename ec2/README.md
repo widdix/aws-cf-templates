@@ -19,7 +19,8 @@ This template describes an EC2 instance with auto-recovery. If the instance fail
 
 ### Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
-* `vpc/vpc-ssh-bastion.yaml`
+* `vpc/vpc-ssh-bastion.yaml` (recommended)
+* `operations/alert.yaml` (recommended)
 
 ## Support
 We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)

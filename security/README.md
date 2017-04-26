@@ -58,7 +58,8 @@ This template describes a **highly available** authentication proxy that forward
 
 ### Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
-* `vpc/vpc-ssh-bastion.yaml`
+* `vpc/vpc-ssh-bastion.yaml` (recommended)
+* `operations/alert.yaml` (recommended)
 
 ## CloudTrail across all regions
 This template enables CloudTrail to records AWS API calls across all regions in your AWS account. API calls are archived in S3 and also pushed CloudWatch Logs. If new API calls are available in S3 a SNS topic is notified.

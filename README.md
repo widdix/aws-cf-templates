@@ -12,6 +12,7 @@ We are offering the following templates:
 * [Elastic Compute Cloud (EC2)](./ec2/)
 * [EC2 Container Service (ECS)](./ecs/)
 * [Jenkins ](./jenkins/)
+* [Operations](./operations/)
 * [Security](./security/)
 * [Static website](./static-website/)
 * [Virtual Private Cloud (VPC)](./vpc/)

@@ -83,7 +83,8 @@ This template describes a **highly available** Network Address Translation (NAT)
 
 ### Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
-* `vpc/vpc-ssh-bastion.yaml`
+* `vpc/vpc-ssh-bastion.yaml` (recommended)
+* `operations/alert.yaml` (recommended)
 
 ## SSH bastion host/instance
 This template describes a **highly available** SSH bastion host/instance. SSH Port 22 is open to the world. You can enable the default ec2-user access protected by the referenced EC2 KeyPair. You can also enable personalized SSH access by using the IAM users and their configured public keys. Use `ssh -A user@ip` to enable forwarding of the authentication agent connection when connection to the bastion host.
@@ -103,6 +104,7 @@ This template describes a **highly available** SSH bastion host/instance. SSH Po
 
 ### Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
+* `operations/alert.yaml` (recommended)
 
 ## VPC Endpoint to S3
 This template describes a VPC endpoint to securely route traffic within a VPC for private instances to access S3 without the need of a NAT Gateway, NAT instance, or public internet. Refer to [AWS VPC endpoint](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-endpoints.html) documentation if this is necessary for your stack. By default, access to all S3 actions and buckets is allowed, but may be constrained with a policy document.

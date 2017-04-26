@@ -10,6 +10,7 @@ Metadata:
       - ParentVPCStack
       - ParentSSHBastionStack
       - ParentAuthProxyStack
+      - ParentAlertStack
     - Label:
         default: 'Domain Name and SSL certificates'
       Parameters:
@@ -40,11 +41,15 @@ Parameters:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
   ParentSSHBastionStack:
-    Description: 'Optional Stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
     Type: String
     Default: ''
   ParentAuthProxyStack:
-    Description: 'Optional Stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
+    Description: 'Optional stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
+    Type: String
+    Default: ''
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
   DomainName:
@@ -144,6 +149,7 @@ Conditions:
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
   HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
 Resources:
   WebServerLogs:
     Type: 'AWS::Logs::LogGroup'
@@ -215,6 +221,40 @@ Resources:
         FromPort: 3306
         ToPort: 3306
         SourceSecurityGroupId: !Ref WebServerSecurityGroup
+  HTTPCodeELB5XXTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Elastic load balancer returns 5XX HTTP status codes'
+      Namespace: 'AWS/ELB'
+      MetricName: HTTPCode_ELB_5XX
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancerName
+        Value: !Ref LoadBalancer
+  HTTPCodeTarget5XXTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Elastic load balancer receives 5XX HTTP status codes from backends'
+      Namespace: 'AWS/ELB'
+      MetricName: HTTPCode_Backend_5XX
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancerName
+        Value: !Ref LoadBalancer
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancing::LoadBalancer'
     Properties:
@@ -582,6 +622,23 @@ Resources:
       AutoScalingRollingUpdate:
         PauseTime: PT10M
         WaitOnResourceSignals: true
+  CPUTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
+      Namespace: 'AWS/EC2'
+      MetricName: CPUUtilization
+      Statistic: Average
+      Period: 600
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value: !Ref AutoScalingGroup
   ScalingUpPolicy:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
@@ -593,11 +650,11 @@ Resources:
   CPUHighAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      EvaluationPeriods: 5
+      EvaluationPeriods: 1
       Statistic: Average
-      Threshold: 75
+      Threshold: 60
       AlarmDescription: 'Alarm if CPU load is high.'
-      Period: 60
+      Period: 300
       AlarmActions:
       - !Ref ScalingUpPolicy
       Namespace: 'AWS/EC2'
@@ -617,11 +674,11 @@ Resources:
   CPULowAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      EvaluationPeriods: 15
+      EvaluationPeriods: 3
       Statistic: Average
-      Threshold: 25
+      Threshold: 30
       AlarmDescription: 'Alarm if CPU load is low.'
-      Period: 60
+      Period: 300
       AlarmActions:
       - !Ref ScalingDownPolicy
       Namespace: 'AWS/EC2'
