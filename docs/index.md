@@ -1,5 +1,3 @@
-${READTHEDOCS_VERSION}
-
 Using our Infrastructure as Code templates will help you to bootstrap common setups on Amazon Web Services (AWS) within minutes. Our templates are exclusively designed for AWS CloudFormation, the Infrastructure as Code services on AWS.
 
 ## Benefits
@@ -29,7 +27,7 @@ We are interested in your requirements. [Please use the following survey to upvo
 
 ## Releases
 We host all versions starting with version 3.1.0 on the `widdix-aws-cf-templates-releases-eu-west-1` S3 bucket.
-The file `vpc/vpc-2azs.yaml` becomes the S3 key `v3.1.0/vpc/vpc-2azs.yaml`.
+The file `vpc/vpc-2azs.yaml` becomes the S3 key `__VERSION__/vpc/vpc-2azs.yaml`.
 The latest version can also be found at `latest/vpc/vpc-2azs.yaml`.
 
 The current master branch (work in progress) is hosted on the `widdix-aws-cf-templates` S3 bucket.

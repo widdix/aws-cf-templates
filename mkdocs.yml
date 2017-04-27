@@ -1,4 +1,2 @@
 ---
-site_name: test
-markdown_extensions:
-- 'md_environ.environ'
+site_name: 'Free Templates for AWS CloudFormation'
