@@ -5,11 +5,11 @@ Using our Infrastructure as Code templates will help you to bootstrap common set
 * Speed up development and migration: reuse our CloudFormation templates to create complex environments for common use cases with ease.
 * Rely on high quality infrastructure templates: peer-reviewed by an expert (certified AWS solutions architect Professional) and verified with automated tests.
 * All templates are production-ready. If no other limitations are documented, they are:
-** Highly available: no single point of failure
-** Scalable: increase or decrease the number of instances based on load
-** Frictionless deployment: deliver new versions of your application automatically without downtime
-** Secure: using the latest operating systems and software components, follow the least privilege principle in all areas
-** Operations: provide tools like logging, monitoring and alerting to recognize and debug problems
+  * Highly available: no single point of failure
+  * Scalable: increase or decrease the number of instances based on load
+  * Frictionless deployment: deliver new versions of your application automatically without downtime
+  * Secure: using the latest operating systems and software components, follow the least privilege principle in all areas
+  * Operations: provide tools like logging, monitoring and alerting to recognize and debug problems
 * Premium Support available: Get help in case of small and big emergencies and submit feature request.
 
 ## Templates
