@@ -3,7 +3,7 @@
 ## EC2 with auto-recovery
 This template describes an EC2 instance with auto-recovery. If the instance fails it will be replaced automatically. All data stored on EBS volumes will still be available. The public and private IP address won't change. Auto-recovery does only work inside of a single availability zone (AZ).
 
-![Architecture](./ec2-auto-recovery.png?raw=true "Architecture")
+![Architecture](./img/ec2-auto-recovery.png?raw=true "Architecture")
 
 ### Installation Guide
 1. This templates depends on one of our [`vpc-*azs.yaml`](../vpc/) templates. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml">Launch Stack</a>
@@ -24,12 +24,3 @@ This template describes an EC2 instance with auto-recovery. If the instance fail
 
 ### Limitations
 * The EC2 instance only runs in a single AZ. In case of an AZ outage the instance will be unavailable.
-
-## Premium Support
-We offer Premium Support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
-
-## Feedback
-We are looking forward to your feedback. Mail to [hello@widdix.de](mailto:hello@widdix.de).
-
-## About
-A [cloudonaut.io](https://cloudonaut.io/templates-for-aws-cloudformation/) project. Engineered by [widdix](https://widdix.net).

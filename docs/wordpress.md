@@ -42,12 +42,3 @@ This template combines the following services:
 * PHP files are cached for 300 seconds on the web servers.
 * Static files `wp-includes` and `wp-content` are cached for 15 minutes on the CDN.
 * Pre-defined auto-scaling might not be able to cover your requirements and needs load and performance testing.
-
-## Premium Support
-We offer Premium Support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
-
-## Feedback
-We are looking forward to your feedback. Mail to [hello@widdix.de](mailto:hello@widdix.de).
-
-## About
-A [cloudonaut.io](https://cloudonaut.io/templates-for-aws-cloudformation/) project. Engineered by [widdix](https://widdix.net).

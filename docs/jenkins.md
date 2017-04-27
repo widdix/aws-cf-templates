@@ -51,12 +51,3 @@ This template describes a Jenkins master in a highly available manner. If the ma
 
 ## Limitations
 * Jenkins will only run in two Availability Zones, even if your VPC stack has more.
-
-## Premium Support
-We offer Premium Support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
-
-## Feedback
-We are looking forward to your feedback. Mail to [hello@widdix.de](mailto:hello@widdix.de).
-
-## About
-A [cloudonaut.io](https://cloudonaut.io/templates-for-aws-cloudformation/) project. Engineered by [widdix](https://widdix.net).

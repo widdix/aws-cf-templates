@@ -126,12 +126,3 @@ This template describes a VPC endpoint to securely route traffic within a VPC fo
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 ![Architecture](./vpc-endpoint-s3.png?raw=true "Architecture")
-
-## Premium Support
-We offer Premium Support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
-
-## Feedback
-We are looking forward to your feedback. Mail to [hello@widdix.de](mailto:hello@widdix.de).
-
-## About
-A [cloudonaut.io](https://cloudonaut.io/templates-for-aws-cloudformation/) project. Engineered by [widdix](https://widdix.net).

@@ -15,12 +15,3 @@ This template describes a SNS topic that can be used by many other templates to 
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
-
-## Premium Support
-We offer Premium Support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
-
-## Feedback
-We are looking forward to your feedback. Mail to [hello@widdix.de](mailto:hello@widdix.de).
-
-## About
-A [cloudonaut.io](https://cloudonaut.io/templates-for-aws-cloudformation/) project. Engineered by [widdix](https://widdix.net).
