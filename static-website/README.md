@@ -1,19 +1,9 @@
 # Static Website Templates for AWS CloudFormation
 
-## Static website with CDN
-This template describes the infrastructure for hosting a static website over HTTPS behind a CDN.
+Find the documentation here: http://templates.cloudonaut.io/en/stable/static-website/
 
-![Architecture](./static-website.png?raw=true "Architecture")
-
-### Installation Guide
-1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=static-website&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/static-website/static-website.yaml">Launch Stack</a>
-1. Click **Next** to proceed with the next step of the wizard.
-1. Specify a name and all parameters for the stack.
-1. Click **Next** to proceed with the next step of the wizard.
-1. Click **Next** to skip the **Options** step of the wizard.
-1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
-1. Click **Create** to start the creation of the stack.
-1. Wait until the stack reaches the state **CREATE_COMPLETE**
+## License
+All templates are published under Apache License Version 2.0.
 
 ## Premium Support
 We offer Premium Support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)

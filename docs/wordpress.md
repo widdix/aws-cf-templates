@@ -1,13 +1,13 @@
-## WordPress: fault tolerant and scalable
+# WordPress: fault tolerant and scalable
 Use this CloudFormation template to create a fault tolerant and scalable WordPress environment on AWS.
 
-### Features
+## Features
 * HTTPS only
 * CDN caching static files
 * Scalable file storage
 * Fault tolerance due to multi-AZ setup
 
-### Services
+## Services
 This template combines the following services:
 * CloudFront: CDN for dynamic and static content
 * ELB: load balancer forwarding requests to EC2 instances and terminating SSL

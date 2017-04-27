@@ -2,6 +2,8 @@ from setuptools import setup
 from setuptools.command.install import install
 import os
 
+# only needed for readthedocs.io
+
 class PreProcess(install):
   def run(self):
     install.run(self)

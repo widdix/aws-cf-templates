@@ -1,4 +1,4 @@
-## Alert topic
+# Alert topic
 This template describes a SNS topic that can be used by many other templates to receive alerts. You can add one or multiple subscribers to this topic and they will all receive the same alerts. Supported transports are:
 * Email
 * HTTP endpoint
@@ -6,7 +6,7 @@ This template describes a SNS topic that can be used by many other templates to 
 
 ![Architecture](./img/operations-alert.png)
 
-### Installation Guide
+## Installation Guide
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=operations-alert&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__operations/alert.yaml)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
