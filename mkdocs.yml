@@ -1,4 +1,4 @@
 ---
 site_name: test
 markdown_extensions:
-- 'md-environ'
+- 'md_environ.environ'
