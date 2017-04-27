@@ -1,7 +1,8 @@
-Using our Infrastructure as Code templates will help you to bootstrap common setups on Amazon Web Services (AWS) within minutes. Our templates are exclusively designed for AWS CloudFormation, the Infrastructure as Code services on AWS.
+Your source for free [AWS CloudFormation](https://aws.amazon.com/cloudformation/) templates. Bootstrap high quality AWS infrastructure within minutes.
 
-## Benefits
-* Speed up development and migration: reuse our CloudFormation templates to create complex environments for common use cases with ease.
+## Why Free AWS CloudFormation Templates 
+
+* Speed up development and migration: reuse our templates to create complex environments for common use cases with ease.
 * Rely on high quality infrastructure templates: peer-reviewed by an expert (certified AWS solutions architect Professional) and verified with automated tests.
 * All templates are production-ready. If no other limitations are documented, they are:
   * Highly available: no single point of failure
@@ -11,8 +12,8 @@ Using our Infrastructure as Code templates will help you to bootstrap common set
   * Operations: provide tools like logging, monitoring and alerting to recognize and debug problems
 * Premium Support available: Get help in case of small and big emergencies and submit feature request.
 
-## Templates
-We are offering the following templates:
+## Infrastructure Templates
+Choose from our template catalog:
 
 * [Elastic Compute Cloud (EC2)](./ec2/)
 * [EC2 Container Service (ECS)](./ecs/)
@@ -25,12 +26,7 @@ We are offering the following templates:
 
 We are interested in your requirements. [Please use the following survey to upvote and add templates you are impatiently waiting for](https://docs.google.com/forms/d/e/1FAIpQLSerhIuMuCWrHai639FoUOt8ffmMqWr0PWzLhCn3VN29VUi8TA/viewform?usp=send_form)
 
-## Releases
-We host all versions starting with version 3.1.0 on the `widdix-aws-cf-templates-releases-eu-west-1` S3 bucket.
-The file `vpc/vpc-2azs.yaml` becomes the S3 key `__VERSION__/vpc/vpc-2azs.yaml`.
-The latest version can also be found at `latest/vpc/vpc-2azs.yaml`.
-
-The current master branch (work in progress) is hosted on the `widdix-aws-cf-templates` S3 bucket.
+## How does CloudFormation works
 
 ## License
 All templates are published under Apache License Version 2.0.
