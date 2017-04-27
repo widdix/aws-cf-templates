@@ -210,10 +210,14 @@ Resources:
       - !Ref ALBSecurityGroup
       Subnets: !If
       - HasLoadBalancerSchemeInternal
-      - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'
-        - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'
-      - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
-        - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      - !Split
+        - ','
+        - 'Fn::ImportValue':
+            !Sub '${ParentVPCStack}-SubnetsPrivate'
+      - !Split
+        - ','
+        - 'Fn::ImportValue':
+            !Sub '${ParentVPCStack}-SubnetsPublic'
   HttpListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:

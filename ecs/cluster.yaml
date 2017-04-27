@@ -371,10 +371,14 @@ Resources:
       - !Ref ALBSecurityGroup
       Subnets: !If
       - HasLoadBalancerSchemeInternal
-      - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'
-        - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'
-      - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
-        - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      - !Split
+        - ','
+        - 'Fn::ImportValue':
+            !Sub '${ParentVPCStack}-SubnetsPrivate'
+      - !Split
+        - ','
+        - 'Fn::ImportValue':
+            !Sub '${ParentVPCStack}-SubnetsPublic'
   DefaultTargetGroup: # this is used as the fall-back target group. Services use their own ListenerRules to accept traffic based on path prefixes.
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
@@ -759,9 +763,10 @@ Resources:
       MinSize: !Ref MinSize
       MaxSize: !Ref MaxSize
       DesiredCapacity: !Ref DesiredCapacity
-      VPCZoneIdentifier:
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetA${SubnetsReach}'
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetB${SubnetsReach}'
+      VPCZoneIdentifier: !Split
+      - ','
+      - 'Fn::ImportValue':
+          !Sub '${ParentVPCStack}-Subnets${SubnetsReach}'
       Tags:
       - Key: Name
         Value: 'ecs-cluster'

@@ -181,9 +181,10 @@ Resources:
       Scheme: 'internet-facing'
       SecurityGroups:
       - !Ref LoadBalancerSecurityGroup
-      Subnets:
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      Subnets: !Split
+      - ','
+      - 'Fn::ImportValue':
+          !Sub '${ParentVPCStack}-SubnetsPublic'
       Tags:
       - Key: Name
         Value: 'Auth proxy'
@@ -710,9 +711,10 @@ Resources:
       TargetGroupARNs:
       - !Ref LoadBalancerTargetGroup
       - !Ref LoadBalancerTargetGroupHttpRedirect
-      VPCZoneIdentifier:
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      VPCZoneIdentifier: !Split
+      - ','
+      - 'Fn::ImportValue':
+          !Sub '${ParentVPCStack}-SubnetsPublic'
     CreationPolicy:
       ResourceSignal:
         Count: 1

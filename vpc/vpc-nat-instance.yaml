@@ -456,9 +456,10 @@ Resources:
         - ClassB:
             'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
         PropagateAtLaunch: true
-      VPCZoneIdentifier:
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      VPCZoneIdentifier: !Split
+      - ','
+      - 'Fn::ImportValue':
+          !Sub '${ParentVPCStack}-SubnetsPublic'
     CreationPolicy:
       ResourceSignal:
         Count: 1
