@@ -3,7 +3,7 @@ A VPC is a virtual network inside AWS where you can isolate your setup using pri
 ## VPC with private and public subnets in two Availability Zones
 This template describes a VPC with two private and two public subnets.
 
-![Architecture](./vpc-2azs.png?raw=true "Architecture")
+![Architecture](./img/vpc-2azs.png)
 
 ### Installation Guide
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__vpc/vpc-2azs.yaml">Launch Stack</a>
@@ -19,7 +19,7 @@ If you have an existing VPC you can wrap it into our required form using a legac
 ## VPC with private and public subnets in three Availability Zones
 This template describes a VPC with three private and three public subnets.
 
-![Architecture](./vpc-3azs.png?raw=true "Architecture")
+![Architecture](./img/vpc-3azs.png)
 
 ### Installation Guide
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-3azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__vpc/vpc-3azs.yaml">Launch Stack</a>
@@ -49,7 +49,7 @@ If you have an existing VPC you can wrap it into our required form using a legac
 ## NAT Gateway
 This template describes a NAT Gateway that forwards HTTP, HTTPS and NTP traffic from private subnets to the Internet.
 
-![Architecture](./vpc-nat-gateway.png?raw=true "Architecture")
+![Architecture](./img/vpc-nat-gateway.png)
 
 ### Installation Guide
 1. This templates depends on one of our `vpc-*azs.yaml` templates. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__vpc/vpc-2azs.yaml">Launch Stack</a>
@@ -70,7 +70,7 @@ This template describes a NAT Gateway that forwards HTTP, HTTPS and NTP traffic 
 ## NAT instance
 This template describes a **highly available** Network Address Translation (NAT) instance that forwards HTTP, HTTPS and NTP traffic from private subnets to the Internet.
 
-![Architecture](./vpc-nat-instance.png?raw=true "Architecture")
+![Architecture](./img/vpc-nat-instance.png)
 ### Installation Guide
 1. This templates depends on one of our `vpc-*azs.yaml` templates. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__vpc/vpc-2azs.yaml">Launch Stack</a>
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-nat-instance&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__vpc/vpc-nat-instance.yaml">Launch Stack</a>
@@ -94,7 +94,7 @@ This template describes a **highly available** Network Address Translation (NAT)
 This template describes a **highly available** SSH bastion host/instance. SSH Port 22 is open to the world. You can enable the default ec2-user access protected by the referenced EC2 KeyPair. You can also enable personalized SSH access by using the IAM users and their configured public keys. Use `ssh -A user@ip` to enable forwarding of the authentication agent connection when connection to the bastion host.
 **Users are not able to sudo on the bastion host/instance! That's very important for security. Why? SSH places a SSH_AUTH_SOCK file into the /tmp directoy only accessible by the user. If you have root you could use any of those files and jump to other machines as another user!**
 
-![Architecture](./vpc-ssh-bastion.png?raw=true "Architecture")
+![Architecture](./img/vpc-ssh-bastion.png)
 ### Installation Guide
 1. This templates depends on one of our `vpc-*azs.yaml` templates. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__vpc/vpc-2azs.yaml">Launch Stack</a>
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-ssh-bastion&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__vpc/vpc-ssh-bastion.yaml">Launch Stack</a>
@@ -116,6 +116,8 @@ This template describes a **highly available** SSH bastion host/instance. SSH Po
 ## VPC Endpoint to S3
 This template describes a VPC endpoint to securely route traffic within a VPC for private instances to access S3 without the need of a NAT Gateway, NAT instance, or public internet. Refer to [AWS VPC endpoint](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-endpoints.html) documentation if this is necessary for your stack. By default, access to all S3 actions and buckets is allowed, but may be constrained with a policy document.
 
+![Architecture](./img/vpc-endpoint-s3.png)
+### Installation Guide
 1. This templates depends on one of our `vpc-*azs.yaml` templates. [Launch Stack](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__vpc/vpc-2azs.yaml)
 1. [Launch Stack](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-endpoint-s3&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__vpc/vpc-endpoint-s3.yaml) for this VPC endpoint to S3.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -125,4 +127,4 @@ This template describes a VPC endpoint to securely route traffic within a VPC fo
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
-![Architecture](./vpc-endpoint-s3.png?raw=true "Architecture")
+

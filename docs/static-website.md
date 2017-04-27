@@ -3,7 +3,7 @@
 ## Static website with CDN
 This template describes the infrastructure for hosting a static website over HTTPS behind a CDN.
 
-![Architecture](./static-website.png?raw=true "Architecture")
+![Architecture](./img/static-website.png)
 
 ### Installation Guide
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=static-website&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__static-website/static-website.yaml">Launch Stack</a>

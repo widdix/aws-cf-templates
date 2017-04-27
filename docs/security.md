@@ -41,7 +41,7 @@ Or just use the suggested defaults.
 ## Authentication Proxy using your GitHub Organization
 This template describes a **highly available** authentication proxy that forwards request to a upstream http(s) endpoint if the user is authenticated against your GitHub Organization.
 
-![Architecture](./auth-proxy-ha-github-orga.png?raw=true "Architecture")
+![Architecture](./img/security-auth-proxy-ha-github-orga.png)
 
 ### Installation Guide
 1. This templates depends on one of our [`vpc-*azs.yaml`](../vpc/) templates. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__vpc/vpc-2azs.yaml">Launch Stack</a>

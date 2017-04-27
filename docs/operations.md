@@ -4,7 +4,7 @@ This template describes a SNS topic that can be used by many other templates to 
 * HTTP endpoint
 * HTTPS endpoint (can be used by [marbot](https://marbot.io/))
 
-![Architecture](./alert.png?raw=true "Architecture")
+![Architecture](./img/operations-alert.png)
 
 ### Installation Guide
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=operations-alert&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__operations/alert.yaml">Launch Stack</a>

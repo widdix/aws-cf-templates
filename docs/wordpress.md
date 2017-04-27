@@ -15,7 +15,7 @@ This template combines the following services:
 * EFS: storage for WordPress files (WordPress core, plugins, themes, user uploads, ...)
 * RDS: MySQL database
 
-![Architecture](./wordpress-ha.png?raw=true "Architecture")
+![Architecture](./img/wordpress-ha.png)
 
 ## Installation Guide
 1. This templates depends on our [`vpc-*azs.yaml`](../vpc/) template. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__vpc/vpc-2azs.yaml">Launch Stack</a>

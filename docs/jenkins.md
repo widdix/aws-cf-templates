@@ -1,9 +1,9 @@
-![Demo](./demo.gif?raw=true "Demo")
+![Demo](./img/jenkins-demo.gif)
 
 ## Jenkins 2.0: highly available master
 This template describes a Jenkins master in a highly available manner. If the master instance fails it will be replaced automatically. All data stored on EFS where it is replicated across AZs and the file system can grow without a limit. The Jenkins master sits behind a load balancer to provide a fixed endpoint. Logs from the operating system and Jenkins are pushed to CloudWatch Logs.
 
-![Architecture](./jenkins2-ha.png?raw=true "Architecture")
+![Architecture](./img/jenkins2-ha.png)
 
 ### Installation Guide
 1. This templates depends on one of our [`vpc-*azs.yaml`](../vpc/) templates. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__vpc/vpc-2azs.yaml">Launch Stack</a>
@@ -29,7 +29,7 @@ This template describes a Jenkins master in a highly available manner. If the ma
 ## Jenkins 2.0: highly available master and dynamic agents
 This template describes a Jenkins master in a highly available manner. If the master instance fails it will be replaced automatically. All data stored on EFS where it is replicated across AZs and the file system can grow without a limit. The Jenkins master sits behind a load balancer to provide a fixed endpoint. A dynamic pool of agents will execute builds. If the build queue grows new agents are provisioned. Of the build queue is empty agents are taken offline (only if they have no build running). System and Jenkins logs are pushed to CloudWatch Logs.
 
-![Architecture](./jenkins2-ha-agents.png?raw=true "Architecture")
+![Architecture](./img/jenkins2-ha-agents.png)
 
 ### Installation Guide
 1. This templates depends on one of our [`vpc-*azs.yaml`](../vpc/) templates. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__vpc/vpc-2azs.yaml">Launch Stack</a>

@@ -9,7 +9,7 @@ We provide you templates for the ECS cluster and the service. You need to publis
 ## ECS cluster
 This template describes a fault tolerant and scalable ECS cluster on AWS. The cluster scales the underlying EC2 instances based on memory and CPU reservation. In case of a scale down, the instance drains all containers before it is terminated.
 
-![Architecture](./img/ecs/cluster.png?raw=true "Architecture")
+![Architecture](./img/ecs-cluster.png)
 
 ### Installation Guide
 1. This templates depends on our [`vpc-*azs.yaml`](../vpc/) template. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml">Launch Stack</a>
@@ -40,7 +40,7 @@ We provide two service templates:
 ### Using the cluster's load balancer and path and/or host based routing
 This template describes a fault tolerant and scalable ECS service that uses the cluster's load balancer and path and/or host based routing.
 
-![Architecture](./img/ecs-service-cluster-alb.png?raw=true "Architecture")
+![Architecture](./img/ecs-service-cluster-alb.png)
 
 #### Installation Guide
 1. This templates depends on our [`cluster.yaml`](../ecs/) template. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=ecs-cluster&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__ecs/cluster.yaml">Launch Stack</a>
@@ -60,7 +60,7 @@ This template describes a fault tolerant and scalable ECS service that uses the 
 ### Using a dedicated load balancer for the service
 This template describes a fault tolerant and scalable ECS service that uses a dedicated load balancer for the service.
 
-![Architecture](./img/ecs-service-dedicated-alb.png?raw=true "Architecture")
+![Architecture](./img/ecs-service-dedicated-alb.png)
 
 #### Installation Guide
 1. This templates depends on our [`cluster.yaml`](../ecs/) template. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=ecs-cluster&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__ecs/cluster.yaml">Launch Stack</a>
