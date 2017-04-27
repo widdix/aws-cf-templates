@@ -1,3 +1,5 @@
+${READTHEDOCS_VERSION}
+
 Using our Infrastructure as Code templates will help you to bootstrap common setups on Amazon Web Services (AWS) within minutes. Our templates are exclusively designed for AWS CloudFormation, the Infrastructure as Code services on AWS.
 
 ## Benefits
