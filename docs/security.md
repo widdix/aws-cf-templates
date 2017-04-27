@@ -124,8 +124,6 @@ This template enables AWS Config to deliver a AWS resource inventory to S3. Allo
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
-## Support needed?
-We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments.
 
 If you want to use an external S3 bucket, the bucket needs to have the following S3 bucket policy:
 
@@ -154,9 +152,9 @@ If you want to use an external S3 bucket, the bucket needs to have the following
       },
       "Action": "s3:PutObject",
       "Resource": [
-        "arn:aws:s3:::$ExternalTrailBucket/AWSLogs/$AccountId[0]/Config/*",
-        "arn:aws:s3:::$ExternalTrailBucket/AWSLogs/$AccountId[0]/Config/*",
-        "arn:aws:s3:::$ExternalTrailBucket/AWSLogs/$AccountId[2]/Config/*"
+        "arn:aws:s3:::$ExternalConfigBucket/AWSLogs/$AccountId[0]/Config/*",
+        "arn:aws:s3:::$ExternalConfigBucket/AWSLogs/$AccountId[0]/Config/*",
+        "arn:aws:s3:::$ExternalConfigBucket/AWSLogs/$AccountId[2]/Config/*"
       ],
       "Condition": { 
         "StringEquals": { 
