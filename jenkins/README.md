@@ -25,6 +25,9 @@ This template describes a Jenkins master in a highly available manner. If the ma
 * `security/auth-proxy-*.yaml`
 * `operations/alert.yaml` (recommended)
 
+## Limitations
+* Jenkins will only run in two Availability Zones, even if your VPC stack has more.
+
 ## Jenkins 2.0: highly available master and dynamic agents
 This template describes a Jenkins master in a highly available manner. If the master instance fails it will be replaced automatically. All data stored on EFS where it is replicated across AZs and the file system can grow without a limit. The Jenkins master sits behind a load balancer to provide a fixed endpoint. A dynamic pool of agents will execute builds. If the build queue grows new agents are provisioned. Of the build queue is empty agents are taken offline (only if they have no build running). System and Jenkins logs are pushed to CloudWatch Logs.
 
@@ -48,8 +51,11 @@ This template describes a Jenkins master in a highly available manner. If the ma
 * `security/auth-proxy-*.yaml`
 * `operations/alert.yaml` (recommended)
 
-## Support
-We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
+## Limitations
+* Jenkins will only run in two Availability Zones, even if your VPC stack has more.
+
+## Premium Support
+We offer Premium Support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
 
 ## Feedback
 We are looking forward to your feedback. Mail to [hello@widdix.de](mailto:hello@widdix.de).

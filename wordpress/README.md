@@ -20,7 +20,7 @@ This template combines the following services:
 ![Architecture](./wordpress-ha.png?raw=true "Architecture")
 
 ## Installation Guide
-1. This templates depends on our [`vpc-*azs.yaml`](../vpc/) template. WordPress will use 2 AZs only. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.yaml">Launch Stack</a>
+1. This templates depends on our [`vpc-*azs.yaml`](../vpc/) template. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/vpc/vpc-2azs.yaml">Launch Stack</a>
 1. Create an ACM certificate for your domain name within the region you want to launch your stack in. Copy the ARN of the certificate. This is for the ELB.
 1. Create another ACM certificate for your domain in region `us-east-1`. Copy the ARN of the certificate. This is for CloudFront (note: [CloudFront only supports ACM certificates in us-east-1](https://docs.aws.amazon.com/acm/latest/userguide/acm-services.html))
 1. <a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=wordpress-ha&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/wordpress/wordpress-ha.yaml">Launch Stack</a>
@@ -34,18 +34,19 @@ This template combines the following services:
 1. Grab the `URL` of the WordPress environment from the **Outputs** tab of your stack.
 
 ## Dependencies
-* `vpc/vpc-*azs.yaml` (**required, WordPress will use 2 AZs only**)
+* `vpc/vpc-*azs.yaml` (**required**)
 * `vpc/vpc-ssh-bastion.yaml` (recommended)
 * `security/auth-proxy-*.yaml`
 * `operations/alert.yaml` (recommended)
 
 ## Limitations
+* WordPress will only run in two Availability Zones, even if your VPC stack has more.
 * PHP files are cached for 300 seconds on the web servers.
 * Static files `wp-includes` and `wp-content` are cached for 15 minutes on the CDN.
 * Pre-defined auto-scaling might not be able to cover your requirements and needs load and performance testing.
 
-## Support
-We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
+## Premium Support
+We offer Premium Support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
 
 ## Feedback
 We are looking forward to your feedback. Mail to [hello@widdix.de](mailto:hello@widdix.de).

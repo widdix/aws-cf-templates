@@ -22,8 +22,11 @@ This template describes an EC2 instance with auto-recovery. If the instance fail
 * `vpc/vpc-ssh-bastion.yaml` (recommended)
 * `operations/alert.yaml` (recommended)
 
-## Support
-We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
+### Limitations
+* The EC2 instance only runs in a single AZ. In case of an AZ outage the instance will be unavailable.
+
+## Premium Support
+We offer Premium Support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
 
 ## Feedback
 We are looking forward to your feedback. Mail to [hello@widdix.de](mailto:hello@widdix.de).

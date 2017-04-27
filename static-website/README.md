@@ -15,8 +15,8 @@ This template describes the infrastructure for hosting a static website over HTT
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
-## Support
-We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
+## Premium Support
+We offer Premium Support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
 
 ## Feedback
 We are looking forward to your feedback. Mail to [hello@widdix.de](mailto:hello@widdix.de).

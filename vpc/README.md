@@ -66,6 +66,9 @@ This template describes a NAT Gateway that forwards HTTP, HTTPS and NTP traffic 
 ### Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
 
+## Limitations
+* The NAT Gateway is a single point of failure because it runs only in one Subnet (and therefore in one Availability Zone): https://github.com/widdix/aws-cf-templates/issues/65
+
 ## NAT instance
 This template describes a **highly available** Network Address Translation (NAT) instance that forwards HTTP, HTTPS and NTP traffic from private subnets to the Internet.
 
@@ -85,6 +88,9 @@ This template describes a **highly available** Network Address Translation (NAT)
 * `vpc/vpc-*azs.yaml` (**required**)
 * `vpc/vpc-ssh-bastion.yaml` (recommended)
 * `operations/alert.yaml` (recommended)
+
+### Limitations
+* Only one EC2 instance is managed by the ASG. In case of an outage the instance will be replaced within 5 minutes.
 
 ## SSH bastion host/instance
 This template describes a **highly available** SSH bastion host/instance. SSH Port 22 is open to the world. You can enable the default ec2-user access protected by the referenced EC2 KeyPair. You can also enable personalized SSH access by using the IAM users and their configured public keys. Use `ssh -A user@ip` to enable forwarding of the authentication agent connection when connection to the bastion host.
@@ -106,6 +112,9 @@ This template describes a **highly available** SSH bastion host/instance. SSH Po
 * `vpc/vpc-*azs.yaml` (**required**)
 * `operations/alert.yaml` (recommended)
 
+### Limitations
+* Only one EC2 instance is managed by the ASG. In case of an outage the instance will be replaced within 5 minutes.
+
 ## VPC Endpoint to S3
 This template describes a VPC endpoint to securely route traffic within a VPC for private instances to access S3 without the need of a NAT Gateway, NAT instance, or public internet. Refer to [AWS VPC endpoint](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-endpoints.html) documentation if this is necessary for your stack. By default, access to all S3 actions and buckets is allowed, but may be constrained with a policy document.
 
@@ -120,8 +129,8 @@ This template describes a VPC endpoint to securely route traffic within a VPC fo
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 ![Architecture](./vpc-endpoint-s3.png?raw=true "Architecture")
 
-## Support
-We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
+## Premium Support
+We offer Premium Support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
 
 ## Feedback
 We are looking forward to your feedback. Mail to [hello@widdix.de](mailto:hello@widdix.de).

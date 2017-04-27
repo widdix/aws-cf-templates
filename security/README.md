@@ -61,6 +61,9 @@ This template describes a **highly available** authentication proxy that forward
 * `vpc/vpc-ssh-bastion.yaml` (recommended)
 * `operations/alert.yaml` (recommended)
 
+### Limitations
+* By default, only one EC2 instance is managed by the ASG. In case of an outage the instance will be replaced within 5 minutes. You can change this in the ASG configuration!
+
 ## CloudTrail across all regions
 This template enables CloudTrail to records AWS API calls across all regions in your AWS account. API calls are archived in S3 and also pushed CloudWatch Logs. If new API calls are available in S3 a SNS topic is notified.
 
@@ -170,8 +173,8 @@ If you want to use an external S3 bucket, the bucket needs to have the following
 
 Replace `$ExternalTrailBucket` with the name of your bucket, and add a row for every account you want to write from `$AccountId[*]`.
 
-## Support
-We offer support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
+## Premium Support
+We offer Premium Support for our CloudFormation templates: setting up environments based on our templates, adopting templates to specific use cases, resolving issues in production environments. [Hire us!](https://widdix.net/)
 
 ## Feedback
 We are looking forward to your feedback. Mail to [hello@widdix.de](mailto:hello@widdix.de).
