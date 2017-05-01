@@ -1,6 +1,6 @@
 Your source for free [AWS CloudFormation](https://aws.amazon.com/cloudformation/) templates. Bootstrap high quality AWS infrastructure within minutes.
 
-# Why Free AWS CloudFormation Templates 
+# Why Free Templates for AWS CloudFormation
 
 * Speed up development and migration: reuse our templates to create complex environments for common use cases with ease.
 * Rely on high quality infrastructure templates: peer-reviewed by an expert (certified AWS solutions architect Professional) and verified with automated tests.
