@@ -1,0 +1,65 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'VPC: Adding FlowLog to a VPC'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+Parameters:
+  ParentVPCStack:
+    Description: Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.
+    Type: String
+Resources:
+  IAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+       AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+              - 'vpc-flow-logs.amazonaws.com'
+            Action: 'sts:AssumeRole'
+       Policies:
+       - PolicyName: 'flowlogs-policy'
+         PolicyDocument:
+           Version: '2012-10-17'
+           Statement:
+           - Effect: Allow
+             Action:
+             - 'logs:CreateLogGroup'
+             - 'logs:CreateLogStream'
+             - 'logs:PutLogEvents'
+             - 'logs:DescribeLogGroups'
+             - 'logs:DescribeLogStreams'
+             Resource: '*'
+       RoleName: 'flowlogs-role'
+  FlowLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+       LogGroupName : 'FlowLogsGroup'
+  FlowLog:
+    Type: 'AWS::EC2::FlowLog'
+    Properties:
+       DeliverLogsPermissionArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/flowlogs-role'
+       LogGroupName : 'FlowLogsGroup'
+       ResourceId :
+          'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+       ResourceType : 'VPC'
+       TrafficType : 'ALL'
+Outputs:
+  TemplateID:
+    Description: 'template id.'
+    Value: 'vpc/vpc-flowlog'
+  RoleCreated:
+    Description: 'Role created by the template.'
+    Value: !Ref IAMRole
+  Endpoint:
+    Description: 'FlowLog id.'
+    Value: !Ref FlowLog
+    Export:
+      Name: !Sub '${AWS::StackName}-FlowLog'
