@@ -400,10 +400,18 @@ Resources:
         - ','
         - 'Fn::ImportValue':
             !Sub '${ParentVPCStack}-SubnetsPublic'
-  DefaultTargetGroup: # this is used as the fall-back target group. Services use their own ListenerRules to accept traffic based on path prefixes.
+  DefaultTargetGroup: # this is used as the fall-back target group and is used to health checking the ECS agent. Services use their own ListenerRules to accept traffic based on path prefixes.
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
-      Port: 80
+      HealthCheckIntervalSeconds: 15
+      HealthCheckPort: 51678
+      HealthCheckPath: '/'
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 2
+      Matcher:
+        HttpCode: '200'
+      Port: 80 # port 80 is a reserved port that is never used by the agent, so we are safe to use it here
       Protocol: HTTP
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
@@ -787,6 +795,10 @@ Resources:
       MinSize: !Ref MinSize
       MaxSize: !Ref MaxSize
       DesiredCapacity: !Ref DesiredCapacity
+      HealthCheckGracePeriod: 300
+      HealthCheckType: ELB
+      TargetGroupARNs:
+      - !Ref DefaultTargetGroup
       VPCZoneIdentifier: !Split
       - ','
       - 'Fn::ImportValue':
