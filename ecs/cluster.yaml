@@ -255,6 +255,27 @@ Resources:
             - 'sqs:DeleteMessage'
             - 'sqs:ReceiveMessage'
             Resource: !GetAtt 'AutoScalingGroupLifecycleHookQueue.Arn'
+  IAMPolicySSHAccess:
+    Type: 'AWS::IAM::Policy'
+    Condition: HasIAMUserSSHAccess
+    Properties:
+      Roles:
+      - !Ref Role
+      PolicyName: 'iam-ssh'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - 'iam:ListUsers'
+          Resource:
+          - '*'
+        - Effect: Allow
+          Action:
+          - 'iam:ListSSHPublicKeys'
+          - 'iam:GetSSHPublicKey'
+          Resource:
+          - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
   ALBSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -439,6 +460,9 @@ Resources:
                 files:
                 - '/etc/newrelic/nrsysmond.cfg'
         ssh-access:
+          packages:
+            yum:
+              'aws-cli': []
           files:
             '/opt/authorized_keys_command.sh':
               content: !Sub |
@@ -455,7 +479,7 @@ Resources:
               group: root
             '/opt/import_users.sh':
               content: !Sub |
-                #!/bin/bash
+                #!/bin/bash -e
                 aws iam list-users --query "Users[].[UserName]" --output text | while read User; do
                   if id -u "$User" >/dev/null 2>&1; then
                     echo "$User exists"

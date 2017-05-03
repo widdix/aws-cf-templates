@@ -282,7 +282,7 @@ Resources:
               group: root
             '/opt/import_users.sh':
               content: |
-                #!/bin/bash
+                #!/bin/bash -e
                 aws iam list-users --query "Users[].[UserName]" --output text | while read User; do
                   SaveUserName="$User"
                   SaveUserName=${SaveUserName//"+"/".plus."}
