@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'VPC: Endpoint to S3 for private subnets, a cloudonaut.io template'
+Description: 'VPC: Endpoint to S3 for private subnets, a cloudonaut.io template, contributed by https://github.com/btsuhako'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:

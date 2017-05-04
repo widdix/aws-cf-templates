@@ -1,0 +1,80 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'VPC: Publish flow logs to CloudWatch Logs, a cloudonaut.io template, contributed by https://github.com/statik'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+    - Label:
+        default: 'Flow Logs Parameters'
+      Parameters:
+      - RetentionInDays
+      - TrafficType
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+  RetentionInDays:
+    Description: 'Specifies the number of days you want to retain log events.'
+    Type: Number
+    Default: 14
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  TrafficType:
+    Description: 'The type of traffic to log.'
+    Type: String
+    Default: REJECT
+    AllowedValues:
+    - ACCEPT
+    - REJECT
+    - ALL
+Resources:
+  Role:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - 'vpc-flow-logs.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      Policies:
+      - PolicyName: 'flowlogs-policy'
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'logs:CreateLogGroup'
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+            - 'logs:DescribeLogGroups'
+            - 'logs:DescribeLogStreams'
+            Resource: '*'
+  LogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      RetentionInDays: !Ref RetentionInDays
+  FlowLog:
+    Type: 'AWS::EC2::FlowLog'
+    Properties:
+      DeliverLogsPermissionArn: !GetAtt 'Role.Arn'
+      LogGroupName: !Ref LogGroup
+      ResourceId :
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      ResourceType: 'VPC'
+      TrafficType: !Ref TrafficType
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'vpc/vpc-flowlog'
+  LogGroupName:
+    Description: 'The name of the CloudWatch Logs log group where Amazon EC2 publishes your flow logs.'
+    Value: !Ref LogGroup
+  LogGroupARN:
+    Description: 'The ARN of the CloudWatch Logs log group where Amazon EC2 publishes your flow logs.'
+    Value: !GetAtt 'LogGroup.Arn'

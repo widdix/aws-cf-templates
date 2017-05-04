@@ -21,7 +21,7 @@ public class TestVPCNatGateway extends ACloudFormationTest {
                         "vpc/vpc-nat-gateway.yaml",
                         new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName)
                 );
-                // TODO how can we check if this stack works?  launch an EC2 instance into a private subnet and open google from the instance?
+                // TODO how can we check if this stack works? launch an EC2 instance into a private subnet and open google from the instance?
             } finally {
                 this.deleteStack(natStackName);
             }
