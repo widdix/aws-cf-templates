@@ -145,7 +145,7 @@ Parameters:
   JenkinsVersion:
     Description: 'Jenkins version number'
     Type: String
-    Default: '2.46.1'
+    Default: '2.46.2'
     ConstraintDescription: 'x.y.z'
     AllowedPattern: '[0-9]+\.[0-9]+\.[0-9]+'
   NewRelicLicenseKey:
@@ -754,7 +754,7 @@ Resources:
                 Aws.config.update(region: $conf['region'])
                 $log.info 'poller started'
                 def takeAgentTemporarilyOffline(agent)
-                  if system("java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s http://localhost:8080 -noKeyAuth offline-node #{agent} -m 'scale down' --username admin --password '#{$conf['masterAdminPassword']}'")
+                  if system("java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s http://localhost:8080 -auth 'admin:#{$conf['masterAdminPassword']}' offline-node #{agent} -m 'scale down'")
                     $log.info "agent #{agent} is marked as offline"
                     return true
                   else
@@ -763,7 +763,7 @@ Resources:
                   end
                 end
                 def deleteAgent(agent)
-                  if system("java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s http://localhost:8080 -noKeyAuth delete-node #{agent} --username admin --password '#{$conf['masterAdminPassword']}'")
+                  if system("java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s http://localhost:8080 -auth 'admin:#{$conf['masterAdminPassword']}' delete-node #{agent}")
                     $log.info "agent #{agent} is deleted"
                     return true
                   else
@@ -923,7 +923,7 @@ Resources:
               command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'f_install_plugins':
-              command: 'while read -r plugin; do java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -noKeyAuth install-plugin "$plugin" --username admin --password "$(cat /var/lib/jenkins/secrets/initialAdminPassword)"; done < /root/plugins.txt'
+              command: 'while read -r plugin; do java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" install-plugin "$plugin"; done < /root/plugins.txt'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'g_restart_jenkins':
               command: 'service jenkins restart'
@@ -932,7 +932,7 @@ Resources:
               command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'i_set_admin_password':
-              command: !Sub 'echo ''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", "${MasterAdminPassword}")'' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -noKeyAuth groovy = --username admin --password "$(cat /var/lib/jenkins/secrets/initialAdminPassword)"'
+              command: !Sub 'echo ''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", "${MasterAdminPassword}")'' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" groovy ='
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'j_stop_jenkins':
               command: 'service jenkins stop'
@@ -1370,7 +1370,7 @@ Resources:
                 #!/bin/bash -ex
                 masterInstanceId=$(aws --region ${AWS::Region} autoscaling describe-auto-scaling-groups --auto-scaling-group-names ${MasterASG} --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)
                 masterIP=$(aws --region ${AWS::Region} ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
-                java -jar jenkins-cli.jar -s http://$masterIP:8080 -noKeyAuth get-node $(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id) --username admin --password '${MasterAdminPassword}'
+                java -jar jenkins-cli.jar -s http://$masterIP:8080 -auth 'admin:${MasterAdminPassword}' get-node $(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
               mode: '000500'
               owner: root
               group: root
@@ -1379,7 +1379,7 @@ Resources:
                 #!/bin/bash -ex
                 masterInstanceId=$(aws --region ${AWS::Region} autoscaling describe-auto-scaling-groups --auto-scaling-group-names ${MasterASG} --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)
                 masterIP=$(aws --region ${AWS::Region} ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
-                cat /root/agent.xml | java -jar jenkins-cli.jar -s http://$masterIP:8080 -noKeyAuth create-node $(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id) --username admin --password '${MasterAdminPassword}'
+                cat /root/agent.xml | java -jar jenkins-cli.jar -s http://$masterIP:8080 -auth 'admin:${MasterAdminPassword}' create-node $(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
               mode: '000500'
               owner: root
               group: root
