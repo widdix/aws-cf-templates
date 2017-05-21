@@ -366,27 +366,22 @@ Resources:
                     }
                 - ClassB:
                     'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
-              mode: '000400'
+              mode: '000644'
               owner: root
-              group: root 
+              group: root
             '/etc/awslogs/awslogs.conf':
               content: !Sub |
                 [general]
                 state_file = /var/lib/awslogs/agent-state
-                [/var/log/messages]
+                [/var/log/auth.log]
                 datetime_format = %b %d %H:%M:%S
-                file = /var/log/messages
-                log_stream_name = {instance_id}/var/log/messages
+                file = /var/log/auth.log
+                log_stream_name = {instance_id}/var/log/auth.log
                 log_group_name = ${Logs}
-                [/var/log/secure]
+                [/var/log/syslog]
                 datetime_format = %b %d %H:%M:%S
-                file = /var/log/secure
-                log_stream_name = {instance_id}/var/log/secure
-                log_group_name = ${Logs}
-                [/var/log/cron]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cron
-                log_stream_name = {instance_id}/var/log/cron
+                file = /var/log/syslog
+                log_stream_name = {instance_id}/var/log/syslog
                 log_group_name = ${Logs}
                 [/var/log/cloud-init.log]
                 datetime_format = %b %d %H:%M:%S
@@ -411,10 +406,6 @@ Resources:
                 [/var/log/cloud-init-output.log]
                 file = /var/log/cloud-init-output.log
                 log_stream_name = {instance_id}/var/log/cloud-init-output.log
-                log_group_name = ${Logs}
-                [/var/log/dmesg]
-                file = /var/log/dmesg
-                log_stream_name = {instance_id}/var/log/dmesg
                 log_group_name = ${Logs}
                 [/var/log/openvpnas.log]
                 file = /var/log/openvpnas.log
@@ -450,8 +441,27 @@ Resources:
               cwd: '/tmp'
             'd_change_openvpn_password':
               command: !Sub 'echo "openvpn:${OpenVPNAdminPassword}" | chpasswd'
+            'e_update_openvpn_config':
+              command: !Sub 
+                - |
+                    ./sacli -k host.name -v "${EIP}" ConfigPut
+                    ./sacli -k admin_ui.https.port -v ${OpenVPNHttpsPort} ConfigPut
+                    ./sacli -k cs.https.port -v ${OpenVPNHttpsPort} ConfigPut
+                    ./sacli -k vpn.daemon.0.listen.port -v ${OpenVPNDaemonTcpPort} ConfigPut
+                    ./sacli -k vpn.server.daemon.tcp.port -v ${OpenVPNDaemonTcpPort} ConfigPut
+                    ./sacli -k vpn.server.daemon.udp.port -v ${OpenVPNDaemonUdpPort} ConfigPut
+                    ./sacli -k vpn.server.routing.private_network.0 -v "10.${ClassB}.0.0/16" ConfigPut
+                    service openvpnas restart
+                - ClassB:
+                    'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'                  
+              cwd: '/usr/local/openvpn_as/scripts'
           services:
             sysvinit:
+              openvpnas:
+                ensureRunning: true
+                files:
+                - '/usr/local/openvpn/etc/as.conf'
+                - '/usr/local/openvpn/etc/config.json'
               awslogs:
                 enabled: true
                 ensureRunning: true
