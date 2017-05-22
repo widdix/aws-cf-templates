@@ -16,8 +16,10 @@ Resources:
   Endpoint:
     Type: 'AWS::EC2::VPCEndpoint'
     Properties:
-      RouteTableIds:
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablePrivate'
+      RouteTableIds: !Split
+      - ','
+      - 'Fn::ImportValue':
+          !Sub '${ParentVPCStack}-RouteTablesPrivate'
       ServiceName: !Sub 'com.amazonaws.${AWS::Region}.dynamodb'
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
@@ -30,3 +32,5 @@ Outputs:
     Value: !Ref Endpoint
     Export:
       Name: !Sub '${AWS::StackName}-EndpointS3'
+
+
