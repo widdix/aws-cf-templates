@@ -107,20 +107,48 @@ Resources:
         Value: 'C private'
       - Key: Reach
         Value: private
-  RouteTablePublic:
+  RouteTablePublic: # should be RouteTableAPublic, but logical id was not changed for backward compatibility
     Type: 'AWS::EC2::RouteTable'
     Properties:
       VpcId: !Ref VPC
       Tags:
       - Key: Name
         Value: Public
-  RouteTablePrivate:
+  RouteTablePrivate: # should be RouteTableAPrivate, but logical id was not changed for backward compatibility
     Type: 'AWS::EC2::RouteTable'
     Properties:
       VpcId: !Ref VPC
       Tags:
       - Key: Name
         Value: Private
+  RouteTableBPublic:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: 'B Public'
+  RouteTableBPrivate:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: 'B Private'
+  RouteTableCPublic:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: 'C Public'
+  RouteTableCPrivate:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: 'C Private'
   RouteTableAssociationAPublic:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
@@ -135,27 +163,41 @@ Resources:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
       SubnetId: !Ref SubnetBPublic
-      RouteTableId: !Ref RouteTablePublic
+      RouteTableId: !Ref RouteTableBPublic
   RouteTableAssociationBPrivate:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
       SubnetId: !Ref SubnetBPrivate
-      RouteTableId: !Ref RouteTablePrivate
+      RouteTableId: !Ref RouteTableBPrivate
   RouteTableAssociationCPublic:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
       SubnetId: !Ref SubnetCPublic
-      RouteTableId: !Ref RouteTablePublic
+      RouteTableId: !Ref RouteTableCPublic
   RouteTableAssociationCPrivate:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
       SubnetId: !Ref SubnetCPrivate
-      RouteTableId: !Ref RouteTablePrivate
-  RouteTablePublicInternetRoute:
+      RouteTableId: !Ref RouteTableCPrivate
+  RouteTablePublicInternetRoute: # should be RouteTablePublicAInternetRoute, but logical id was not changed for backward compatibility
     Type: 'AWS::EC2::Route'
     DependsOn: VPCGatewayAttachment
     Properties:
       RouteTableId: !Ref RouteTablePublic
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InternetGateway
+  RouteTablePublicBInternetRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTableBPublic
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InternetGateway
+  RouteTablePublicCInternetRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTableCPublic
       DestinationCidrBlock: '0.0.0.0/0'
       GatewayId: !Ref InternetGateway
   NetworkAclPublic:
@@ -282,43 +324,83 @@ Outputs:
     Value: !Join [',', [!Ref SubnetAPrivate, !Ref SubnetBPrivate, !Ref SubnetCPrivate]]
     Export:
       Name: !Sub '${AWS::StackName}-SubnetsPrivate'
-  RouteTablePrivate:
-    Description: 'Route table private.'
+  RouteTablePrivate: # deprecated in v4, will be removed in v5
+    Description: 'Route table private (deprecated in v4, will be removed in v5).'
     Value: !Ref RouteTablePrivate
     Export:
       Name: !Sub '${AWS::StackName}-RouteTablePrivate'
-  RouteTablePublic:
-    Description: 'Route table public.'
+  RouteTablePublic: # deprecated in v4, will be removed in v5
+    Description: 'Route table public (deprecated in v4, will be removed in v5).'
     Value: !Ref RouteTablePublic
     Export:
       Name: !Sub '${AWS::StackName}-RouteTablePublic'
+  RouteTablesPrivate:
+    Description: 'Route tables private.'
+    Value: !Join [',', [!Ref RouteTablePrivate, !Ref RouteTableBPrivate, !Ref RouteTableCPrivate]]
+    Export:
+      Name: !Sub '${AWS::StackName}-RouteTablesPrivate'
+  RouteTablesPublic:
+    Description: 'Route tables public.'
+    Value: !Join [',', [!Ref RouteTablePublic, !Ref RouteTableBPublic, !Ref RouteTableCPublic]]
+    Export:
+      Name: !Sub '${AWS::StackName}-RouteTablesPublic'
   SubnetAPublic:
     Description: 'Subnet A public.'
     Value: !Ref SubnetAPublic
     Export:
       Name: !Sub '${AWS::StackName}-SubnetAPublic'
+  RouteTableAPublic:
+    Description: 'Route table A public.'
+    Value: !Ref RouteTablePublic
+    Export:
+      Name: !Sub '${AWS::StackName}-RouteTableAPublic'
   SubnetAPrivate:
     Description: 'Subnet A private.'
     Value: !Ref SubnetAPrivate
     Export:
       Name: !Sub '${AWS::StackName}-SubnetAPrivate'
+  RouteTableAPrivate:
+    Description: 'Route table A private.'
+    Value: !Ref RouteTablePrivate
+    Export:
+      Name: !Sub '${AWS::StackName}-RouteTableAPrivate'
   SubnetBPublic:
     Description: 'Subnet B public.'
     Value: !Ref SubnetBPublic
     Export:
       Name: !Sub '${AWS::StackName}-SubnetBPublic'
+  RouteTableBPublic:
+    Description: 'Route table B public.'
+    Value: !Ref RouteTableBPublic
+    Export:
+      Name: !Sub '${AWS::StackName}-RouteTableBPublic'
   SubnetBPrivate:
     Description: 'Subnet B private.'
     Value: !Ref SubnetBPrivate
     Export:
       Name: !Sub '${AWS::StackName}-SubnetBPrivate'
+  RouteTableBPrivate:
+    Description: 'Route table B private.'
+    Value: !Ref RouteTableBPrivate
+    Export:
+      Name: !Sub '${AWS::StackName}-RouteTableBPrivate'
   SubnetCPublic:
     Description: 'Subnet C public.'
     Value: !Ref SubnetCPublic
     Export:
       Name: !Sub '${AWS::StackName}-SubnetCPublic'
+  RouteTableCPublic:
+    Description: 'Route table C public.'
+    Value: !Ref RouteTableCPublic
+    Export:
+      Name: !Sub '${AWS::StackName}-RouteTableCPublic'
   SubnetCPrivate:
     Description: 'Subnet C private.'
     Value: !Ref SubnetCPrivate
     Export:
       Name: !Sub '${AWS::StackName}-SubnetCPrivate'
+  RouteTableCPrivate:
+    Description: 'Route table C private.'
+    Value: !Ref RouteTableCPrivate
+    Export:
+      Name: !Sub '${AWS::StackName}-RouteTableCPrivate'
