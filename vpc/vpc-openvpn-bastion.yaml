@@ -433,15 +433,14 @@ Resources:
           commands:
             'a_fake_etc_issue_as_amz_ami':
               command: 'echo "Amazon Linux AMI" > /etc/issue'
-            'b_download_awslogs_agent_setup':
-              command: 'curl https://s3.amazonaws.com//aws-cloudwatch/downloads/latest/awslogs-agent-setup.py -O'
-              cwd: '/tmp'
-            'c_run_awslogs_agent_setup':
-              command: !Sub 'python ./awslogs-agent-setup.py --region ${AWS::Region} --non-interactive --configfile=/etc/awslogs/awslogs.conf'
-              cwd: '/tmp'
-            'd_change_openvpn_password':
+            'b_install_awslogs_agent':
+              command: !Sub |
+                mkdir -p /var/lib/awslogs
+                curl https://s3.amazonaws.com//aws-cloudwatch/downloads/latest/awslogs-agent-setup.py -O
+                python ./awslogs-agent-setup.py --region ${AWS::Region} --non-interactive --configfile=/etc/awslogs/awslogs.conf
+            'c_change_openvpn_password':
               command: !Sub 'echo "openvpn:${OpenVPNAdminPassword}" | chpasswd'
-            'e_update_openvpn_config':
+            'd_update_openvpn_config':
               command: !Sub 
                 - |
                     ./sacli -k host.name -v "${EIP}" ConfigPut
