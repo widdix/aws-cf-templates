@@ -155,10 +155,25 @@ Resources:
       Actions:
       - Type: forward
         TargetGroupArn: !Ref LoadBalancerTargetGroup
-      Conditions:
-      - Field: path-pattern
-        Values:
-        - !Sub '/${LoadBalancerPath}/*'
+      Conditions: !If
+      - HasLoadBalancerPath
+      - !If
+        - HasLoadBalancerHostPattern
+        - - Field: host-header
+            Values:
+            - !Ref LoadBalancerHostPattern
+          - Field: path-pattern
+            Values:
+            - !Sub '/${LoadBalancerPath}/*'
+        - - Field: path-pattern
+            Values:
+            - !Sub '/${LoadBalancerPath}/*'
+      - !If
+        - HasLoadBalancerHostPattern
+        - - Field: host-header
+            Values:
+            - !Ref LoadBalancerHostPattern
+        - [] # neither LoadBalancerHostPattern nor LoadBalancerPath specified
       ListenerArn:
         'Fn::ImportValue': !Sub '${ParentClusterStack}-HttpsListener'
       Priority: !Ref LoadBalancerPriority
