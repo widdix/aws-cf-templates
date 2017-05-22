@@ -86,7 +86,7 @@ Parameters:
   JenkinsVersion:
     Description: 'Jenkins version number'
     Type: String
-    Default: '2.46.1'
+    Default: '2.46.2'
     ConstraintDescription: 'x.y.z'
     AllowedPattern: '[0-9]+\.[0-9]+\.[0-9]+'
   NewRelicLicenseKey:
@@ -652,7 +652,7 @@ Resources:
               command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'f_install_plugins':
-              command: 'while read -r plugin; do java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -noKeyAuth install-plugin "$plugin" --username admin --password "$(cat /var/lib/jenkins/secrets/initialAdminPassword)"; done < /root/plugins.txt'
+              command: 'while read -r plugin; do java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" install-plugin "$plugin"; done < /root/plugins.txt'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'g_restart_jenkins':
               command: 'service jenkins restart'
@@ -661,7 +661,7 @@ Resources:
               command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'i_set_admin_password':
-              command: !Sub 'echo ''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", "${MasterAdminPassword}")'' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -noKeyAuth groovy = --username admin --password "$(cat /var/lib/jenkins/secrets/initialAdminPassword)"'
+              command: !Sub 'echo ''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", "${MasterAdminPassword}")'' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" groovy ='
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'j_stop_jenkins':
               command: 'service jenkins stop'

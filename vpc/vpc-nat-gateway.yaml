@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'VPC: NAT Gateway for private subnets, a cloudonaut.io template'
+Description: 'VPC: NAT Gateway for private subnet, a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -11,20 +11,20 @@ Metadata:
     - Label:
         default: 'NatGateway Parameters'
       Parameters:
-      - SubnetName
+      - SubnetZone
 Parameters:
   ParentVPCStack:
     Description: Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.
     Type: String
-  SubnetName:
-    Description: 'Subnet name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+  SubnetZone:
+    Description: 'Subnet zone.'
     Type: String
-    Default: SubnetAPublic
+    Default: A
     AllowedValues:
-    - SubnetAPublic
-    - SubnetBPublic
-    - SubnetCPublic
-    - SubnetDPublic
+    - A
+    - B
+    - C
+    - D
 Resources:
   EIP:
     Type: 'AWS::EC2::EIP'
@@ -35,12 +35,12 @@ Resources:
     Properties:
       AllocationId: !GetAtt 'EIP.AllocationId'
       SubnetId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-${SubnetName}'
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-Subnet${SubnetZone}Public'
   Route:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablePrivate'
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTable${SubnetZone}Private'
       DestinationCidrBlock: '0.0.0.0/0'
       NatGatewayId: !Ref NatGateway
 Outputs:
