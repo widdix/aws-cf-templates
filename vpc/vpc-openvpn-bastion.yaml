@@ -1,0 +1,564 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'VPC: highly available OpenVPN bastion host/instance'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+      - ParentAlertStack
+    - Label:
+        default: 'OpenVPN Parameters'
+      Parameters:
+        - OpenVPNAdminPassword
+        - OpenVPNHttpsPort
+        - OpenVPNDaemonTcpPort
+        - OpenVPNDaemonUdpPort
+    - Label:
+        default: 'EC2 Parameters'
+      Parameters:
+      - InstanceType
+      - KeyName
+      - IAMUserSSHAccess
+      - LogsRetentionInDays
+      - NewRelicLicenseKey
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  OpenVPNAdminPassword:
+    Description: 'OpenVPN admin password. (Admin username is "openvpn")'
+    Type: String
+    Default: openvpn
+  OpenVPNHttpsPort:
+    Description: 'OpenVPN HTTPS port.'
+    Type: Number
+    Default: 943
+  OpenVPNDaemonTcpPort:
+    Description: 'OpenVPN Daemon TCP port.'
+    Type: Number
+    Default: 443
+  OpenVPNDaemonUdpPort:
+    Description: 'OpenVPN Daemon UDP port.'
+    Type: Number
+    Default: 1194
+  KeyName:
+    Description: 'Optional key pair of the ec2-user to establish a SSH connection to the OpenVPN bastion host/instance.'
+    Type: String
+    Default: ''
+  IAMUserSSHAccess:
+    Description: 'Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).'
+    Type: String
+    Default: false
+    AllowedValues:
+    - true
+    - false
+  InstanceType:
+    Description: 'Instance type of the OpenVPN bastion host/instance.'
+    Type: String
+    Default: 't2.micro'
+  LogsRetentionInDays:
+    Description: 'Specifies the number of days you want to retain log events.'
+    Type: Number
+    Default: 14
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  NewRelicLicenseKey:
+    Description: 'Optional New Relic License Key will install the New Relic Servers for Linux agent.'
+    Type: String
+    Default: ''
+    NoEcho: true
+Mappings:
+  RegionMap:  
+    # Asia Pacific (Mumbai)
+    ap-south-1:
+      BYOLAMI: ami-066f1b69
+    # EU (London)
+    eu-west-2:
+      BYOLAMI: ami-86c3c9e2   
+    # EU (Ireland)
+    eu-west-1:
+      BYOLAMI: ami-07783674   
+    # Asia Pacific (Seoul)
+    ap-northeast-2:
+      BYOLAMI: ami-b6e733d8
+    # Asia Pacific (Tokyo)
+    ap-northeast-1:
+      BYOLAMI: ami-2f66c04e   
+    # South America (São Paulo)
+    sa-east-1:
+      BYOLAMI: ami-283fa244    
+    # Canada (Central)
+    ca-central-1:
+      BYOLAMI: ami-24ad1f40    
+    # Asia Pacific (Singapore)
+    ap-southeast-1:
+      BYOLAMI: ami-d72a8cb4   
+    # Asia Pacific (Sydney)
+    ap-southeast-2:
+      BYOLAMI: ami-5e3b063d    
+    # EU (Frankfurt)
+    eu-central-1:
+      BYOLAMI: ami-3f788150    
+    # US East (N. Virginia)
+    us-east-1:
+      BYOLAMI: ami-44aaf953    
+    # US East (Ohio)
+    us-east-2:
+      BYOLAMI: ami-ae3e64cb    
+    # US West (N. California)
+    us-west-1:
+      BYOLAMI: ami-fa105b9a    
+    # US West (Oregon)
+    us-west-2:
+      BYOLAMI: ami-e8d67288
+Conditions:
+  HasKeyName: !Not [!Equals [!Ref KeyName, '']]
+  HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
+  HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+Resources:
+  EIP:
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      Domain: vpc
+  Logs:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      RetentionInDays: !Ref LogsRetentionInDays
+  SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Sub
+      - 'OpenVPN bastion host/instance 10.${ClassB}.0.0/16'
+      - ClassB:
+          'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: '0.0.0.0/0'
+      - IpProtocol: tcp
+        FromPort: !Ref OpenVPNDaemonTcpPort
+        ToPort: !Ref OpenVPNDaemonTcpPort
+        CidrIp: '0.0.0.0/0'
+      - IpProtocol: udp
+        FromPort: !Ref OpenVPNDaemonUdpPort
+        ToPort: !Ref OpenVPNDaemonUdpPort
+        CidrIp: '0.0.0.0/0'
+      - IpProtocol: tcp
+        FromPort: !Ref OpenVPNHttpsPort
+        ToPort: !Ref OpenVPNHttpsPort
+        CidrIp: '0.0.0.0/0'
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+  InstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: '/'
+      Roles:
+      - !Ref IAMRole
+  IAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - 'ec2.amazonaws.com'
+          Action:
+          - 'sts:AssumeRole'
+      Path: '/'
+      Policies:
+      - PolicyName: 'ec2'
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'ec2:AssociateAddress'
+            Resource:
+            - '*'
+      - PolicyName: logs
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'logs:CreateLogGroup'
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+            - 'logs:DescribeLogStreams'
+            Resource:
+            - 'arn:aws:logs:*:*:*'
+  IAMPolicySSHAccess:
+    Type: 'AWS::IAM::Policy'
+    Condition: HasIAMUserSSHAccess
+    Properties:
+      Roles:
+      - !Ref IAMRole
+      PolicyName: iam
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - 'iam:ListUsers'
+          Resource:
+          - '*'
+        - Effect: Allow
+          Action:
+          - 'iam:ListSSHPublicKeys'
+          - 'iam:GetSSHPublicKey'
+          Resource:
+          - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
+  LaunchConfiguration:
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+    Metadata:
+      'AWS::CloudFormation::Init':
+        configSets:
+          default:
+            !If
+            - HasNewRelic
+            - !If [HasIAMUserSSHAccess, [config, ssh-access, newrelic], [config, newrelic]]
+            - !If [HasIAMUserSSHAccess, [config, ssh-access], [config]]
+        newrelic:
+          packages:
+            rpm:
+              newrelic-sysmond: 'https://download.newrelic.com/pub/newrelic/el5/x86_64/newrelic-sysmond-2.3.0.132-1.x86_64.rpm'
+          files:
+            '/etc/newrelic/nrsysmond.cfg':
+              content: !Sub |
+                license_key=${NewRelicLicenseKey}
+                loglevel=info
+                logfile=/var/log/newrelic/nrsysmond.log
+                labels=StackName:${AWS::StackName};AccountId:${AWS::AccountId};Region:${AWS::Region}
+              mode: '000640'
+              owner: root
+              group: newrelic
+          services:
+            sysvinit:
+              newrelic-sysmond:
+                enabled: true
+                ensureRunning: true
+                files:
+                - '/etc/newrelic/nrsysmond.cfg'
+        ssh-access:
+          files:
+            '/opt/authorized_keys_command.sh':
+              content: |
+                #!/bin/bash -e
+                if [ -z "$1" ]; then
+                  exit 1
+                fi
+                SaveUserName="$1"
+                SaveUserName=${SaveUserName//"+"/".plus."}
+                SaveUserName=${SaveUserName//"="/".equal."}
+                SaveUserName=${SaveUserName//","/".comma."}
+                SaveUserName=${SaveUserName//"@"/".at."}
+                aws iam list-ssh-public-keys --user-name "$SaveUserName" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read KeyId; do
+                  aws iam get-ssh-public-key --user-name "$SaveUserName" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
+                done
+              mode: '000755'
+              owner: root
+              group: root
+            '/opt/import_users.sh':
+              content: |
+                #!/bin/bash -e
+                aws iam list-users --query "Users[].[UserName]" --output text | while read User; do
+                  SaveUserName="$User"
+                  SaveUserName=${SaveUserName//"+"/".plus."}
+                  SaveUserName=${SaveUserName//"="/".equal."}
+                  SaveUserName=${SaveUserName//","/".comma."}
+                  SaveUserName=${SaveUserName//"@"/".at."}
+                  if ! id -u "$SaveUserName" >/dev/null 2>&1; then
+                    # don't grant sudo rights on bastion host!
+                    /usr/sbin/useradd "$SaveUserName"
+                  fi
+                done
+              mode: '000755'
+              owner: root
+              group: root
+            '/etc/cron.d/import_users':
+              content: |
+                */10 * * * * root /opt/import_users.sh
+              mode: '000644'
+              owner: root
+              group: root
+          commands:
+            'a_configure_sshd_command':
+              command: 'sed -i "s:#AuthorizedKeysCommand none:AuthorizedKeysCommand /opt/authorized_keys_command.sh:g" /etc/ssh/sshd_config'
+            'b_configure_sshd_commanduser':
+              command: 'sed -i "s:#AuthorizedKeysCommandUser nobody:AuthorizedKeysCommandUser nobody:g" /etc/ssh/sshd_config'
+            'c_import_users':
+              command: './import_users.sh'
+              cwd: '/opt'
+          services:
+            sysvinit:
+              sshd:
+                ensureRunning: true
+                commands:
+                - 'a_configure_sshd_command'
+                - 'b_configure_sshd_commanduser'
+        config:
+          files:
+            '/usr/local/openvpn_as/etc/config.json':
+              content: !Sub 
+                - |
+                    {
+                      "Default": {
+                        "admin_ui.https.ip_address": "all", 
+                        "admin_ui.https.port": "${OpenVPNHttpsPort}", 
+                        "auth.ldap.0.name": "My LDAP servers", 
+                        "auth.ldap.0.ssl_verify": "never", 
+                        "auth.ldap.0.timeout": "4", 
+                        "auth.ldap.0.use_ssl": "never", 
+                        "auth.module.type": "local", 
+                        "auth.pam.0.service": "openvpnas", 
+                        "auth.radius.0.acct_enable": "false", 
+                        "auth.radius.0.name": "My Radius servers", 
+                        "cs.cws_proto_v2": "true", 
+                        "cs.https.ip_address": "all", 
+                        "cs.https.port": "${OpenVPNHttpsPort}", 
+                        "cs.prof_sign_web": "true", 
+                        "host.name": "${EIP}", 
+                        "sa.initial_run_groups.0": "web_group", 
+                        "sa.initial_run_groups.1": "openvpn_group", 
+                        "vpn.client.basic": "false", 
+                        "vpn.client.config_text": "cipher AES-128-CBC", 
+                        "vpn.client.routing.inter_client": "false", 
+                        "vpn.client.routing.reroute_dns": "true", 
+                        "vpn.client.routing.reroute_gw": "true", 
+                        "vpn.daemon.0.client.netmask_bits": "20", 
+                        "vpn.daemon.0.client.network": "172.27.224.0", 
+                        "vpn.daemon.0.listen.ip_address": "all", 
+                        "vpn.daemon.0.listen.port": "${OpenVPNDaemonTcpPort}", 
+                        "vpn.daemon.0.listen.protocol": "tcp", 
+                        "vpn.daemon.0.server.ip_address": "all", 
+                        "vpn.server.config_text": "cipher AES-128-CBC", 
+                        "vpn.server.daemon.enable": "true", 
+                        "vpn.server.daemon.tcp.n_daemons": 1, 
+                        "vpn.server.daemon.tcp.port": "${OpenVPNDaemonTcpPort}", 
+                        "vpn.server.daemon.udp.n_daemons": 1, 
+                        "vpn.server.daemon.udp.port": "${OpenVPNDaemonUdpPort}", 
+                        "vpn.server.group_pool.0": "172.27.240.0/20", 
+                        "vpn.server.nat.masquerade": "true", 
+                        "vpn.server.port_share.enable": "true", 
+                        "vpn.server.port_share.ip_address": "1.2.3.4", 
+                        "vpn.server.port_share.port": "1234", 
+                        "vpn.server.port_share.service": "admin+client", 
+                        "vpn.server.routing.private_access": "nat", 
+                        "vpn.server.routing.private_network.0": "10.${ClassB}.0.0/16"
+                        "vpn.tls_refresh.do_reauth": "true", 
+                        "vpn.tls_refresh.interval": "360"
+                      }, 
+                      "_INTERNAL": {
+                        "run_api.active_profile": "Default", 
+                        "webui.edit_profile": "Default"
+                      }
+                    }
+                - ClassB:
+                    'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/awslogs.conf':
+              content: !Sub |
+                [general]
+                state_file = /var/lib/awslogs/agent-state
+                [/var/log/auth.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/auth.log
+                log_stream_name = {instance_id}/var/log/auth.log
+                log_group_name = ${Logs}
+                [/var/log/syslog]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/syslog
+                log_stream_name = {instance_id}/var/log/syslog
+                log_group_name = ${Logs}
+                [/var/log/cloud-init.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cloud-init.log
+                log_stream_name = {instance_id}/var/log/cloud-init.log
+                log_group_name = ${Logs}
+                [/var/log/cfn-init.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init.log
+                log_stream_name = {instance_id}/var/log/cfn-init.log
+                log_group_name = ${Logs}
+                [/var/log/cfn-hup.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-hup.log
+                log_stream_name = {instance_id}/var/log/cfn-hup.log
+                log_group_name = ${Logs}
+                [/var/log/cfn-init-cmd.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init-cmd.log
+                log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
+                log_group_name = ${Logs}
+                [/var/log/cloud-init-output.log]
+                file = /var/log/cloud-init-output.log
+                log_stream_name = {instance_id}/var/log/cloud-init-output.log
+                log_group_name = ${Logs}
+                [/var/log/openvpnas.log]
+                file = /var/log/openvpnas.log
+                log_stream_name = {instance_id}/var/log/openvpnas.log
+                log_group_name = ${Logs}
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/cfn/cfn-hup.conf':
+              content: !Sub |
+                [main]
+                stack=${AWS::StackId}
+                region=${AWS::Region}
+                interval=1
+              mode: '000400'
+              owner: root
+              group: root
+            '/etc/cfn/hooks.d/cfn-auto-reloader.conf':
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.LaunchConfiguration.Metadata.AWS::CloudFormation::Init
+                action=/usr/local/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=LaunchConfiguration
+                runas=root
+          commands:
+            'a_fake_etc_issue_as_amz_ami':
+              command: 'echo "Amazon Linux AMI" > /etc/issue'
+            'b_install_awslogs_agent':
+              command: !Sub |
+                mkdir -p /var/lib/awslogs
+                curl https://s3.amazonaws.com//aws-cloudwatch/downloads/latest/awslogs-agent-setup.py -O
+                python ./awslogs-agent-setup.py --region ${AWS::Region} --non-interactive --configfile=/etc/awslogs/awslogs.conf
+            'c_change_openvpn_password':
+              command: !Sub 'echo "openvpn:${OpenVPNAdminPassword}" | chpasswd'
+            'd_update_openvpn_config':
+              command: !Sub 
+                - |
+                    ./sacli -k host.name -v "${EIP}" ConfigPut
+                    ./sacli -k admin_ui.https.port -v ${OpenVPNHttpsPort} ConfigPut
+                    ./sacli -k cs.https.port -v ${OpenVPNHttpsPort} ConfigPut
+                    ./sacli -k vpn.daemon.0.listen.port -v ${OpenVPNDaemonTcpPort} ConfigPut
+                    ./sacli -k vpn.server.daemon.tcp.port -v ${OpenVPNDaemonTcpPort} ConfigPut
+                    ./sacli -k vpn.server.daemon.udp.port -v ${OpenVPNDaemonUdpPort} ConfigPut
+                    ./sacli -k vpn.server.routing.private_network.0 -v "10.${ClassB}.0.0/16" ConfigPut
+                    service openvpnas restart
+                - ClassB:
+                    'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'                  
+              cwd: '/usr/local/openvpn_as/scripts'
+          services:
+            sysvinit:
+              openvpnas:
+                ensureRunning: true
+                files:
+                - '/usr/local/openvpn/etc/as.conf'
+                - '/usr/local/openvpn/etc/config.json'
+              awslogs:
+                enabled: true
+                ensureRunning: true
+                files:
+                - '/etc/awslogs/awslogs.conf'
+              cfn-hup:
+                enabled: true
+                ensureRunning: true
+                files:
+                - '/etc/cfn/cfn-hup.conf'
+                - '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
+    Properties:
+      AssociatePublicIpAddress: true
+      EbsOptimized: false
+      IamInstanceProfile: !Ref InstanceProfile
+      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', BYOLAMI]
+      InstanceType: !Ref InstanceType
+      SecurityGroups:
+      - !Ref SecurityGroup
+      KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+      UserData:
+        'Fn::Base64': !Sub |
+          #!/bin/bash -x
+          INSTANCEID=$(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
+          apt-get -qq update -y
+          apt-get -q install python-pip -y
+          pip install awscli
+          pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
+          cp /usr/local/init/ubuntu/cfn-hup /etc/init.d/cfn-hup
+          chmod +x /etc/init.d/cfn-hup
+          update-rc.d cfn-hup defaults
+          service cfn-hup start
+          aws --region ${AWS::Region} ec2 associate-address --instance-id $INSTANCEID --allocation-id ${EIP.AllocationId} && /usr/local/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+          /usr/local/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+  AutoScalingGroup:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      DesiredCapacity: 1
+      LaunchConfigurationName: !Ref LaunchConfiguration
+      MaxSize: 1
+      MinSize: 1
+      Tags:
+      - Key: Name
+        Value: !Sub
+        - 'OpenVPN bastion host/instance 10.${ClassB}.0.0/16'
+        - ClassB:
+            'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
+        PropagateAtLaunch: true
+      VPCZoneIdentifier: !Split
+      - ','
+      - 'Fn::ImportValue':
+          !Sub '${ParentVPCStack}-SubnetsPublic'
+    CreationPolicy:
+      ResourceSignal:
+        Count: 1
+        Timeout: PT10M
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        PauseTime: PT10M
+        WaitOnResourceSignals: true
+  CPUTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
+      Namespace: 'AWS/EC2'
+      MetricName: CPUUtilization
+      Statistic: Average
+      Period: 600
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value: !Ref AutoScalingGroup
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'vpc/vpc-openvpn-bastion'
+  SecurityGroup:
+    Description: 'Use this Security Group to reference incoming traffic from the OpenVPN bastion host/instance.'
+    Value: !Ref SecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-SecurityGroup'
+  IPAddress:
+    Description: 'The public IP address of the OpenVPN bastion host/instance.'
+    Value: !Ref EIP
+    Export:
+      Name: !Sub '${AWS::StackName}-IPAddress'
+  LoginUrl:
+    Description: 'The OpenVPN login page URL.'
+    Value: !Join ['', ['https://', !Ref EIP, ':', !Ref OpenVPNHttpsPort]]
+    Export:
+      Name: !Sub '${AWS::StackName}-LoginUrl'
+  AdminLoginUrl:
+    Description: 'The OpenVPN admin login page URL.'
+    Value: !Join ['', ['https://', !Ref EIP, ':', !Ref OpenVPNHttpsPort, '/admin']]
+    Export:
+      Name: !Sub '${AWS::StackName}-AdminLoginUrl'
