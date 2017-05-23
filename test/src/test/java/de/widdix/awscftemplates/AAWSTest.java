@@ -1,14 +1,21 @@
 package de.widdix.awscftemplates;
 
 import com.amazonaws.auth.*;
+import com.amazonaws.regions.DefaultAwsRegionProviderChain;
+import com.amazonaws.services.s3.model.Region;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.*;
+import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.route53.AmazonRoute53ClientBuilder;
 import com.amazonaws.services.route53.model.*;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.*;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.route53.AmazonRoute53;
+import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,16 +30,22 @@ public abstract class AAWSTest extends ATest {
 
     private AmazonRoute53 route53;
 
+    private final AmazonS3 s3;
+
+    private final AWSSecurityTokenService sts;
+
     public AAWSTest() {
         super();
         if (Config.has(Config.Key.IAM_ROLE_ARN)) {
-            final AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.standard().withCredentials(new DefaultAWSCredentialsProviderChain()).build();
-            this.credentialsProvider = new STSAssumeRoleSessionCredentialsProvider.Builder(Config.get(Config.Key.IAM_ROLE_ARN), IAM_SESSION_NAME).withStsClient(sts).build();
+            final AWSSecurityTokenService local = AWSSecurityTokenServiceClientBuilder.standard().withCredentials(new DefaultAWSCredentialsProviderChain()).build();
+            this.credentialsProvider = new STSAssumeRoleSessionCredentialsProvider.Builder(Config.get(Config.Key.IAM_ROLE_ARN), IAM_SESSION_NAME).withStsClient(local).build();
         } else {
             this.credentialsProvider = new DefaultAWSCredentialsProviderChain();
         }
         this.ec2 = AmazonEC2ClientBuilder.standard().withCredentials(this.credentialsProvider).build();
         this.route53 = AmazonRoute53ClientBuilder.standard().withCredentials(this.credentialsProvider).build();
+        this.s3 = AmazonS3ClientBuilder.standard().withCredentials(this.credentialsProvider).build();
+        this.sts = AWSSecurityTokenServiceClientBuilder.standard().withCredentials(this.credentialsProvider).build();
     }
 
     protected final KeyPair createKey(final String keyName) {
@@ -96,6 +109,37 @@ public abstract class AAWSTest extends ATest {
         }
     }
 
+    protected final void createBucket(final String name, final String policy) {
+        this.s3.createBucket(new CreateBucketRequest(name, Region.fromValue(this.getRegion())));
+        this.s3.setBucketPolicy(name, policy);
+    }
+
+    protected final void emptyBucket(final String name) {
+        ObjectListing objectListing = s3.listObjects(name);
+        while (true) {
+            objectListing.getObjectSummaries().forEach((summary) -> s3.deleteObject(name, summary.getKey()));
+            if (objectListing.isTruncated()) {
+                objectListing = s3.listNextBatchOfObjects(objectListing);
+            } else {
+                break;
+            }
+        }
+        VersionListing versionListing = s3.listVersions(new ListVersionsRequest().withBucketName(name));
+        while (true) {
+            versionListing.getVersionSummaries().forEach((vs) -> s3.deleteVersion(name, vs.getKey(), vs.getVersionId()));
+            if (versionListing.isTruncated()) {
+                versionListing = s3.listNextBatchOfVersions(versionListing);
+            } else {
+                break;
+            }
+        }
+    }
+
+    protected final void deleteBucket(final String name) {
+        this.emptyBucket(name);
+        this.s3.deleteBucket(new DeleteBucketRequest(name));
+    }
+
     protected final Vpc getDefaultVPC() {
         final DescribeVpcsResult res = this.ec2.describeVpcs(new DescribeVpcsRequest().withFilters(new Filter().withName("isDefault").withValues("true")));
         return res.getVpcs().get(0);
@@ -113,6 +157,14 @@ public abstract class AAWSTest extends ATest {
                 new Filter().withName("group-name").withValues("default")
         ));
         return res.getSecurityGroups().get(0);
+    }
+
+    protected final String getRegion() {
+        return new DefaultAwsRegionProviderChain().getRegion();
+    }
+
+    protected final String getAccount() {
+        return this.sts.getCallerIdentity(new GetCallerIdentityRequest()).getAccount();
     }
 
     protected final String random8String() {
