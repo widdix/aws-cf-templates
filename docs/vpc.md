@@ -47,7 +47,7 @@ This template describes a VPC with four private and four public subnets.
 If you have an existing VPC you can wrap it into our required form using a legacy VPC wrapper: [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-4azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-4azs-legacy.yaml) 
 
 # NAT Gateway
-This template describes a NAT Gateway that forwards HTTP, HTTPS and NTP traffic from private subnets to the Internet.
+This template describes a NAT Gateway that forwards HTTP, HTTPS and NTP traffic from a single private subnet to the Internet. You need one stack per availability zone. Example: If you use the `vpc-2azs.yaml` template, you will need two Nat Gateway stack in `A` and `B`.
 
 > You need one Gateway in each `SubnetZone` (e.g. `A` and `B` in `vpc-2azs.yaml`).
 
@@ -67,7 +67,7 @@ This template describes a NAT Gateway that forwards HTTP, HTTPS and NTP traffic 
 * `vpc/vpc-*azs.yaml` (**required**)
 
 # NAT instance
-This template describes a **highly available** Network Address Translation (NAT) instance that forwards HTTP, HTTPS and NTP traffic from private subnets to the Internet.
+This template describes a **highly available** Network Address Translation (NAT) instance that forwards HTTP, HTTPS and NTP traffic from a single private subnet to the Internet. You need one stack per availability zone. Example: If you use the `vpc-2azs.yaml` template, you will need two Nat Gateway stack in `A` and `B`.
 
 > You need one Instance in each `SubnetZone` (e.g. `A` and `B` in `vpc-2azs.yaml`).
 
