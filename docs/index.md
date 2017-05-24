@@ -20,7 +20,7 @@ Choose from our template catalog:
 * [Jenkins ](./jenkins/)
 * [Operations](./operations/)
 * [Security](./security/)
-* [Static website](./static-website/)
+* [Static Website](./static-website/)
 * [Virtual Private Cloud (VPC)](./vpc/)
 * [WordPress](./wordpress/)
 
