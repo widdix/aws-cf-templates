@@ -107,7 +107,6 @@ If you want to use an external S3 bucket, the bucket needs to have the following
     }
   }]
 }
-
 ```
 
 Replace `$ExternalTrailBucket` with the name of your bucket, and add a row for every account you want to write from `$AccountId[*]`.
@@ -147,7 +146,7 @@ If you want to use an external S3 bucket, the bucket needs to have the following
       "Effect": "Allow",
       "Principal": {
         "Service": [
-         "config.amazonaws.com"    
+         "config.amazonaws.com"
         ]
       },
       "Action": "s3:PutObject",
@@ -156,15 +155,14 @@ If you want to use an external S3 bucket, the bucket needs to have the following
         "arn:aws:s3:::$ExternalConfigBucket/AWSLogs/$AccountId[0]/Config/*",
         "arn:aws:s3:::$ExternalConfigBucket/AWSLogs/$AccountId[2]/Config/*"
       ],
-      "Condition": { 
-        "StringEquals": { 
+      "Condition": {
+        "StringEquals": {
           "s3:x-amz-acl": "bucket-owner-full-control" 
         }
       }
     }
   ]
 }
-
 ```
 
 Replace `$ExternalTrailBucket` with the name of your bucket, and add a row for every account you want to write from `$AccountId[*]`.

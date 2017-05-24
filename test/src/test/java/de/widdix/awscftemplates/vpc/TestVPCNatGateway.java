@@ -1,10 +1,9 @@
 package de.widdix.awscftemplates.vpc;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
-import de.widdix.awscftemplates.ACloudFormationTest;
 import org.junit.Test;
 
-public class TestVPCNatGateway extends ACloudFormationTest {
+public class TestVPCNatGateway extends AVPCTest {
 
     @Test
     public void test() {
@@ -21,7 +20,7 @@ public class TestVPCNatGateway extends ACloudFormationTest {
                         "vpc/vpc-nat-gateway.yaml",
                         new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName)
                 );
-                // TODO how can we check if this stack works? launch an EC2 instance into a private subnet and open google from the instance?
+                this.testVPCSubnetInternetAccess(vpcStackName, "SubnetAPrivate");
             } finally {
                 this.deleteStack(natStackName);
             }
