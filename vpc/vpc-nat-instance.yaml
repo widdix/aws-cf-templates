@@ -13,6 +13,7 @@ Metadata:
     - Label:
         default: 'EC2 Parameters'
       Parameters:
+      - SubnetZone
       - NATInstanceType
       - KeyName
       - IAMUserSSHAccess
@@ -30,6 +31,15 @@ Parameters:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
+  SubnetZone:
+    Description: 'Subnet zone.'
+    Type: String
+    Default: A
+    AllowedValues:
+    - A
+    - B
+    - C
+    - D
   KeyName:
     Description: 'Optional key pair of the ec2-user to establish a SSH connection to the NAT instance.'
     Type: String
@@ -435,7 +445,7 @@ Resources:
             aws --region ${Region} ec2 associate-address --instance-id $INSTANCEID --allocation-id ${EIPAllocationId} && aws --region ${Region} ec2 modify-instance-attribute --instance-id $INSTANCEID --source-dest-check "{\"Value\": false}" && (aws --region ${Region} ec2 replace-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID || aws --region ${Region} ec2 create-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID) && /opt/aws/bin/cfn-init -v --stack ${StackName} --resource NATLaunchConfiguration --region ${Region}
             /opt/aws/bin/cfn-signal -e $? --region ${Region} --stack ${StackName} --resource NATAutoScalingGroup
           - RouteTablePrivate:
-              'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablePrivate'
+              'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTable${SubnetZone}Private'
             Region:
               !Ref 'AWS::Region'
             StackName:
@@ -456,10 +466,8 @@ Resources:
         - ClassB:
             'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
         PropagateAtLaunch: true
-      VPCZoneIdentifier: !Split
-      - ','
-      - 'Fn::ImportValue':
-          !Sub '${ParentVPCStack}-SubnetsPublic'
+      VPCZoneIdentifier:
+      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-Subnet${SubnetZone}Public'
     CreationPolicy:
       ResourceSignal:
         Count: 1

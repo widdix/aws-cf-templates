@@ -20,7 +20,7 @@ public class TestVPCEndpointS3 extends ACloudFormationTest {
                         "vpc/vpc-endpoint-s3.yaml",
                         new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName)
                 );
-                // TODO how can we check if this stack works? launch an EC2 instance into a private subnet and connect to S3
+                // TODO how can we check if this stack works?
             } finally {
                 this.deleteStack(endpointStackName);
             }

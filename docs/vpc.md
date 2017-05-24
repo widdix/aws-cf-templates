@@ -47,7 +47,9 @@ This template describes a VPC with four private and four public subnets.
 If you have an existing VPC you can wrap it into our required form using a legacy VPC wrapper: [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-4azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-4azs-legacy.yaml) 
 
 # NAT Gateway
-This template describes a NAT Gateway that forwards HTTP, HTTPS and NTP traffic from private subnets to the Internet.
+This template describes a NAT Gateway that forwards HTTP, HTTPS and NTP traffic from a single private subnet to the Internet. You need one stack per availability zone. Example: If you use the `vpc-2azs.yaml` template, you will need two Nat Gateway stack in `A` and `B`.
+
+> You need one Gateway in each `SubnetZone` (e.g. `A` and `B` in `vpc-2azs.yaml`).
 
 ![Architecture](./img/vpc-nat-gateway.png)
 
@@ -64,11 +66,10 @@ This template describes a NAT Gateway that forwards HTTP, HTTPS and NTP traffic 
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
 
-## Limitations
-* The NAT Gateway is a single point of failure because it runs only in one Subnet (and therefore in one Availability Zone): https://github.com/widdix/aws-cf-templates/issues/65
-
 # NAT instance
-This template describes a **highly available** Network Address Translation (NAT) instance that forwards HTTP, HTTPS and NTP traffic from private subnets to the Internet.
+This template describes a **highly available** Network Address Translation (NAT) instance that forwards HTTP, HTTPS and NTP traffic from a single private subnet to the Internet. You need one stack per availability zone. Example: If you use the `vpc-2azs.yaml` template, you will need two Nat Gateway stack in `A` and `B`.
+
+> You need one Instance in each `SubnetZone` (e.g. `A` and `B` in `vpc-2azs.yaml`).
 
 ![Architecture](./img/vpc-nat-instance.png)
 ## Installation Guide
@@ -86,9 +87,6 @@ This template describes a **highly available** Network Address Translation (NAT)
 * `vpc/vpc-*azs.yaml` (**required**)
 * `vpc/vpc-ssh-bastion.yaml` (recommended)
 * `operations/alert.yaml` (recommended)
-
-## Limitations
-* Only one EC2 instance is managed by the ASG. In case of an outage the instance will be replaced within 5 minutes.
 
 # SSH bastion host/instance
 This template describes a **highly available** SSH bastion host/instance. SSH Port 22 is open to the world. You can enable the default ec2-user access protected by the referenced EC2 KeyPair. You can also enable personalized SSH access by using the IAM users and their configured public keys. Use `ssh -A user@ip` to enable forwarding of the authentication agent connection when connection to the bastion host.

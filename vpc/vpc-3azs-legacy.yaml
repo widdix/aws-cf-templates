@@ -13,13 +13,17 @@ Metadata:
       - ClassB
       - VPC
       - SubnetAPublic
+      - RouteTableAPublic
       - SubnetBPublic
+      - RouteTableBPublic
       - SubnetCPublic
+      - RouteTableCPublic
       - SubnetAPrivate
+      - RouteTableAPrivate
       - SubnetBPrivate
+      - RouteTableBPrivate
       - SubnetCPrivate
-      - RouteTablePublic
-      - RouteTablePrivate
+      - RouteTableCPrivate
 Parameters:
   AZA:
     Description: 'AZ of A'
@@ -43,26 +47,38 @@ Parameters:
   SubnetAPublic:
     Description: 'Subnet A public.'
     Type: 'AWS::EC2::Subnet::Id'
+  RouteTableAPublic:
+    Description: 'Route table A public.'
+    Type: String
   SubnetBPublic:
     Description: 'Subnet B public.'
     Type: 'AWS::EC2::Subnet::Id'
+  RouteTableBPublic:
+    Description: 'Route table B public.'
+    Type: String
   SubnetCPublic:
     Description: 'Subnet C public.'
     Type: 'AWS::EC2::Subnet::Id'
+  RouteTableCPublic:
+    Description: 'Route table C public.'
+    Type: String
   SubnetAPrivate:
     Description: 'Subnet A private.'
     Type: 'AWS::EC2::Subnet::Id'
+  RouteTableAPrivate:
+    Description: 'Route table A private.'
+    Type: String
   SubnetBPrivate:
     Description: 'Subnet B private.'
     Type: 'AWS::EC2::Subnet::Id'
+  RouteTableBPrivate:
+    Description: 'Route table B private.'
+    Type: String
   SubnetCPrivate:
     Description: 'Subnet C private.'
     Type: 'AWS::EC2::Subnet::Id'
-  RouteTablePublic:
-    Description: 'Route table public.'
-    Type: String
-  RouteTablePrivate:
-    Description: 'Route table private.'
+  RouteTableCPrivate:
+    Description: 'Route table C private.'
     Type: String
 Resources:
   Dummy:
@@ -113,43 +129,83 @@ Outputs:
     Value: !Join [',', [!Ref SubnetAPrivate, !Ref SubnetBPrivate, !Ref SubnetCPrivate]]
     Export:
       Name: !Sub '${AWS::StackName}-SubnetsPrivate'
-  RouteTablePrivate:
-    Description: 'Route table private.'
-    Value: !Ref RouteTablePrivate
+  RouteTablePrivate: # deprecated in v4, will be removed in v5
+    Description: 'Route table private (deprecated in v4, will be removed in v5).'
+    Value: !Ref RouteTableAPrivate
     Export:
       Name: !Sub '${AWS::StackName}-RouteTablePrivate'
-  RouteTablePublic:
-    Description: 'Route table public.'
-    Value: !Ref RouteTablePublic
+  RouteTablePublic: # deprecated in v4, will be removed in v5
+    Description: 'Route table public (deprecated in v4, will be removed in v5).'
+    Value: !Ref RouteTableAPublic
     Export:
       Name: !Sub '${AWS::StackName}-RouteTablePublic'
+  RouteTablesPrivate:
+    Description: 'Route tables private.'
+    Value: !Join [',', [!Ref RouteTableAPrivate, !Ref RouteTableBPrivate, !Ref RouteTableCPrivate]]
+    Export:
+      Name: !Sub '${AWS::StackName}-RouteTablesPrivate'
+  RouteTablesPublic:
+    Description: 'Route tables public.'
+    Value: !Join [',', [!Ref RouteTableAPublic, !Ref RouteTableBPublic, !Ref RouteTableCPublic]]
+    Export:
+      Name: !Sub '${AWS::StackName}-RouteTablesPublic'
   SubnetAPublic:
     Description: 'Subnet A public.'
     Value: !Ref SubnetAPublic
     Export:
       Name: !Sub '${AWS::StackName}-SubnetAPublic'
+  RouteTableAPublic:
+    Description: 'Route table A public.'
+    Value: !Ref RouteTableAPublic
+    Export:
+      Name: !Sub '${AWS::StackName}-RouteTableAPublic'
   SubnetAPrivate:
     Description: 'Subnet A private.'
     Value: !Ref SubnetAPrivate
     Export:
       Name: !Sub '${AWS::StackName}-SubnetAPrivate'
+  RouteTableAPrivate:
+    Description: 'Route table A private.'
+    Value: !Ref RouteTableAPrivate
+    Export:
+      Name: !Sub '${AWS::StackName}-RouteTableAPrivate'
   SubnetBPublic:
     Description: 'Subnet B public.'
     Value: !Ref SubnetBPublic
     Export:
       Name: !Sub '${AWS::StackName}-SubnetBPublic'
+  RouteTableBPublic:
+    Description: 'Route table B public.'
+    Value: !Ref RouteTableBPublic
+    Export:
+      Name: !Sub '${AWS::StackName}-RouteTableBPublic'
   SubnetBPrivate:
     Description: 'Subnet B private.'
     Value: !Ref SubnetBPrivate
     Export:
       Name: !Sub '${AWS::StackName}-SubnetBPrivate'
+  RouteTableBPrivate:
+    Description: 'Route table B private.'
+    Value: !Ref RouteTableBPrivate
+    Export:
+      Name: !Sub '${AWS::StackName}-RouteTableBPrivate'
   SubnetCPublic:
     Description: 'Subnet C public.'
     Value: !Ref SubnetCPublic
     Export:
       Name: !Sub '${AWS::StackName}-SubnetCPublic'
+  RouteTableCPublic:
+    Description: 'Route table C public.'
+    Value: !Ref RouteTableCPublic
+    Export:
+      Name: !Sub '${AWS::StackName}-RouteTableCPublic'
   SubnetCPrivate:
     Description: 'Subnet C private.'
     Value: !Ref SubnetCPrivate
     Export:
       Name: !Sub '${AWS::StackName}-SubnetCPrivate'
+  RouteTableCPrivate:
+    Description: 'Route table C private.'
+    Value: !Ref RouteTableCPrivate
+    Export:
+      Name: !Sub '${AWS::StackName}-RouteTableCPrivate'
