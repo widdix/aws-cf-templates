@@ -1,15 +1,15 @@
 ---
 # only needed for readthedocs.io
-site_name: Free Templates for AWS CloudFormation
-docs_dir: docs
+site_name: 'Free Templates for AWS CloudFormation'
+docs_dir: 'docs'
 pages:
-  Home: index.md
-  EC2: ec2.md
-  ECS: ec2.md
-  Jenkins: jenkins.md
-  Operations: operations.md
-  Security: security.md
-  'Static Website': static-website.md
-  VPC: vpc.md
-  WordPress: wordpress.md
-  'Migrate to v4': migrate-v4.md
+  - 'Home': 'index.md'
+  - 'EC2': 'ec2.md'
+  - 'ECS': 'ec2.md'
+  - 'Jenkins': 'jenkins.md'
+  - 'Operations': 'operations.md'
+  - 'Security': 'security.md'
+  - 'Static Website': 'static-website.md'
+  - 'VPC': 'vpc.md'
+  - 'WordPress': 'wordpress.md'
+  - 'Migrate to v4': 'migrate-v4.md'
