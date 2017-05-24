@@ -1,6 +1,6 @@
 # Migrate from v3 to v4
 
-There is a breaking change in the VPC layout going from v3 to v4. This change enables HA NAT Gateway/Instance ( https://github.com/widdix/aws-cf-templates/issues/65 ). Updating your VPC will cause connectivity interruptions to the Internet in `SubnetBPrivate`, `SubnetCPrivate`, and `SubnetDPrivate` until you created new NAT Gateway/Instance for each `SubnetZone` in step 3b.
+There is a breaking change in the VPC layout going from v3 to v4. This change enables HA NAT Gateway/Instance (https://github.com/widdix/aws-cf-templates/issues/65). Updating your VPC will cause connectivity interruptions to the Internet in `SubnetBPrivate`, `SubnetCPrivate`, and `SubnetDPrivate` until you created new NAT Gateway/Instance for each `SubnetZone` in step 3b.
 
 > None of our templates launch workloads into private subnets that require Internet access. This could only be an issue if you run external workloads in a VPC based on our templates.
 

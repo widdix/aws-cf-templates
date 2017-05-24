@@ -5,7 +5,7 @@ docs_dir: 'docs'
 pages:
   - 'Home': 'index.md'
   - 'EC2': 'ec2.md'
-  - 'ECS': 'ec2.md'
+  - 'ECS': 'ecs.md'
   - 'Jenkins': 'jenkins.md'
   - 'Operations': 'operations.md'
   - 'Security': 'security.md'
