@@ -84,9 +84,9 @@ Parameters:
     ConstraintDescription: 'x.y.z'
     AllowedPattern: '[0-9]+\.[0-9]+\.[0-9]+'
   WebServerKeyName:
-    Description: 'Optional key pair of the ec2-user to establish a SSH connection to the web server.'
-    Type: String
-    Default: ''
+    Description: "Name of an existing EC2 KeyPair to enable SSH access to the instance"
+    Type: "AWS::EC2::KeyPair::KeyName"
+    ConstraintDescription: "must be the name of an existing EC2 KeyPair."
   WebServerIAMUserSSHAccess:
     Description: 'Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).'
     Type: String
