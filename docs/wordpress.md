@@ -54,13 +54,13 @@ This template combines the following services:
 1. Create or update a CNAME/Alias record for your custom domain name pointing to the `CloudFrontDomainName` from the previous step.
 
 ## Dependencies
-* `vpc/vpc-*azs.yaml` (**required**)
+* `vpc/vpc-*azs.yaml` (**required, 2 or  more AZs required for MySQL, 3 or more AZs required for Aurora**)
 * `vpc/vpc-ssh-bastion.yaml` (recommended)
 * `security/auth-proxy-*.yaml`
 * `operations/alert.yaml` (recommended)
 
 ## Limitations
-* WordPress will only run in two Availability Zones, even if your VPC stack has more.
+* WordPress will only run in two Availability Zones (MySQL) or three Availability Zones (Aurora), even if your VPC stack has more.
 * PHP files are cached for 300 seconds on the web servers.
 * Static files `wp-includes` and `wp-content` are cached for 15 minutes on the CDN.
 * Pre-defined auto-scaling might not be able to cover your requirements and needs load and performance testing.

@@ -266,6 +266,7 @@ Resources:
       Subnets:
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetCPublic'
       SecurityGroups:
       - !Ref LoadBalancerSecurityGroup
       Scheme: 'internet-facing'
@@ -629,6 +630,7 @@ Resources:
     DependsOn:
     - EFSMountTargetA
     - EFSMountTargetB
+    - EFSMountTargetC
     Properties:
       TargetGroupARNs:
       - !Ref LoadBalancerTargetGroup
@@ -642,6 +644,7 @@ Resources:
       VPCZoneIdentifier:
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetCPublic'
       Tags:
       - PropagateAtLaunch: true
         Value: wordpress
@@ -738,6 +741,14 @@ Resources:
       FileSystemId: !Ref EFSFileSystem
       SubnetId: 
         'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      SecurityGroups:
+      - !Ref EFSSecurityGroup
+  EFSMountTargetC:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref EFSFileSystem
+      SubnetId: 
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetCPublic'
       SecurityGroups:
       - !Ref EFSSecurityGroup
   EFSSecurityGroup:
