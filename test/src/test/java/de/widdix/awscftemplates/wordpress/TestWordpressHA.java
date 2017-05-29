@@ -82,7 +82,7 @@ public class TestWordpressHA extends ACloudFormationTest {
             this.createKey(keyName);
             try {
                 this.createStack(vpcStackName,
-                        "vpc/vpc-2azs.yaml",
+                        "vpc/vpc-3azs.yaml",
                         new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                 );
                 try {
