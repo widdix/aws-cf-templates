@@ -104,9 +104,9 @@ Parameters:
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
   DBServerInstanceType:
-    Description: 'The instance type of database server (e.g. db.t2.micro).'
+    Description: 'The instance type of database server (e.g. db.t2.small).'
     Type: String
-    Default: 'db.t2.micro'
+    Default: 'db.t2.small'
   DBBackupRetentionPeriod:
     Description: 'The number of days to keep snapshots of the database.'
     Type: Number
@@ -231,8 +231,8 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Elastic load balancer returns 5XX HTTP status codes'
-      Namespace: 'AWS/ELB'
-      MetricName: HTTPCode_ELB_5XX
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: HTTPCode_ELB_5XX_Count
       Statistic: Sum
       Period: 60
       EvaluationPeriods: 1
@@ -248,8 +248,8 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Elastic load balancer receives 5XX HTTP status codes from backends'
-      Namespace: 'AWS/ELB'
-      MetricName: HTTPCode_Backend_5XX
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: HTTPCode_Target_5XX_Count
       Statistic: Sum
       Period: 60
       EvaluationPeriods: 1
@@ -261,27 +261,41 @@ Resources:
       - Name: LoadBalancerName
         Value: !Ref LoadBalancer
   LoadBalancer:
-    Type: 'AWS::ElasticLoadBalancing::LoadBalancer'
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
       Subnets:
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
-      Listeners:
-      - InstancePort: 80
-        InstanceProtocol: HTTP
-        LoadBalancerPort: 443
-        Protocol: HTTPS
-        SSLCertificateId: !Ref ElbAcmCertificate
-      HealthCheck:
-        HealthyThreshold: 2
-        Interval: 5
-        Target: 'TCP:80'
-        Timeout: 3
-        UnhealthyThreshold: 2
       SecurityGroups:
       - !Ref LoadBalancerSecurityGroup
       Scheme: 'internet-facing'
-      CrossZone: true
+  LoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref LoadBalancerTargetGroup
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+      - CertificateArn: !Ref ElbAcmCertificate
+  LoadBalancerTargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      HealthCheckIntervalSeconds: 5
+      HealthCheckPath: '/'
+      HealthCheckPort: 80
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 3
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      Matcher:
+        HttpCode: '200'
+      Port: 80
+      Protocol: HTTP
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
   DBSubnetGroup:
     Type: 'AWS::RDS::DBSubnetGroup'
     Properties:
@@ -289,21 +303,31 @@ Resources:
       SubnetIds:
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'
-  Database:
-    Type: 'AWS::RDS::DBInstance'
+  DatabaseCluster:
+    Type: 'AWS::RDS::DBCluster'
     Properties:
-      AllocatedStorage: 5
       BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
-      DBInstanceClass: !Ref DBServerInstanceType
-      DBName: wordpress
-      Engine: MySQL
+      DatabaseName: wordpress
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      Engine: aurora
       MasterUsername: wordpress
       MasterUserPassword: wordpress
-      VPCSecurityGroups:
+      VpcSecurityGroupIds:
       - !Ref DatabaseSecurityGroup
+  DatabaseA:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBClusterIdentifier: !Ref DatabaseCluster
+      DBInstanceClass: !Ref DBServerInstanceType
+      Engine: aurora
       DBSubnetGroupName: !Ref DBSubnetGroup
-      MultiAZ: true
-      StorageType: gp2
+  DatabaseB:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBClusterIdentifier: !Ref DatabaseCluster
+      DBInstanceClass: !Ref DBServerInstanceType
+      Engine: aurora
+      DBSubnetGroupName: !Ref DBSubnetGroup
   WebServerInstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
@@ -358,6 +382,7 @@ Resources:
           Resource:
           - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
   LaunchConfiguration:
+    DependsOn: [DatabaseA, DatabaseB]
     Type: 'AWS::AutoScaling::LaunchConfiguration'
     Metadata:
       'AWS::CloudFormation::Init':
@@ -484,7 +509,7 @@ Resources:
                   wget -q -T 60 https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
                   if ! php wp-cli.phar core is-installed --allow-root; then
                     php wp-cli.phar core download --allow-root --version=${BlogVersion}
-                    php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='wordpress' --dbhost='${Database.Endpoint.Address}' --allow-root
+                    php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='wordpress' --dbhost='${DatabaseCluster.Endpoint.Address}' --allow-root
                     php wp-cli.phar core install --url='https://${DomainName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}' --skip-email --allow-root
                     sed -i "/$table_prefix = 'wp_';/a\$_SERVER['HTTPS'] = 'on';" /var/www/html/wp-config.php 
                   fi
@@ -604,8 +629,8 @@ Resources:
     - EFSMountTargetA
     - EFSMountTargetB
     Properties:
-      LoadBalancerNames:
-      - !Ref LoadBalancer
+      TargetGroupARNs:
+      - !Ref LoadBalancerTargetGroup
       LaunchConfigurationName: !Ref LaunchConfiguration
       MinSize: 2
       MaxSize: 4
