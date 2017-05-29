@@ -71,7 +71,7 @@ public class TestWordpressHA extends ACloudFormationTest {
 
     @Test
     public void testAurora() {
-        final String vpcStackName = "vpc-2azs-" + this.random8String();
+        final String vpcStackName = "vpc-3azs-" + this.random8String();
         final String stackName = "wordpress-ha-aurora" + this.random8String();
         final String classB = "10";
         final String keyName = "key-" + this.random8String();
