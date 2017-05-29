@@ -303,6 +303,7 @@ Resources:
       SubnetIds:
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'
+      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetCPrivate'
   DatabaseCluster:
     Type: 'AWS::RDS::DBCluster'
     Properties:
