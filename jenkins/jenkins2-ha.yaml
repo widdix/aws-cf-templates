@@ -86,7 +86,7 @@ Parameters:
   JenkinsVersion:
     Description: 'Jenkins version number'
     Type: String
-    Default: '2.46.2'
+    Default: '2.46.3'
     ConstraintDescription: 'x.y.z'
     AllowedPattern: '[0-9]+\.[0-9]+\.[0-9]+'
   NewRelicLicenseKey:
