@@ -1,3 +1,5 @@
+<iframe src="https://ghbtns.com/github-btn.html?user=widdix&repo=aws-cf-templates&type=star&count=true&size=large" frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
+
 # WordPress: fault tolerant and scalable
 Use this CloudFormation template to create a fault tolerant and scalable WordPress environment on AWS.
 
