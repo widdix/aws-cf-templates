@@ -613,6 +613,14 @@ Resources:
       Cooldown: 60
       HealthCheckGracePeriod: 300
       HealthCheckType: ELB
+      NotificationConfigurations: !If
+      - HasAlertTopic
+      - - NotificationTypes:
+          - 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR'
+          - 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR'
+          TopicARN:
+            'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - !Ref 'AWS::NoValue'
       VPCZoneIdentifier:
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'

@@ -385,6 +385,14 @@ Resources:
         - ClassB:
             'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
         PropagateAtLaunch: true
+      NotificationConfigurations: !If
+      - HasAlertTopic
+      - - NotificationTypes:
+          - 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR'
+          - 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR'
+          TopicARN:
+            'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - !Ref 'AWS::NoValue'
       VPCZoneIdentifier: !Split
       - ','
       - 'Fn::ImportValue':
