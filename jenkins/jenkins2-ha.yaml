@@ -87,8 +87,6 @@ Parameters:
     Description: 'Jenkins version number'
     Type: String
     Default: '2.46.3'
-    ConstraintDescription: 'x.y.z'
-    AllowedPattern: '[0-9]+\.[0-9]+\.[0-9]+'
   NewRelicLicenseKey:
     Description: 'Optional New Relic License Key will install the New Relic Servers for Linux agent.'
     Type: String
