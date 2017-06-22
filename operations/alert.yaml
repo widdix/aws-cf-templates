@@ -40,6 +40,23 @@ Resources:
   Topic:
     Type: 'AWS::SNS::Topic'
     Properties: {}
+  TopicPolicy:
+    Type: 'AWS::SNS::TopicPolicy'
+    Properties:
+      PolicyDocument:
+        Id: Id1
+        Version: '2012-10-17'
+        Statement:
+        - Sid: Sid1
+          Effect: Allow
+          Principal:
+            Service:
+            - 'events.amazonaws.com' # Allow CloudWatch Events
+            - 'budgets.amazonaws.com' # Allow Budget Notifications
+          Action: 'sns:Publish'
+          Resource: !Ref Topic
+      Topics:
+      - !Ref Topic
   FallbackTopic:
     Type: 'AWS::SNS::Topic'
     Properties: {}
