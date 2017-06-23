@@ -390,8 +390,93 @@ Resources:
           default:
             !If
             - HasNewRelic
-            - !If [HasIAMUserSSHAccess, [ssh-access, newrelic, config], [newrelic, config]]
-            - !If [HasIAMUserSSHAccess, [ssh-access, config], [config]]
+            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, newrelic, config], [awslogs, newrelic, config]]
+            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, config], [awslogs, config]]
+        awslogs:
+          packages:
+            yum:
+              awslogs: []
+          files:
+            '/etc/awslogs/awscli.conf':
+              content: !Sub |
+                [default]
+                region = ${AWS::Region}
+                [plugins]
+                cwlogs = cwlogs
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/awslogs.conf':
+              content: !Sub |
+                [general]
+                state_file = /var/lib/awslogs/agent-state
+                [/var/log/messages]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/messages
+                log_stream_name = {instance_id}/var/log/messages
+                log_group_name = ${WebServerLogs}
+                [/var/log/secure]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/secure
+                log_stream_name = {instance_id}/var/log/secure
+                log_group_name = ${WebServerLogs}
+                [/var/log/cron]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cron
+                log_stream_name = {instance_id}/var/log/cron
+                log_group_name = ${WebServerLogs}
+                [/var/log/cloud-init.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cloud-init.log
+                log_stream_name = {instance_id}/var/log/cloud-init.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/cfn-init.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init.log
+                log_stream_name = {instance_id}/var/log/cfn-init.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/cfn-hup.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-hup.log
+                log_stream_name = {instance_id}/var/log/cfn-hup.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/cfn-init-cmd.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init-cmd.log
+                log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/cloud-init-output.log]
+                file = /var/log/cloud-init-output.log
+                log_stream_name = {instance_id}/var/log/cloud-init-output.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/dmesg]
+                file = /var/log/dmesg
+                log_stream_name = {instance_id}/var/log/dmesg
+                log_group_name = ${WebServerLogs}
+                [/var/log/httpd/access_log]
+                datetime_format = %b %d %H:%M:%S %Y
+                file = /var/log/httpd/access_log
+                log_stream_name = {instance_id}/var/log/httpd/access_log
+                log_group_name = ${WebServerLogs}
+                [/var/log/httpd/error_log]
+                datetime_format = %d/%b/%Y:%H:%M:%S %z
+                file = /var/log/httpd/error_log
+                log_stream_name = {instance_id}/var/log/httpd/error_log
+                log_group_name = ${WebServerLogs}
+              mode: '000644'
+              owner: root
+              group: root
+          services:
+            sysvinit:
+              awslogs:
+                enabled: true
+                ensureRunning: true
+                packages:
+                  yum:
+                  - awslogs
+                files:
+                - '/etc/awslogs/awslogs.conf'
+                - '/etc/awslogs/awscli.conf'
         newrelic:
           packages:
             rpm:
@@ -481,7 +566,6 @@ Resources:
               php70-mysqlnd: []
               mysql56: []
               httpd24: []
-              awslogs: []
           files:
             '/root/php.sh':
               content: !Sub |
@@ -520,75 +604,6 @@ Resources:
               mode: '000500'
               owner: root
               group: root
-            '/etc/awslogs/awscli.conf':
-              content: !Sub |
-                [default]
-                region = ${AWS::Region}
-                [plugins]
-                cwlogs = cwlogs
-              mode: '000644'
-              owner: root
-              group: root
-            '/etc/awslogs/awslogs.conf':
-              content: !Sub |
-                [general]
-                state_file = /var/lib/awslogs/agent-state
-                [/var/log/messages]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/messages
-                log_stream_name = {instance_id}/var/log/messages
-                log_group_name = ${WebServerLogs}
-                [/var/log/secure]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/secure
-                log_stream_name = {instance_id}/var/log/secure
-                log_group_name = ${WebServerLogs}
-                [/var/log/cron]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cron
-                log_stream_name = {instance_id}/var/log/cron
-                log_group_name = ${WebServerLogs}
-                [/var/log/cloud-init.log]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cloud-init.log
-                log_stream_name = {instance_id}/var/log/cloud-init.log
-                log_group_name = ${WebServerLogs}
-                [/var/log/cfn-init.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init.log
-                log_stream_name = {instance_id}/var/log/cfn-init.log
-                log_group_name = ${WebServerLogs}
-                [/var/log/cfn-hup.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-hup.log
-                log_stream_name = {instance_id}/var/log/cfn-hup.log
-                log_group_name = ${WebServerLogs}
-                [/var/log/cfn-init-cmd.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init-cmd.log
-                log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
-                log_group_name = ${WebServerLogs}
-                [/var/log/cloud-init-output.log]
-                file = /var/log/cloud-init-output.log
-                log_stream_name = {instance_id}/var/log/cloud-init-output.log
-                log_group_name = ${WebServerLogs}
-                [/var/log/dmesg]
-                file = /var/log/dmesg
-                log_stream_name = {instance_id}/var/log/dmesg
-                log_group_name = ${WebServerLogs}
-                [/var/log/httpd/access_log]
-                datetime_format = %b %d %H:%M:%S %Y
-                file = /var/log/httpd/access_log
-                log_stream_name = {instance_id}/var/log/httpd/access_log
-                log_group_name = ${WebServerLogs}
-                [/var/log/httpd/error_log]
-                datetime_format = %d/%b/%Y:%H:%M:%S %z
-                file = /var/log/httpd/error_log
-                log_stream_name = {instance_id}/var/log/httpd/error_log
-                log_group_name = ${WebServerLogs}
-              mode: '000644'
-              owner: root
-              group: root
           commands:
             01_php:
               command: '/root/php.sh'
@@ -601,15 +616,6 @@ Resources:
               httpd:
                 enabled: true
                 ensureRunning: true
-              awslogs:
-                enabled: true
-                ensureRunning: true
-                packages:
-                  yum:
-                  - awslogs
-                files:
-                - '/etc/awslogs/awslogs.conf'
-                - '/etc/awslogs/awscli.conf'
     Properties:
       AssociatePublicIpAddress: true
       IamInstanceProfile: !Ref WebServerInstanceProfile

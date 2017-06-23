@@ -145,7 +145,7 @@ Parameters:
   JenkinsVersion:
     Description: 'Jenkins version number'
     Type: String
-    Default: '2.46.3'
+    Default: '2.60.1'
   NewRelicLicenseKey:
     Description: 'Optional New Relic License Key will install the New Relic Servers for Linux agent.'
     Type: String
@@ -484,24 +484,89 @@ Resources:
           default:
             !If
             - HasNewRelic
-            - !If [HasIAMUserSSHAccess, [ssh-access, mount, install, setup, newrelic, custom, run], [mount, install, setup, newrelic, custom, run]]
-            - !If [HasIAMUserSSHAccess, [ssh-access, mount, install, setup, custom, run], [mount, install, setup, custom, run]]
-        custom:
+            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, install, setup, newrelic, custom, run], [awslogs, mount, install, setup, newrelic, custom, run]]
+            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, install, setup, custom, run], [awslogs, mount, install, setup, custom, run]]
+        awslogs:
           packages:
             yum:
-              git: []
-              docker: []
-          commands:
-            'a_add_to_docker_group':
-              command: 'usermod -a -G docker jenkins'
+              awslogs: []
+          files:
+            '/etc/awslogs/awscli.conf':
+              content: !Sub |
+                [default]
+                region = ${AWS::Region}
+                [plugins]
+                cwlogs = cwlogs
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/awslogs.conf':
+              content: !Sub |
+                [general]
+                state_file = /var/lib/awslogs/agent-state
+                [/var/log/messages]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/messages
+                log_stream_name = {instance_id}/var/log/messages
+                log_group_name = ${MasterLogs}
+                [/var/log/secure]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/secure
+                log_stream_name = {instance_id}/var/log/secure
+                log_group_name = ${MasterLogs}
+                [/var/log/cron]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cron
+                log_stream_name = {instance_id}/var/log/cron
+                log_group_name = ${MasterLogs}
+                [/var/log/cloud-init.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cloud-init.log
+                log_stream_name = {instance_id}/var/log/cloud-init.log
+                log_group_name = ${MasterLogs}
+                [/var/log/cfn-init.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init.log
+                log_stream_name = {instance_id}/var/log/cfn-init.log
+                log_group_name = ${MasterLogs}
+                [/var/log/cfn-hup.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-hup.log
+                log_stream_name = {instance_id}/var/log/cfn-hup.log
+                log_group_name = ${MasterLogs}
+                [/var/log/cfn-init-cmd.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init-cmd.log
+                log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
+                log_group_name = ${MasterLogs}
+                [/var/log/cloud-init-output.log]
+                file = /var/log/cloud-init-output.log
+                log_stream_name = {instance_id}/var/log/cloud-init-output.log
+                log_group_name = ${MasterLogs}
+                [/var/log/dmesg]
+                file = /var/log/dmesg
+                log_stream_name = {instance_id}/var/log/dmesg
+                log_group_name = ${MasterLogs}
+                [/var/log/jenkins/jenkins.log]
+                datetime_format = %d %b %Y %H:%M:%S
+                multi_line_start_pattern = {datetime_format}
+                file = /var/log/jenkins/jenkins.log
+                log_stream_name = {instance_id}/var/log/jenkins/jenkins.log
+                log_group_name = ${MasterLogs}
+              mode: '000644'
+              owner: root
+              group: root
           services:
             sysvinit:
-              docker:
+              awslogs:
                 enabled: true
                 ensureRunning: true
                 packages:
                   yum:
-                  - docker
+                  - awslogs
+                files:
+                - '/etc/awslogs/awslogs.conf'
+                - '/etc/awslogs/awscli.conf'
         newrelic:
           packages:
             rpm:
@@ -610,73 +675,8 @@ Resources:
             rpm:
               jenkins: !Sub 'http://pkg.jenkins-ci.org/redhat-stable/jenkins-${JenkinsVersion}-1.1.noarch.rpm'
             yum:
-              awslogs: []
+              'java-1.8.0-openjdk': []
           files:
-            '/etc/awslogs/awscli.conf':
-              content: !Sub |
-                [default]
-                region = ${AWS::Region}
-                [plugins]
-                cwlogs = cwlogs
-              mode: '000644'
-              owner: root
-              group: root
-            '/etc/awslogs/awslogs.conf':
-              content: !Sub |
-                [general]
-                state_file = /var/lib/awslogs/agent-state
-                [/var/log/messages]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/messages
-                log_stream_name = {instance_id}/var/log/messages
-                log_group_name = ${MasterLogs}
-                [/var/log/secure]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/secure
-                log_stream_name = {instance_id}/var/log/secure
-                log_group_name = ${MasterLogs}
-                [/var/log/cron]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cron
-                log_stream_name = {instance_id}/var/log/cron
-                log_group_name = ${MasterLogs}
-                [/var/log/cloud-init.log]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cloud-init.log
-                log_stream_name = {instance_id}/var/log/cloud-init.log
-                log_group_name = ${MasterLogs}
-                [/var/log/cfn-init.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init.log
-                log_stream_name = {instance_id}/var/log/cfn-init.log
-                log_group_name = ${MasterLogs}
-                [/var/log/cfn-hup.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-hup.log
-                log_stream_name = {instance_id}/var/log/cfn-hup.log
-                log_group_name = ${MasterLogs}
-                [/var/log/cfn-init-cmd.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init-cmd.log
-                log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
-                log_group_name = ${MasterLogs}
-                [/var/log/cloud-init-output.log]
-                file = /var/log/cloud-init-output.log
-                log_stream_name = {instance_id}/var/log/cloud-init-output.log
-                log_group_name = ${MasterLogs}
-                [/var/log/dmesg]
-                file = /var/log/dmesg
-                log_stream_name = {instance_id}/var/log/dmesg
-                log_group_name = ${MasterLogs}
-                [/var/log/jenkins/jenkins.log]
-                datetime_format = %d %b %Y %H:%M:%S
-                multi_line_start_pattern = {datetime_format}
-                file = /var/log/jenkins/jenkins.log
-                log_stream_name = {instance_id}/var/log/jenkins/jenkins.log
-                log_group_name = ${MasterLogs}
-              mode: '000644'
-              owner: root
-              group: root
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
                 [main]
@@ -837,17 +837,11 @@ Resources:
               mode: '000500'
               owner: root
               group: root
+          commands:
+            'a_alternatives':
+              command: 'alternatives --set java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java'
           services:
             sysvinit:
-              awslogs:
-                enabled: true
-                ensureRunning: true
-                packages:
-                  yum:
-                  - awslogs
-                files:
-                - '/etc/awslogs/awslogs.conf'
-                - '/etc/awslogs/awscli.conf'
               cfn-hup:
                 enabled: true
                 ensureRunning: true
@@ -938,6 +932,22 @@ Resources:
             'z_create_setup_done_file':
               command: 'echo "Setup done. Don not delete this file." > /var/lib/jenkins/setup_done.txt'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+        custom:
+          packages:
+            yum:
+              git: []
+              docker: []
+          commands:
+            'a_add_to_docker_group':
+              command: 'usermod -a -G docker jenkins'
+          services:
+            sysvinit:
+              docker:
+                enabled: true
+                ensureRunning: true
+                packages:
+                  yum:
+                  - docker
         run:
           services:
             sysvinit:
@@ -1137,24 +1147,87 @@ Resources:
           default:
             !If
             - HasNewRelic
-            - !If [HasIAMUserSSHAccess, [ssh-access, install, setup, newrelic, custom, run], [install, setup, newrelic, custom, run]]
-            - !If [HasIAMUserSSHAccess, [ssh-access, install, setup, custom, run], [install, setup, custom, run]]
-        custom:
+            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, install, setup, newrelic, custom, run], [awslogs, install, setup, newrelic, custom, run]]
+            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, install, setup, custom, run], [awslogs, install, setup, custom, run]]
+        awslogs:
           packages:
             yum:
-              git: []
-              docker: []
-          commands:
-            'a_add_to_docker_group':
-              command: 'usermod -a -G docker jenkins'
+              awslogs: []
+          files:
+            '/etc/awslogs/awscli.conf':
+              content: !Sub |
+                [default]
+                region = ${AWS::Region}
+                [plugins]
+                cwlogs = cwlogs
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/awslogs.conf':
+              content: !Sub |
+                [general]
+                state_file = /var/lib/awslogs/agent-state
+                [/var/log/messages]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/messages
+                log_stream_name = {instance_id}/var/log/messages
+                log_group_name = ${AgentLogs}
+                [/var/log/secure]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/secure
+                log_stream_name = {instance_id}/var/log/secure
+                log_group_name = ${AgentLogs}
+                [/var/log/cron]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cron
+                log_stream_name = {instance_id}/var/log/cron
+                log_group_name = ${AgentLogs}
+                [/var/log/cloud-init.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cloud-init.log
+                log_stream_name = {instance_id}/var/log/cloud-init.log
+                log_group_name = ${AgentLogs}
+                [/var/log/cfn-init.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init.log
+                log_stream_name = {instance_id}/var/log/cfn-init.log
+                log_group_name = ${AgentLogs}
+                [/var/log/cfn-hup.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-hup.log
+                log_stream_name = {instance_id}/var/log/cfn-hup.log
+                log_group_name = ${AgentLogs}
+                [/var/log/cfn-init-cmd.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init-cmd.log
+                log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
+                log_group_name = ${AgentLogs}
+                [/var/log/cloud-init-output.log]
+                file = /var/log/cloud-init-output.log
+                log_stream_name = {instance_id}/var/log/cloud-init-output.log
+                log_group_name = ${AgentLogs}
+                [/var/log/dmesg]
+                file = /var/log/dmesg
+                log_stream_name = {instance_id}/var/log/dmesg
+                log_group_name = ${AgentLogs}
+                [/var/lib/jenkins/screenlog]
+                file = /var/lib/jenkins/screenlog.*
+                log_stream_name = {instance_id}/var/lib/jenkins/screenlog
+                log_group_name = ${AgentLogs}
+              mode: '000644'
+              owner: root
+              group: root
           services:
             sysvinit:
-              docker:
+              awslogs:
                 enabled: true
                 ensureRunning: true
                 packages:
                   yum:
-                  - docker
+                  - awslogs
+                files:
+                - '/etc/awslogs/awslogs.conf'
+                - '/etc/awslogs/awscli.conf'
         newrelic:
           packages:
             rpm:
@@ -1239,71 +1312,8 @@ Resources:
         install:
           packages:
             yum:
-              awslogs: []
+              'java-1.8.0-openjdk': []
           files:
-            '/etc/awslogs/awscli.conf':
-              content: !Sub |
-                [default]
-                region = ${AWS::Region}
-                [plugins]
-                cwlogs = cwlogs
-              mode: '000644'
-              owner: root
-              group: root
-            '/etc/awslogs/awslogs.conf':
-              content: !Sub |
-                [general]
-                state_file = /var/lib/awslogs/agent-state
-                [/var/log/messages]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/messages
-                log_stream_name = {instance_id}/var/log/messages
-                log_group_name = ${AgentLogs}
-                [/var/log/secure]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/secure
-                log_stream_name = {instance_id}/var/log/secure
-                log_group_name = ${AgentLogs}
-                [/var/log/cron]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cron
-                log_stream_name = {instance_id}/var/log/cron
-                log_group_name = ${AgentLogs}
-                [/var/log/cloud-init.log]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cloud-init.log
-                log_stream_name = {instance_id}/var/log/cloud-init.log
-                log_group_name = ${AgentLogs}
-                [/var/log/cfn-init.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init.log
-                log_stream_name = {instance_id}/var/log/cfn-init.log
-                log_group_name = ${AgentLogs}
-                [/var/log/cfn-hup.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-hup.log
-                log_stream_name = {instance_id}/var/log/cfn-hup.log
-                log_group_name = ${AgentLogs}
-                [/var/log/cfn-init-cmd.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init-cmd.log
-                log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
-                log_group_name = ${AgentLogs}
-                [/var/log/cloud-init-output.log]
-                file = /var/log/cloud-init-output.log
-                log_stream_name = {instance_id}/var/log/cloud-init-output.log
-                log_group_name = ${AgentLogs}
-                [/var/log/dmesg]
-                file = /var/log/dmesg
-                log_stream_name = {instance_id}/var/log/dmesg
-                log_group_name = ${AgentLogs}
-                [/var/lib/jenkins/screenlog]
-                file = /var/lib/jenkins/screenlog.*
-                log_stream_name = {instance_id}/var/lib/jenkins/screenlog
-                log_group_name = ${AgentLogs}
-              mode: '000644'
-              owner: root
-              group: root
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
                 [main]
@@ -1321,26 +1331,19 @@ Resources:
                 action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=AgentLC
                 runas=root
           commands:
-            'a_groupadd':
+            'a_alternatives':
+              command: 'alternatives --set java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java'
+            'b_groupadd':
               command: 'groupadd -g 497 jenkins'
               test: 'if grep -q jenkins: /etc/group; then exit 1; else exit 0; fi'
-            b_useradd:
+            'c_useradd':
               command: 'adduser -u 498 -g 497 -s /bin/bash -d /var/lib/jenkins -c "Jenkins Continuous Integration Server" jenkins'
               test: 'if grep -q jenkins: /etc/passwd; then exit 1; else exit 0; fi'
-            c_mkdir:
+            'd_mkdir':
               command: 'mkdir /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins'
               test: '[ ! -d /var/lib/jenkins ]'
           services:
             sysvinit:
-              awslogs:
-                enabled: true
-                ensureRunning: true
-                packages:
-                  yum:
-                  - awslogs
-                files:
-                - '/etc/awslogs/awslogs.conf'
-                - '/etc/awslogs/awscli.conf'
               cfn-hup:
                 enabled: true
                 ensureRunning: true
@@ -1521,6 +1524,22 @@ Resources:
               command: '/root/create-agent.sh'
               cwd: '/var/lib/jenkins'
               test: 'if /root/check-agent.sh; then exit 1; else exit 0; fi'
+        custom:
+          packages:
+            yum:
+              git: []
+              docker: []
+          commands:
+            'a_add_to_docker_group':
+              command: 'usermod -a -G docker jenkins'
+          services:
+            sysvinit:
+              docker:
+                enabled: true
+                ensureRunning: true
+                packages:
+                  yum:
+                  - docker
         run:
           commands:
             'a_start_agent':
