@@ -53,6 +53,7 @@ Resources:
             Service:
             - 'events.amazonaws.com' # Allow CloudWatch Events
             - 'budgets.amazonaws.com' # Allow Budget Notifications
+            - 'rds.amazonaws.com' # Allow RDS Events
           Action: 'sns:Publish'
           Resource: !Ref Topic
       Topics:
