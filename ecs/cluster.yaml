@@ -531,6 +531,13 @@ Resources:
               - '2.7.10'
               daemons:
               - '1.2.3'
+          commands:
+            'a_update_ecs_init':
+              command: 'yum update -y ecs-init'
+            'b_restart_docker':
+              command: 'service docker restart'
+            'c_start_ecs':
+              command: 'start ecs'
           files:
             '/etc/awslogs/awscli.conf':
               content: !Sub |
