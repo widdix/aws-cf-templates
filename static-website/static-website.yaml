@@ -22,6 +22,7 @@ Parameters:
   RedirectDomainName:
     Description: 'Optional domain name redirecting to DomainName (e.g. www.widdix.de).'
     Type: String
+    Default: ''
   CertificateType:
     Description: 'Indicates whether to use the certificate from the AWS Certificate Manager or AWS Identity and Access Management. CreateAcmCertificate only works in the us-east-1 region.'
     Type: String
@@ -33,6 +34,7 @@ Parameters:
   ExistingCertificate:
     Description: 'Optional ACM Certificate ARN or IAM Certificate ID. Must be created in the us-east-1 region!'
     Type: String
+    Default: ''
   HostedZoneId:
     Description: 'The Id of the hosted zone managed by AWS Route53.'
     Type: String
