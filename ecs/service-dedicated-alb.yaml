@@ -16,6 +16,7 @@ Metadata:
       Parameters:
       - LoadBalancerScheme
       - LoadBalancerCertificateArn
+      - LoadBalancerDeregistrationDelay
     - Label:
         default: 'Task Parameters'
       Parameters:
@@ -49,6 +50,13 @@ Parameters:
     Description: 'Optional Amazon Resource Name (ARN) of the certificate to associate with the load balancer.'
     Type: String
     Default: ''
+  LoadBalancerDeregistrationDelay:
+    Description: 'The amount time (in seconds) to wait before changing the state of a deregistering target from draining to unused.'
+    Type: Number
+    Default: 300
+    ConstraintDescription: 'Must be in the range [0-3600]'
+    MinValue: 0
+    MaxValue: 3600
   Image:
     Description: 'The image to use for a container, which is passed directly to the Docker daemon. You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag).'
     Type: String
@@ -168,6 +176,9 @@ Resources:
       UnhealthyThresholdCount: 4
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: !Ref LoadBalancerDeregistrationDelay
   HTTPCodeELB5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
