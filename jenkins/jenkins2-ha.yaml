@@ -648,7 +648,7 @@ Resources:
               command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'f_install_plugins':
-              command: 'while read -r plugin; do java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" install-plugin "$plugin"; done < /root/plugins.txt'
+              command: 'java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" install-plugin $(cat /root/plugins.txt | tr '\n' ' ')'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'g_restart_jenkins':
               command: 'service jenkins restart'
