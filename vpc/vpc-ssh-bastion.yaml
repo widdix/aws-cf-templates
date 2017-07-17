@@ -304,9 +304,13 @@ Resources:
                   SaveUserName=${SaveUserName//"="/".equal."}
                   SaveUserName=${SaveUserName//","/".comma."}
                   SaveUserName=${SaveUserName//"@"/".at."}
-                  if ! id -u "$SaveUserName" >/dev/null 2>&1; then
-                    # don't grant sudo rights on bastion host!
-                    /usr/sbin/useradd "$SaveUserName"
+                  if [ "${#SaveUserName}" -le "32" ]; then
+                    if ! id -u "$SaveUserName" > /dev/null 2>&1; then
+                      # don't grant sudo rights on bastion host!
+                      /usr/sbin/useradd "$SaveUserName"
+                    fi
+                  else
+                    echo "Can not import IAM user ${SaveUserName}. User name is longer than 32 characters."
                   fi
                 done
               mode: '000755'
