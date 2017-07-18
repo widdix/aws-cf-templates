@@ -281,7 +281,7 @@ Resources:
         Cooldown: 300
         MinAdjustmentMagnitude: 1
         StepAdjustments:
-        - MetricIntervalLowerBound: 0
+        - MetricIntervalUpperBound: 0
           ScalingAdjustment: -25
   CPUUtilizationTooHighAlarm:
     Condition: HasAlertTopic
