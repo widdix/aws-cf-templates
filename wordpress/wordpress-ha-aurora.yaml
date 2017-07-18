@@ -315,6 +315,7 @@ Resources:
       VpcSecurityGroupIds:
       - !Ref DatabaseSecurityGroup
   DatabaseA:
+    DeletionPolicy: Delete # TODO workaround for https://stackoverflow.com/questions/45117089/deletionpolicysnapshot-cannot-be-specified-for-a-cluster-instance-use-deletion
     Type: 'AWS::RDS::DBInstance'
     Properties:
       DBClusterIdentifier: !Ref DatabaseCluster
@@ -322,6 +323,7 @@ Resources:
       Engine: aurora
       DBSubnetGroupName: !Ref DBSubnetGroup
   DatabaseB:
+    DeletionPolicy: Delete # TODO workaround for https://stackoverflow.com/questions/45117089/deletionpolicysnapshot-cannot-be-specified-for-a-cluster-instance-use-deletion
     Type: 'AWS::RDS::DBInstance'
     Properties:
       DBClusterIdentifier: !Ref DatabaseCluster
