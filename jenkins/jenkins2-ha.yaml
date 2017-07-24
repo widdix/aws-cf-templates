@@ -453,6 +453,11 @@ Resources:
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
                 log_group_name = ${MasterLogs}
+                [/var/log/newrelic/nrsysmond.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/newrelic/nrsysmond.log
+                log_stream_name = {instance_id}/var/log/newrelic/nrsysmond.log
+                log_group_name = ${MasterLogs}
                 [/var/log/jenkins/jenkins.log]
                 datetime_format = %d %b %Y %H:%M:%S
                 multi_line_start_pattern = {datetime_format}

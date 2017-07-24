@@ -455,6 +455,11 @@ Resources:
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
                 log_group_name = ${WebServerLogs}
+                [/var/log/newrelic/nrsysmond.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/newrelic/nrsysmond.log
+                log_stream_name = {instance_id}/var/log/newrelic/nrsysmond.log
+                log_group_name = ${WebServerLogs}
                 [/var/log/httpd/access_log]
                 datetime_format = %b %d %H:%M:%S %Y
                 file = /var/log/httpd/access_log
