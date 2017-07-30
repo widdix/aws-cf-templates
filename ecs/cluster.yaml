@@ -18,6 +18,12 @@ Metadata:
       - IAMUserSSHAccess
       - NewRelicLicenseKey
     - Label:
+        default: 'EFS Parameters'
+      Parameters:
+      - EFSPath
+      - EFSOwner
+      - EFSGroup
+    - Label:
         default: 'Load Balancer Parameters'
       Parameters:
       - LoadBalancerScheme
@@ -64,6 +70,18 @@ Parameters:
     Type: String
     Default: ''
     NoEcho: true
+  EFSPath:
+    Description: Absolue path for shared EFS mount (begin with "/")
+    Type: String
+    Default: /efs
+  EFSOwner:
+    Description: Owner of shared EFS mount directory
+    Type: String
+    Default: root
+  EFSGroup:
+    Description: Group of shared EFS mount directory
+    Type: String
+    Default: root
   SubnetsReach:
     Description: 'Should the cluster have direct access to the Internet or do you prefer private subnets with NAT?'
     Type: String
@@ -141,6 +159,16 @@ Mappings:
     'us-west-2':
       ECSAMI: 'ami-57d9cd2e'
 Conditions:
+  Has2AZs: !Or [
+    !Equals [vpc-2azs, !Ref ParentVPCStack], 
+    !Equals [vpc-3azs, !Ref ParentVPCStack], 
+    !Equals [vpc-4azs, !Ref ParentVPCStack]
+  ]
+  Has3AZs: !Or [
+    !Equals [vpc-3azs, !Ref ParentVPCStack], 
+    !Equals [vpc-4azs, !Ref ParentVPCStack]
+  ]
+  Has4AZs: !Equals [vpc-4azs, !Ref ParentVPCStack]
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
@@ -331,6 +359,17 @@ Resources:
         FromPort: 0
         ToPort: 65535
         IpProtocol: tcp
+  SecurityGroupEfsShare:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'ecs-cluster-efs-share'
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      SecurityGroupIngress:
+      - SourceSecurityGroupId: !Ref SecurityGroup
+        FromPort: 2049
+        ToPort: 2049
+        IpProtocol: tcp
   SecurityGroupInSSHBastion:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasSSHBastionSecurityGroup
@@ -350,6 +389,57 @@ Resources:
       FromPort: 22
       ToPort: 22
       CidrIp: '0.0.0.0/0'
+  EfsShare:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      PerformanceMode: generalPurpose
+      FileSystemTags:
+      - Key: Name
+        Value: ecs-cluster-efs-share
+  EfsShareMountTargetA:
+    Type: AWS::EFS::MountTarget
+    Condition: Has2AZs
+    Properties:
+      FileSystemId:
+        Ref: EfsShare
+      SubnetId: 
+        Fn::ImportValue:
+          !Sub '${ParentVPCStack}-SubnetA${SubnetsReach}'
+      SecurityGroups:
+      - Ref: SecurityGroupEfsShare
+  EfsShareMountTargetB:
+    Type: AWS::EFS::MountTarget
+    Condition: Has2AZs
+    Properties:
+      FileSystemId:
+        Ref: EfsShare
+      SubnetId: 
+        Fn::ImportValue:
+          !Sub '${ParentVPCStack}-SubnetB${SubnetsReach}'
+      SecurityGroups:
+      - Ref: SecurityGroupEfsShare
+  EfsShareMountTargetC:
+    Type: AWS::EFS::MountTarget
+    Condition: Has3AZs
+    Properties:
+      FileSystemId:
+        Ref: EfsShare
+      SubnetId: 
+        Fn::ImportValue:
+          !Sub '${ParentVPCStack}-SubnetC${SubnetsReach}'
+      SecurityGroups:
+      - Ref: SecurityGroupEfsShare
+  EfsShareMountTargetD:
+    Type: AWS::EFS::MountTarget
+    Condition: Has4AZs
+    Properties:
+      FileSystemId:
+        Ref: EfsShare
+      SubnetId:   
+        Fn::ImportValue:
+          !Sub '${ParentVPCStack}-SubnetD${SubnetsReach}'
+      SecurityGroups:
+      - Ref: SecurityGroupEfsShare
   HTTPCodeELB5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -623,6 +713,13 @@ Resources:
               - '2.7.10'
               daemons:
               - '1.2.3'
+          commands:
+            'a_update_ecs_init':
+              command: 'yum update -y ecs-init'
+            'b_restart_docker':
+              command: 'service docker restart'
+            'c_start_ecs':
+              command: 'start ecs'
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -809,8 +906,25 @@ Resources:
         'Fn::Base64': !Sub |
           #!/bin/bash -x
           echo "ECS_CLUSTER=${Cluster}" >> /etc/ecs/ecs.config
+
           yum install -y aws-cfn-bootstrap
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+
+          yum update -y
+
+          yum install -y nfs-utils
+
+          mkdir -p ${EFSPath}
+          mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${EfsShare}.efs.${AWS::Region}.amazonaws.com:/ ${EFSPath}
+
+          service docker restart
+
+          start ecs
+
+          chown -R ${EFSOwner}:${EFSGroup} ${EFSPath}
+
+          ls -al
+
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
