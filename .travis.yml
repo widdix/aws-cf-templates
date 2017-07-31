@@ -12,4 +12,4 @@ install:
 - 'pip install awscli'
 script:
 - 'yamllint .'
-- "find . -type f -name '*.y?ml' -exec aws cloudformation validate-template --template-body file://{} +"
+- 'find . -type f -name ''*.y?ml'' -exec aws cloudformation validate-template --template-body file://{} \;'
