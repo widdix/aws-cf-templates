@@ -723,7 +723,7 @@ Resources:
               content: |
                 #!/usr/bin/env ruby
                 # chkconfig:    - 80 20
-                APP_NAME = 'lifecycle-poller'  
+                APP_NAME = 'lifecycle-poller'
                 APP_PATH = '/opt/lifecycle-poller/daemon.rb'
                 case ARGV.first
                   when 'start'
@@ -1452,7 +1452,7 @@ Resources:
               content: |
                 #!/usr/bin/env ruby
                 # chkconfig:    - 80 20
-                APP_NAME = 'agent-healthcheck'  
+                APP_NAME = 'agent-healthcheck'
                 APP_PATH = '/opt/agent-healthcheck/daemon.rb'
                 case ARGV.first
                   when 'start'

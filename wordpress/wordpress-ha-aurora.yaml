@@ -606,7 +606,7 @@ Resources:
                     php wp-cli.phar core download --allow-root --version=${BlogVersion}
                     php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='wordpress' --dbhost='${DatabaseCluster.Endpoint.Address}' --allow-root
                     php wp-cli.phar core install --url='https://${DomainName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}' --skip-email --allow-root
-                    sed -i "/$table_prefix = 'wp_';/a\$_SERVER['HTTPS'] = 'on';" /var/www/html/wp-config.php 
+                    sed -i "/$table_prefix = 'wp_';/a\$_SERVER['HTTPS'] = 'on';" /var/www/html/wp-config.php
                   fi
                   chown -R apache:apache /var/www/html
                   chmod u+wrx /var/www/html/wp-content/*
@@ -785,7 +785,7 @@ Resources:
     Type: AWS::EFS::MountTarget
     Properties:
       FileSystemId: !Ref EFSFileSystem
-      SubnetId: 
+      SubnetId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
       SecurityGroups:
       - !Ref EFSSecurityGroup
@@ -793,7 +793,7 @@ Resources:
     Type: AWS::EFS::MountTarget
     Properties:
       FileSystemId: !Ref EFSFileSystem
-      SubnetId: 
+      SubnetId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetCPublic'
       SecurityGroups:
       - !Ref EFSSecurityGroup
@@ -801,7 +801,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Allowing access to EFS
-      VpcId: 
+      VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
       SecurityGroupIngress:
       - IpProtocol: tcp

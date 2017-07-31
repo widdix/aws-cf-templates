@@ -191,7 +191,7 @@ Resources:
       FileSystemId: !Ref MasterStorage
       SecurityGroups:
       - !Ref MasterStorageSG
-      SubnetId: 
+      SubnetId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetA${MasterSubnetsReach}'
   MasterStorageMountTargetB:
     Type: 'AWS::EFS::MountTarget'

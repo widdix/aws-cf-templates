@@ -95,7 +95,7 @@ Conditions:
 Resources:
   TaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
-    Properties: 
+    Properties:
       Family: !Ref 'AWS::StackName'
       NetworkMode: bridge
       ContainerDefinitions:
@@ -129,8 +129,8 @@ Resources:
       VpcId:
         'Fn::ImportValue': !Sub '${ParentClusterStack}-VPC'
       TargetGroupAttributes:
-        - Key: deregistration_delay.timeout_seconds
-          Value: !Ref LoadBalancerDeregistrationDelay
+      - Key: deregistration_delay.timeout_seconds
+        Value: !Ref LoadBalancerDeregistrationDelay
   LoadBalancerHttpListenerRule:
     Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
     Properties:
@@ -263,7 +263,7 @@ Resources:
       PolicyName: !Sub '${AWS::StackName}-scale-up'
       PolicyType: StepScaling
       ScalingTargetId: !Ref ScalableTarget
-      StepScalingPolicyConfiguration: 
+      StepScalingPolicyConfiguration:
         AdjustmentType: PercentChangeInCapacity
         Cooldown: 300
         MinAdjustmentMagnitude: 1
@@ -276,7 +276,7 @@ Resources:
       PolicyName: !Sub '${AWS::StackName}-scale-down'
       PolicyType: StepScaling
       ScalingTargetId: !Ref ScalableTarget
-      StepScalingPolicyConfiguration: 
+      StepScalingPolicyConfiguration:
         AdjustmentType: PercentChangeInCapacity
         Cooldown: 300
         MinAdjustmentMagnitude: 1
@@ -355,7 +355,7 @@ Outputs:
     Description: 'URL to the ECS service.' # TODO does not work with LoadBalancerHostPattern
     Value: !Sub
     - '${ClusterURL}/${LoadBalancerPath}/'
-    - ClusterURL: 
+    - ClusterURL:
         'Fn::ImportValue': !Sub '${ParentClusterStack}-URL'
       LoadBalancerPath: !Ref LoadBalancerPath
     Export:

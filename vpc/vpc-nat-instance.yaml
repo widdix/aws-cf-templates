@@ -452,24 +452,24 @@ Resources:
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
       UserData:
         'Fn::Base64': !Sub
-          - |
-            #!/bin/bash -x
-            bash -ex << TRY
-              INSTANCEID=$(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
-              aws --region ${Region} ec2 associate-address --instance-id $INSTANCEID --allocation-id ${EIPAllocationId}
-              aws --region ${Region} ec2 modify-instance-attribute --instance-id $INSTANCEID --source-dest-check "{\"Value\": false}"
-              aws --region ${Region} ec2 replace-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID || aws --region ${Region} ec2 create-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID
-              /opt/aws/bin/cfn-init -v --stack ${StackName} --resource NATLaunchConfiguration --region ${Region}
-            TRY
-            /opt/aws/bin/cfn-signal -e $? --region ${Region} --stack ${StackName} --resource NATAutoScalingGroup
-          - RouteTablePrivate:
-              'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTable${SubnetZone}Private'
-            Region:
-              !Ref 'AWS::Region'
-            StackName:
-              !Ref 'AWS::StackName'
-            EIPAllocationId:
-              !Sub '${EIP.AllocationId}'
+        - |
+          #!/bin/bash -x
+          bash -ex << TRY
+            INSTANCEID=$(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
+            aws --region ${Region} ec2 associate-address --instance-id $INSTANCEID --allocation-id ${EIPAllocationId}
+            aws --region ${Region} ec2 modify-instance-attribute --instance-id $INSTANCEID --source-dest-check "{\"Value\": false}"
+            aws --region ${Region} ec2 replace-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID || aws --region ${Region} ec2 create-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID
+            /opt/aws/bin/cfn-init -v --stack ${StackName} --resource NATLaunchConfiguration --region ${Region}
+          TRY
+          /opt/aws/bin/cfn-signal -e $? --region ${Region} --stack ${StackName} --resource NATAutoScalingGroup
+        - RouteTablePrivate:
+            'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTable${SubnetZone}Private'
+          Region:
+            !Ref 'AWS::Region'
+          StackName:
+            !Ref 'AWS::StackName'
+          EIPAllocationId:
+            !Sub '${EIP.AllocationId}'
   NATAutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:

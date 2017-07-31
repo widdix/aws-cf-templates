@@ -47,7 +47,7 @@ Resources:
   Certificate:
     Condition: HasCreateAcmCertificate
     Type: 'AWS::CertificateManager::Certificate'
-    Properties: 
+    Properties:
       DomainName: !Ref DomainName
       DomainValidationOptions: !If
       - HasRedirectDomainName
@@ -84,7 +84,7 @@ Resources:
         - !Ref DomainName
         Comment: !Ref DomainName
         Origins:
-        - DomainName: !Select [ 2, !Split [ /, !GetAtt S3Bucket.WebsiteURL ] ]
+        - DomainName: !Select [2, !Split ['/', !GetAtt 'S3Bucket.WebsiteURL']]
           Id: s3origin
           CustomOriginConfig:
             OriginProtocolPolicy: 'http-only'
@@ -107,8 +107,8 @@ Resources:
         HttpVersion: http2
         PriceClass: 'PriceClass_All'
         ViewerCertificate:
-          AcmCertificateArn: !If [HasCreateAcmCertificate, !Ref Certificate, !If [HasAcmCertificateArn, !Ref ExistingCertificate, !Ref 'AWS::NoValue']] 
-          IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue'] 
+          AcmCertificateArn: !If [HasCreateAcmCertificate, !Ref Certificate, !If [HasAcmCertificateArn, !Ref ExistingCertificate, !Ref 'AWS::NoValue']]
+          IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue']
           SslSupportMethod: 'sni-only'
           MinimumProtocolVersion: TLSv1
   Route53Record:
@@ -140,7 +140,7 @@ Resources:
         - !Ref RedirectDomainName
         Comment: !Ref RedirectDomainName
         Origins:
-        - DomainName: !Select [ 2, !Split [ /, !GetAtt S3BucketRedirect.WebsiteURL ] ]
+        - DomainName: !Select [2, !Split ['/', !GetAtt 'S3BucketRedirect.WebsiteURL']]
           Id: s3origin
           CustomOriginConfig:
             OriginProtocolPolicy: 'http-only'
@@ -163,8 +163,8 @@ Resources:
         HttpVersion: http2
         PriceClass: 'PriceClass_All'
         ViewerCertificate:
-          AcmCertificateArn: !If [HasCreateAcmCertificate, !Ref Certificate, !If [HasAcmCertificateArn, !Ref ExistingCertificate, !Ref 'AWS::NoValue']] 
-          IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue'] 
+          AcmCertificateArn: !If [HasCreateAcmCertificate, !Ref Certificate, !If [HasAcmCertificateArn, !Ref ExistingCertificate, !Ref 'AWS::NoValue']]
+          IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue']
           SslSupportMethod: 'sni-only'
           MinimumProtocolVersion: TLSv1
   Route53RecordRedirect:

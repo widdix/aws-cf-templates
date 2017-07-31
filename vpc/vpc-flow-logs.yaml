@@ -64,7 +64,7 @@ Resources:
     Properties:
       DeliverLogsPermissionArn: !GetAtt 'Role.Arn'
       LogGroupName: !Ref LogGroup
-      ResourceId :
+      ResourceId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
       ResourceType: 'VPC'
       TrafficType: !Ref TrafficType

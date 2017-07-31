@@ -63,7 +63,7 @@ Parameters:
 Resources:
   Dummy:
     Type: 'AWS::S3::Bucket'
-    Properties: 
+    Properties:
       BucketName: !Ref 'AWS::StackName'
 Outputs:
   TemplateID:

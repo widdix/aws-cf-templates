@@ -644,7 +644,7 @@ Resources:
               content: |
                 #!/usr/bin/env ruby
                 # chkconfig:    - 80 20
-                APP_NAME = 'lifecycle-poller'  
+                APP_NAME = 'lifecycle-poller'
                 APP_PATH = '/opt/lifecycle-poller/daemon.rb'
                 case ARGV.first
                   when 'start'
@@ -722,7 +722,7 @@ Resources:
                 def isContainerInstanceIdle(containerInstanceId)
                   ecs = Aws::ECS::Client.new()
                   resp = ecs.list_tasks({
-                    cluster: $conf['cluster'], 
+                    cluster: $conf['cluster'],
                     container_instance: containerInstanceId
                   })
                   return resp.task_arns.empty?
@@ -742,9 +742,9 @@ Resources:
                 def deregisterContainerInstance(containerInstanceId)
                   ecs = Aws::ECS::Client.new()
                   resp = ecs.deregister_container_instance({
-                    cluster: $conf['cluster'], 
-                    container_instance: containerInstanceId, 
-                    force: false 
+                    cluster: $conf['cluster'],
+                    container_instance: containerInstanceId,
+                    force: false
                   })
                 end
                 def completeLifecycleAction(token, hook, asg)
