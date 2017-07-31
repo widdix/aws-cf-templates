@@ -84,7 +84,7 @@ Resources:
         - !Ref DomainName
         Comment: !Ref DomainName
         Origins:
-        - DomainName: !Sub '${S3Bucket}.s3-website-${AWS::Region}.amazonaws.com'
+        - DomainName: !Select [ 2, !Split [ /, !GetAtt S3Bucket.WebsiteURL ] ]
           Id: s3origin
           CustomOriginConfig:
             OriginProtocolPolicy: 'http-only'
@@ -140,7 +140,7 @@ Resources:
         - !Ref RedirectDomainName
         Comment: !Ref RedirectDomainName
         Origins:
-        - DomainName: !Sub '${S3BucketRedirect}.s3-website-${AWS::Region}.amazonaws.com'
+        - DomainName: !Select [ 2, !Split [ /, !GetAtt S3BucketRedirect.WebsiteURL ] ]
           Id: s3origin
           CustomOriginConfig:
             OriginProtocolPolicy: 'http-only'
