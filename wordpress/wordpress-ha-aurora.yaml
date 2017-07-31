@@ -757,6 +757,7 @@ Resources:
       - Key: Name
         Value: !Sub '${AWS::StackName}-efs'
   EFSFileSystemBurstCreditBalanceTooLowAlarm:
+    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'EFS file system is running out of burst credits.  You can expect a significant performance drop in the next hour.'
