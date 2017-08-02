@@ -408,6 +408,9 @@ Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
     Value: 'ecs/service-dedicated-alb'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
   DNSName:
     Description: 'The DNS name for the ECS cluster/service load balancer.'
     Value: !GetAtt 'LoadBalancer.DNSName'

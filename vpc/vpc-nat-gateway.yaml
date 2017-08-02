@@ -47,6 +47,9 @@ Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
     Value: 'vpc/vpc-nat-gateway'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
   IPAddress:
     Description: 'The public IP address of the NAT gateway.'
     Value: !Ref EIP

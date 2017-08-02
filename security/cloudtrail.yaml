@@ -126,3 +126,6 @@ Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
     Value: 'security/cloudtrail'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'

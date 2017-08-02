@@ -764,6 +764,9 @@ Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
     Value: 'jenkins/jenkins2-ha'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
   AdminUsername:
     Description: 'User name for the Jenkins admin.'
     Value: admin

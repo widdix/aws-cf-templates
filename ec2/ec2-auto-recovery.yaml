@@ -458,6 +458,9 @@ Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
     Value: 'ec2/ec2-auto-recovery'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
   IPAddress:
     Description: 'The public IP address of the EC2 instance.'
     Value: !Ref ElasticIP

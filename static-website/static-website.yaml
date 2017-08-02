@@ -183,6 +183,9 @@ Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
     Value: 'static-website/static-website'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
   URL:
     Description: 'URL to static website.'
     Value: !Sub 'https://${DomainName}'
