@@ -27,6 +27,9 @@ Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
     Value: 'vpc/vpc-endpoint-s3'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
   Endpoint:
     Description: 'The VPC endpoint to S3.'
     Value: !Ref EndpointS3

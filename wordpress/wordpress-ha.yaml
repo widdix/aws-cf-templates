@@ -852,6 +852,9 @@ Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
     Value: 'wordpress/wordpress-ha'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
   CloudFrontID:
     Description: 'The ID of the CloudFront distribution.'
     Value: !Ref CloudFrontDistribution

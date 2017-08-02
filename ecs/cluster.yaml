@@ -1028,6 +1028,9 @@ Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
     Value: 'ecs/cluster'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
   Cluster:
     Description: 'ECS cluster.'
     Value: !Ref Cluster

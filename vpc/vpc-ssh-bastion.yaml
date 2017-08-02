@@ -442,6 +442,9 @@ Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
     Value: 'vpc/vpc-ssh-bastion'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
   SecurityGroup:
     Description: 'Use this Security Group to reference incoming traffic from the SSH bastion host/instance.'
     Value: !Ref SecurityGroup
