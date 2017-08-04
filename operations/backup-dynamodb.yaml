@@ -1,0 +1,188 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Operations: DynamoDB backup with Data Pipeline, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentAlertStack
+    - Label:
+        default: 'Table Parameters'
+      Parameters:
+      - TableName
+      - ReadThroughputPercent
+    - Label:
+        default: 'EMR Parameters'
+      Parameters:
+      - InstanceType
+Parameters:
+  ParentAlertStack:
+    Description: 'Stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+  TableName:
+    Description: 'DynamoDB table name'
+    Type: String
+  ReadThroughputPercent:
+    Description: 'DynamoDB read throughput percent'
+    Type: Number
+    Default: 0.25
+    ConstraintDescription: 'Must be in the range [0.1-1]'
+    MinValue: 0.1
+    MaxValue: 1
+  InstanceType:
+    Description: 'The instance type of the EC2 instances of the EMR cluster (http://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-supported-instance-types.html).'
+    Type: String
+    Default: 'm3.xlarge'
+Resources:
+  BackupBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-backup'
+  LogBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-log'
+  DataPipelineDefaultResourceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'ec2.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+      - 'arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforDataPipelineRole'
+  DataPipelineDefaultResourceInstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Roles:
+      - !Ref DataPipelineDefaultResourceRole
+  DataPipelineDefaultRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - 'datapipeline.amazonaws.com'
+            - 'elasticmapreduce.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+      - 'arn:aws:iam::aws:policy/service-role/AWSDataPipelineRole'
+  DataPipeline:
+    Type: 'AWS::DataPipeline::Pipeline'
+    Properties:
+      Name: !Ref 'AWS::StackName'
+      PipelineObjects:
+      - Id: Failure
+        Name: Failure
+        Fields:
+        - Key: type
+          StringValue: SnsAlarm
+        - Key: topicArn
+          StringValue:
+            'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+        - Key: subject
+          StringValue: !Sub 'DynamoDB backup failure in ${AWS::StackName}'
+        - Key: message
+          StringValue: '#{@error}'
+      - Id: EmrClusterForBackup
+        Name: EmrClusterForBackup
+        Fields:
+        - Key: terminateAfter
+          StringValue: '3 Hours'
+        - Key: region
+          StringValue: !Ref 'AWS::Region'
+        - Key: bootstrapAction
+          StringValue: !Sub 's3://${AWS::Region}.elasticmapreduce/bootstrap-actions/configure-hadoop, --yarn-key-value,yarn.nodemanager.resource.memory-mb=11520,--yarn-key-value,yarn.scheduler.maximum-allocation-mb=11520,--yarn-key-value,yarn.scheduler.minimum-allocation-mb=1440,--yarn-key-value,yarn.app.mapreduce.am.resource.mb=2880,--mapred-key-value,mapreduce.map.memory.mb=5760,--mapred-key-value,mapreduce.map.java.opts=-Xmx4608M,--mapred-key-value,mapreduce.reduce.memory.mb=2880,--mapred-key-value,mapreduce.reduce.java.opts=-Xmx2304m,--mapred-key-value,mapreduce.map.speculative=false'
+        - Key: coreInstanceType
+          StringValue: !Ref InstanceType
+        - Key: coreInstanceCount
+          StringValue: 1
+        - Key: masterInstanceType
+          StringValue: !Ref InstanceType
+        - Key: amiVersion
+          StringValue: '3.9.0'
+        - Key: type
+          StringValue: EmrCluster
+        - Key: resourceRole
+          StringValue: !Ref DataPipelineDefaultResourceInstanceProfile
+      - Id: TableBackupActivity
+        Name: TableBackupActivity
+        Fields:
+        - Key: resizeClusterBeforeRunning
+          StringValue: true
+        - Key: step
+          StringValue: !Sub 's3://dynamodb-emr-${AWS::Region}/emr-ddb-storage-handler/2.1.0/emr-ddb-2.1.0.jar,org.apache.hadoop.dynamodb.tools.DynamoDbExport,#{output.directoryPath},#{input.tableName},#{input.readThroughputPercent}'
+        - Key: input
+          RefValue: DDBSourceTable
+        - Key: output
+          RefValue: S3BackupLocation
+        - Key: type
+          StringValue: EmrActivity
+        - Key: maximumRetries
+          StringValue: 2
+        - Key: runsOn
+          RefValue: EmrClusterForBackup
+      - Id: DefaultSchedule
+        Name: 'Every 1 day'
+        Fields:
+        - Key: type
+          StringValue: Schedule
+        - Key: startAt
+          StringValue: FIRST_ACTIVATION_DATE_TIME
+        - Key: period
+          StringValue: '1 days'
+      - Id: S3BackupLocation
+        Name: S3BackupLocation
+        Fields:
+        - Key: directoryPath
+          StringValue: !Sub 's3://${BackupBucket}/#{format(@scheduledStartTime, ''YYYY-MM-dd-HH-mm-ss'')}'
+        - Key: type
+          StringValue: S3DataNode
+      - Id: DDBSourceTable
+        Name: DDBSourceTable
+        Fields:
+        - Key: readThroughputPercent
+          StringValue: !Ref ReadThroughputPercent
+        - Key: tableName
+          StringValue: !Ref TableName
+        - Key: type
+          StringValue: DynamoDBDataNode
+      - Id: Default
+        Name: Default
+        Fields:
+        - Key: pipelineLogUri
+          StringValue: !Sub 's3://${LogBucket}/'
+        - Key: failureAndRerunMode
+          StringValue: CASCADE
+        - Key: resourceRole
+          StringValue: !Ref DataPipelineDefaultResourceRole
+        - Key: schedule
+          RefValue: DefaultSchedule
+        - Key: role
+          StringValue: !Ref DataPipelineDefaultRole
+        - Key: scheduleType
+          StringValue: cron
+        - Key: type
+          StringValue: Default
+        - Key: onFail
+          RefValue: Failure
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'operations/backup-dynamodb'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
+  BackupBucketName:
+    Description: 'The name of the backup bucket.'
+    Value: !Ref BackupBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-BackupBucketName'
