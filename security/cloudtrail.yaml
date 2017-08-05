@@ -9,6 +9,7 @@ Metadata:
       Parameters:
       - CloudWatchLogsRetentionInDays
       - ExternalTrailBucket
+      - LogFilePrefix
 Parameters:
   CloudWatchLogsRetentionInDays:
     Description: 'The number of days log events are kept in CloudWatch Logs'
@@ -18,6 +19,10 @@ Parameters:
   ExternalTrailBucket:
     Description: 'Optional The name of the Amazon S3 bucket where CloudTrail publishes log files. If you leave this empty, the Amazon S3 bucket is created for you.'
     Type: String
+  LogFilePrefix:
+    Description: 'Optional The log file prefix.'
+    Type: String
+    Default: ''
 Conditions:
   InternalBucket: !Equals [!Ref ExternalTrailBucket, '']
   ExternalBucket: !Not [!Equals [!Ref ExternalTrailBucket, '']]
@@ -106,6 +111,7 @@ Resources:
       IsLogging: true
       IsMultiRegionTrail: true
       S3BucketName: !Ref TrailBucket
+      S3KeyPrefix: !Ref LogFilePrefix
       CloudWatchLogsLogGroupArn: !GetAtt 'TrailLogGroup.Arn'
       CloudWatchLogsRoleArn: !GetAtt 'TrailLogGroupRole.Arn'
       SnsTopicName: !GetAtt 'TrailTopic.TopicName'
@@ -119,6 +125,7 @@ Resources:
       IsLogging: true
       IsMultiRegionTrail: true
       S3BucketName: !Ref ExternalTrailBucket
+      S3KeyPrefix: !Ref LogFilePrefix
       CloudWatchLogsLogGroupArn: !GetAtt 'TrailLogGroup.Arn'
       CloudWatchLogsRoleArn: !GetAtt 'TrailLogGroupRole.Arn'
       SnsTopicName: !GetAtt 'TrailTopic.TopicName'
