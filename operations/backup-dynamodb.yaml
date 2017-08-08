@@ -34,7 +34,7 @@ Parameters:
   InstanceType:
     Description: 'The instance type of the EC2 instances of the EMR cluster (http://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-supported-instance-types.html).'
     Type: String
-    Default: 'm3.xlarge'
+    Default: 'm4.large'
 Resources:
   BackupBucket:
     Type: 'AWS::S3::Bucket'
