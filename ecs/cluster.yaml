@@ -1021,9 +1021,9 @@ Resources:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
   SchedulableContainersRule:
     Type: 'AWS::Events::Rule'
-    Properties: 
+    Properties:
       EventPattern:
-        source: 
+        source:
         - 'aws.ecs'
         'detail-type':
         - 'ECS Container Instance State Change'
@@ -1074,9 +1074,9 @@ Resources:
           - Effect: Allow
             Action: 'cloudwatch:PutMetricData'
             Resource: '*'
-  SchedulableContainersLambdaPermission: 
+  SchedulableContainersLambdaPermission:
     Type: 'AWS::Lambda::Permission'
-    Properties: 
+    Properties:
       Action: 'lambda:InvokeFunction'
       FunctionName: !Ref SchedulableContainersLambda
       Principal: 'events.amazonaws.com'
