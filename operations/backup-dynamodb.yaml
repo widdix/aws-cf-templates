@@ -7,6 +7,7 @@ Metadata:
     - Label:
         default: 'Parent Stacks'
       Parameters:
+      - ParentVPCStack
       - ParentAlertStack
     - Label:
         default: 'Table Parameters'
@@ -18,6 +19,9 @@ Metadata:
       Parameters:
       - InstanceType
 Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
   ParentAlertStack:
     Description: 'Stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
@@ -113,6 +117,9 @@ Resources:
           StringValue: EmrCluster
         - Key: resourceRole
           StringValue: !Ref DataPipelineDefaultResourceInstanceProfile
+        - Key: subnetId
+          StringValue:
+            'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
       - Id: TableBackupActivity
         Name: TableBackupActivity
         Fields:
