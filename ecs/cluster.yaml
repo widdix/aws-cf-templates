@@ -119,27 +119,27 @@ Parameters:
 Mappings:
   RegionMap:
     'eu-west-2':
-      ECSAMI: 'ami-ff15039b'
+      ECSAMI: 'ami-0a85946e'
     'eu-west-1':
-      ECSAMI: 'ami-809f84e6'
+      ECSAMI: 'ami-bd7e8dc4'
     'ap-northeast-1':
-      ECSAMI: 'ami-e4657283'
+      ECSAMI: 'ami-ab5ea9cd'
     'ca-central-1':
-      ECSAMI: 'ami-3da81759'
+      ECSAMI: 'ami-32bb0556'
     'ap-southeast-1':
-      ECSAMI: 'ami-19f7787a'
+      ECSAMI: 'ami-ae0b91cd'
     'ap-southeast-2':
-      ECSAMI: 'ami-42e9f921'
+      ECSAMI: 'ami-c3233ba0'
     'eu-central-1':
-      ECSAMI: 'ami-a3a006cc'
+      ECSAMI: 'ami-f15ff69e'
     'us-east-1':
-      ECSAMI: 'ami-04351e12'
+      ECSAMI: 'ami-d61027ad'
     'us-east-2':
-      ECSAMI: 'ami-207b5a45'
+      ECSAMI: 'ami-bb8eaede'
     'us-west-1':
-      ECSAMI: 'ami-7d664a1d'
+      ECSAMI: 'ami-514e6431'
     'us-west-2':
-      ECSAMI: 'ami-57d9cd2e'
+      ECSAMI: 'ami-c6f81abe'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
