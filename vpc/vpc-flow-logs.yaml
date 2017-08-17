@@ -64,7 +64,7 @@ Resources:
     Properties:
       DeliverLogsPermissionArn: !GetAtt 'Role.Arn'
       LogGroupName: !Ref LogGroup
-      ResourceId :
+      ResourceId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
       ResourceType: 'VPC'
       TrafficType: !Ref TrafficType
@@ -72,6 +72,9 @@ Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
     Value: 'vpc/vpc-flowlog'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
   LogGroupName:
     Description: 'The name of the CloudWatch Logs log group where Amazon EC2 publishes your flow logs.'
     Value: !Ref LogGroup

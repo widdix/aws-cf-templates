@@ -102,3 +102,6 @@ Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
     Value: 'security/config'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'

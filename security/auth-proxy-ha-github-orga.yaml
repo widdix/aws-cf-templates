@@ -87,33 +87,33 @@ Parameters:
 Mappings:
   RegionMap:
     'ap-south-1':
-      AMI: 'ami-52c7b43d'
+      AMI: 'ami-d7abd1b8'
     'eu-west-2':
-      AMI: 'ami-b6daced2'
+      AMI: 'ami-489f8e2c'
     'eu-west-1':
-      AMI: 'ami-01ccc867'
+      AMI: 'ami-ebd02392'
     'ap-northeast-2':
-      AMI: 'ami-9d15c7f3'
+      AMI: 'ami-8663bae8'
     'ap-northeast-1':
-      AMI: 'ami-923d12f5'
+      AMI: 'ami-4af5022c'
     'sa-east-1':
-      AMI: 'ami-37cfad5b'
+      AMI: 'ami-d27203be'
     'ca-central-1':
-      AMI: 'ami-0bd66a6f'
+      AMI: 'ami-5ac17f3e'
     'ap-southeast-1':
-      AMI: 'ami-fc5ae39f'
+      AMI: 'ami-fdb8229e'
     'ap-southeast-2':
-      AMI: 'ami-162c2575'
+      AMI: 'ami-30041c53'
     'eu-central-1':
-      AMI: 'ami-b968bad6'
+      AMI: 'ami-657bd20a'
     'us-east-1':
-      AMI: 'ami-c58c1dd3'
+      AMI: 'ami-4fffc834'
     'us-east-2':
-      AMI: 'ami-4191b524'
+      AMI: 'ami-ea87a78f'
     'us-west-1':
-      AMI: 'ami-7a85a01a'
+      AMI: 'ami-3a674d5a'
     'us-west-2':
-      AMI: 'ami-4836a428'
+      AMI: 'ami-aa5ebdd2'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -345,8 +345,97 @@ Resources:
           default:
             !If
             - HasNewRelic
-            - !If [HasIAMUserSSHAccess, [ssh-access, newrelic, config], [newrelic, config]]
-            - !If [HasIAMUserSSHAccess, [ssh-access, config], [config]]
+            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, newrelic, config], [awslogs, newrelic, config]]
+            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, config], [awslogs, config]]
+        awslogs:
+          packages:
+            yum:
+              awslogs: []
+          files:
+            '/etc/awslogs/awscli.conf':
+              content: !Sub |
+                [default]
+                region = ${AWS::Region}
+                [plugins]
+                cwlogs = cwlogs
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/awslogs.conf':
+              content: !Sub |
+                [general]
+                state_file = /var/lib/awslogs/agent-state
+                [/var/log/messages]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/messages
+                log_stream_name = {instance_id}/var/log/messages
+                log_group_name = ${Logs}
+                [/var/log/secure]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/secure
+                log_stream_name = {instance_id}/var/log/secure
+                log_group_name = ${Logs}
+                [/var/log/cron]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cron
+                log_stream_name = {instance_id}/var/log/cron
+                log_group_name = ${Logs}
+                [/var/log/cloud-init.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cloud-init.log
+                log_stream_name = {instance_id}/var/log/cloud-init.log
+                log_group_name = ${Logs}
+                [/var/log/cfn-init.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init.log
+                log_stream_name = {instance_id}/var/log/cfn-init.log
+                log_group_name = ${Logs}
+                [/var/log/cfn-hup.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-hup.log
+                log_stream_name = {instance_id}/var/log/cfn-hup.log
+                log_group_name = ${Logs}
+                [/var/log/cfn-init-cmd.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init-cmd.log
+                log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
+                log_group_name = ${Logs}
+                [/var/log/cloud-init-output.log]
+                file = /var/log/cloud-init-output.log
+                log_stream_name = {instance_id}/var/log/cloud-init-output.log
+                log_group_name = ${Logs}
+                [/var/log/dmesg]
+                file = /var/log/dmesg
+                log_stream_name = {instance_id}/var/log/dmesg
+                log_group_name = ${Logs}
+                [/var/log/newrelic/nrsysmond.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/newrelic/nrsysmond.log
+                log_stream_name = {instance_id}/var/log/newrelic/nrsysmond.log
+                log_group_name = ${Logs}
+                [/var/log/oauth2_proxy.log]
+                file = /var/log/oauth2_proxy.log
+                log_stream_name = {instance_id}/var/log/oauth2_proxy.log
+                log_group_name = ${Logs}
+                [/var/log/oauth2_proxy.err]
+                datetime_format = %Y/%m/%d %H:%M:%S
+                file = /var/log/oauth2_proxy.err
+                log_stream_name = {instance_id}/var/log/oauth2_proxy.err
+                log_group_name = ${Logs}
+              mode: '000644'
+              owner: root
+              group: root
+          services:
+            sysvinit:
+              awslogs:
+                enabled: true
+                ensureRunning: true
+                packages:
+                  yum:
+                  - awslogs
+                files:
+                - '/etc/awslogs/awslogs.conf'
+                - '/etc/awslogs/awscli.conf'
         newrelic:
           packages:
             rpm:
@@ -396,11 +485,15 @@ Resources:
                   SaveUserName=${SaveUserName//"="/".equal."}
                   SaveUserName=${SaveUserName//","/".comma."}
                   SaveUserName=${SaveUserName//"@"/".at."}
-                  if ! id -u "$SaveUserName" >/dev/null 2>&1; then
-                    #sudo will read each file in /etc/sudoers.d, skipping file names that end in ‘~’ or contain a ‘.’ character to avoid causing problems with package manager or editor temporary/backup files.
-                    SaveUserFileName=$(echo "$SaveUserName" | tr "." " ")
-                    /usr/sbin/useradd "$SaveUserName"
-                    echo "$SaveUserName ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$SaveUserFileName"
+                  if [ "${#SaveUserName}" -le "32" ]; then
+                    if ! id -u "$SaveUserName" >/dev/null 2>&1; then
+                      #sudo will read each file in /etc/sudoers.d, skipping file names that end in ‘~’ or contain a ‘.’ character to avoid causing problems with package manager or editor temporary/backup files.
+                      SaveUserFileName=$(echo "$SaveUserName" | tr "." " ")
+                      /usr/sbin/useradd "$SaveUserName"
+                      echo "$SaveUserName ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$SaveUserFileName"
+                    fi
+                  else
+                    echo "Can not import IAM user ${SaveUserName}. User name is longer than 32 characters."
                   fi
                 done
               mode: '000755'
@@ -435,7 +528,6 @@ Resources:
             /opt/oauth2_proxy: 'https://github.com/bitly/oauth2_proxy/releases/download/v2.1/oauth2_proxy-2.1.linux-amd64.go1.6.tar.gz'
           packages:
             yum:
-              awslogs: []
               nginx: []
           files:
             '/etc/nginx/conf.d/http2https.conf':
@@ -564,74 +656,6 @@ Resources:
               mode: '000755'
               owner: root
               group: root
-            '/etc/awslogs/awscli.conf':
-              content: !Sub |
-                [default]
-                region = ${AWS::Region}
-                [plugins]
-                cwlogs = cwlogs
-              mode: '000644'
-              owner: root
-              group: root
-            '/etc/awslogs/awslogs.conf':
-              content: !Sub |
-                [general]
-                state_file = /var/lib/awslogs/agent-state
-                [/var/log/messages]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/messages
-                log_stream_name = {instance_id}/var/log/messages
-                log_group_name = ${Logs}
-                [/var/log/secure]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/secure
-                log_stream_name = {instance_id}/var/log/secure
-                log_group_name = ${Logs}
-                [/var/log/cron]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cron
-                log_stream_name = {instance_id}/var/log/cron
-                log_group_name = ${Logs}
-                [/var/log/cloud-init.log]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cloud-init.log
-                log_stream_name = {instance_id}/var/log/cloud-init.log
-                log_group_name = ${Logs}
-                [/var/log/cfn-init.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init.log
-                log_stream_name = {instance_id}/var/log/cfn-init.log
-                log_group_name = ${Logs}
-                [/var/log/cfn-hup.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-hup.log
-                log_stream_name = {instance_id}/var/log/cfn-hup.log
-                log_group_name = ${Logs}
-                [/var/log/cfn-init-cmd.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init-cmd.log
-                log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
-                log_group_name = ${Logs}
-                [/var/log/cloud-init-output.log]
-                file = /var/log/cloud-init-output.log
-                log_stream_name = {instance_id}/var/log/cloud-init-output.log
-                log_group_name = ${Logs}
-                [/var/log/dmesg]
-                file = /var/log/dmesg
-                log_stream_name = {instance_id}/var/log/dmesg
-                log_group_name = ${Logs}
-                [/var/log/oauth2_proxy.log]
-                file = /var/log/oauth2_proxy.log
-                log_stream_name = {instance_id}/var/log/oauth2_proxy.log
-                log_group_name = ${Logs}
-                [/var/log/oauth2_proxy.err]
-                datetime_format = %Y/%m/%d %H:%M:%S
-                file = /var/log/oauth2_proxy.err
-                log_stream_name = {instance_id}/var/log/oauth2_proxy.err
-                log_group_name = ${Logs}
-              mode: '000644'
-              owner: root
-              group: root
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
                 [main]
@@ -650,15 +674,6 @@ Resources:
                 runas=root
           services:
             sysvinit:
-              awslogs:
-                enabled: true
-                ensureRunning: true
-                packages:
-                  yum:
-                  - awslogs
-                files:
-                - '/etc/awslogs/awslogs.conf'
-                - '/etc/awslogs/awscli.conf'
               nginx:
                 enabled: true
                 ensureRunning: true
@@ -711,6 +726,14 @@ Resources:
       TargetGroupARNs:
       - !Ref LoadBalancerTargetGroup
       - !Ref LoadBalancerTargetGroupHttpRedirect
+      NotificationConfigurations: !If
+      - HasAlertTopic
+      - - NotificationTypes:
+          - 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR'
+          - 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR'
+          TopicARN:
+            'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - !Ref 'AWS::NoValue'
       VPCZoneIdentifier: !Split
       - ','
       - 'Fn::ImportValue':
@@ -744,6 +767,9 @@ Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
     Value: 'security/auth-proxy-ha-github-orga'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
   SecurityGroup:
     Description: 'Use this Security Group to reference incoming traffic from the auth proxy.'
     Value: !Ref SecurityGroup

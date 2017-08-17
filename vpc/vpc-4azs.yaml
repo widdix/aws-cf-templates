@@ -348,6 +348,9 @@ Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
     Value: 'vpc/vpc-4azs'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
   AZs:
     Description: 'AZs'
     Value: 4

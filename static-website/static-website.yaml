@@ -22,6 +22,7 @@ Parameters:
   RedirectDomainName:
     Description: 'Optional domain name redirecting to DomainName (e.g. www.widdix.de).'
     Type: String
+    Default: ''
   CertificateType:
     Description: 'Indicates whether to use the certificate from the AWS Certificate Manager or AWS Identity and Access Management. CreateAcmCertificate only works in the us-east-1 region.'
     Type: String
@@ -33,6 +34,7 @@ Parameters:
   ExistingCertificate:
     Description: 'Optional ACM Certificate ARN or IAM Certificate ID. Must be created in the us-east-1 region!'
     Type: String
+    Default: ''
   HostedZoneId:
     Description: 'The Id of the hosted zone managed by AWS Route53.'
     Type: String
@@ -45,7 +47,7 @@ Resources:
   Certificate:
     Condition: HasCreateAcmCertificate
     Type: 'AWS::CertificateManager::Certificate'
-    Properties: 
+    Properties:
       DomainName: !Ref DomainName
       DomainValidationOptions: !If
       - HasRedirectDomainName
@@ -82,7 +84,7 @@ Resources:
         - !Ref DomainName
         Comment: !Ref DomainName
         Origins:
-        - DomainName: !Sub '${S3Bucket}.s3-website-${AWS::Region}.amazonaws.com'
+        - DomainName: !Select [2, !Split ['/', !GetAtt 'S3Bucket.WebsiteURL']]
           Id: s3origin
           CustomOriginConfig:
             OriginProtocolPolicy: 'http-only'
@@ -105,8 +107,8 @@ Resources:
         HttpVersion: http2
         PriceClass: 'PriceClass_All'
         ViewerCertificate:
-          AcmCertificateArn: !If [HasCreateAcmCertificate, !Ref Certificate, !If [HasAcmCertificateArn, !Ref ExistingCertificate, !Ref 'AWS::NoValue']] 
-          IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue'] 
+          AcmCertificateArn: !If [HasCreateAcmCertificate, !Ref Certificate, !If [HasAcmCertificateArn, !Ref ExistingCertificate, !Ref 'AWS::NoValue']]
+          IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue']
           SslSupportMethod: 'sni-only'
           MinimumProtocolVersion: TLSv1
   Route53Record:
@@ -138,7 +140,7 @@ Resources:
         - !Ref RedirectDomainName
         Comment: !Ref RedirectDomainName
         Origins:
-        - DomainName: !Sub '${S3BucketRedirect}.s3-website-${AWS::Region}.amazonaws.com'
+        - DomainName: !Select [2, !Split ['/', !GetAtt 'S3BucketRedirect.WebsiteURL']]
           Id: s3origin
           CustomOriginConfig:
             OriginProtocolPolicy: 'http-only'
@@ -161,8 +163,8 @@ Resources:
         HttpVersion: http2
         PriceClass: 'PriceClass_All'
         ViewerCertificate:
-          AcmCertificateArn: !If [HasCreateAcmCertificate, !Ref Certificate, !If [HasAcmCertificateArn, !Ref ExistingCertificate, !Ref 'AWS::NoValue']] 
-          IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue'] 
+          AcmCertificateArn: !If [HasCreateAcmCertificate, !Ref Certificate, !If [HasAcmCertificateArn, !Ref ExistingCertificate, !Ref 'AWS::NoValue']]
+          IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue']
           SslSupportMethod: 'sni-only'
           MinimumProtocolVersion: TLSv1
   Route53RecordRedirect:
@@ -181,6 +183,9 @@ Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
     Value: 'static-website/static-website'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
   URL:
     Description: 'URL to static website.'
     Value: !Sub 'https://${DomainName}'
