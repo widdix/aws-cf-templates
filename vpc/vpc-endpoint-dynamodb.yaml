@@ -32,5 +32,3 @@ Outputs:
     Value: !Ref Endpoint
     Export:
       Name: !Sub '${AWS::StackName}-Endpoint'
-
-
