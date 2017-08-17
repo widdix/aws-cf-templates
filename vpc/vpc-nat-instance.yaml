@@ -68,33 +68,33 @@ Parameters:
 Mappings:
   RegionMap:
     'ap-south-1':
-      NATAMI: 'ami-e0215f8f'
+      NATAMI: 'ami-96a9d3f9'
     'eu-west-2':
-      NATAMI: 'ami-21120445'
+      NATAMI: 'ami-868190e2'
     'eu-west-1':
-      NATAMI: 'ami-3a849f5c'
+      NATAMI: 'ami-f1d22188'
     'ap-northeast-2':
-      NATAMI: 'ami-1a1bc474'
+      NATAMI: 'ami-a462bbca'
     'ap-northeast-1':
-      NATAMI: 'ami-10dfc877'
+      NATAMI: 'ami-c4887fa2'
     'sa-east-1':
-      NATAMI: 'ami-8bdab1e7'
+      NATAMI: 'ami-9b7504f7'
     'ca-central-1':
-      NATAMI: 'ami-b0a619d4'
+      NATAMI: 'ami-a1be00c5'
     'ap-southeast-1':
-      NATAMI: 'ami-36af2055'
+      NATAMI: 'ami-40bb2123'
     'ap-southeast-2':
-      NATAMI: 'ami-1e91817d'
+      NATAMI: 'ami-ef051d8c'
     'eu-central-1':
-      NATAMI: 'ami-9ebe18f1'
+      NATAMI: 'ami-eb66cf84'
     'us-east-1':
-      NATAMI: 'ami-d4c5efc2'
+      NATAMI: 'ami-a7fdcadc'
     'us-east-2':
-      NATAMI: 'ami-f27b5a97'
+      NATAMI: 'ami-4986a62c'
     'us-west-1':
-      NATAMI: 'ami-b87f53d8'
+      NATAMI: 'ami-3e674d5e'
     'us-west-2':
-      NATAMI: 'ami-8bfce8f2'
+      NATAMI: 'ami-4da24035'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
