@@ -1019,6 +1019,7 @@ Resources:
       Threshold: 90
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+  # scaling based on SchedulableContainers is described in detail here: http://garbe.io/blog/2017/04/12/a-better-solution-to-ecs-autoscaling/
   SchedulableContainersRule:
     Type: 'AWS::Events::Rule'
     Properties:
