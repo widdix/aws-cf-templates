@@ -31,6 +31,6 @@ Outputs:
     Description: 'The VPC endpoint to DynamoDB.'
     Value: !Ref Endpoint
     Export:
-      Name: !Sub '${AWS::StackName}-EndpointS3'
+      Name: !Sub '${AWS::StackName}-Endpoint'
 
 
