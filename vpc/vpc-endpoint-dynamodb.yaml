@@ -1,0 +1,34 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'VPC: Endpoint to DynamoDB for private subnets, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+Resources:
+  Endpoint:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      RouteTableIds: !Split
+      - ','
+      - 'Fn::ImportValue':
+          !Sub '${ParentVPCStack}-RouteTablesPrivate'
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.dynamodb'
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'vpc/vpc-endpoint-dynamodb'
+  Endpoint:
+    Description: 'The VPC endpoint to DynamoDB.'
+    Value: !Ref Endpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-Endpoint'

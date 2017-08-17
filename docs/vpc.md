@@ -131,6 +131,24 @@ This template describes a VPC endpoint to securely route traffic within a VPC fo
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
 
+# VPC Endpoint to DynamoDB
+This template describes a VPC endpoint to securely route traffic within a VPC for private instances to access DynamoDB without the need of a NAT Gateway, NAT instance, or public internet. Refer to [AWS VPC endpoint](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-endpoints.html) documentation if this is necessary for your stack. By default, access to all DynamoDB actions and tables is allowed, but may be constrained with a policy document.
+
+## Installation Guide
+1. This templates depends on one of our `vpc-*azs.yaml` templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml)
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-endpoint-dynamodb&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-endpoint-dynamodb.yaml)
+1. Click **Next** to proceed with the next step of the wizard.
+1. Specify a name and all parameters for the stack.
+1. Click **Next** to proceed with the next step of the wizard.
+1. Click **Next** to skip the **Options** step of the wizard.
+1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
+1. Click **Create** to start the creation of the stack.
+1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
+## Dependencies
+* `vpc/vpc-*azs.yaml` (**required**)
+
+
 # VPC Flow Logs to CloudWatch Logs
 This template enables [Flow Logs](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/flow-logs.html) for the specified VPC. Flow Logs contain aggregated network traffic data in your VPC.
 
