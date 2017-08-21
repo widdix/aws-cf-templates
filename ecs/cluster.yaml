@@ -32,6 +32,13 @@ Metadata:
       - MinSize
       - DesiredCapacity
       - DrainingTimeoutInSeconds
+    - Label:
+        default: 'Cluster Scaling Parameters'
+      Parameters:
+      - ContainerMaxCPU
+      - ContainerMaxMemory
+      - ContainerShortageThreshold
+      - ContainerExcessThreshold
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -116,6 +123,26 @@ Parameters:
     ConstraintDescription: 'Must be in the range [60-7200]'
     MinValue: 60
     MaxValue: 7200
+  ContainerMaxCPU:
+    Description: 'The maximum number of cpu reservation per container that you plan to run on this cluster. A container instance has 1,024 CPU units for every CPU core.'
+    Type: Number
+    Default: 128
+  ContainerMaxMemory:
+    Description: 'The maximum number of memory reservation (in MB)  per container that you plan to run on this cluster.'
+    Type: Number
+    Default: 128
+  ContainerShortageThreshold:
+    Description: 'Scale up if free cluster capacity <= containers (based on ContainerMaxCPU and ContainerMaxMemory settings)'
+    Type: Number
+    Default: 2
+    MinValue: 0
+    ConstraintDescription: 'Must be >= 0'
+  ContainerExcessThreshold:
+    Description: 'Scale down if free cluster capacity >= containers (based on ContainerMaxCPU and ContainerMaxMemory settings)'
+    Type: Number
+    Default: 10
+    MinValue: 2
+    ConstraintDescription: 'Must be >= 2'
 Mappings:
   RegionMap:
     'eu-west-2':
@@ -909,22 +936,38 @@ Resources:
       AutoScalingGroupName: !Ref AutoScalingGroup
       Cooldown: 300
       ScalingAdjustment: -25
-  CPUReservationHighAlarm:
+  ContainerInstancesShortageAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Cluster is running out of CPU (reservation)'
-      Namespace: 'AWS/ECS'
+      AlarmDescription: 'Cluster is running out of container instances'
+      Namespace: !Ref 'AWS::StackName'
       Dimensions:
       - Name: ClusterName
         Value: !Ref Cluster
-      MetricName: CPUReservation
-      ComparisonOperator: GreaterThanThreshold
-      Statistic: Average # special rule because we scale on reservations and not utilization
+      MetricName: SchedulableContainers
+      ComparisonOperator: LessThanOrEqualToThreshold
+      Statistic: Minimum # special rule because we scale on reservations and not utilization
       Period: 60
       EvaluationPeriods: 1
-      Threshold: 80
+      Threshold: !Ref ContainerShortageThreshold
       AlarmActions:
       - !Ref ScaleUpPolicy
+  ContainerInstancesExcessAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Cluster is wasting container instances'
+      Namespace: !Ref 'AWS::StackName'
+      Dimensions:
+      - Name: ClusterName
+        Value: !Ref Cluster
+      MetricName: SchedulableContainers
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Statistic: Maximum # special rule because we scale on reservations and not utilization
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: !Ref ContainerExcessThreshold
+      AlarmActions:
+      - !Ref ScaleDownPolicy
   CPUReservationTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -959,22 +1002,6 @@ Resources:
       Threshold: 80
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-  MemoryReservationHighAlarm:
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Cluster is running out of memory (reservation)'
-      Namespace: 'AWS/ECS'
-      Dimensions:
-      - Name: ClusterName
-        Value: !Ref Cluster
-      MetricName: MemoryReservation
-      ComparisonOperator: GreaterThanThreshold
-      Statistic: Average # special rule because we scale on reservations and not utilization
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 80
-      AlarmActions:
-      - !Ref ScaleUpPolicy
   MemoryReservationTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -992,38 +1019,143 @@ Resources:
       Threshold: 90
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-  CPUReservationLowAlarm:
-    Type: 'AWS::CloudWatch::Alarm'
+  # scaling based on SchedulableContainers is described in detail here: http://garbe.io/blog/2017/04/12/a-better-solution-to-ecs-autoscaling/
+  SchedulableContainersRule:
+    Type: 'AWS::Events::Rule'
     Properties:
-      AlarmDescription: 'Cluster is wasting CPU (reservation)'
-      Namespace: 'AWS/ECS'
-      Dimensions:
-      - Name: ClusterName
-        Value: !Ref Cluster
-      MetricName: CPUReservation
-      ComparisonOperator: LessThanThreshold
-      Statistic: Average # special rule because we scale on reservations and not utilization
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 20
-      AlarmActions:
-      - !Ref ScaleDownPolicy
-  MemoryReservationLowAlarm:
-    Type: 'AWS::CloudWatch::Alarm'
+      EventPattern:
+        source:
+        - 'aws.ecs'
+        'detail-type':
+        - 'ECS Container Instance State Change'
+      State: ENABLED
+      Targets:
+      - Arn: !GetAtt 'SchedulableContainersLambda.Arn'
+        Id: lambda
+  SchedulableContainersCron:
+    Type: 'AWS::Events::Rule'
     Properties:
-      AlarmDescription: 'Cluster is wasting memory (reservation)'
-      Namespace: 'AWS/ECS'
-      Dimensions:
-      - Name: ClusterName
-        Value: !Ref Cluster
-      MetricName: MemoryReservation
-      ComparisonOperator: LessThanThreshold
-      Statistic: Average # special rule because we scale on reservations and not utilization
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: 20
-      AlarmActions:
-      - !Ref ScaleDownPolicy
+      ScheduleExpression: 'rate(1 minute)'
+      State: ENABLED
+      Targets:
+      - Arn: !GetAtt 'SchedulableContainersLambda.Arn'
+        Id: lambda
+  SchedulableContainersLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'lambda.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      Policies:
+      - PolicyName: logs
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'logs:CreateLogGroup'
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+            Resource: 'arn:aws:logs:*:*:*'
+      - PolicyName: ecs
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action: 'ecs:ListContainerInstances'
+            Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}'
+          - Effect: Allow
+            Action: 'ecs:DescribeContainerInstances'
+            Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:container-instance/*'
+      - PolicyName: cloudwatch
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action: 'cloudwatch:PutMetricData'
+            Resource: '*'
+  SchedulableContainersLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref SchedulableContainersLambda
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt 'SchedulableContainersRule.Arn'
+  SchedulableContainersLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        ZipFile: !Sub |
+          'use strict';
+          const AWS = require('aws-sdk');
+          const ecs = new AWS.ECS({apiVersion: '2014-11-13'});
+          const cloudwatch = new AWS.CloudWatch({apiVersion: '2010-08-01'});
+          const CONTAINER_MAX_CPU = ${ContainerMaxCPU};
+          const CONTAINER_MAX_MEMORY = ${ContainerMaxMemory};
+          const CLUSTER = '${Cluster}';
+          const NAMESPACE = '${AWS::StackName}';
+          function list(nextToken) {
+            return ecs.listContainerInstances({
+              cluster: CLUSTER,
+              maxResults: 1,
+              nextToken: nextToken,
+              status: 'ACTIVE'
+            }).promise();
+          }
+          function describe(containerInstanceArns) {
+            return ecs.describeContainerInstances({
+              cluster: CLUSTER,
+              containerInstances: containerInstanceArns
+            }).promise();
+          }
+          function compute(totalSchedulableContainers, nextToken) {
+            return list(nextToken)
+              .then((list) => {
+                return describe(list.containerInstanceArns)
+                  .then((data) => {
+                    const localSchedulableContainers = data.containerInstances
+                      .map((instance) => ({
+                        cpu: instance.remainingResources.find((resource) => resource.name === 'CPU').integerValue,
+                        memory: instance.remainingResources.find((resource) => resource.name === 'MEMORY').integerValue
+                      }))
+                      .map((remaining) => Math.min(Math.floor(remaining.cpu/CONTAINER_MAX_CPU), Math.floor(remaining.memory/CONTAINER_MAX_MEMORY)))
+                      .reduce((acc, containers) => acc + containers, 0);
+                    console.log(`localSchedulableContainers ${!localSchedulableContainers}`);
+                    if (list.nextToken !== null && list.nextToken !== undefined) {
+                      return compute(localSchedulableContainers + totalSchedulableContainers, list.nextToken);
+                    } else {
+                      return localSchedulableContainers + totalSchedulableContainers;
+                    }
+                  });
+              });
+          }
+          exports.handler = (event, context, cb) => {
+            console.log(`Invoke: ${!JSON.stringify(event)}`);
+            compute(0, undefined)
+              .then((schedulableContainers) => {
+                console.log(`schedulableContainers: ${!schedulableContainers}`);
+                return cloudwatch.putMetricData({
+                  MetricData: [{
+                    MetricName: 'SchedulableContainers',
+                    Dimensions: [{
+                      Name: 'ClusterName',
+                      Value: CLUSTER
+                    }],
+                    Value: schedulableContainers,
+                    Unit: 'Count'
+                  }],
+                  Namespace: NAMESPACE
+                }).promise();
+              })
+              .then(() => cb())
+              .catch(cb);
+          };
+      Handler: 'index.handler'
+      MemorySize: 128
+      Role: !GetAtt 'SchedulableContainersLambdaRole.Arn'
+      Runtime: 'nodejs6.10'
+      Timeout: 60
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
