@@ -1098,7 +1098,7 @@ Resources:
           function list(nextToken) {
             return ecs.listContainerInstances({
               cluster: CLUSTER,
-              maxResults: 1, // TODO back to 8
+              maxResults: 1,
               nextToken: nextToken,
               status: 'ACTIVE'
             }).promise();
@@ -1119,7 +1119,7 @@ Resources:
                         cpu: instance.remainingResources.find((resource) => resource.name === 'CPU').integerValue,
                         memory: instance.remainingResources.find((resource) => resource.name === 'MEMORY').integerValue
                       }))
-                      .map((remining) => Math.min(Math.floor(remining.cpu/CONTAINER_MAX_CPU), Math.floor(remining.memory/CONTAINER_MAX_MEMORY)))
+                      .map((remaining) => Math.min(Math.floor(remaining.cpu/CONTAINER_MAX_CPU), Math.floor(remaining.memory/CONTAINER_MAX_MEMORY)))
                       .reduce((acc, containers) => acc + containers, 0);
                     console.log(`localSchedulableContainers ${!localSchedulableContainers}`);
                     if (list.nextToken !== null && list.nextToken !== undefined) {
