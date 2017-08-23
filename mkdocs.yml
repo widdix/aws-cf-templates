@@ -13,3 +13,4 @@ pages:
 - 'VPC': 'vpc.md'
 - 'WordPress': 'wordpress.md'
 - 'Migrate to v4': 'migrate-v4.md'
+- 'Migrate to v5': 'migrate-v5.md'
