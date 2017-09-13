@@ -16,3 +16,7 @@ script:
   "s3://immdevops/aws-cf-templates/$TRAVIS_COMMIT/$file" && aws cloudformation validate-template
   --template-url "https://s3.amazonaws.com/immdevops/aws-cf-templates/$TRAVIS_COMMIT/$file"
   > /dev/null; done
+notifications:
+  hipchat:
+    rooms:
+      secure: T3bA32pQGoi80qhIYx2wgxCjvzrNbf47Ckw/292V3IjO3UZzINWqpDaWo/bKI3PX8HykDf7SPAPuTbbi8/qwR+cmhujegVUxWJ2K9CYzwvpXKGEkGtEyj85jpYPm/+HAS6ZykZ/EJuRWx//Jq3Z/pTMpkQELUgi65Sbm4fMTmXJuB31zTB3ZpCuqnLa55I4OJexp1Ox+kzVLOC4Vt2Fkty/bA5P1f4Wur5WKGo2LJ5wVcHvRHnhjwSVyqUx7Yb2qrz4ntZOpcJRN70ooGxbfH67d3KmUbdyPw1gOoVw527nOUeAxWBkmWsMpNKpN4PjOLwUQU2QVipQwxBCNSPpNwmdaD3FAB5l+WDZIx2WjZqQ9LSFeOhdAJ8lCVv9dLgsXUEMO7vMMU2ZAxMJv7l+DxUlD1Kar3Q9TVywwo2uMA2+EfylFBm1YjozW1FFnbIzc4gxswrXMTyUUTteLdktlJGNl1NwV8irt0/3MKIq0Vvc1MPjF0MPgVukBv5uDkv1cHcUWNmlZm1KOlPXK+sqAoPPq1/uVM+4dHltixCupRlpv4rqrbgKpN6SD2dvCtJcvOVSMfG/5qwG8U1buXD91TYLVNgATxQUVZ3+o0oywB46rHjQyYBTsBzVnweXeQxJ1c+UuMyiHpEUsiSjq1KCJz3nxbEuPL3XdWzgiJ77L7Hg=
