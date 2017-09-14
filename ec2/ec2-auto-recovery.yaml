@@ -309,7 +309,7 @@ Resources:
               content: !Sub |
                 license_key: ${NewRelicLicenseKey}
                 log_file: /var/log/newrelic/newrelic-infra.log
-                display_name: ${EIP}-${AWS::StackName}-${AWS::AccountId}-${AWS::Region}
+                display_name: ${ElasticIP}-${AWS::StackName}-${AWS::AccountId}-${AWS::Region}
               mode: '000640'
               owner: root
               group: root
