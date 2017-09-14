@@ -46,7 +46,7 @@ Parameters:
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
   NewRelicLicenseKey:
-    Description: 'Optional New Relic License Key will install the New Relic Servers for Linux agent.'
+    Description: 'Optional New Relic License Key will install the New Relic Infrastructure for Linux agent.'
     Type: String
     Default: ''
     NoEcho: true
