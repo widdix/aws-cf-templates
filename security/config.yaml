@@ -23,6 +23,7 @@ Parameters:
   ExternalConfigBucket:
     Description: 'Optional The name of an S3 bucket where you want to store configuration history for the delivery channel. If you leave this empty, the Amazon S3 bucket is created for you.'
     Type: String
+    Default: ''
 Conditions:
   InternalBucket: !Equals [!Ref ExternalConfigBucket, '']
   ExternalBucket: !Not [!Equals [!Ref ExternalConfigBucket, '']]
