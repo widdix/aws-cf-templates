@@ -133,7 +133,7 @@ Resources:
         AliasTarget:
           HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
           DNSName: !GetAtt 'CloudFrontDistribution.DomainName'
-  Route53Record:
+  Route53RecordV2:
     Type: 'AWS::Route53::RecordSetGroup'
     Condition: HasZone
     Properties:
@@ -203,7 +203,7 @@ Resources:
         AliasTarget:
           HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
           DNSName: !GetAtt 'CloudFrontDistributionRedirect.DomainName'
-  Route53RecordRedirect:
+  Route53RecordRedirectV2:
     Condition:
     - HasRedirectDomainName
     - HasZone
