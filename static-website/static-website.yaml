@@ -54,6 +54,8 @@ Conditions:
   HasCreateAcmCertificate: !Equals [!Ref CertificateType, 'CreateAcmCertificate']
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasNotZone: !Equals [!Ref ParentZoneStack, '']
+  HasRedirectDomainNameAndHasZone: !And [!Condition HasRedirectDomainName, !Condition HasZone]
+  HasRedirectDomainNameAndHasNotZone: !And [!Condition HasRedirectDomainName, !Condition HasNotZone]
 Resources:
   Certificate:
     Condition: HasCreateAcmCertificate
@@ -191,9 +193,7 @@ Resources:
           SslSupportMethod: 'sni-only'
           MinimumProtocolVersion: TLSv1
   Route53RecordRedirect:
-    Condition:
-    - HasRedirectDomainName
-    - HasNotZone
+    Condition: HasRedirectDomainNameAndHasNotZone
     Type: 'AWS::Route53::RecordSetGroup'
     Properties:
       HostedZoneId: !Ref HostedZoneId
@@ -204,9 +204,7 @@ Resources:
           HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
           DNSName: !GetAtt 'CloudFrontDistributionRedirect.DomainName'
   Route53RecordRedirectV2:
-    Condition:
-    - HasRedirectDomainName
-    - HasZone
+    Condition: HasRedirectDomainNameAndHasZone
     Type: 'AWS::Route53::RecordSetGroup'
     Properties:
       HostedZoneId:
