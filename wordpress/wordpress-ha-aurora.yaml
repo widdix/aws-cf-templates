@@ -888,7 +888,7 @@ Resources:
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
-    Value: 'wordpress/wordpress-ha'
+    Value: 'wordpress/wordpress-ha-aurora'
   StackName:
     Description: 'Stack name'
     Value: !Sub '${AWS::StackName}'
