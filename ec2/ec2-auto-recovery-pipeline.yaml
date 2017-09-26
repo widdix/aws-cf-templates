@@ -173,18 +173,18 @@ Resources:
             TemplatePath: 'Source::ec2/ec2-auto-recovery.yaml'
             ParameterOverrides: !Sub
             - |
-              {
-                "ParentVPCStack": "${ParentVPCStack}",
-                "ParentSSHBastionStack": "${ParentSSHBastionStack}",
-                "ParentAlertStack": "${ParentAlertStack}",
-                "InstanceType": "${InstanceType}",
-                "Name": "${Name}",
-                "SubnetName": "${SubnetName}",
-                "KeyName": "${KeyName}",
-                "IAMUserSSHAccess": "${IAMUserSSHAccess}",
-                "LogsRetentionInDays": "${LogsRetentionInDays}",
-                "NewRelicLicenseKey": "${NewRelicLicenseKey}"
-              }
+                {
+                  "ParentVPCStack": "${ParentVPCStack}",
+                  "ParentSSHBastionStack": "${ParentSSHBastionStack}",
+                  "ParentAlertStack": "${ParentAlertStack}",
+                  "InstanceType": "${InstanceType}",
+                  "Name": "${Name}",
+                  "SubnetName": "${SubnetName}",
+                  "KeyName": "${KeyName}",
+                  "IAMUserSSHAccess": "${IAMUserSSHAccess}",
+                  "LogsRetentionInDays": "${LogsRetentionInDays}",
+                  "NewRelicLicenseKey": "${NewRelicLicenseKey}"
+                }
             - ParentVPCStack:
                 'Fn::ImportValue': !Sub '${ParentAcceptanceStageStack}-ParentVPCStack'
               ParentSSHBastionStack:
@@ -228,18 +228,18 @@ Resources:
             TemplatePath: 'Source::ec2/ec2-auto-recovery.yaml'
             ParameterOverrides: !Sub
             - |
-              {
-                "ParentVPCStack": "${ParentVPCStack}",
-                "ParentSSHBastionStack": "${ParentSSHBastionStack}",
-                "ParentAlertStack": "${ParentAlertStack}",
-                "InstanceType": "${InstanceType}",
-                "Name": "${Name}",
-                "SubnetName": "${SubnetName}",
-                "KeyName": "${KeyName}",
-                "IAMUserSSHAccess": "${IAMUserSSHAccess}",
-                "LogsRetentionInDays": "${LogsRetentionInDays}",
-                "NewRelicLicenseKey": "${NewRelicLicenseKey}"
-              }
+                {
+                  "ParentVPCStack": "${ParentVPCStack}",
+                  "ParentSSHBastionStack": "${ParentSSHBastionStack}",
+                  "ParentAlertStack": "${ParentAlertStack}",
+                  "InstanceType": "${InstanceType}",
+                  "Name": "${Name}",
+                  "SubnetName": "${SubnetName}",
+                  "KeyName": "${KeyName}",
+                  "IAMUserSSHAccess": "${IAMUserSSHAccess}",
+                  "LogsRetentionInDays": "${LogsRetentionInDays}",
+                  "NewRelicLicenseKey": "${NewRelicLicenseKey}"
+                }
             - ParentVPCStack:
               'Fn::ImportValue': !Sub '${ParentProductionStageStack}-ParentVPCStack'
               ParentSSHBastionStack:
