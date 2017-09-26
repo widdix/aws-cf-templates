@@ -1,0 +1,247 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Jenkins 2: pipeline, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentAcceptanceStageStack
+      - ParentProductionStageStack
+    - Label:
+        default: 'EC2 Parameters'
+      Parameters:
+      - InstanceType
+      - Name
+      - SubnetName
+      - KeyName
+      - IAMUserSSHAccess
+      - LogsRetentionInDays
+      - NewRelicLicenseKey
+Parameters:
+  ParentAcceptanceStageStack:
+    Description: 'Stack name of parent Acceptance Stage stack based on operations/stage.yaml template.'
+    Type: String
+  ParentProductionStageStack:
+    Description: 'Stack name of parent Production Stage stack based on operations/stage.yaml template.'
+    Type: String
+  # BEGIN: Copy of all non parent stack parameters
+  KeyName:
+    Description: 'Optional key pair of the ec2-user to establish a SSH connection to the EC2 instance.'
+    Type: String
+    Default: ''
+  IAMUserSSHAccess:
+    Description: 'Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).'
+    Type: String
+    Default: false
+    AllowedValues:
+    - true
+    - false
+  InstanceType:
+    Description: 'The instance type for the EC2 instance.'
+    Type: String
+    Default: 't2.micro'
+  Name:
+    Description: 'The name for the EC2 instance.'
+    Type: String
+    Default: 'test'
+  SubnetName:
+    Description: 'Subnet name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+    Default: SubnetAPublic
+    AllowedValues:
+    - SubnetAPublic
+    - SubnetAPrivate
+    - SubnetBPublic
+    - SubnetBPrivate
+    - SubnetCPublic
+    - SubnetCPrivate
+    - SubnetDPublic
+    - SubnetDPrivate
+  LogsRetentionInDays:
+    Description: 'Specifies the number of days you want to retain log events.'
+    Type: Number
+    Default: 14
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  NewRelicLicenseKey:
+    Description: 'Optional New Relic License Key will install the New Relic Servers for Linux agent.'
+    Type: String
+    Default: ''
+    NoEcho: true
+  # END: Copy of all non parent stack parameters
+Resources:
+  ArtifactsBucket:
+    DependsOn: CloudFormationRole # make sure that CloudFormationRole is deleted last
+    DeletionPolicy: Retain
+    Type: 'AWS::S3::Bucket'
+  PipelineRole:
+    DependsOn: CloudFormationRole # make sure that CloudFormationRole is deleted last
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - 'codepipeline.amazonaws.com'
+          Action:
+          - 'sts:AssumeRole'
+      ManagedPolicyArns:
+      - 'arn:aws:iam::aws:policy/AdministratorAccess'
+  CloudFormationRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - 'cloudformation.amazonaws.com'
+          Action:
+          - 'sts:AssumeRole'
+      ManagedPolicyArns:
+      - 'arn:aws:iam::aws:policy/AdministratorAccess'
+  Pipeline:
+    Type: 'AWS::CodePipeline::Pipeline'
+    Properties:
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactsBucket
+      Name: !Ref 'AWS::StackName'
+      RestartExecutionOnUpdate: true
+      RoleArn: !GetAtt 'PipelineRole.Arn'
+      Stages:
+      - Name: Source
+        Actions:
+        - Name: FetchSource
+          ActionTypeId:
+            Category: Source
+            Owner: AWS
+            Provider: CodeCommit
+            Version: 1
+          Configuration:
+            RepositoryName: 'aws-cf-templates'
+            BranchName: pipeline
+          OutputArtifacts:
+          - Name: Source
+          RunOrder: 1
+      - Name: Pipeline
+        Actions:
+        - Name: DeployPipeline
+          ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Provider: CloudFormation
+            Version: 1
+          Configuration:
+            ActionMode: CREATE_UPDATE
+            Capabilities: CAPABILITY_IAM
+            RoleArn: !GetAtt 'CloudFormationRole.Arn'
+            StackName: !Ref 'AWS::StackName'
+            TemplatePath: 'Source::ec2/ec2-auto-recovery-pipeline.yaml'
+          InputArtifacts:
+          - Name: Source
+          RunOrder: 1
+      - Name: Acceptance
+        Actions:
+        - Name: Deploy
+          ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Provider: CloudFormation
+            Version: 1
+          Configuration:
+            ActionMode: CREATE_UPDATE
+            Capabilities: CAPABILITY_IAM
+            RoleArn: !GetAtt 'CloudFormationRole.Arn'
+            StackName: !Sub '${AWS::StackName}-acceptance'
+            TemplatePath: 'Source::ec2/ec2-auto-recovery.yaml'
+            ParameterOverrides: !Sub
+            - |
+              {
+                "ParentVPCStack": "${ParentVPCStack}",
+                "ParentSSHBastionStack": "${ParentSSHBastionStack}",
+                "ParentAlertStack": "${ParentAlertStack}",
+                "InstanceType": "${InstanceType}",
+                "Name": "${Name}",
+                "SubnetName": "${SubnetName}",
+                "KeyName": "${KeyName}",
+                "IAMUserSSHAccess": "${IAMUserSSHAccess}",
+                "LogsRetentionInDays": "${LogsRetentionInDays}",
+                "NewRelicLicenseKey": "${NewRelicLicenseKey}"
+              }
+            - ParentVPCStack:
+                'Fn::ImportValue': !Sub '${ParentAcceptanceStageStack}-ParentVPCStack'
+              ParentSSHBastionStack:
+                'Fn::ImportValue': !Sub '${ParentAcceptanceStageStack}-ParentSSHBastionStack'
+              ParentAlertStack:
+                'Fn::ImportValue': !Sub '${ParentAcceptanceStageStack}-ParentAlertStack'
+              InstanceType: !Ref InstanceType
+              Name: !Ref Name
+              SubnetName: !Ref SubnetName
+              KeyName: !Ref KeyName
+              IAMUserSSHAccess: !Ref IAMUserSSHAccess
+              LogsRetentionInDays: !Ref LogsRetentionInDays
+              NewRelicLicenseKey: !Ref NewRelicLicenseKey
+          InputArtifacts:
+          - Name: Source
+          RunOrder: 1
+#           - Name: Test
+#             ActionTypeId:
+#               Category: Build
+#               Owner: AWS
+#               Provider: CodeBuild
+#               Version: 1
+#             Configuration:
+#               ProjectName: !Ref RunAcceptanceProject
+#             InputArtifacts:
+#             - Name: Acceptance
+#             RunOrder: 2
+#      - Name: Production
+#        Actions:
+#        - Name: Deploy
+#          ActionTypeId:
+#            Category: Deploy
+#            Owner: AWS
+#            Provider: CloudFormation
+#            Version: 1
+#          Configuration:
+#            ActionMode: CREATE_UPDATE
+#            Capabilities: CAPABILITY_IAM
+#            RoleArn: !GetAtt 'CloudFormationRole.Arn'
+#            StackName: !Sub '${AWS::StackName}-production'
+#            TemplatePath: 'Source::jenkins2-ha.yaml'
+#            ParameterOverrides: !Sub
+#            - |
+#              {
+#                "ParentVPCStack": "${ParentVPCStack}",
+#                "ParentSSHBastionStack": "${ParentSSHBastionStack}",
+#                "ParentAlertStack": "${ParentAlertStack}",
+#                "InstanceType": "${InstanceType}",
+#                "Name": "${Name}",
+#                "SubnetName": "${SubnetName}",
+#                "KeyName": "${KeyName}",
+#                "IAMUserSSHAccess": "${IAMUserSSHAccess}",
+#                "LogsRetentionInDays": "${LogsRetentionInDays}",
+#                "NewRelicLicenseKey": "${NewRelicLicenseKey}"
+#              }
+#            - ParentVPCStack:
+#              'Fn::ImportValue': !Sub '${ParentProductionStageStack}-ParentVPCStack'
+#              ParentSSHBastionStack:
+#                'Fn::ImportValue': !Sub '${ParentProductionStageStack}-ParentSSHBastionStack'
+#              ParentAlertStack:
+#                'Fn::ImportValue': !Sub '${ParentProductionStageStack}-ParentAlertStack'
+#              InstanceType: !Ref InstanceType
+#              Name: !Ref Name
+#              SubnetName: !Ref SubnetName
+#              KeyName: !Ref KeyName
+#              IAMUserSSHAccess: !Ref IAMUserSSHAccess
+#              LogsRetentionInDays: !Ref LogsRetentionInDays
+#              NewRelicLicenseKey: !Ref NewRelicLicenseKey
+#          InputArtifacts:
+#          - Name: Source
+#          - Name: Image
+#          RunOrder: 1

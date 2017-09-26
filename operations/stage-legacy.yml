@@ -1,0 +1,47 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Operations: CI/CD stage, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+      - ParentSSHBastionStack
+      - ParentAlertStack
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+  ParentSSHBastionStack:
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Type: String
+    Default: ''
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+Resources:
+  Dummy:
+    Type: 'AWS::S3::Bucket'
+    Properties: {}
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'operations/stage-legacy'
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Value: !Ref ParentVPCStack
+    Export:
+      Name: !Sub '${AWS::StackName}-ParentVPCStack'
+  ParentSSHBastionStack:
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Value: !Ref ParentSSHBastionStack
+    Export:
+      Name: !Sub '${AWS::StackName}-ParentSSHBastionStack'
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Value: !Ref ParentAlertStack
+    Export:
+      Name: !Sub '${AWS::StackName}-ParentAlertStack'
