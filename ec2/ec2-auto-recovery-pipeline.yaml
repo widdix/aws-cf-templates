@@ -186,11 +186,14 @@ Resources:
                   "NewRelicLicenseKey": "${NewRelicLicenseKey}"
                 }
             - ParentVPCStack:
-                'Fn::ImportValue': !Sub '${ParentAcceptanceStageStack}-ParentVPCStack'
+                'Fn::ImportValue':
+                  'Fn:Sub': '${ParentAcceptanceStageStack}-ParentVPCStack' # TODO not working, !ImportValue not allowed inside !Sub
               ParentSSHBastionStack:
-                'Fn::ImportValue': !Sub '${ParentAcceptanceStageStack}-ParentSSHBastionStack'
+                'Fn::ImportValue':
+                  'Fn:Sub': '${ParentAcceptanceStageStack}-ParentSSHBastionStack' # TODO not working, !ImportValue not allowed inside !Sub
               ParentAlertStack:
-                'Fn::ImportValue': !Sub '${ParentAcceptanceStageStack}-ParentAlertStack'
+                'Fn::ImportValue':
+                  'Fn:Sub': '${ParentAcceptanceStageStack}-ParentAlertStack' # TODO not working, !ImportValue not allowed inside !Sub
               InstanceType: !Ref InstanceType
               Name: !Ref Name
               SubnetName: !Ref SubnetName
@@ -241,11 +244,14 @@ Resources:
                   "NewRelicLicenseKey": "${NewRelicLicenseKey}"
                 }
             - ParentVPCStack:
-              'Fn::ImportValue': !Sub '${ParentProductionStageStack}-ParentVPCStack'
+                'Fn::ImportValue':
+                  'Fn:Sub': '${ParentProductionStageStack}-ParentVPCStack' # TODO not working, !ImportValue not allowed inside !Sub
               ParentSSHBastionStack:
-                'Fn::ImportValue': !Sub '${ParentProductionStageStack}-ParentSSHBastionStack'
+                'Fn::ImportValue':
+                  'Fn:Sub': '${ParentProductionStageStack}-ParentSSHBastionStack' # TODO not working, !ImportValue not allowed inside !Sub
               ParentAlertStack:
-                'Fn::ImportValue': !Sub '${ParentProductionStageStack}-ParentAlertStack'
+                'Fn::ImportValue':
+                  'Fn:Sub': '${ParentProductionStageStack}-ParentAlertStack' # TODO not working, !ImportValue not allowed inside !Sub
               InstanceType: !Ref InstanceType
               Name: !Ref Name
               SubnetName: !Ref SubnetName
