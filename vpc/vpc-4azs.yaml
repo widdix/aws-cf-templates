@@ -200,32 +200,32 @@ Resources:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
       SubnetId: !Ref SubnetBPublic
-      RouteTableId: !Ref RouteTablePublic
+      RouteTableId: !Ref RouteTableBPublic
   RouteTableAssociationBPrivate:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
       SubnetId: !Ref SubnetBPrivate
-      RouteTableId: !Ref RouteTablePrivate
+      RouteTableId: !Ref RouteTableBPrivate
   RouteTableAssociationCPublic:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
       SubnetId: !Ref SubnetCPublic
-      RouteTableId: !Ref RouteTablePublic
+      RouteTableId: !Ref RouteTableCPublic
   RouteTableAssociationCPrivate:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
       SubnetId: !Ref SubnetCPrivate
-      RouteTableId: !Ref RouteTablePrivate
+      RouteTableId: !Ref RouteTableCPrivate
   RouteTableAssociationDPublic:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
       SubnetId: !Ref SubnetDPublic
-      RouteTableId: !Ref RouteTablePublic
+      RouteTableId: !Ref RouteTableDPublic
   RouteTableAssociationDPrivate:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
       SubnetId: !Ref SubnetDPrivate
-      RouteTableId: !Ref RouteTablePrivate
+      RouteTableId: !Ref RouteTableDPrivate
   RouteTablePublicInternetRoute: # should be RouteTablePublicAInternetRoute, but logical id was not changed for backward compatibility
     Type: 'AWS::EC2::Route'
     DependsOn: VPCGatewayAttachment
