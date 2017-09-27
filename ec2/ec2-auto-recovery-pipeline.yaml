@@ -134,37 +134,30 @@ Resources:
 #          InputArtifacts:
 #          - Name: Acceptance
 #          RunOrder: 2
-#      - Name: Production
-#        Actions:
-#        - Name: Deploy
-#          ActionTypeId:
-#            Category: Deploy
-#            Owner: AWS
-#            Provider: CloudFormation
-#            Version: 1
-#          Configuration:
-#            ActionMode: CREATE_UPDATE
-#            Capabilities: CAPABILITY_IAM
-#            RoleArn: !GetAtt 'CloudFormationRole.Arn'
-#            StackName: !Sub '${AWS::StackName}-production'
-#            TemplatePath: 'Source::ec2/ec2-auto-recovery.yaml'
-#            TemplateConfiguration: 'Source::ec2/ec2-auto-recovery.json'
-#            ParameterOverrides: !Sub
-#            - |
-#                {
-#                  "ParentVPCStack": "${ParentVPCStack}",
-#                  "ParentSSHBastionStack": "${ParentSSHBastionStack}",
-#                  "ParentAlertStack": "${ParentAlertStack}"
-#                }
-#            - ParentVPCStack:
-#                'Fn::ImportValue':
-#                  'Fn:Sub': '${ParentProductionStageStack}-ParentVPCStack' # TODO not working, !ImportValue not allowed inside !Sub
-#              ParentSSHBastionStack:
-#                'Fn::ImportValue':
-#                  'Fn:Sub': '${ParentProductionStageStack}-ParentSSHBastionStack' # TODO not working, !ImportValue not allowed inside !Sub
-#              ParentAlertStack:
-#                'Fn::ImportValue':
-#                  'Fn:Sub': '${ParentProductionStageStack}-ParentAlertStack' # TODO not working, !ImportValue not allowed inside !Sub
-#          InputArtifacts:
-#          - Name: Source
-#          RunOrder: 1
+      - Name: Production
+        Actions:
+        - Name: Deploy
+          ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Provider: CloudFormation
+            Version: 1
+          Configuration:
+            ActionMode: CREATE_UPDATE
+            Capabilities: CAPABILITY_IAM
+            RoleArn: !GetAtt 'CloudFormationRole.Arn'
+            StackName: !Sub '${AWS::StackName}-production'
+            TemplatePath: 'Source::ec2/ec2-auto-recovery.yaml'
+            TemplateConfiguration: 'Source::ec2/ec2-auto-recovery.json'
+            ParameterOverrides: !Join
+            - ''
+            - - '{"ParentVPCStack": "'
+              - 'Fn::ImportValue': !Sub '${ParentProductionStageStack}-ParentVPCStack'
+              - '", "ParentSSHBastionStack": "'
+              - 'Fn::ImportValue': !Sub '${ParentProductionStageStack}-ParentSSHBastionStack'
+              - '", "ParentAlertStack": "'
+              - 'Fn::ImportValue': !Sub '${ParentProductionStageStack}-ParentAlertStack'
+              - '"}'
+            InputArtifacts:
+          - Name: Source
+          RunOrder: 1
