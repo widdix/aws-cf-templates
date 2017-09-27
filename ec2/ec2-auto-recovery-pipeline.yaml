@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Jenkins 2: pipeline, a cloudonaut.io template'
+Description: 'EC2: pipeline, a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -96,44 +96,44 @@ Resources:
           InputArtifacts:
           - Name: Source
           RunOrder: 1
-#      - Name: Acceptance
-#        Actions:
-#        - Name: Deploy
+      - Name: Acceptance
+        Actions:
+        - Name: Deploy
+          ActionTypeId:
+            Category: Deploy
+            Owner: AWS
+            Provider: CloudFormation
+            Version: 1
+          Configuration:
+            ActionMode: CREATE_UPDATE
+            Capabilities: CAPABILITY_IAM
+            RoleArn: !GetAtt 'CloudFormationRole.Arn'
+            StackName: !Sub '${AWS::StackName}-acceptance'
+            TemplatePath: 'Source::ec2/ec2-auto-recovery.yaml'
+            TemplateConfiguration: 'Source::ec2/ec2-auto-recovery.json'
+            ParameterOverrides: !Join
+            - ''
+            - - '{"ParentVPCStack": "'
+              - 'Fn::ImportValue': !Sub '${ParentAcceptanceStageStack}-ParentVPCStack'
+              - '", "ParentSSHBastionStack": "'
+              - 'Fn::ImportValue': !Sub '${ParentAcceptanceStageStack}-ParentSSHBastionStack'
+              - '", "ParentAlertStack": "'
+              - 'Fn::ImportValue': !Sub '${ParentAcceptanceStageStack}-ParentAlertStack'
+              - '"}'
+          InputArtifacts:
+          - Name: Source
+          RunOrder: 1
+#        - Name: Test
 #          ActionTypeId:
-#            Category: Deploy
+#            Category: Build
 #            Owner: AWS
-#            Provider: CloudFormation
+#            Provider: CodeBuild
 #            Version: 1
 #          Configuration:
-#            ActionMode: CREATE_UPDATE
-#            Capabilities: CAPABILITY_IAM
-#            RoleArn: !GetAtt 'CloudFormationRole.Arn'
-#            StackName: !Sub '${AWS::StackName}-acceptance'
-#            TemplatePath: 'Source::ec2/ec2-auto-recovery.yaml'
-#            TemplateConfiguration: 'Source::ec2/ec2-auto-recovery.json'
-#            ParameterOverrides: !Join
-#            - ''
-#            - - '{"ParentVPCStack": "'
-#              - 'Fn::ImportValue': !Sub '${ParentAcceptanceStageStack}-ParentVPCStack'
-#              - '", "ParentSSHBastionStack": "'
-#              - 'Fn::ImportValue': !Sub '${ParentAcceptanceStageStack}-ParentSSHBastionStack'
-#              - '", "ParentAlertStack": "'
-#              - 'Fn::ImportValue': !Sub '${ParentAcceptanceStageStack}-ParentAlertStack'
-#              - '"}'
+#            ProjectName: !Ref RunAcceptanceProject
 #          InputArtifacts:
-#          - Name: Source
-#          RunOrder: 1
-#           - Name: Test
-#             ActionTypeId:
-#               Category: Build
-#               Owner: AWS
-#               Provider: CodeBuild
-#               Version: 1
-#             Configuration:
-#               ProjectName: !Ref RunAcceptanceProject
-#             InputArtifacts:
-#             - Name: Acceptance
-#             RunOrder: 2
+#          - Name: Acceptance
+#          RunOrder: 2
 #      - Name: Production
 #        Actions:
 #        - Name: Deploy
@@ -148,6 +148,7 @@ Resources:
 #            RoleArn: !GetAtt 'CloudFormationRole.Arn'
 #            StackName: !Sub '${AWS::StackName}-production'
 #            TemplatePath: 'Source::ec2/ec2-auto-recovery.yaml'
+#            TemplateConfiguration: 'Source::ec2/ec2-auto-recovery.json'
 #            ParameterOverrides: !Sub
 #            - |
 #                {
