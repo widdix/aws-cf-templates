@@ -158,6 +158,6 @@ Resources:
               - '", "ParentAlertStack": "'
               - 'Fn::ImportValue': !Sub '${ParentProductionStageStack}-ParentAlertStack'
               - '"}'
-            InputArtifacts:
+          InputArtifacts:
           - Name: Source
           RunOrder: 1
