@@ -1,0 +1,11 @@
+{
+  "Parameters": {
+    "InstanceType": "t2.micro",
+    "Name": "test",
+    "SubnetName": "SubnetAPublic",
+    "KeyName": "",
+    "IAMUserSSHAccess": "true",
+    "LogsRetentionInDays": "14",
+    "NewRelicLicenseKey": ""
+  }
+}

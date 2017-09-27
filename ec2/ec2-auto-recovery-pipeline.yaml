@@ -9,16 +9,6 @@ Metadata:
       Parameters:
       - ParentAcceptanceStageStack
       - ParentProductionStageStack
-    - Label:
-        default: 'EC2 Parameters'
-      Parameters:
-      - InstanceType
-      - Name
-      - SubnetName
-      - KeyName
-      - IAMUserSSHAccess
-      - LogsRetentionInDays
-      - NewRelicLicenseKey
 Parameters:
   ParentAcceptanceStageStack:
     Description: 'Stack name of parent Acceptance Stage stack based on operations/stage.yaml template.'
@@ -26,50 +16,6 @@ Parameters:
   ParentProductionStageStack:
     Description: 'Stack name of parent Production Stage stack based on operations/stage.yaml template.'
     Type: String
-  # BEGIN: Copy of all non parent stack parameters
-  KeyName:
-    Description: 'Optional key pair of the ec2-user to establish a SSH connection to the EC2 instance.'
-    Type: String
-    Default: ''
-  IAMUserSSHAccess:
-    Description: 'Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).'
-    Type: String
-    Default: false
-    AllowedValues:
-    - true
-    - false
-  InstanceType:
-    Description: 'The instance type for the EC2 instance.'
-    Type: String
-    Default: 't2.micro'
-  Name:
-    Description: 'The name for the EC2 instance.'
-    Type: String
-    Default: 'test'
-  SubnetName:
-    Description: 'Subnet name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
-    Type: String
-    Default: SubnetAPublic
-    AllowedValues:
-    - SubnetAPublic
-    - SubnetAPrivate
-    - SubnetBPublic
-    - SubnetBPrivate
-    - SubnetCPublic
-    - SubnetCPrivate
-    - SubnetDPublic
-    - SubnetDPrivate
-  LogsRetentionInDays:
-    Description: 'Specifies the number of days you want to retain log events.'
-    Type: Number
-    Default: 14
-    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
-  NewRelicLicenseKey:
-    Description: 'Optional New Relic License Key will install the New Relic Servers for Linux agent.'
-    Type: String
-    Default: ''
-    NoEcho: true
-  # END: Copy of all non parent stack parameters
 Resources:
   ArtifactsBucket:
     DependsOn: CloudFormationRole # make sure that CloudFormationRole is deleted last
@@ -145,14 +91,7 @@ Resources:
             ParameterOverrides: !Sub | # Copy of all stack parameters
               {
                 "ParentAcceptanceStageStack": "${ParentAcceptanceStageStack}",
-                "ParentProductionStageStack": "${ParentProductionStageStack}",
-                "KeyName": "${KeyName}",
-                "IAMUserSSHAccess": "${IAMUserSSHAccess}",
-                "InstanceType": "${InstanceType}",
-                "Name": "${Name}",
-                "SubnetName": "${SubnetName}",
-                "LogsRetentionInDays": "${LogsRetentionInDays}",
-                "NewRelicLicenseKey": "${NewRelicLicenseKey}"
+                "ParentProductionStageStack": "${ParentProductionStageStack}"
               }
           InputArtifacts:
           - Name: Source
@@ -171,36 +110,16 @@ Resources:
             RoleArn: !GetAtt 'CloudFormationRole.Arn'
             StackName: !Sub '${AWS::StackName}-acceptance'
             TemplatePath: 'Source::ec2/ec2-auto-recovery.yaml'
-            ParameterOverrides: !Sub
-            - |
-                {
-                  "ParentVPCStack": "${ParentVPCStack}",
-                  "ParentSSHBastionStack": "${ParentSSHBastionStack}",
-                  "ParentAlertStack": "${ParentAlertStack}",
-                  "InstanceType": "${InstanceType}",
-                  "Name": "${Name}",
-                  "SubnetName": "${SubnetName}",
-                  "KeyName": "${KeyName}",
-                  "IAMUserSSHAccess": "${IAMUserSSHAccess}",
-                  "LogsRetentionInDays": "${LogsRetentionInDays}",
-                  "NewRelicLicenseKey": "${NewRelicLicenseKey}"
-                }
-            - ParentVPCStack:
-                'Fn::ImportValue':
-                  'Fn:Sub': '${ParentAcceptanceStageStack}-ParentVPCStack' # TODO not working, !ImportValue not allowed inside !Sub
-              ParentSSHBastionStack:
-                'Fn::ImportValue':
-                  'Fn:Sub': '${ParentAcceptanceStageStack}-ParentSSHBastionStack' # TODO not working, !ImportValue not allowed inside !Sub
-              ParentAlertStack:
-                'Fn::ImportValue':
-                  'Fn:Sub': '${ParentAcceptanceStageStack}-ParentAlertStack' # TODO not working, !ImportValue not allowed inside !Sub
-              InstanceType: !Ref InstanceType
-              Name: !Ref Name
-              SubnetName: !Ref SubnetName
-              KeyName: !Ref KeyName
-              IAMUserSSHAccess: !Ref IAMUserSSHAccess
-              LogsRetentionInDays: !Ref LogsRetentionInDays
-              NewRelicLicenseKey: !Ref NewRelicLicenseKey
+            TemplateConfiguration: 'Source::ec2/ec2-auto-recovery.json'
+            ParameterOverrides: !Join
+            - ''
+            - - '{"ParentVPCStack": "'
+              - 'Fn::ImportValue': !Sub '${ParentAcceptanceStageStack}-ParentVPCStack'
+              - '", "ParentSSHBastionStack": "'
+              - 'Fn::ImportValue': !Sub '${ParentAcceptanceStageStack}-ParentSSHBastionStack'
+              - '", "ParentAlertStack": "'
+              - 'Fn::ImportValue': !Sub '${ParentAcceptanceStageStack}-ParentAlertStack'
+              - '"}'
           InputArtifacts:
           - Name: Source
           RunOrder: 1
@@ -215,50 +134,36 @@ Resources:
 #             InputArtifacts:
 #             - Name: Acceptance
 #             RunOrder: 2
-      - Name: Production
-        Actions:
-        - Name: Deploy
-          ActionTypeId:
-            Category: Deploy
-            Owner: AWS
-            Provider: CloudFormation
-            Version: 1
-          Configuration:
-            ActionMode: CREATE_UPDATE
-            Capabilities: CAPABILITY_IAM
-            RoleArn: !GetAtt 'CloudFormationRole.Arn'
-            StackName: !Sub '${AWS::StackName}-production'
-            TemplatePath: 'Source::ec2/ec2-auto-recovery.yaml'
-            ParameterOverrides: !Sub
-            - |
-                {
-                  "ParentVPCStack": "${ParentVPCStack}",
-                  "ParentSSHBastionStack": "${ParentSSHBastionStack}",
-                  "ParentAlertStack": "${ParentAlertStack}",
-                  "InstanceType": "${InstanceType}",
-                  "Name": "${Name}",
-                  "SubnetName": "${SubnetName}",
-                  "KeyName": "${KeyName}",
-                  "IAMUserSSHAccess": "${IAMUserSSHAccess}",
-                  "LogsRetentionInDays": "${LogsRetentionInDays}",
-                  "NewRelicLicenseKey": "${NewRelicLicenseKey}"
-                }
-            - ParentVPCStack:
-                'Fn::ImportValue':
-                  'Fn:Sub': '${ParentProductionStageStack}-ParentVPCStack' # TODO not working, !ImportValue not allowed inside !Sub
-              ParentSSHBastionStack:
-                'Fn::ImportValue':
-                  'Fn:Sub': '${ParentProductionStageStack}-ParentSSHBastionStack' # TODO not working, !ImportValue not allowed inside !Sub
-              ParentAlertStack:
-                'Fn::ImportValue':
-                  'Fn:Sub': '${ParentProductionStageStack}-ParentAlertStack' # TODO not working, !ImportValue not allowed inside !Sub
-              InstanceType: !Ref InstanceType
-              Name: !Ref Name
-              SubnetName: !Ref SubnetName
-              KeyName: !Ref KeyName
-              IAMUserSSHAccess: !Ref IAMUserSSHAccess
-              LogsRetentionInDays: !Ref LogsRetentionInDays
-              NewRelicLicenseKey: !Ref NewRelicLicenseKey
-          InputArtifacts:
-          - Name: Source
-          RunOrder: 1
+#      - Name: Production
+#        Actions:
+#        - Name: Deploy
+#          ActionTypeId:
+#            Category: Deploy
+#            Owner: AWS
+#            Provider: CloudFormation
+#            Version: 1
+#          Configuration:
+#            ActionMode: CREATE_UPDATE
+#            Capabilities: CAPABILITY_IAM
+#            RoleArn: !GetAtt 'CloudFormationRole.Arn'
+#            StackName: !Sub '${AWS::StackName}-production'
+#            TemplatePath: 'Source::ec2/ec2-auto-recovery.yaml'
+#            ParameterOverrides: !Sub
+#            - |
+#                {
+#                  "ParentVPCStack": "${ParentVPCStack}",
+#                  "ParentSSHBastionStack": "${ParentSSHBastionStack}",
+#                  "ParentAlertStack": "${ParentAlertStack}"
+#                }
+#            - ParentVPCStack:
+#                'Fn::ImportValue':
+#                  'Fn:Sub': '${ParentProductionStageStack}-ParentVPCStack' # TODO not working, !ImportValue not allowed inside !Sub
+#              ParentSSHBastionStack:
+#                'Fn::ImportValue':
+#                  'Fn:Sub': '${ParentProductionStageStack}-ParentSSHBastionStack' # TODO not working, !ImportValue not allowed inside !Sub
+#              ParentAlertStack:
+#                'Fn::ImportValue':
+#                  'Fn:Sub': '${ParentProductionStageStack}-ParentAlertStack' # TODO not working, !ImportValue not allowed inside !Sub
+#          InputArtifacts:
+#          - Name: Source
+#          RunOrder: 1
