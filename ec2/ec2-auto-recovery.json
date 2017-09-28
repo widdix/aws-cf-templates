@@ -1,6 +1,6 @@
 {
   "Parameters": {
-    "InstanceType": "t2.small",
+    "InstanceType": "t2.micro",
     "Name": "test",
     "SubnetName": "SubnetAPublic",
     "KeyName": "",
