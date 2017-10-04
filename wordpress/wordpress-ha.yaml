@@ -117,33 +117,33 @@ Parameters:
 Mappings:
   RegionMap:
     'ap-south-1':
-      AMI: 'ami-d7abd1b8'
+      AMI: 'ami-4fc58420'
     'eu-west-2':
-      AMI: 'ami-489f8e2c'
+      AMI: 'ami-1a7f6d7e'
     'eu-west-1':
-      AMI: 'ami-ebd02392'
+      AMI: 'ami-acd005d5'
     'ap-northeast-2':
-      AMI: 'ami-8663bae8'
+      AMI: 'ami-9bec36f5'
     'ap-northeast-1':
-      AMI: 'ami-4af5022c'
+      AMI: 'ami-2a69be4c'
     'sa-east-1':
-      AMI: 'ami-d27203be'
+      AMI: 'ami-f1344b9d'
     'ca-central-1':
-      AMI: 'ami-5ac17f3e'
+      AMI: 'ami-fd55ec99'
     'ap-southeast-1':
-      AMI: 'ami-fdb8229e'
+      AMI: 'ami-0797ea64'
     'ap-southeast-2':
-      AMI: 'ami-30041c53'
+      AMI: 'ami-8536d6e7'
     'eu-central-1':
-      AMI: 'ami-657bd20a'
+      AMI: 'ami-c7ee5ca8'
     'us-east-1':
-      AMI: 'ami-4fffc834'
+      AMI: 'ami-8c1be5f6'
     'us-east-2':
-      AMI: 'ami-ea87a78f'
+      AMI: 'ami-c5062ba0'
     'us-west-1':
-      AMI: 'ami-3a674d5a'
+      AMI: 'ami-02eada62'
     'us-west-2':
-      AMI: 'ami-aa5ebdd2'
+      AMI: 'ami-e689729e'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref WebServerKeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref WebServerIAMUserSSHAccess, 'true']
