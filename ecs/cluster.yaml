@@ -444,6 +444,9 @@ Resources:
       Protocol: HTTP
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      TargetGroupAttributes:
+      - Key: 'deregistration_delay.timeout_seconds'
+        Value: 0
   HttpListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
@@ -649,7 +652,7 @@ Resources:
               ruby: []
             rubygems:
               'aws-sdk':
-              - '2.7.10'
+              - '3.0.1'
               daemons:
               - '1.2.3'
           files:
