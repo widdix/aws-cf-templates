@@ -18,6 +18,9 @@ Metadata:
       - LoadBalancerScheme
       - LoadBalancerCertificateArn
       - LoadBalancerDeregistrationDelay
+    - Label:
+        default: 'Service Parameters'
+      Parameters:
       - SubDomainName
     - Label:
         default: 'Task Parameters'
