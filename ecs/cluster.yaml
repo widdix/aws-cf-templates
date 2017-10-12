@@ -1184,6 +1184,11 @@ Outputs:
     Value: !Ref HttpsListener
     Export:
       Name: !Sub '${AWS::StackName}-HttpsListener'
+  CanonicalHostedZoneID:
+    Description: 'The ID of the Amazon Route 53 hosted zone associated with the load balancer.'
+    Value: !GetAtt LoadBalancer.CanonicalHostedZoneID
+    Export:
+      Name: !Sub '${AWS::StackName}-CanonicalHostedZoneID'
   VPC:
     Description: 'VPC of ECS cluster.'
     Value:
