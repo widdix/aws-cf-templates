@@ -46,7 +46,7 @@ Parameters:
     Type: String
     Default: ''
   LoadBalancerScheme:
-    Description: 'Indicates whether the load balancer in front of the ECS cluster is internet-facing or internal.'
+    Description: 'Indicates whether the load balancer in front of the ECS service is internet-facing or internal.'
     Type: String
     Default: 'internet-facing'
     AllowedValues:
