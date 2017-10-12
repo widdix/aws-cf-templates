@@ -153,7 +153,7 @@ Parameters:
     Type: String
     Default: '2.60.3'
   NewRelicLicenseKey:
-    Description: 'Optional New Relic License Key will install the New Relic Servers for Linux agent.'
+    Description: 'Optional New Relic License Key will install the New Relic Infrastructure for Linux agent.'
     Type: String
     Default: ''
     NoEcho: true
@@ -590,10 +590,10 @@ Resources:
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
                 log_group_name = ${MasterLogs}
-                [/var/log/newrelic/nrsysmond.log]
+                [/var/log/newrelic/newrelic-infra.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/newrelic/nrsysmond.log
-                log_stream_name = {instance_id}/var/log/newrelic/nrsysmond.log
+                file = /var/log/newrelic/newrelic-infra.log
+                log_stream_name = {instance_id}/var/log/newrelic/newrelic-infra.log
                 log_group_name = ${MasterLogs}
                 [/var/log/jenkins/jenkins.log]
                 datetime_format = %d %b %Y %H:%M:%S
@@ -618,24 +618,32 @@ Resources:
         newrelic:
           packages:
             rpm:
-              newrelic-sysmond: 'https://download.newrelic.com/pub/newrelic/el5/x86_64/newrelic-sysmond-2.3.0.132-1.x86_64.rpm'
+              newrelic-infra: 'https://download.newrelic.com/infrastructure_agent/linux/yum/el/6/x86_64/newrelic-infra-1.0.775-1.x86_64.rpm'
           files:
-            '/etc/newrelic/nrsysmond.cfg':
+            '/etc/yum.repos.d/newrelic-infra.repo':
               content: !Sub |
-                license_key=${NewRelicLicenseKey}
-                loglevel=info
-                logfile=/var/log/newrelic/nrsysmond.log
-                labels=StackName:${AWS::StackName};AccountId:${AWS::AccountId};Region:${AWS::Region}
+                [newrelic-infra]
+                name=New Relic Infrastructure
+                baseurl=http://download.newrelic.com/infrastructure_agent/linux/yum/el/6/x86_64
+                gpgkey=http://download.newrelic.com/infrastructure_agent/gpg/newrelic-infra.gpg
+                gpgcheck=1
+                repo_gpgcheck=1
               mode: '000640'
               owner: root
-              group: newrelic
-          services:
-            sysvinit:
-              newrelic-sysmond:
-                enabled: true
-                ensureRunning: true
-                files:
-                - '/etc/newrelic/nrsysmond.cfg'
+              group: root
+            '/etc/newrelic-infra.yml':
+              content: !Sub |
+                license_key: ${NewRelicLicenseKey}
+                log_file: /var/log/newrelic/newrelic-infra.log
+                display_name: ${AWS::StackName}-${AWS::AccountId}-${AWS::Region}
+              mode: '000640'
+              owner: root
+              group: root
+          commands:
+            'a_mknewrelic_dir':
+              command: 'mkdir /var/log/newrelic'
+            'b_restart_newrelic':
+              command: 'initctl restart newrelic-infra'
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':
