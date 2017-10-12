@@ -680,9 +680,9 @@ Resources:
               'nfs-utils': []
             rubygems:
               'aws-sdk':
-              - '2.2.29'
+              - '3.0.1'
               daemons:
-              - '1.2.3'
+              - '1.2.4'
           commands:
             'a_groupadd':
               command: 'groupadd -g 497 jenkins'
@@ -760,7 +760,7 @@ Resources:
               content: |
                 #!/usr/bin/env ruby
                 require 'daemons'
-                Daemons.run(__dir__ + '/worker.rb', {:monitor => true})
+                Daemons.run(__dir__ + '/worker.rb', {:monitor => true, :log_output_syslog => true})
               mode: '000500'
               owner: root
               group: root
@@ -1395,9 +1395,9 @@ Resources:
           packages:
             rubygems:
               'aws-sdk':
-              - '2.2.29'
+              - '3.0.1'
               daemons:
-              - '1.2.3'
+              - '1.2.4'
           files:
             '/root/agent.xml':
               content: |
@@ -1494,7 +1494,7 @@ Resources:
               content: |
                 #!/usr/bin/env ruby
                 require 'daemons'
-                Daemons.run(__dir__ + '/server.rb', {:monitor => true})
+                Daemons.run(__dir__ + '/server.rb', {:monitor => true, :log_output_syslog => true})
               mode: '000500'
               owner: root
               group: root

@@ -654,7 +654,7 @@ Resources:
               'aws-sdk':
               - '3.0.1'
               daemons:
-              - '1.2.3'
+              - '1.2.4'
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -713,7 +713,7 @@ Resources:
               content: |
                 #!/usr/bin/env ruby
                 require 'daemons'
-                Daemons.run(__dir__ + '/worker.rb', {:monitor => true})
+                Daemons.run(__dir__ + '/worker.rb', {:monitor => true, :log_output_syslog => true})
               mode: '000500'
               owner: root
               group: root
