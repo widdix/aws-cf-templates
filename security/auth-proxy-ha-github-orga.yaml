@@ -28,7 +28,7 @@ Metadata:
       - IAMUserSSHAccess
       - LogsRetentionInDays
       - NewRelicLicenseKey
-      - DNSName
+      - SubDomainName
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -90,8 +90,8 @@ Parameters:
     Description: 'Seed string for secure cookies. Create one with python -c ''import os,base64; print base64.b64encode(os.urandom(16))'''
     Type: String
     NoEcho: true
-  DNSName:
-    Description: 'Name that is used for the DNS entry (works only when ParentZoneStack is set)'
+  SubDomainName:
+    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (works only when ParentZoneStack is set)'
     Type: String
     Default: 'jenkins'
 Mappings:
@@ -196,8 +196,8 @@ Resources:
       HostedZoneId:
         'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
       Name: !Sub
-      - '${DNSName}.${HostedZoneName}'
-      - DNSName: !Ref DNSName
+      - '${SubDomainName}.${HostedZoneName}'
+      - SubDomainName: !Ref SubDomainName
         HostedZoneName:
           'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       Type: A

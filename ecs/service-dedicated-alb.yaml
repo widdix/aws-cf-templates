@@ -18,7 +18,7 @@ Metadata:
       - LoadBalancerScheme
       - LoadBalancerCertificateArn
       - LoadBalancerDeregistrationDelay
-      - DNSName
+      - SubDomainName
     - Label:
         default: 'Task Parameters'
       Parameters:
@@ -84,8 +84,8 @@ Parameters:
     Default: 2
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
-  DNSName:
-    Description: 'Name that is used for the DNS entry (works only when ParentZoneStack is set)'
+  SubDomainName:
+    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (works only when ParentZoneStack is set)'
     Type: String
     Default: ''
 Mappings: {}
@@ -234,8 +234,8 @@ Resources:
       HostedZoneId:
         'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
       Name: !Sub
-      - '${DNSName}.${HostedZoneName}'
-      - DNSName: !Ref DNSName
+      - '${SubDomainName}.${HostedZoneName}'
+      - SubDomainName: !Ref SubDomainName
         HostedZoneName:
           'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       Type: A
