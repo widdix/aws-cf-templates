@@ -811,3 +811,8 @@ Outputs:
     Value: !Sub 'http://${MasterELB.DNSName}'
     Export:
       Name: !Sub '${AWS::StackName}-URL'
+  MasterIAMRole:
+    Description: 'Use this IAm Role to reference API calls from the Jenkins master'
+    Value: !GetAtt 'MasterIAMRole.Arn'
+    Export:
+      Name: !Sub '${AWS::StackName}-MasterIAMRole'
