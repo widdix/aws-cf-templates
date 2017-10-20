@@ -233,6 +233,9 @@ Resources:
         Value: 'Auth proxy'
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      TargetGroupAttributes:
+      - Key: 'deregistration_delay.timeout_seconds'
+        Value: 30
   LoadBalancerTargetGroupHttpRedirect:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
@@ -252,6 +255,9 @@ Resources:
         Value: 'Auth proxy http redirect'
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      TargetGroupAttributes:
+      - Key: 'deregistration_delay.timeout_seconds'
+        Value: 30
   LoadBalancerListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:

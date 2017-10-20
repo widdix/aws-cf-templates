@@ -380,6 +380,9 @@ Resources:
         Value: 'jenkins-master'
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      TargetGroupAttributes:
+      - Key: 'deregistration_delay.timeout_seconds'
+        Value: 30
   MasterELBListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
@@ -1082,6 +1085,9 @@ Resources:
         Value: 'jenkins-agent'
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      TargetGroupAttributes:
+      - Key: 'deregistration_delay.timeout_seconds'
+        Value: 15
   AgentELBListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:

@@ -306,6 +306,9 @@ Resources:
       Protocol: HTTP
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      TargetGroupAttributes:
+      - Key: 'deregistration_delay.timeout_seconds'
+        Value: 30
   DBSubnetGroup:
     Type: 'AWS::RDS::DBSubnetGroup'
     Properties:
