@@ -59,7 +59,7 @@ public class TestWordpressHA extends ACloudFormationTest {
                         this.deleteDomain(stackName);
                     }
                 } finally {
-                    this.deleteStack(stackName);
+                    this.deleteStackAndRetryOnFailure(stackName);
                 }
             } finally {
                 this.deleteStack(vpcStackName);
@@ -116,7 +116,7 @@ public class TestWordpressHA extends ACloudFormationTest {
                         this.deleteDomain(stackName);
                     }
                 } finally {
-                    this.deleteStack(stackName);
+                    this.deleteStackAndRetryOnFailure(stackName);
                 }
             } finally {
                 this.deleteStack(vpcStackName);

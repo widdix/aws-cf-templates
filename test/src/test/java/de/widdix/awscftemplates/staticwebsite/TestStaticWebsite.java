@@ -36,7 +36,7 @@ public class TestStaticWebsite extends ACloudFormationTest {
             };
             this.retry(callable);
         } finally {
-            this.deleteStack(stackName);
+            this.deleteStackAndRetryOnFailure(stackName);
         }
     }
 
