@@ -235,6 +235,23 @@ Resources:
         FromPort: 3306
         ToPort: 3306
         SourceSecurityGroupId: !Ref WebServerSecurityGroup
+  BackendConnectionErrorsTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Elastic load balancer backend connection errors'
+      Namespace: 'AWS/ELB'
+      MetricName: BackendConnectionErrors
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancerName
+        Value: !Ref LoadBalancer
   HTTPCodeELB5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -263,6 +280,40 @@ Resources:
       Period: 60
       EvaluationPeriods: 1
       ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancerName
+        Value: !Ref LoadBalancer
+  SpilloverCountTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Elastic load balancer rejected requests because the surge queue is full.'
+      Namespace: 'AWS/ELB'
+      MetricName: SpilloverCount
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancerName
+        Value: !Ref LoadBalancer
+  SurgeQueueLengthTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Elastic load balancer surge queue is queuing up. Requests will be dropped when more than 1024 requests are queued.'
+      Namespace: 'AWS/ELB'
+      MetricName: SurgeQueueLength
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 512
+      ComparisonOperator: SurgeQueueLength
       Threshold: 0
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'

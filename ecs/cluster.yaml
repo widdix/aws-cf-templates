@@ -394,8 +394,8 @@ Resources:
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
-      - Name: LoadBalancer
-        Value: !GetAtt LoadBalancer.LoadBalancerFullName
+      - Name: TargetGroup
+        Value: !GetAtt DefaultTargetGroup.TargetGroupFullName
   HTTPCodeTarget5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -411,9 +411,43 @@ Resources:
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
-      - Name: LoadBalancer
-        Value: !GetAtt LoadBalancer.LoadBalancerFullName
-  LoadBalancer:
+      - Name: TargetGroup
+        Value: !GetAtt DefaultTargetGroup.TargetGroupFullName
+  RejectedConnectionCountTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer rejected connections because the load balancer had reached its maximum number of connections'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: RejectedConnectionCount
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: TargetGroup
+        Value: !GetAtt DefaultTargetGroup.TargetGroupFullName
+  TargetConnectionErrorCountTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer could not connect to targets'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: TargetConnectionErrorCount
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: TargetGroup
+        Value: !GetAtt DefaultTargetGroup.TargetGroupFullName
+  LoadBalancer: # not monitored, but DefaultTargetGroup is monitored!
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
       Scheme: !Ref LoadBalancerScheme
@@ -1041,21 +1075,21 @@ Resources:
       Threshold: 90
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-  MemoryReservationTooHighAlarm:
+  MemoryUtilizationTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average memory reservation over last 10 minutes higher than 90%'
+      AlarmDescription: 'Average memory utilization over last 10 minutes higher than 80%'
       Namespace: 'AWS/ECS'
       Dimensions:
       - Name: ClusterName
         Value: !Ref Cluster
-      MetricName: MemoryReservation
+      MetricName: MemoryUtilization
       ComparisonOperator: GreaterThanThreshold
-      Statistic: Average # special rule because we scale on reservations and not utilization
+      Statistic: Average
       Period: 600
       EvaluationPeriods: 1
-      Threshold: 90
+      Threshold: 80
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
   # scaling based on SchedulableContainers is described in detail here: http://garbe.io/blog/2017/04/12/a-better-solution-to-ecs-autoscaling/
