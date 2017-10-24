@@ -155,6 +155,13 @@ Resources:
         FromPort: 2049
         ToPort: 2049
         IpProtocol: tcp
+  MasterStorage:
+    Type: 'AWS::EFS::FileSystem'
+    Properties:
+      FileSystemTags:
+      - Key: Name
+        Value: 'jenkins-master-storage'
+      PerformanceMode: generalPurpose
   PercentIOLimitTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -172,13 +179,6 @@ Resources:
       Dimensions:
       - Name: FileSystemId
         Value: !Ref MasterStorage
-  MasterStorage:
-    Type: 'AWS::EFS::FileSystem'
-    Properties:
-      FileSystemTags:
-      - Key: Name
-        Value: 'jenkins-master-storage'
-      PerformanceMode: generalPurpose
   MasterStorageBurstCreditBalanceTooLowAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -792,6 +792,23 @@ Resources:
       AutoScalingRollingUpdate:
         PauseTime: PT15M
         WaitOnResourceSignals: true
+  MasterCPUTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Master average CPU utilization over last 10 minutes higher than 80%'
+      Namespace: 'AWS/EC2'
+      MetricName: CPUUtilization
+      Statistic: Average
+      Period: 600
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value: !Ref MasterASG
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
