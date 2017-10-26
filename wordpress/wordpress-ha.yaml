@@ -802,6 +802,8 @@ Resources:
       Period: 300
       AlarmActions:
       - !Ref ScalingUpPolicy
+      OKActions:
+      - !Ref ScalingDownPolicy
       Namespace: 'AWS/EC2'
       Dimensions:
       - Name: AutoScalingGroupName
@@ -816,22 +818,6 @@ Resources:
       AutoScalingGroupName: !Ref AutoScalingGroup
       Cooldown: 300
       ScalingAdjustment: -25
-  CPULowAlarm:
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      EvaluationPeriods: 3
-      Statistic: Average
-      Threshold: 30
-      AlarmDescription: 'Alarm if CPU load is low.'
-      Period: 300
-      AlarmActions:
-      - !Ref ScalingDownPolicy
-      Namespace: 'AWS/EC2'
-      Dimensions:
-      - Name: AutoScalingGroupName
-        Value: !Ref AutoScalingGroup
-      ComparisonOperator: LessThanThreshold
-      MetricName: CPUUtilization
   EFSFileSystem:
     Type: AWS::EFS::FileSystem
     Properties:
