@@ -86,7 +86,7 @@ Parameters:
   BlogVersion:
     Description: 'WordPress version number'
     Type: String
-    Default: '4.8.2'
+    Default: '4.8.3'
   WebServerKeyName:
     Description: 'Optional key pair of the ec2-user to establish a SSH connection to the web server.'
     Type: String
