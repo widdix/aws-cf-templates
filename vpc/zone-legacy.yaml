@@ -1,0 +1,39 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'VPC: legacy DNS zone, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Zone Parameters'
+      Name:
+      - HostedZoneName
+      - HostedZoneId
+Parameters:
+  HostedZoneName:
+    Description: 'The name of the hosted zone.'
+    Type: String
+  HostedZoneId:
+    Description: 'The ID of the hosted zone.'
+    Type: String
+Resources:
+  Dummy:
+    Type: 'AWS::S3::Bucket'
+    Properties: {}
+Outputs:
+  TemplateID:
+    Description: 'Template id'
+    Value: 'vpc/zone-legacy'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
+  HostedZoneName:
+    Description: 'The name of the hosted zone.'
+    Value: !Ref HostedZoneName
+    Export:
+      Name: !Sub '${AWS::StackName}-HostedZoneName'
+  HostedZoneId:
+    Description: 'The ID of the hosted zone.'
+    Value: !Ref HostedZoneId
+    Export:
+      Name: !Sub '${AWS::StackName}-HostedZoneId'

@@ -19,6 +19,7 @@ Parameters:
   ExternalTrailBucket:
     Description: 'Optional The name of the Amazon S3 bucket where CloudTrail publishes log files. If you leave this empty, the Amazon S3 bucket is created for you.'
     Type: String
+    Default: ''
   LogFilePrefix:
     Description: 'Optional The log file prefix.'
     Type: String

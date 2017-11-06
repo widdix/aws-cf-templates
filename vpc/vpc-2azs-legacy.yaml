@@ -63,8 +63,7 @@ Parameters:
 Resources:
   Dummy:
     Type: 'AWS::S3::Bucket'
-    Properties:
-      BucketName: !Ref 'AWS::StackName'
+    Properties: {}
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'

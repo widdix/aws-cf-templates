@@ -146,27 +146,29 @@ Parameters:
 Mappings:
   RegionMap:
     'eu-west-2':
-      ECSAMI: 'ami-cb1101af'
+      ECSAMI: 'ami-ee7d618a'
     'eu-west-1':
-      ECSAMI: 'ami-8fcc32f6'
+      ECSAMI: 'ami-d65dfbaf'
+    'ap-northeast-2':
+      ECSAMI: 'ami-70d0741e'
     'ap-northeast-1':
-      ECSAMI: 'ami-b743bed1'
+      ECSAMI: 'ami-95903df3'
     'ca-central-1':
-      ECSAMI: 'ami-b677c9d2'
+      ECSAMI: 'ami-fc5fe798'
     'ap-southeast-1':
-      ECSAMI: 'ami-9d1f7efe'
+      ECSAMI: 'ami-c8c98bab'
     'ap-southeast-2':
-      ECSAMI: 'ami-c1a6bda2'
+      ECSAMI: 'ami-e3b75981'
     'eu-central-1':
-      ECSAMI: 'ami-0460cb6b'
+      ECSAMI: 'ami-ebfb7e84'
     'us-east-1':
-      ECSAMI: 'ami-9eb4b1e5'
+      ECSAMI: 'ami-20ff515a'
     'us-east-2':
-      ECSAMI: 'ami-1c002379'
+      ECSAMI: 'ami-b0527dd5'
     'us-west-1':
-      ECSAMI: 'ami-4a2c192a'
+      ECSAMI: 'ami-b388b4d3'
     'us-west-2':
-      ECSAMI: 'ami-1d668865'
+      ECSAMI: 'ami-3702ca4f'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -442,6 +444,9 @@ Resources:
       Protocol: HTTP
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      TargetGroupAttributes:
+      - Key: 'deregistration_delay.timeout_seconds'
+        Value: 0
   HttpListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
@@ -585,13 +590,13 @@ Resources:
                 if [ -z "$1" ]; then
                   exit 1
                 fi
-                SaveUserName="$1"
-                SaveUserName=${SaveUserName//"+"/".plus."}
-                SaveUserName=${SaveUserName//"="/".equal."}
-                SaveUserName=${SaveUserName//","/".comma."}
-                SaveUserName=${SaveUserName//"@"/".at."}
-                aws iam list-ssh-public-keys --user-name "$SaveUserName" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read KeyId; do
-                  aws iam get-ssh-public-key --user-name "$SaveUserName" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
+                UnsaveUserName="$1"
+                UnsaveUserName=${UnsaveUserName//".plus."/"+"}
+                UnsaveUserName=${UnsaveUserName//".equal."/"="}
+                UnsaveUserName=${UnsaveUserName//".comma."/","}
+                UnsaveUserName=${UnsaveUserName//".at."/"@"}
+                aws iam list-ssh-public-keys --user-name "$UnsaveUserName" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read -r KeyId; do
+                  aws iam get-ssh-public-key --user-name "$UnsaveUserName" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
                 done
               mode: '000755'
               owner: root
@@ -647,9 +652,9 @@ Resources:
               ruby: []
             rubygems:
               'aws-sdk':
-              - '2.7.10'
+              - '3.0.1'
               daemons:
-              - '1.2.3'
+              - '1.2.4'
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -708,7 +713,7 @@ Resources:
               content: |
                 #!/usr/bin/env ruby
                 require 'daemons'
-                Daemons.run(__dir__ + '/worker.rb', {:monitor => true})
+                Daemons.run(__dir__ + '/worker.rb', {:monitor => true, :log_output_syslog => true})
               mode: '000500'
               owner: root
               group: root
@@ -1179,6 +1184,11 @@ Outputs:
     Value: !Ref HttpsListener
     Export:
       Name: !Sub '${AWS::StackName}-HttpsListener'
+  CanonicalHostedZoneID:
+    Description: 'The ID of the Amazon Route 53 hosted zone associated with the load balancer.'
+    Value: !GetAtt LoadBalancer.CanonicalHostedZoneID
+    Export:
+      Name: !Sub '${AWS::StackName}-CanonicalHostedZoneID'
   VPC:
     Description: 'VPC of ECS cluster.'
     Value:

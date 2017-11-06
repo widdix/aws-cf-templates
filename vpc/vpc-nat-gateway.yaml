@@ -14,7 +14,7 @@ Metadata:
       - SubnetZone
 Parameters:
   ParentVPCStack:
-    Description: Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
   SubnetZone:
     Description: 'Subnet zone.'

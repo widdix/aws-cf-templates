@@ -54,8 +54,18 @@ Resources:
             - 'events.amazonaws.com' # Allow CloudWatch Events
             - 'budgets.amazonaws.com' # Allow Budget Notifications
             - 'rds.amazonaws.com' # Allow RDS Events
+            - 's3.amazonaws.com' # Allow S3 Event Notifications
           Action: 'sns:Publish'
           Resource: !Ref Topic
+        - Sid: Sid2
+          Effect: Allow
+          Principal:
+            AWS: '*' # Allow CloudWatch Alarms, ElastiCache Notifications, Elastic Beanstalk Notifications, Auto Scaling Notification
+          Action: 'sns:Publish'
+          Resource: !Ref Topic
+          Condition:
+            StringEquals:
+              'AWS:SourceOwner': !Ref 'AWS::AccountId'
       Topics:
       - !Ref Topic
   FallbackTopic:

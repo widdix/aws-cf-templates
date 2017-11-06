@@ -11,6 +11,7 @@ Metadata:
       - ParentSSHBastionStack
       - ParentAuthProxyStack
       - ParentAlertStack
+      - ParentZoneStack
     - Label:
         default: 'Jenkins Parameters'
       Parameters:
@@ -21,6 +22,7 @@ Metadata:
       - KeyName
       - IAMUserSSHAccess
       - NewRelicLicenseKey
+      - SubDomainName
     - Label:
         default: 'Master Parameters'
       Parameters:
@@ -54,6 +56,10 @@ Parameters:
     Default: ''
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  ParentZoneStack:
+    Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
     Type: String
     Default: ''
   KeyName:
@@ -151,36 +157,40 @@ Parameters:
     Type: String
     Default: ''
     NoEcho: true
+  SubDomainName:
+    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (works only when ParentZoneStack is set)'
+    Type: String
+    Default: 'jenkins'
 Mappings:
   RegionMap:
     'ap-south-1':
-      AMI: 'ami-d7abd1b8'
+      AMI: 'ami-4fc58420'
     'eu-west-2':
-      AMI: 'ami-489f8e2c'
+      AMI: 'ami-1a7f6d7e'
     'eu-west-1':
-      AMI: 'ami-ebd02392'
+      AMI: 'ami-acd005d5'
     'ap-northeast-2':
-      AMI: 'ami-8663bae8'
+      AMI: 'ami-9bec36f5'
     'ap-northeast-1':
-      AMI: 'ami-4af5022c'
+      AMI: 'ami-2a69be4c'
     'sa-east-1':
-      AMI: 'ami-d27203be'
+      AMI: 'ami-f1344b9d'
     'ca-central-1':
-      AMI: 'ami-5ac17f3e'
+      AMI: 'ami-fd55ec99'
     'ap-southeast-1':
-      AMI: 'ami-fdb8229e'
+      AMI: 'ami-0797ea64'
     'ap-southeast-2':
-      AMI: 'ami-30041c53'
+      AMI: 'ami-8536d6e7'
     'eu-central-1':
-      AMI: 'ami-657bd20a'
+      AMI: 'ami-c7ee5ca8'
     'us-east-1':
-      AMI: 'ami-4fffc834'
+      AMI: 'ami-8c1be5f6'
     'us-east-2':
-      AMI: 'ami-ea87a78f'
+      AMI: 'ami-c5062ba0'
     'us-west-1':
-      AMI: 'ami-3a674d5a'
+      AMI: 'ami-02eada62'
     'us-west-2':
-      AMI: 'ami-aa5ebdd2'
+      AMI: 'ami-e689729e'
 Conditions:
   HasZeroAgents: !Equals [!Ref AgentDesiredCapacity, '0']
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
@@ -192,6 +202,7 @@ Conditions:
   HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
   HasMasterELBSchemeInternal: !Equals [!Ref MasterELBScheme, 'internal']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
 Resources:
   MasterStorageSG:
     Type: 'AWS::EC2::SecurityGroup'
@@ -320,6 +331,21 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt MasterELB.LoadBalancerFullName
+  RecordSet:
+    Condition: HasZone
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      AliasTarget:
+        HostedZoneId: !GetAtt 'MasterELB.CanonicalHostedZoneID'
+        DNSName: !GetAtt 'MasterELB.DNSName'
+      HostedZoneId:
+        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      Name: !Sub
+      - '${SubDomainName}.${HostedZoneName}'
+      - SubDomainName: !Ref SubDomainName
+        HostedZoneName:
+          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      Type: A
   MasterELB:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
@@ -354,6 +380,9 @@ Resources:
         Value: 'jenkins-master'
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      TargetGroupAttributes:
+      - Key: 'deregistration_delay.timeout_seconds'
+        Value: 30
   MasterELBListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
@@ -618,13 +647,13 @@ Resources:
                 if [ -z "$1" ]; then
                   exit 1
                 fi
-                SaveUserName="$1"
-                SaveUserName=${SaveUserName//"+"/".plus."}
-                SaveUserName=${SaveUserName//"="/".equal."}
-                SaveUserName=${SaveUserName//","/".comma."}
-                SaveUserName=${SaveUserName//"@"/".at."}
-                aws iam list-ssh-public-keys --user-name "$SaveUserName" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read KeyId; do
-                  aws iam get-ssh-public-key --user-name "$SaveUserName" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
+                UnsaveUserName="$1"
+                UnsaveUserName=${UnsaveUserName//".plus."/"+"}
+                UnsaveUserName=${UnsaveUserName//".equal."/"="}
+                UnsaveUserName=${UnsaveUserName//".comma."/","}
+                UnsaveUserName=${UnsaveUserName//".at."/"@"}
+                aws iam list-ssh-public-keys --user-name "$UnsaveUserName" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read -r KeyId; do
+                  aws iam get-ssh-public-key --user-name "$UnsaveUserName" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
                 done
               mode: '000755'
               owner: root
@@ -680,9 +709,9 @@ Resources:
               'nfs-utils': []
             rubygems:
               'aws-sdk':
-              - '2.2.29'
+              - '3.0.1'
               daemons:
-              - '1.2.3'
+              - '1.2.4'
           commands:
             'a_groupadd':
               command: 'groupadd -g 497 jenkins'
@@ -760,7 +789,7 @@ Resources:
               content: |
                 #!/usr/bin/env ruby
                 require 'daemons'
-                Daemons.run(__dir__ + '/worker.rb', {:monitor => true})
+                Daemons.run(__dir__ + '/worker.rb', {:monitor => true, :log_output_syslog => true})
               mode: '000500'
               owner: root
               group: root
@@ -934,25 +963,31 @@ Resources:
             'c_activate_slave_agent_port':
               command: 'sed -i -e "s@<slaveAgentPort>.*</slaveAgentPort>@<slaveAgentPort>49817</slaveAgentPort>@" /var/lib/jenkins/config.xml'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'd_restart_jenkins':
+            'd_disable_master_executors':
+              command: 'sed -i -e "s@<numExecutors>.*</numExecutors>@<numExecutors>0</numExecutors>@" /var/lib/jenkins/config.xml'
+              test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+            'e_set_label':
+              command: 'sed -i -e "s@<label>.*</label>@<label>master</label>@" /var/lib/jenkins/config.xml'
+              test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+            'f_restart_jenkins':
               command: 'service jenkins restart'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'e_await_jenkins':
+            'g_await_jenkins':
               command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'f_install_plugins':
+            'h_install_plugins':
               command: 'java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" install-plugin $(cat /root/plugins.txt | tr "\n" " ")'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'g_restart_jenkins':
+            'i_restart_jenkins':
               command: 'service jenkins restart'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'h_await_jenkins':
+            'j_await_jenkins':
               command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'i_set_admin_password':
-              command: !Sub 'echo ''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", "${MasterAdminPassword}")'' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" groovy ='
+            'k_set_admin_password':
+              command: !Sub 'echo $''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", \''${MasterAdminPassword}\'')'' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" groovy ='
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'j_stop_jenkins':
+            'l_stop_jenkins':
               command: 'service jenkins stop'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'z_create_setup_done_file':
@@ -1050,6 +1085,9 @@ Resources:
         Value: 'jenkins-agent'
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      TargetGroupAttributes:
+      - Key: 'deregistration_delay.timeout_seconds'
+        Value: 15
   AgentELBListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
@@ -1288,13 +1326,13 @@ Resources:
                 if [ -z "$1" ]; then
                   exit 1
                 fi
-                SaveUserName="$1"
-                SaveUserName=${SaveUserName//"+"/".plus."}
-                SaveUserName=${SaveUserName//"="/".equal."}
-                SaveUserName=${SaveUserName//","/".comma."}
-                SaveUserName=${SaveUserName//"@"/".at."}
-                aws iam list-ssh-public-keys --user-name "$SaveUserName" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read KeyId; do
-                  aws iam get-ssh-public-key --user-name "$SaveUserName" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
+                UnsaveUserName="$1"
+                UnsaveUserName=${UnsaveUserName//".plus."/"+"}
+                UnsaveUserName=${UnsaveUserName//".equal."/"="}
+                UnsaveUserName=${UnsaveUserName//".comma."/","}
+                UnsaveUserName=${UnsaveUserName//".at."/"@"}
+                aws iam list-ssh-public-keys --user-name "$UnsaveUserName" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read -r KeyId; do
+                  aws iam get-ssh-public-key --user-name "$UnsaveUserName" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
                 done
               mode: '000755'
               owner: root
@@ -1389,9 +1427,9 @@ Resources:
           packages:
             rubygems:
               'aws-sdk':
-              - '2.2.29'
+              - '3.0.1'
               daemons:
-              - '1.2.3'
+              - '1.2.4'
           files:
             '/root/agent.xml':
               content: |
@@ -1488,7 +1526,7 @@ Resources:
               content: |
                 #!/usr/bin/env ruby
                 require 'daemons'
-                Daemons.run(__dir__ + '/server.rb', {:monitor => true})
+                Daemons.run(__dir__ + '/server.rb', {:monitor => true, :log_output_syslog => true})
               mode: '000500'
               owner: root
               group: root
@@ -1750,3 +1788,13 @@ Outputs:
     Value: !Sub 'http://${MasterELB.DNSName}'
     Export:
       Name: !Sub '${AWS::StackName}-URL'
+  MasterIAMRole:
+    Description: 'Use this IAm Role to reference API calls from the Jenkins master'
+    Value: !GetAtt 'MasterIAMRole.Arn'
+    Export:
+      Name: !Sub '${AWS::StackName}-MasterIAMRole'
+  AgentIAMRole:
+    Description: 'Use this IAm Role to reference API calls from the Jenkins agents'
+    Value: !GetAtt 'AgentIAMRole.Arn'
+    Export:
+      Name: !Sub '${AWS::StackName}-AgentIAMRole'

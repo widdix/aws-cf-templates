@@ -10,6 +10,7 @@ Metadata:
       - ParentVPCStack
       - ParentSSHBastionStack
       - ParentAlertStack
+      - ParentZoneStack
     - Label:
         default: 'EC2 Parameters'
       Parameters:
@@ -19,6 +20,7 @@ Metadata:
       - IAMUserSSHAccess
       - LogsRetentionInDays
       - NewRelicLicenseKey
+      - SubDomainName
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -29,6 +31,10 @@ Parameters:
     Default: ''
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  ParentZoneStack:
+    Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
     Type: String
     Default: ''
   SubnetZone:
@@ -65,36 +71,40 @@ Parameters:
     Type: String
     Default: ''
     NoEcho: true
+  SubDomainName:
+    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (works only when ParentZoneStack is set)'
+    Type: String
+    Default: 'nat'
 Mappings:
   RegionMap:
     'ap-south-1':
-      NATAMI: 'ami-96a9d3f9'
+      NATAMI: 'ami-6dc38202'
     'eu-west-2':
-      NATAMI: 'ami-868190e2'
+      NATAMI: 'ami-e07d6f84'
     'eu-west-1':
-      NATAMI: 'ami-f1d22188'
+      NATAMI: 'ami-38d20741'
     'ap-northeast-2':
-      NATAMI: 'ami-a462bbca'
+      NATAMI: 'ami-61e03a0f'
     'ap-northeast-1':
-      NATAMI: 'ami-c4887fa2'
+      NATAMI: 'ami-17944271'
     'sa-east-1':
-      NATAMI: 'ami-9b7504f7'
+      NATAMI: 'ami-6a354a06'
     'ca-central-1':
-      NATAMI: 'ami-a1be00c5'
+      NATAMI: 'ami-f055ec94'
     'ap-southeast-1':
-      NATAMI: 'ami-40bb2123'
+      NATAMI: 'ami-0597ea66'
     'ap-southeast-2':
-      NATAMI: 'ami-ef051d8c'
+      NATAMI: 'ami-2c37d74e'
     'eu-central-1':
-      NATAMI: 'ami-eb66cf84'
+      NATAMI: 'ami-3cec5e53'
     'us-east-1':
-      NATAMI: 'ami-a7fdcadc'
+      NATAMI: 'ami-b419e7ce'
     'us-east-2':
-      NATAMI: 'ami-4986a62c'
+      NATAMI: 'ami-8c002de9'
     'us-west-1':
-      NATAMI: 'ami-3e674d5e'
+      NATAMI: 'ami-36ebdb56'
     'us-west-2':
-      NATAMI: 'ami-4da24035'
+      NATAMI: 'ami-d08b70a8'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -102,7 +112,23 @@ Conditions:
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
   HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
 Resources:
+  RecordSet:
+    Condition: HasZone
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      HostedZoneId:
+        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      Name: !Sub
+      - '${SubDomainName}.${HostedZoneName}'
+      - SubDomainName: !Ref SubDomainName
+        HostedZoneName:
+          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      ResourceRecords:
+      - !Ref EIP
+      TTL: 60
+      Type: A
   EIP:
     Type: 'AWS::EC2::EIP'
     Properties:
@@ -359,13 +385,13 @@ Resources:
                 if [ -z "$1" ]; then
                   exit 1
                 fi
-                SaveUserName="$1"
-                SaveUserName=${SaveUserName//"+"/".plus."}
-                SaveUserName=${SaveUserName//"="/".equal."}
-                SaveUserName=${SaveUserName//","/".comma."}
-                SaveUserName=${SaveUserName//"@"/".at."}
-                aws iam list-ssh-public-keys --user-name "$SaveUserName" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read KeyId; do
-                  aws iam get-ssh-public-key --user-name "$SaveUserName" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
+                UnsaveUserName="$1"
+                UnsaveUserName=${UnsaveUserName//".plus."/"+"}
+                UnsaveUserName=${UnsaveUserName//".equal."/"="}
+                UnsaveUserName=${UnsaveUserName//".comma."/","}
+                UnsaveUserName=${UnsaveUserName//".at."/"@"}
+                aws iam list-ssh-public-keys --user-name "$UnsaveUserName" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read -r KeyId; do
+                  aws iam get-ssh-public-key --user-name "$UnsaveUserName" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
                 done
               mode: '000755'
               owner: root
