@@ -807,21 +807,35 @@ Resources:
                 Aws.config.update(region: $conf['region'])
                 $log.info 'poller started'
                 def takeAgentTemporarilyOffline(agent)
-                  if system("java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s http://localhost:8080 -auth 'admin:#{$conf['masterAdminPassword']}' offline-node #{agent} -m 'scale down'")
+                  # sterr is forwarded to sdout to get the information in ruby
+                  out=`java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s http://localhost:8080 -auth 'admin:#{$conf['masterAdminPassword']}' offline-node #{agent} -m 'scale down' 2>&1`
+                  if $?.exitstatus == 0
                     $log.info "agent #{agent} is marked as offline"
                     return true
                   else
-                    $log.error "agent #{agent} could not be marked as offline"
-                    return false
+                    if out.include? "ERROR: No such agent"
+                      $log.info "agent #{agent} could not be marked as offline, it already is deleted: #{out}"
+                      return true
+                    else
+                      $log.error "agent #{agent} could not be marked as offline: #{out}"
+                      return false
+                    end
                   end
                 end
                 def deleteAgent(agent)
-                  if system("java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s http://localhost:8080 -auth 'admin:#{$conf['masterAdminPassword']}' delete-node #{agent}")
+                  # sterr is forwarded to sdout to get the information in ruby
+                  out=`java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s http://localhost:8080 -auth 'admin:#{$conf['masterAdminPassword']}' delete-node #{agent} 2>&1`
+                  if $?.exitstatus == 0
                     $log.info "agent #{agent} is deleted"
                     return true
                   else
-                    $log.error "agent #{agent} could not be deleted"
-                    return false
+                    if out.include? "ERROR: No such node"
+                      $log.info "agent #{agent} could not be deleted, it already is deleted: #{out}"
+                      return true
+                    else
+                      $log.error "agent #{agent} could not be deleted: #{out}"
+                      return false
+                    end
                   end
                 end
                 def isAgentIdle(agent)
