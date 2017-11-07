@@ -814,13 +814,25 @@ Resources:
                   })
                 end
                 def completeLifecycleAction(token, hook, asg)
-                  autoscaling = Aws::AutoScaling::Client.new()
-                  autoscaling.complete_lifecycle_action(
-                    lifecycle_hook_name: hook,
-                    auto_scaling_group_name: asg,
-                    lifecycle_action_token: token,
-                    lifecycle_action_result: 'CONTINUE'
-                  )
+                  begin
+                    autoscaling = Aws::AutoScaling::Client.new()
+                    autoscaling.complete_lifecycle_action(
+                      lifecycle_hook_name: hook,
+                      auto_scaling_group_name: asg,
+                      lifecycle_action_token: token,
+                      lifecycle_action_result: 'CONTINUE'
+                    )
+                    $log.info "Lifecycle action completed"
+                    return true
+                  rescue Exception => e
+                    if e.code == 'ValidationError'
+                      $log.info "Lifecycle action failed validation: #{e.inspect}"
+                      return true
+                    else
+                      $log.info "Lifecycle action failed: #{e.inspect}"
+                      raise e
+                    end
+                  end
                 end
                 def pollSQS()
                   poller = Aws::SQS::QueuePoller.new($conf['queueUrl'])
