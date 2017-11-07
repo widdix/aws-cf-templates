@@ -948,6 +948,19 @@ Resources:
                     end
                   end
                 end
+                def awaitFile(file)
+                  endTime = Time.now.to_i + $conf['maxWaitInSeconds']
+                  while Time.now.to_i < endTime do
+                    if File.exist? file
+                      $log.info "file #{file} exists"
+                      return true
+                    end
+                    sleep 5 # seconds
+                  end
+                  $log.error "file #{file} is not available, but wait time elapsed"
+                  return false
+                end
+                awaitFile('/var/cache/jenkins/war/WEB-INF/jenkins-cli.jar')
                 pollSQS
               mode: '000500'
               owner: root
