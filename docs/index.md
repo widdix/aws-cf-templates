@@ -28,19 +28,19 @@ Choose from our template catalog:
 
 We are interested in your requirements. [Please use the following survey to upvote and add templates you are impatiently waiting for](https://docs.google.com/forms/d/e/1FAIpQLSerhIuMuCWrHai639FoUOt8ffmMqWr0PWzLhCn3VN29VUi8TA/viewform?usp=send_form)
 
-# How does CloudFormation works
+# How does CloudFormation work
 
-CloudFormation turns a template (JSON or YAML) into a stack as the following figure shows.
+CloudFormation turns a template (JSON or YAML) into a stack like the following figure shows.
 
 ![CloudFormation](./img/cloudformation.png)
 
-You can apply updated to an existing stack with an updated template an CloudFormation will figure out what needs to be changed.
+You can apply updates to an existing stack with an updated template. CloudFormation will figure out what needs to be changed.
 
 **Never make manual changes to infrastructure managed by CloudFormation!**
 
 # Example
 
-Imagine you want to set up a Jenkins automation server. This project, uses templates as modules to reuse infrastructure components. Some are optional, while others are required. The following figure shows templates that are needed to set up Jenkins.
+Imagine you want to set up a Jenkins automation server. This project uses templates as modules to reuse infrastructure components. Some are optional, while others are required. The following figure shows templates that are needed to set up Jenkins.
 
 ![Example: Modules](./img/example-modules.png)
 
@@ -50,7 +50,7 @@ Let's look at the first dependency.
 
 ## VPC dependency (required)
 
-Many templates depend on a VPC stack. This is usually a required dependency. 
+Many templates depend on a VPC stack. The VPC is a required dependency. 
 
 ![VPC dependency](./img/example-vpc.png)
 
@@ -60,7 +60,7 @@ If you want to receive alerts when things go wrong, you can optionally supply an
 
 ![Alert dependency](./img/example-alert.png)
 
-I highly recommend to use an alert stack. Otherwise, you will not know when things go wrong (and they will!).
+I highly recommend using an alert stack. Otherwise, you will not know when things go wrong (and they will!).
 
 ## SSH bastion host dependency (optional)
 
@@ -74,7 +74,7 @@ Finally, you can create the Jenkins stack.
 
 ![Jenkins](/img/example-jenkins.png)
 
-The cool thing is, that you can re-use the dependencies. So you can use the same SSH bastion host for Jenkins and for WordPress.
+The cool thing is that you can re-use the dependencies. E.g., you can use the same SSH bastion host for Jenkins and WordPress.
 
 # License
 All templates are published under Apache License Version 2.0.
@@ -86,7 +86,7 @@ You will probably find an answer to your question on [Stack Overflow](https://st
 Are you in need of a feature or does a bug cause you sleepless nights? Please let us know by using the project's [issue tracker](https://github.com/widdix/aws-cf-templates/issues). We work on bug fixes and new features as time permits. Are you in need of an urgent bug fix or important feature request? [Contact us](mailto:hello@widdix.net) to sponsor a feature or bug fix.
 
 ## Training and Consulting
-Do you want to accelerate your start with AWS CloudFormation and our templates? We do offer remote and on-site training for you and your team. Are you looking for guidance on how to use or adapt our templates to your use case? We do offer consulting as well. [Contact us](mailto:hello@widdix.net) and we’ll accelerate your project.
+Do you want to accelerate your start with AWS CloudFormation and our templates? We do offer remote and on-site training for you and your team. Are you looking for guidance on how to use or adapt our templates to your use case? We do offer consulting as well. [Contact us](mailto:hello@widdix.net), and we’ll accelerate your project.
 
 # About
 A [cloudonaut.io](https://cloudonaut.io/templates-for-aws-cloudformation/) project. Engineered by [widdix](https://widdix.net).
