@@ -8,6 +8,7 @@ Metadata:
         default: 'Parent Stacks'
       Parameters:
       - ParentVPCStack
+      - ParentAlertStack
     - Label:
         default: 'NatGateway Parameters'
       Parameters:
@@ -16,6 +17,10 @@ Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
   SubnetZone:
     Description: 'Subnet zone.'
     Type: String
@@ -25,6 +30,8 @@ Parameters:
     - B
     - C
     - D
+Conditions:
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
 Resources:
   EIP:
     Type: 'AWS::EC2::EIP'
@@ -43,6 +50,40 @@ Resources:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTable${SubnetZone}Private'
       DestinationCidrBlock: '0.0.0.0/0'
       NatGatewayId: !Ref NatGateway
+  AlarmNatGatewayErrorPortAllocation:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: !Sub 'NAT gateway ${SubnetZone} could not allocate a source port'
+      Namespace: 'AWS/NATGateway'
+      MetricName: ErrorPortAllocation
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: NatGatewayId
+        Value: !Ref NatGateway
+  AlarmNatGatewayPacketsDropCount:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: !Sub 'NAT gateway ${SubnetZone} dropped packets'
+      Namespace: 'AWS/NATGateway'
+      MetricName: PacketsDropCount
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: NatGatewayId
+        Value: !Ref NatGateway
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
