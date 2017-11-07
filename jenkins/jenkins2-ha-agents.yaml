@@ -1827,6 +1827,23 @@ Resources:
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt 'AgentTerminatingLifecycleHookDeadLetterQueue.Arn'
         maxReceiveCount: 5
+  AgentTerminatingLifecycleHookQueueTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Queue contains messages older than 10 minutes, messages are not consumed'
+      Namespace: 'AWS/SQS'
+      MetricName: ApproximateAgeOfOldestMessage
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 600
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: QueueName
+        Value: !GetAtt 'AgentTerminatingLifecycleHookQueue.QueueName'
   AgentTerminatingLifecycleHookDeadLetterQueue:
     Type: 'AWS::SQS::Queue'
     Properties:
