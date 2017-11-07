@@ -2,7 +2,9 @@
 
 # Free Templates for AWS CloudFormation
 
-Find the documentation here: http://templates.cloudonaut.io/en/stable/
+Find the documentation of the **latest stable release** here: http://templates.cloudonaut.io/en/stable/
+
+Find the documentation of the **unstable master branch** here: http://templates.cloudonaut.io/en/latest/
 
 ## License
 All templates are published under Apache License Version 2.0.

@@ -30,9 +30,51 @@ We are interested in your requirements. [Please use the following survey to upvo
 
 # How does CloudFormation works
 
-CloudFormation turns a template (JSON or YAML) into a stack. You can apply updated to an existing stack with an updated template an CloudFormation will figure out what needs to be changed.
+CloudFormation turns a template (JSON or YAML) into a stack as the following figure shows.
+
+![CloudFormation](./img/cloudformation.png)
+
+You can apply updated to an existing stack with an updated template an CloudFormation will figure out what needs to be changed.
 
 **Never make manual changes to infrastructure managed by CloudFormation!**
+
+# Example
+
+Imagine you want to set up a Jenkins automation server. This project, uses templates as modules to reuse infrastructure components. Some are optional, while others are required. The following figure shows templates that are needed to set up Jenkins.
+
+![Example: Modules](./img/example-modules.png)
+
+If you create a stack, you sometimes have to supply parameters that start with `Parent`. That's the mechanism to pass dependent stacks into a stack.
+
+Let's look at the first dependency.
+
+## VPC dependency (required)
+
+Many templates depend on a VPC stack. This is usually a required dependency. 
+
+![VPC dependency](./img/example-vpc.png)
+
+## Alert dependency (optional)
+
+If you want to receive alerts when things go wrong, you can optionally supply an alert stack. 
+
+![Alert dependency](./img/example-alert.png)
+
+I highly recommend to use an alert stack. Otherwise, you will not know when things go wrong (and they will!).
+
+## SSH bastion host dependency (optional)
+
+If you want to add some extra security, you can use an SSH bastion host.
+
+![SSH bastion host dependency](example-ssh-bastion-host.png)
+
+## Jenkins
+
+Finally, you can create the Jenkins stack.
+
+![Jenkins](/img/example-jenkins.png)
+
+The cool thing is, that you can re-use the dependencies. So you can use the same SSH bastion host for Jenkins and for WordPress.
 
 # License
 All templates are published under Apache License Version 2.0.
