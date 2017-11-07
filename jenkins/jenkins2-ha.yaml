@@ -679,6 +679,8 @@ Resources:
                 subversion
                 timestamper
                 ws-cleanup
+                pipeline-aws
+                http_request
               mode: '000400'
               owner: root
               group: root
