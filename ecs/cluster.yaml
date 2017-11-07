@@ -1037,6 +1037,23 @@ Resources:
       Targets:
       - Arn: !GetAtt 'SchedulableContainersLambda.Arn'
         Id: lambda
+  SchedulableContainersRuleFailedInvocationsTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Invocations failed permanently'
+      Namespace: 'AWS/Events'
+      MetricName: FailedInvocations
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: RuleName
+        Value: !Ref SchedulableContainersRule
   SchedulableContainersCron:
     Type: 'AWS::Events::Rule'
     Properties:
@@ -1045,6 +1062,23 @@ Resources:
       Targets:
       - Arn: !GetAtt 'SchedulableContainersLambda.Arn'
         Id: lambda
+  SchedulableContainersCronFailedInvocationsTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Invocations failed permanently'
+      Namespace: 'AWS/Events'
+      MetricName: FailedInvocations
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: RuleName
+        Value: !Ref SchedulableContainersCron
   SchedulableContainersLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
