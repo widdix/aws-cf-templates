@@ -66,7 +66,9 @@ I highly recommend using an alert stack. Otherwise, you will not know when thing
 
 If you want to add some extra security, you can use an SSH bastion host.
 
-![SSH bastion host dependency](example-ssh-bastion-host.png)
+![SSH bastion host dependency](./img/example-ssh-bastion-host.png)
+
+The bastion host has a optional dependency on the alert stack. So if you want to receive alerts if your bastion hosts is in trouble, supply an alert stack.
 
 ## Jenkins
 
