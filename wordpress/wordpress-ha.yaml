@@ -313,7 +313,7 @@ Resources:
       Statistic: Maximum
       Period: 60
       EvaluationPeriods: 512
-      ComparisonOperator: SurgeQueueLength
+      ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
