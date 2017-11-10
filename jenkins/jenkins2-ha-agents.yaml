@@ -398,15 +398,15 @@ Resources:
   MasterELBTargetGroup: # not monitored, but MasterELB is monitored!
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
-      HealthCheckIntervalSeconds: 15
+      HealthCheckIntervalSeconds: 30
       HealthCheckPath: '/login'
       HealthCheckPort: 8080
       HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 10
+      HealthCheckTimeoutSeconds: 25
       HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 8
+      UnhealthyThresholdCount: 2
       Matcher:
-        HttpCode: 200
+        HttpCode: '200-299'
       Port: 8080
       Protocol: HTTP
       Tags:
@@ -1161,15 +1161,15 @@ Resources:
   AgentELBTargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
-      HealthCheckIntervalSeconds: 15
+      HealthCheckIntervalSeconds: 30
       HealthCheckPath: '/'
       HealthCheckPort: 8080
       HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 10
+      HealthCheckTimeoutSeconds: 25
       HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 8
+      UnhealthyThresholdCount: 2
       Matcher:
-        HttpCode: 200
+        HttpCode: '200-299'
       Port: 8080
       Protocol: HTTP
       Tags:

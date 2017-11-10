@@ -152,11 +152,11 @@ Resources:
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 10
       HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
       Matcher:
-        HttpCode: '200'
+        HttpCode: '200-299'
       Port: 80
       Protocol: HTTP
-      UnhealthyThresholdCount: 4
       VpcId:
         'Fn::ImportValue': !Sub '${ParentClusterStack}-VPC'
       TargetGroupAttributes:

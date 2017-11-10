@@ -472,8 +472,9 @@ Resources:
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 10
       HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
       Matcher:
-        HttpCode: '200'
+        HttpCode: '200-299'
       Port: 80 # port 80 is a reserved port that is never used by the agent, so we are safe to use it here
       Protocol: HTTP
       VpcId:

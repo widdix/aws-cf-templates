@@ -257,9 +257,9 @@ Resources:
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 10
       HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 8
+      UnhealthyThresholdCount: 2
       Matcher:
-        HttpCode: 200
+        HttpCode: '200-299'
       Port: 4180
       Protocol: HTTP
       Tags:
@@ -279,9 +279,9 @@ Resources:
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 10
       HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 8
+      UnhealthyThresholdCount: 2
       Matcher:
-        HttpCode: 200
+        HttpCode: '200-299'
       Port: 8080
       Protocol: HTTP
       Tags:

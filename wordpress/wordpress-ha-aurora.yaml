@@ -325,17 +325,17 @@ Resources:
       Certificates:
       - CertificateArn: !Ref ElbAcmCertificate
   LoadBalancerTargetGroup: # not monitored, but LoadBalancer is monitored!
-    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
-      HealthCheckIntervalSeconds: 5
+      HealthCheckIntervalSeconds: 15
       HealthCheckPath: '/'
       HealthCheckPort: 80
       HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 3
+      HealthCheckTimeoutSeconds: 10
       HealthyThresholdCount: 2
       UnhealthyThresholdCount: 2
       Matcher:
-        HttpCode: '200'
+        HttpCode: '200-299'
       Port: 80
       Protocol: HTTP
       VpcId:
