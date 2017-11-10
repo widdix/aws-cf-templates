@@ -1221,7 +1221,10 @@ Resources:
             Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}'
           - Effect: Allow
             Action: 'ecs:DescribeContainerInstances'
-            Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:container-instance/*'
+            Resource: '*'
+            Condition:
+              ArnEquals:
+                'ecs:cluster': !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}'
       - PolicyName: cloudwatch
         PolicyDocument:
           Statement:
@@ -1235,6 +1238,13 @@ Resources:
       FunctionName: !Ref SchedulableContainersLambda
       Principal: 'events.amazonaws.com'
       SourceArn: !GetAtt 'SchedulableContainersRule.Arn'
+  SchedulableContainersLambdaPermission2:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref SchedulableContainersLambda
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt 'SchedulableContainersCron.Arn'
   SchedulableContainersLambda:
     Type: 'AWS::Lambda::Function'
     Properties:
