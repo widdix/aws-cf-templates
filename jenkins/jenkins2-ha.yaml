@@ -91,7 +91,7 @@ Parameters:
   JenkinsVersion:
     Description: 'Jenkins version number'
     Type: String
-    Default: '2.60.3'
+    Default: '2.73.3'
   SubDomainName:
     Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (works only when ParentZoneStack is set)'
     Type: String
