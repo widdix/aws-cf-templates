@@ -94,6 +94,8 @@ Parameters:
     Description: 'A password for the Jenkins master admin.'
     Type: String
     NoEcho: true
+    MinLength: 8
+    MaxLength: 32
   MasterLogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain log events in the specified log group.'
     Type: Number
