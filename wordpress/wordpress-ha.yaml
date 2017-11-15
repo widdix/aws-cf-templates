@@ -79,6 +79,8 @@ Parameters:
     Description: 'A password for the WordPress admin.'
     Type: String
     NoEcho: true
+    MinLength: 8
+    MaxLength: 32
   BlogAdminEMail:
     Description: 'The email address of the WordPress admin.'
     Type: String
@@ -780,6 +782,12 @@ Resources:
     UpdatePolicy:
       AutoScalingRollingUpdate:
         PauseTime: PT10M
+        SuspendProcesses:
+        - HealthCheck
+        - ReplaceUnhealthy
+        - AZRebalance
+        - AlarmNotification
+        - ScheduledActions
         WaitOnResourceSignals: true
   CPUTooHighAlarm:
     Condition: HasAlertTopic

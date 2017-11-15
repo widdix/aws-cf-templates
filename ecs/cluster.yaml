@@ -889,6 +889,12 @@ Resources:
     UpdatePolicy:
       AutoScalingRollingUpdate:
         PauseTime: PT15M
+        SuspendProcesses:
+        - HealthCheck
+        - ReplaceUnhealthy
+        - AZRebalance
+        - AlarmNotification
+        - ScheduledActions
         WaitOnResourceSignals: true
   CPUTooHighAlarm:
     Condition: HasAlertTopic
