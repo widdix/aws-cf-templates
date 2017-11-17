@@ -932,7 +932,7 @@ Resources:
               group: root
           commands:
             'a_alternatives':
-              command: 'alternatives --set java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java'
+              command: '/usr/sbin/alternatives --set java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java'
           services:
             sysvinit:
               cfn-hup:
@@ -1506,7 +1506,7 @@ Resources:
                 runas=root
           commands:
             'a_alternatives':
-              command: 'alternatives --set java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java'
+              command: '/usr/sbin/alternatives --set java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java'
             'b_groupadd':
               command: 'groupadd -g 497 jenkins'
               test: 'if grep -q jenkins: /etc/group; then exit 1; else exit 0; fi'

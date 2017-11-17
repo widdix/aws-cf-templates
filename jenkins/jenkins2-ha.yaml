@@ -650,7 +650,7 @@ Resources:
                 runas=root
           commands:
             'a_alternatives':
-              command: 'alternatives --set java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java'
+              command: '/usr/sbin/alternatives --set java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java'
           services:
             sysvinit:
               cfn-hup:
