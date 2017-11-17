@@ -793,7 +793,6 @@ Resources:
                       $log.info "Lifecycle action failed validation: #{e.inspect}"
                       return true
                     else
-                      $log.info "Lifecycle action failed: #{e.inspect}"
                       raise e
                     end
                   end
@@ -801,22 +800,27 @@ Resources:
                 def pollSQS()
                   poller = Aws::SQS::QueuePoller.new($conf['queueUrl'])
                   poller.poll do |msg|
-                    body = JSON.parse(msg.body)
-                    $log.debug "message #{body}"
-                    if body['Event'] == 'autoscaling:TEST_NOTIFICATION'
-                      $log.info 'received test notification'
-                    else
-                      if body['LifecycleTransition'] == 'autoscaling:EC2_INSTANCE_TERMINATING'
-                        $log.info "lifecycle transition for EC2 instance #{body['EC2InstanceId']}"
-                        containerInstanceId = fetchContainerInstanceId body['EC2InstanceId']
-                        $log.info "lifecycle transition for container instance #{containerInstanceId}"
-                        drainContainerInstanceId containerInstanceId
-                        awaitContainerInstanceIdle containerInstanceId
-                        deregisterContainerInstance containerInstanceId
-                        completeLifecycleAction body['LifecycleActionToken'], body['LifecycleHookName'], body['AutoScalingGroupName']
+                    begin
+                      body = JSON.parse(msg.body)
+                      $log.debug "message #{body}"
+                      if body['Event'] == 'autoscaling:TEST_NOTIFICATION'
+                        $log.info 'received test notification'
                       else
-                        $log.error "received unsupported lifecycle transition: #{body['LifecycleTransition']}"
+                        if body['LifecycleTransition'] == 'autoscaling:EC2_INSTANCE_TERMINATING'
+                          $log.info "lifecycle transition for EC2 instance #{body['EC2InstanceId']}"
+                          containerInstanceId = fetchContainerInstanceId body['EC2InstanceId']
+                          $log.info "lifecycle transition for container instance #{containerInstanceId}"
+                          drainContainerInstanceId containerInstanceId
+                          awaitContainerInstanceIdle containerInstanceId
+                          deregisterContainerInstance containerInstanceId
+                          completeLifecycleAction body['LifecycleActionToken'], body['LifecycleHookName'], body['AutoScalingGroupName']
+                        else
+                          $log.error "received unsupported lifecycle transition: #{body['LifecycleTransition']}"
+                        end
                       end
+                    rescue Exception => e
+                      $log.error "message failed: #{e.inspect} #{msg.inspect}"
+                      raise e
                     end
                   end
                 end
