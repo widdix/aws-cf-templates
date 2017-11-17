@@ -738,7 +738,11 @@ Resources:
                     container_instances: resp1.container_instance_arns,
                   })
                   cis = resp2.container_instances.select {|ci| ci.ec2_instance_id == ec2InstanceId}
-                  return cis.first().container_instance_arn.split("/").last()
+                  if cis.size() > 0
+                    return cis.first().container_instance_arn.split("/").last()
+                  else
+                    return nil
+                  end
                 end
                 def drainContainerInstanceId(containerInstanceId)
                   ecs = Aws::ECS::Client.new()
@@ -809,10 +813,14 @@ Resources:
                         if body['LifecycleTransition'] == 'autoscaling:EC2_INSTANCE_TERMINATING'
                           $log.info "lifecycle transition for EC2 instance #{body['EC2InstanceId']}"
                           containerInstanceId = fetchContainerInstanceId body['EC2InstanceId']
-                          $log.info "lifecycle transition for container instance #{containerInstanceId}"
-                          drainContainerInstanceId containerInstanceId
-                          awaitContainerInstanceIdle containerInstanceId
-                          deregisterContainerInstance containerInstanceId
+                          if containerInstanceId.nil?
+                            $log.info "no container instance found for EC2 instance #{body['EC2InstanceId']}"
+                          else
+                            $log.info "lifecycle transition for container instance #{containerInstanceId}"
+                            drainContainerInstanceId containerInstanceId
+                            awaitContainerInstanceIdle containerInstanceId
+                            deregisterContainerInstance containerInstanceId
+                          end
                           completeLifecycleAction body['LifecycleActionToken'], body['LifecycleHookName'], body['AutoScalingGroupName']
                         else
                           $log.error "received unsupported lifecycle transition: #{body['LifecycleTransition']}"
