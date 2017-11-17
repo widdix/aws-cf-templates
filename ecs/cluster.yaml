@@ -387,8 +387,10 @@ Resources:
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
       - Name: TargetGroup
-        Value: !GetAtt DefaultTargetGroup.TargetGroupFullName
+        Value: !GetAtt 'DefaultTargetGroup.TargetGroupFullName'
   HTTPCodeTarget5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -404,8 +406,10 @@ Resources:
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
       - Name: TargetGroup
-        Value: !GetAtt DefaultTargetGroup.TargetGroupFullName
+        Value: !GetAtt 'DefaultTargetGroup.TargetGroupFullName'
   RejectedConnectionCountTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -421,8 +425,10 @@ Resources:
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
       - Name: TargetGroup
-        Value: !GetAtt DefaultTargetGroup.TargetGroupFullName
+        Value: !GetAtt 'DefaultTargetGroup.TargetGroupFullName'
   TargetConnectionErrorCountTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -438,8 +444,10 @@ Resources:
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
       - Name: TargetGroup
-        Value: !GetAtt DefaultTargetGroup.TargetGroupFullName
+        Value: !GetAtt 'DefaultTargetGroup.TargetGroupFullName'
   LoadBalancer: # not monitored, but DefaultTargetGroup is monitored!
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
@@ -1347,6 +1355,11 @@ Outputs:
     Value: !Ref Cluster
     Export:
       Name: !Sub '${AWS::StackName}-Cluster'
+  LoadBalancerFullName:
+    Description: 'ALB full name for services.'
+    Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
+    Export:
+      Name: !Sub '${AWS::StackName}-LoadBalancerFullName'
   HttpListener:
     Description: 'ALB HTTP listener for services.'
     Value: !Ref HttpListener

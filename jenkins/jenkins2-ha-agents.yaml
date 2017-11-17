@@ -1170,6 +1170,8 @@ Resources:
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt 'MasterELB.LoadBalancerFullName'
       - Name: TargetGroup
         Value: !GetAtt AgentELBTargetGroup.TargetGroupFullName
   AgentHTTPCodeTarget5XXTooHighAlarm:
@@ -1187,6 +1189,8 @@ Resources:
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt 'MasterELB.LoadBalancerFullName'
       - Name: TargetGroup
         Value: !GetAtt AgentELBTargetGroup.TargetGroupFullName
   AgentRejectedConnectionCountTooHighAlarm:
@@ -1204,6 +1208,8 @@ Resources:
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt 'MasterELB.LoadBalancerFullName'
       - Name: TargetGroup
         Value: !GetAtt AgentELBTargetGroup.TargetGroupFullName
   AgentTargetConnectionErrorCountTooHighAlarm:
@@ -1221,6 +1227,8 @@ Resources:
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt 'MasterELB.LoadBalancerFullName'
       - Name: TargetGroup
         Value: !GetAtt AgentELBTargetGroup.TargetGroupFullName
   AgentELBListener:

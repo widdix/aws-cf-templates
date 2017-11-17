@@ -177,6 +177,9 @@ Resources:
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
+      - Name: LoadBalancer
+        Value:
+          'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'
       - Name: TargetGroup
         Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
   HTTPCodeTarget5XXTooHighAlarm:
@@ -194,6 +197,9 @@ Resources:
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
+      - Name: LoadBalancer
+        Value:
+          'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'
       - Name: TargetGroup
         Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
   RejectedConnectionCountTooHighAlarm:
@@ -211,6 +217,9 @@ Resources:
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
+      - Name: LoadBalancer
+        Value:
+          'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'
       - Name: TargetGroup
         Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
   TargetConnectionErrorCountTooHighAlarm:
@@ -228,6 +237,9 @@ Resources:
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
+      - Name: LoadBalancer
+        Value:
+          'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'
       - Name: TargetGroup
         Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
   LoadBalancerHttpListenerRule:
