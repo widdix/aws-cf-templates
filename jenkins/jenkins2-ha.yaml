@@ -80,7 +80,7 @@ Parameters:
     Type: String
     Default: 't2.micro'
   MasterAdminPassword:
-    Description: 'A password for the Jenkins master admin.'
+    Description: 'A password for the Jenkins master admin. MUST NOT BE CHANGED!'
     Type: String
     NoEcho: true
     MinLength: 8
