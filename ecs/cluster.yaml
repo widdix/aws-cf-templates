@@ -746,10 +746,10 @@ Resources:
                     container_instances: resp1.container_instance_arns,
                   })
                   cis = resp2.container_instances.select {|ci| ci.ec2_instance_id == ec2InstanceId}
-                  if cis.size() > 0
-                    return cis.first().container_instance_arn.split("/").last()
-                  else
+                  if cis.first().nil?
                     return nil
+                  else
+                    return cis.first().container_instance_arn.split("/").last()
                   end
                 end
                 def drainContainerInstanceId(containerInstanceId)
