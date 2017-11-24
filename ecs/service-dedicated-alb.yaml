@@ -88,7 +88,7 @@ Parameters:
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
   SubDomainName:
-    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (works only when ParentZoneStack is set)'
+    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
     Type: String
     Default: ''
 Mappings: {}
