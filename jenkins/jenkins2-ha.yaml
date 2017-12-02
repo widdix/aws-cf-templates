@@ -628,7 +628,7 @@ Resources:
         install:
           packages:
             rpm:
-              jenkins: !Sub 'http://pkg.jenkins-ci.org/redhat-stable/jenkins-${JenkinsVersion}-1.1.noarch.rpm'
+              jenkins: !Sub 'https://pkg.jenkins.io/redhat-stable/jenkins-${JenkinsVersion}-1.1.noarch.rpm'
             yum:
               'java-1.8.0-openjdk': []
           files:
