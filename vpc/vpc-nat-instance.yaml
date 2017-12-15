@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'VPC: highly available NAT instance for private subnets, a cloudonaut.io template'
+Description: 'VPC: highly available NAT instance, a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:

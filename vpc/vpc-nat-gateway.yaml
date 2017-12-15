@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'VPC: NAT Gateway for private subnet, a cloudonaut.io template'
+Description: 'VPC: NAT Gateway, a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
