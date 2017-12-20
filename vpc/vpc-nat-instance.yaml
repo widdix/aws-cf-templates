@@ -73,6 +73,8 @@ Mappings:
   RegionMap:
     'ap-south-1':
       NATAMI: 'ami-bdd09dd2'
+    'eu-west-3':
+      NATAMI: 'ami-50ae192d'
     'eu-west-2':
       NATAMI: 'ami-9b011dff'
     'eu-west-1':

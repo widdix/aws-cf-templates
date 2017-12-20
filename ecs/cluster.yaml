@@ -139,6 +139,10 @@ Parameters:
     ConstraintDescription: 'Must be >= 2'
 Mappings:
   RegionMap:
+    'ap-south-1':
+      ECSAMI: 'ami-e4d29c8b'
+    'eu-west-3':
+      ECSAMI: 'ami-d179ceac'
     'eu-west-2':
       ECSAMI: 'ami-dbfee1bf'
     'eu-west-1':
@@ -147,6 +151,8 @@ Mappings:
       ECSAMI: 'ami-7267c01c'
     'ap-northeast-1':
       ECSAMI: 'ami-56bd0030'
+    'sa-east-1':
+      ECSAMI: 'ami-d596d2b9'
     'ca-central-1':
       ECSAMI: 'ami-918b30f5'
     'ap-southeast-1':

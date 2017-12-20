@@ -58,6 +58,8 @@ Mappings:
   RegionMap:
     'ap-south-1':
       AMI: 'ami-2ed19c41'
+    'eu-west-3':
+      AMI: 'ami-c8a017b5'
     'eu-west-2':
       AMI: 'ami-e3051987'
     'eu-west-1':
