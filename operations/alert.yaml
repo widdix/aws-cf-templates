@@ -66,6 +66,15 @@ Resources:
           Condition:
             StringEquals:
               'AWS:SourceOwner': !Ref 'AWS::AccountId'
+        - Sid: Sid3
+          Effect: Allow
+          Principal:
+            Service: 'ses.amazonaws.com' # Allow SES Notifications & Events
+          Action: 'sns:Publish'
+          Resource: !Ref Topic
+          Condition:
+            StringEquals:
+              'AWS:Referer': !Ref 'AWS::AccountId'
       Topics:
       - !Ref Topic
   FallbackTopic:
