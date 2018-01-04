@@ -10,7 +10,7 @@ Metadata:
       - ParentVPCStack
     - Label:
         default: 'Zone Parameters'
-      Name:
+      Parameters:
       - Name
 Parameters:
   ParentVPCStack:

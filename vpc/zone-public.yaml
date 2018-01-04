@@ -6,7 +6,7 @@ Metadata:
     ParameterGroups:
     - Label:
         default: 'Zone Parameters'
-      Name:
+      Parameters:
       - Name
 Parameters:
   Name:
