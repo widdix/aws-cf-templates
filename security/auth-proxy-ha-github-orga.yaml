@@ -604,7 +604,7 @@ Resources:
                 # Short-Description: Start daemon at boot time
                 # Description:       Enable service provided by daemon.
                 ### END INIT INFO
-                dir="/opt/oauth2_proxy/oauth2_proxy-2.1.linux-amd64.go1.6"
+                dir="/opt/oauth2_proxy/oauth2_proxy-2.2.0.linux-amd64.go1.8.1"
                 cmd="./oauth2_proxy -config=/etc/oauth2_proxy.cfg"
                 user="oauth2_proxy"
                 name=`basename $0`
