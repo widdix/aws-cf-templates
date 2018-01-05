@@ -12,7 +12,4 @@ class PreProcess(install):
 setup(
   name="docs",
   cmdclass={'install': PreProcess},
-  install_requires=[
-    "mkdocs-bootswatch",
-  ],
 )

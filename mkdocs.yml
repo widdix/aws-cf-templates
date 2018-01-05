@@ -1,8 +1,6 @@
 ---
 # only needed for readthedocs.io
 site_name: 'Free Templates for AWS CloudFormation'
-requirements_file: 'setup.txt'
-theme: flatly
 docs_dir: docs
 pages:
 - 'Home': 'index.md'
