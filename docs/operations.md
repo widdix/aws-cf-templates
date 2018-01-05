@@ -4,7 +4,7 @@
 This template describes a SNS topic that can be used by many other templates to receive alerts. You can add one or multiple subscribers to this topic and they will all receive the same alerts. Supported transports are:
 * Email
 * HTTP endpoint
-* HTTPS endpoint (can be used by [marbot](https://marbot.io/))
+* HTTPS endpoint (can be used by [marbot](https://marbot.io/?utm_source=templates&utm_medium=doc&utm_campaign=operations))
 
 ![Architecture](./img/operations-alert.png)
 
