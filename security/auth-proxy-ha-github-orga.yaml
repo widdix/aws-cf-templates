@@ -418,7 +418,7 @@ Resources:
               mode: '000644'
               owner: root
               group: root
-            '/etc/awslogs/awslogs.conf': # TODO /var/log does not contain many logs at the moment. journald does not seem to write them to disk
+            '/etc/awslogs/awslogs.conf':
               content: !Sub |
                 [general]
                 state_file = /var/lib/awslogs/agent-state
@@ -557,6 +557,9 @@ Resources:
             oauth2_proxy: {}
           sources:
             /opt/oauth2_proxy: 'https://github.com/bitly/oauth2_proxy/releases/download/v2.2/oauth2_proxy-2.2.0.linux-amd64.go1.8.1.tar.gz'
+          packages:
+            yum:
+              nginx: []
           files:
             '/etc/nginx/conf.d/http2https.conf':
               content: !Sub |
@@ -737,7 +740,7 @@ Resources:
         'Fn::Base64': !Sub |
           #!/bin/bash -x
           bash -ex << "TRY"
-            amazon-linux-extras install nginx1.12 # TODO amazon-linux-extras is not currently supported in cfn-init
+            amazon-linux-extras enable nginx1.12 # TODO amazon-linux-extras is not currently supported in cfn-init
             /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
           TRY
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
