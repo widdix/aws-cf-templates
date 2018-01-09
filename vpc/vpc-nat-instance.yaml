@@ -70,7 +70,7 @@ Parameters:
     Type: String
     Default: 'nat'
 Mappings:
-  RegionMap:
+  RegionMap: # TODO update to Amazon Linux 2
     'ap-south-1':
       NATAMI: 'ami-ffc49090'
     'eu-west-3':

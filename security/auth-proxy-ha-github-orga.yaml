@@ -91,35 +91,35 @@ Parameters:
 Mappings:
   RegionMap:
     'ap-south-1':
-      AMI: 'ami-fedb8f91'
+      AMI: 'ami-79c78f16'
     'eu-west-3':
-      AMI: 'ami-fe03b483'
+      AMI: 'ami-185fe865'
     'eu-west-2':
-      AMI: 'ami-51809835'
+      AMI: 'ami-424c5526'
     'eu-west-1':
-      AMI: 'ami-e487179d'
+      AMI: 'ami-b09e1ac9'
     'ap-northeast-2':
-      AMI: 'ami-d9b616b7'
+      AMI: 'ami-1559ff7b'
     'ap-northeast-1':
-      AMI: 'ami-33c25b55'
+      AMI: 'ami-2a34b64c'
     'sa-east-1':
-      AMI: 'ami-1226647e'
+      AMI: 'ami-bd87c1d1'
     'ca-central-1':
-      AMI: 'ami-61f97c05'
+      AMI: 'ami-9ab802fe'
     'ap-southeast-1':
-      AMI: 'ami-889cecf4'
+      AMI: 'ami-b45030c8'
     'ap-southeast-2':
-      AMI: 'ami-ccab56ae'
+      AMI: 'ami-71867013'
     'eu-central-1':
-      AMI: 'ami-0fc85a60'
+      AMI: 'ami-29ae2546'
     'us-east-1':
-      AMI: 'ami-cb9ec1b1'
+      AMI: 'ami-0b542a71'
     'us-east-2':
-      AMI: 'ami-caaf84af'
+      AMI: 'ami-e97c548c'
     'us-west-1':
-      AMI: 'ami-95eeeef5'
+      AMI: 'ami-ee03078e'
     'us-west-2':
-      AMI: 'ami-32cf7b4a'
+      AMI: 'ami-7707a10f'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -418,7 +418,7 @@ Resources:
               mode: '000644'
               owner: root
               group: root
-            '/etc/awslogs/awslogs.conf':
+            '/etc/awslogs/awslogs.conf': # TODO /var/log does not contain many logs at the moment. journald does not seem to write them to disk
               content: !Sub |
                 [general]
                 state_file = /var/lib/awslogs/agent-state
@@ -479,7 +479,7 @@ Resources:
               group: root
           services:
             sysvinit:
-              awslogs:
+              awslogsd:
                 enabled: true
                 ensureRunning: true
                 packages:
@@ -557,9 +557,6 @@ Resources:
             oauth2_proxy: {}
           sources:
             /opt/oauth2_proxy: 'https://github.com/bitly/oauth2_proxy/releases/download/v2.2/oauth2_proxy-2.2.0.linux-amd64.go1.8.1.tar.gz'
-          packages:
-            yum:
-              nginx: []
           files:
             '/etc/nginx/conf.d/http2https.conf':
               content: !Sub |
@@ -739,7 +736,10 @@ Resources:
       UserData:
         'Fn::Base64': !Sub |
           #!/bin/bash -x
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+          bash -ex << "TRY"
+            amazon-linux-extras install nginx1.12 # TODO amazon-linux-extras is not currently supported in cfn-init
+            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+          TRY
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'

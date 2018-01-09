@@ -227,7 +227,46 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, config], [awslogs, config]]
+          default: !If [HasIAMUserSSHAccess, ['journald-cloudwatch-logs', awslogs, ssh-access, config], ['journald-cloudwatch-logs', awslogs, config]]
+        'journald-cloudwatch-logs':
+          sources:
+            '/root': 'https://github.com/saymedia/journald-cloudwatch-logs/releases/download/v0.0.1/journald-cloudwatch-logs-linux.zip'
+          files:
+            '/usr/local/etc/journald-cloudwatch-logs.conf':
+              content: !Sub |
+                log_group = "${Logs}"
+                state_file = "/var/lib/journald-cloudwatch-logs/state"
+            '/usr/lib/systemd/system/journald-cloudwatch-logs.service':
+              content: |
+                [Unit]
+                Description=journald-cloudwatch-logs
+                After=network-online.target
+
+                [Service]
+                Type=simple
+                ExecStart=/usr/local/bin/journald-cloudwatch-logs /usr/local/etc/journald-cloudwatch-logs.conf
+                Restart=always
+                RestartSec=3
+
+                [Install]
+                WantedBy=multi-user.target
+          commands:
+            'a_create_state_dir':
+              command: 'mkdir /var/lib/journald-cloudwatch-logs'
+              test: '[ ! -d /var/lib/journald-cloudwatch-logs ]'
+            'b_create_state_file':
+              command: 'touch /var/lib/journald-cloudwatch-logs/state'
+              test: '[ ! -f /var/lib/journald-cloudwatch-logs/state ]'
+            'd_mv_bin':
+              command: 'mv /root/journald-cloudwatch-logs/journald-cloudwatch-logs /usr/local/bin/journald-cloudwatch-logs'
+              test: '[ ! -f /usr/local/bin/journald-cloudwatch-logs ]'
+          services:
+            sysvinit:
+              'journald-cloudwatch-logs':
+                enabled: true
+                ensureRunning: true
+                files:
+                - '/usr/local/etc/journald-cloudwatch-logs.conf'
         awslogs:
           packages:
             yum:
@@ -242,34 +281,23 @@ Resources:
               mode: '000644'
               owner: root
               group: root
-            '/etc/awslogs/awslogs.conf': # TODO /var/log does not contain many logs at the moment. journald does not seem to write them to disk
+            '/etc/awslogs/awslogs.conf':
               content: !Sub |
                 [general]
                 state_file = /var/lib/awslogs/agent-state
-                [/var/log/messages]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/messages
-                log_stream_name = {instance_id}/var/log/messages
-                log_group_name = ${Logs}
-                [/var/log/secure]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/secure
-                log_stream_name = {instance_id}/var/log/secure
-                log_group_name = ${Logs}
-                [/var/log/cron]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cron
-                log_stream_name = {instance_id}/var/log/cron
-                log_group_name = ${Logs}
-                [/var/log/cloud-init.log]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cloud-init.log
-                log_stream_name = {instance_id}/var/log/cloud-init.log
-                log_group_name = ${Logs}
-                [/var/log/cfn-init.log]
+                [/var/log/amazon/ssm/amazon-ssm-agent.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init.log
-                log_stream_name = {instance_id}/var/log/cfn-init.log
+                file = /var/log/amazon/ssm/amazon-ssm-agent.log
+                log_stream_name = {instance_id}/var/log/amazon/ssm/amazon-ssm-agent.log
+                log_group_name = ${Logs}
+                [/var/log/awslogs.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/awslogs.log
+                log_stream_name = {instance_id}/var/log/awslogs.log
+                log_group_name = ${Logs}
+                [/var/log/boot.log]
+                file = /var/log/boot.log
+                log_stream_name = {instance_id}/var/log/boot.log
                 log_group_name = ${Logs}
                 [/var/log/cfn-hup.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
@@ -281,13 +309,37 @@ Resources:
                 file = /var/log/cfn-init-cmd.log
                 log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
                 log_group_name = ${Logs}
+                [/var/log/cfn-init.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init.log
+                log_stream_name = {instance_id}/var/log/cfn-init.log
+                log_group_name = ${Logs}
+                [/var/log/cfn-wire.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-wire.log
+                log_stream_name = {instance_id}/var/log/cfn-wire.log
+                log_group_name = ${Logs}
                 [/var/log/cloud-init-output.log]
                 file = /var/log/cloud-init-output.log
                 log_stream_name = {instance_id}/var/log/cloud-init-output.log
                 log_group_name = ${Logs}
+                [/var/log/cloud-init.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cloud-init.log
+                log_stream_name = {instance_id}/var/log/cloud-init.log
+                log_group_name = ${Logs}
                 [/var/log/dmesg]
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
+                log_group_name = ${Logs}
+                [/var/log/grubby_prune_debug]
+                file = /var/log/grubby_prune_debug
+                log_stream_name = {instance_id}/var/log/grubby_prune_debug
+                log_group_name = ${Logs}
+                [/var/log/yum.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/yum.log
+                log_stream_name = {instance_id}/var/log/yum.log
                 log_group_name = ${Logs}
               mode: '000644'
               owner: root
