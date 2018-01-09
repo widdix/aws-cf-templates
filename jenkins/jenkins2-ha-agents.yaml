@@ -1403,7 +1403,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, ['journald-cloudwatch-logs', awslogs, ssh-access, install, setup, custom, run], ['journald-cloudwatch-logs'. awslogs, install, setup, custom, run]]
+          default: !If [HasIAMUserSSHAccess, ['journald-cloudwatch-logs', awslogs, ssh-access, install, setup, custom, run], ['journald-cloudwatch-logs', awslogs, install, setup, custom, run]]
         'journald-cloudwatch-logs':
           sources:
             '/root': 'https://github.com/saymedia/journald-cloudwatch-logs/releases/download/v0.0.1/journald-cloudwatch-logs-linux.zip'
