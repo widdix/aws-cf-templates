@@ -471,7 +471,7 @@ Resources:
           files:
             '/usr/local/etc/journald-cloudwatch-logs.conf':
               content: !Sub |
-                log_group = "${Logs}"
+                log_group = "${MasterLogs}"
                 state_file = "/var/lib/journald-cloudwatch-logs/state"
             '/usr/lib/systemd/system/journald-cloudwatch-logs.service':
               content: |
