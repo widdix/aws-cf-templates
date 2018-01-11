@@ -16,6 +16,7 @@ Metadata:
       Parameters:
       - KeyName
       - IAMUserSSHAccess
+      # TODO - SystemsManagerAccess
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:

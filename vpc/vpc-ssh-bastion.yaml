@@ -16,6 +16,7 @@ Metadata:
       - InstanceType
       - KeyName
       - IAMUserSSHAccess
+      - SystemsManagerAccess
       - LogsRetentionInDays
       - SubDomainName
 Parameters:
@@ -38,6 +39,13 @@ Parameters:
     Description: 'Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).'
     Type: String
     Default: false
+    AllowedValues:
+    - true
+    - false
+  SystemsManagerAccess:
+    Description: 'Enable AWS Systems Manager agent and authorization.'
+    Type: String
+    Default: true
     AllowedValues:
     - true
     - false
@@ -89,6 +97,7 @@ Mappings:
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
+  HasSystemsManagerAccess: !Equals [!Ref SystemsManagerAccess, 'true']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
 Resources:
@@ -148,6 +157,7 @@ Resources:
           Action:
           - 'sts:AssumeRole'
       Path: '/'
+      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []]
       Policies:
       - PolicyName: 'ec2'
         PolicyDocument:
@@ -412,6 +422,9 @@ Resources:
                 files:
                 - '/etc/cfn/cfn-hup.conf'
                 - '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
+              amazon-ssm-agent:
+                enabled: !If [HasSystemsManagerAccess, true, false]
+                ensureRunning: !If [HasSystemsManagerAccess, true, false]
     Properties:
       AssociatePublicIpAddress: true
       EbsOptimized: false
