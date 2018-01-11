@@ -123,35 +123,35 @@ Parameters:
 Mappings:
   RegionMap:
     'ap-south-1':
-      AMI: 'ami-fedb8f91'
+      AMI: 'ami-79c78f16'
     'eu-west-3':
-      AMI: 'ami-fe03b483'
+      AMI: 'ami-185fe865'
     'eu-west-2':
-      AMI: 'ami-51809835'
+      AMI: 'ami-424c5526'
     'eu-west-1':
-      AMI: 'ami-e487179d'
+      AMI: 'ami-b09e1ac9'
     'ap-northeast-2':
-      AMI: 'ami-d9b616b7'
+      AMI: 'ami-1559ff7b'
     'ap-northeast-1':
-      AMI: 'ami-33c25b55'
+      AMI: 'ami-2a34b64c'
     'sa-east-1':
-      AMI: 'ami-1226647e'
+      AMI: 'ami-bd87c1d1'
     'ca-central-1':
-      AMI: 'ami-61f97c05'
+      AMI: 'ami-9ab802fe'
     'ap-southeast-1':
-      AMI: 'ami-889cecf4'
+      AMI: 'ami-b45030c8'
     'ap-southeast-2':
-      AMI: 'ami-ccab56ae'
+      AMI: 'ami-71867013'
     'eu-central-1':
-      AMI: 'ami-0fc85a60'
+      AMI: 'ami-29ae2546'
     'us-east-1':
-      AMI: 'ami-cb9ec1b1'
+      AMI: 'ami-0b542a71'
     'us-east-2':
-      AMI: 'ami-caaf84af'
+      AMI: 'ami-e97c548c'
     'us-west-1':
-      AMI: 'ami-95eeeef5'
+      AMI: 'ami-ee03078e'
     'us-west-2':
-      AMI: 'ami-32cf7b4a'
+      AMI: 'ami-7707a10f'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref WebServerKeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref WebServerIAMUserSSHAccess, 'true']
@@ -544,7 +544,46 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, config], [awslogs, config]]
+          default: !If [HasIAMUserSSHAccess, ['journald-cloudwatch-logs', awslogs, ssh-access, config], ['journald-cloudwatch-logs', awslogs, config]]
+        'journald-cloudwatch-logs':
+          sources:
+            '/root': 'https://github.com/saymedia/journald-cloudwatch-logs/releases/download/v0.0.1/journald-cloudwatch-logs-linux.zip'
+          files:
+            '/usr/local/etc/journald-cloudwatch-logs.conf':
+              content: !Sub |
+                log_group = "${WebServerLogs}"
+                state_file = "/var/lib/journald-cloudwatch-logs/state"
+            '/usr/lib/systemd/system/journald-cloudwatch-logs.service':
+              content: |
+                [Unit]
+                Description=journald-cloudwatch-logs
+                After=network-online.target
+
+                [Service]
+                Type=simple
+                ExecStart=/usr/local/bin/journald-cloudwatch-logs /usr/local/etc/journald-cloudwatch-logs.conf
+                Restart=always
+                RestartSec=3
+
+                [Install]
+                WantedBy=multi-user.target
+          commands:
+            'a_create_state_dir':
+              command: 'mkdir /var/lib/journald-cloudwatch-logs'
+              test: '[ ! -d /var/lib/journald-cloudwatch-logs ]'
+            'b_create_state_file':
+              command: 'touch /var/lib/journald-cloudwatch-logs/state'
+              test: '[ ! -f /var/lib/journald-cloudwatch-logs/state ]'
+            'd_mv_bin':
+              command: 'mv /root/journald-cloudwatch-logs/journald-cloudwatch-logs /usr/local/bin/journald-cloudwatch-logs'
+              test: '[ ! -f /usr/local/bin/journald-cloudwatch-logs ]'
+          services:
+            sysvinit:
+              'journald-cloudwatch-logs':
+                enabled: true
+                ensureRunning: true
+                files:
+                - '/usr/local/etc/journald-cloudwatch-logs.conf'
         awslogs:
           packages:
             yum:
@@ -563,30 +602,19 @@ Resources:
               content: !Sub |
                 [general]
                 state_file = /var/lib/awslogs/agent-state
-                [/var/log/messages]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/messages
-                log_stream_name = {instance_id}/var/log/messages
-                log_group_name = ${WebServerLogs}
-                [/var/log/secure]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/secure
-                log_stream_name = {instance_id}/var/log/secure
-                log_group_name = ${WebServerLogs}
-                [/var/log/cron]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cron
-                log_stream_name = {instance_id}/var/log/cron
-                log_group_name = ${WebServerLogs}
-                [/var/log/cloud-init.log]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cloud-init.log
-                log_stream_name = {instance_id}/var/log/cloud-init.log
-                log_group_name = ${WebServerLogs}
-                [/var/log/cfn-init.log]
+                [/var/log/amazon/ssm/amazon-ssm-agent.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init.log
-                log_stream_name = {instance_id}/var/log/cfn-init.log
+                file = /var/log/amazon/ssm/amazon-ssm-agent.log
+                log_stream_name = {instance_id}/var/log/amazon/ssm/amazon-ssm-agent.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/awslogs.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/awslogs.log
+                log_stream_name = {instance_id}/var/log/awslogs.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/boot.log]
+                file = /var/log/boot.log
+                log_stream_name = {instance_id}/var/log/boot.log
                 log_group_name = ${WebServerLogs}
                 [/var/log/cfn-hup.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
@@ -598,13 +626,37 @@ Resources:
                 file = /var/log/cfn-init-cmd.log
                 log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
                 log_group_name = ${WebServerLogs}
+                [/var/log/cfn-init.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init.log
+                log_stream_name = {instance_id}/var/log/cfn-init.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/cfn-wire.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-wire.log
+                log_stream_name = {instance_id}/var/log/cfn-wire.log
+                log_group_name = ${WebServerLogs}
                 [/var/log/cloud-init-output.log]
                 file = /var/log/cloud-init-output.log
                 log_stream_name = {instance_id}/var/log/cloud-init-output.log
                 log_group_name = ${WebServerLogs}
+                [/var/log/cloud-init.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cloud-init.log
+                log_stream_name = {instance_id}/var/log/cloud-init.log
+                log_group_name = ${WebServerLogs}
                 [/var/log/dmesg]
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
+                log_group_name = ${WebServerLogs}
+                [/var/log/grubby_prune_debug]
+                file = /var/log/grubby_prune_debug
+                log_stream_name = {instance_id}/var/log/grubby_prune_debug
+                log_group_name = ${WebServerLogs}
+                [/var/log/yum.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/yum.log
+                log_stream_name = {instance_id}/var/log/yum.log
                 log_group_name = ${WebServerLogs}
                 [/var/log/httpd/access_log]
                 datetime_format = %b %d %H:%M:%S %Y
@@ -621,7 +673,7 @@ Resources:
               group: root
           services:
             sysvinit:
-              awslogs:
+              awslogsd:
                 enabled: true
                 ensureRunning: true
                 packages:
@@ -697,16 +749,15 @@ Resources:
         config:
           packages:
             yum:
-              php70: []
-              php70-opcache: []
-              php70-mysqlnd: []
-              mysql56: []
-              httpd24: []
+              httpd: []
+              php: []
+              php-opcache: []
+              php-mysqlnd: []
           files:
             '/root/php.sh':
               content: !Sub |
                 #!/bin/bash -ex
-                sed -i 's/;opcache.revalidate_freq=2/opcache.revalidate_freq=300/g' /etc/php-7.0.d/10-opcache.ini
+                sed -i 's/;opcache.revalidate_freq=2/opcache.revalidate_freq=300/g' /etc/php.d/10-opcache.ini
               mode: '000500'
               owner: root
               group: root
@@ -764,13 +815,14 @@ Resources:
         'Fn::Base64': !Sub |
           #!/bin/bash -x
           bash -ex << "TRY"
-            while ! nc -z ${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com 2049; do sleep 10; done
+            amazon-linux-extras enable php7.2 # TODO amazon-linux-extras is not currently supported in cfn-init
+            while ! (echo > /dev/tcp/${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com/2049) >/dev/null 2>&1; do sleep 10; done
             sleep 10
             mkdir /var/www
             mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 "${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com:/" /var/www/
             /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
           TRY
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     DependsOn:
