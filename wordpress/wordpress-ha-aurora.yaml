@@ -753,6 +753,7 @@ Resources:
               php: []
               php-opcache: []
               php-mysqlnd: []
+              mariadb: []
           files:
             '/root/php.sh':
               content: !Sub |
@@ -786,7 +787,7 @@ Resources:
                   fi
                   chown -R apache:apache /var/www/html
                   chmod u+wrx /var/www/html/wp-content/*
-                  rm wp-cli.phar
+                  rm -f wp-cli.phar
                 fi
               mode: '000500'
               owner: root
