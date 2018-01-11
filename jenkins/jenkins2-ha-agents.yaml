@@ -1125,7 +1125,7 @@ Resources:
         'Fn::Base64': !Sub |
           #!/bin/bash -x
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource MasterLC --region ${AWS::Region}
-          /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource MasterASG --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource MasterASG --region ${AWS::Region}
   MasterASG:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     DependsOn:
@@ -1863,7 +1863,7 @@ Resources:
         'Fn::Base64': !Sub |
           #!/bin/bash -x
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource AgentLC --region ${AWS::Region}
-          /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AgentASG --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AgentASG --region ${AWS::Region}
   AgentASG:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     DependsOn: MasterASG
