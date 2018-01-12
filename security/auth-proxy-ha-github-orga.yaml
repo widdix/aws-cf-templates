@@ -413,7 +413,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, config], [awslogs, config]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, extras, config], [awslogs, extras, config]]
         awslogs:
           packages:
             yum:
@@ -562,6 +562,11 @@ Resources:
                 commands:
                 - 'a_configure_sshd_command'
                 - 'b_configure_sshd_commanduser'
+        extras:
+          commands:
+            a_enable_nginx:
+              command: 'amazon-linux-extras enable nginx1.12'
+              test: "[ ! grep -Fxq '[amzn2extra-nginx1.12]' /etc/yum.repos.d/amzn2-extras.repo ]"
         config:
           users:
             oauth2_proxy: {}
@@ -752,10 +757,7 @@ Resources:
       UserData:
         'Fn::Base64': !Sub |
           #!/bin/bash -x
-          bash -ex << "TRY"
-            amazon-linux-extras enable nginx1.12 # TODO amazon-linux-extras is not currently supported in cfn-init
-            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
-          TRY
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'

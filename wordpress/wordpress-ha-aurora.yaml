@@ -544,7 +544,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, ['journald-cloudwatch-logs', awslogs, ssh-access, config], ['journald-cloudwatch-logs', awslogs, config]]
+          default: !If [HasIAMUserSSHAccess, ['journald-cloudwatch-logs', awslogs, ssh-access, extras, config], ['journald-cloudwatch-logs', awslogs, extras, config]]
         'journald-cloudwatch-logs':
           sources:
             '/root': 'https://github.com/saymedia/journald-cloudwatch-logs/releases/download/v0.0.1/journald-cloudwatch-logs-linux.zip'
@@ -746,6 +746,11 @@ Resources:
                 commands:
                 - 'a_configure_sshd_command'
                 - 'b_configure_sshd_commanduser'
+        extras:
+          commands:
+            a_enable_php:
+              command: 'amazon-linux-extras enable php7.2'
+              test: "[ ! grep -Fxq '[amzn2extra-php7.2]' /etc/yum.repos.d/amzn2-extras.repo ]"
         config:
           packages:
             yum:
@@ -816,7 +821,6 @@ Resources:
         'Fn::Base64': !Sub |
           #!/bin/bash -x
           bash -ex << "TRY"
-            amazon-linux-extras enable php7.2 # TODO amazon-linux-extras is not currently supported in cfn-init
             while ! (echo > /dev/tcp/${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com/2049) >/dev/null 2>&1; do sleep 10; done
             sleep 10
             mkdir /var/www
