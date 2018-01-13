@@ -750,7 +750,7 @@ Resources:
           commands:
             a_enable_php:
               command: 'amazon-linux-extras enable php7.2'
-              test: "[ ! grep -Fxq '[amzn2extra-php7.2]' /etc/yum.repos.d/amzn2-extras.repo ]"
+              test: "! grep -Fxq '[amzn2extra-php7.2]' /etc/yum.repos.d/amzn2-extras.repo"
         config:
           packages:
             yum:
