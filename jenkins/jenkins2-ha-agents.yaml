@@ -772,10 +772,8 @@ Resources:
               'nfs-utils': []
               'ruby': []
             rubygems:
-              'aws-sdk':
-              - '3.0.1'
-              daemons:
-              - '1.2.4'
+              'aws-sdk': ['3.0.1']
+              daemons: ['1.2.4']
           commands:
             'a_groupadd':
               command: 'groupadd -g 497 jenkins'
@@ -1661,10 +1659,8 @@ Resources:
               'nfs-utils': []
               'ruby': []
             rubygems:
-              'aws-sdk':
-              - '3.0.1'
-              daemons:
-              - '1.2.4'
+              'aws-sdk': ['3.0.1']
+              daemons: ['1.2.4']
           files:
             '/root/agent.xml':
               content: |
