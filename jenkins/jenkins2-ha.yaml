@@ -90,6 +90,13 @@ Parameters:
     Type: Number
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  MasterVolumeSize:
+    Description: 'The root volume size, in Gibibytes (GiB). Keep in mind that Jenkins home lives on EFS.'
+    Type: Number
+    Default: 8
+    ConstraintDescription: 'Must be in the range [8-1024]'
+    MinValue: 8
+    MaxValue: 1024
   JenkinsVersion:
     Description: 'Jenkins version number'
     Type: String
@@ -754,6 +761,11 @@ Resources:
       SecurityGroups:
       - !Ref MasterSG
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+      BlockDeviceMappings:
+      - DeviceName: '/dev/xvda'
+        Ebs:
+          VolumeSize: !Ref MasterVolumeSize
+          VolumeType: gp2
       UserData:
         'Fn::Base64': !Sub |
           #!/bin/bash -x
