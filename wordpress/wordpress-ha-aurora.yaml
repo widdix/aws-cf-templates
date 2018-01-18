@@ -38,6 +38,7 @@ Metadata:
       Parameters:
       - DBServerInstanceType
       - DBBackupRetentionPeriod
+      - DBMasterUserPassword
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -116,6 +117,13 @@ Parameters:
     Description: 'The number of days to keep snapshots of the database.'
     Type: Number
     Default: 30
+  DBMasterUserPassword:
+    Description: 'The master password for the DB instance. MUST NOT BE CHANGED!'
+    Type: String
+    Default: wordpress
+    NoEcho: true
+    MinLength: 8
+    MaxLength: 32
   SubDomainName:
     Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
     Type: String
@@ -366,7 +374,7 @@ Resources:
       DBSubnetGroupName: !Ref DBSubnetGroup
       Engine: aurora
       MasterUsername: wordpress
-      MasterUserPassword: wordpress
+      MasterUserPassword: !Ref DBMasterUserPassword
       VpcSecurityGroupIds:
       - !Ref DatabaseSecurityGroup
   DatabaseClusterBurstBalanceTooLowAlarm:
@@ -786,7 +794,7 @@ Resources:
                   wget -q -T 60 https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
                   if ! php wp-cli.phar core is-installed --allow-root; then
                     php wp-cli.phar core download --allow-root --version=${BlogVersion}
-                    php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='wordpress' --dbhost='${DatabaseCluster.Endpoint.Address}' --allow-root
+                    php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='${DBMasterUserPassword}' --dbhost='${DatabaseCluster.Endpoint.Address}' --allow-root
                     php wp-cli.phar core install --url='https://${DomainName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}' --skip-email --allow-root
                     sed -i "/$table_prefix = 'wp_';/a\$_SERVER['HTTPS'] = 'on';" /var/www/html/wp-config.php
                   fi
