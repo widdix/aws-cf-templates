@@ -131,16 +131,6 @@ Outputs:
     Value: !Join [',', [!Ref SubnetAPrivate, !Ref SubnetBPrivate, !Ref SubnetCPrivate]]
     Export:
       Name: !Sub '${AWS::StackName}-SubnetsPrivate'
-  RouteTablePrivate: # deprecated in v4, will be removed in v5
-    Description: 'Route table private (deprecated in v4, will be removed in v5).'
-    Value: !Ref RouteTableAPrivate
-    Export:
-      Name: !Sub '${AWS::StackName}-RouteTablePrivate'
-  RouteTablePublic: # deprecated in v4, will be removed in v5
-    Description: 'Route table public (deprecated in v4, will be removed in v5).'
-    Value: !Ref RouteTableAPublic
-    Export:
-      Name: !Sub '${AWS::StackName}-RouteTablePublic'
   RouteTablesPrivate:
     Description: 'Route tables private.'
     Value: !Join [',', [!Ref RouteTableAPrivate, !Ref RouteTableBPrivate, !Ref RouteTableCPrivate]]

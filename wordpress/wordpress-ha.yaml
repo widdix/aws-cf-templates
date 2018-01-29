@@ -15,7 +15,7 @@ Metadata:
     - Label:
         default: 'Domain Name and SSL certificates'
       Parameters:
-      - DomainName
+      - SubDomainNameWithDot
       - CloudFrontAcmCertificate
       - ElbAcmCertificate
     - Label:
@@ -32,7 +32,6 @@ Metadata:
       - WebServerIAMUserSSHAccess
       - WebServerInstanceType
       - WebServerLogsRetentionInDays
-      - SubDomainName
     - Label:
         default: 'Database Parameters'
       Parameters:
@@ -56,17 +55,13 @@ Parameters:
     Type: String
     Default: ''
   ParentZoneStack:
-    Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
-    Type: String
-    Default: ''
-  DomainName:
-    Description: 'The primary domain name of the blog.'
+    Description: 'Stack name of parent zone stack based on vpc/zone-*.yaml template.'
     Type: String
   CloudFrontAcmCertificate:
-    Description: 'The ACM Certificate ARN of certificate for the CloudFront distribution.Must be created in the us-east-1 region!'
+    Description: 'The ACM Certificate ARN for the CloudFront distribution. Must be created in the us-east-1 region!'
     Type: String
   ElbAcmCertificate:
-    Description: 'The ACM Certificate ARN of certificate for the ELB. Must be created in the same region as this stack!'
+    Description: 'The ACM Certificate ARN for the ELB. Must be created in the same region as this stack!'
     Type: String
   BlogTitle:
     Description: 'The title of the WordPress blog.'
@@ -118,16 +113,16 @@ Parameters:
     Type: Number
     Default: 30
   DBMasterUserPassword:
-    Description: 'The master password for the DB instance. MUST NOT BE CHANGED!'
+    Description: 'The master password for the DB instance. Must not be changed!'
     Type: String
     Default: wordpress
     NoEcho: true
     MinLength: 8
     MaxLength: 32
-  SubDomainName:
-    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
+  SubDomainNameWithDot:
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain.'
     Type: String
-    Default: 'www'
+    Default: 'www.'
 Mappings:
   RegionMap:
     'ap-south-1':
@@ -168,7 +163,6 @@ Conditions:
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
-  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
 Resources:
   WebServerLogs:
     Type: 'AWS::Logs::LogGroup'
@@ -773,22 +767,35 @@ Resources:
               owner: root
               group: root
             '/root/wordpress.sh':
-              content: !Sub |
-                #!/bin/bash -ex
-                # ensure than only one machine installs wp
-                if mkdir /var/www/lock; then
-                  cd /var/www/html
-                  wget -q -T 60 https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-                  if ! php wp-cli.phar core is-installed --allow-root; then
-                    php wp-cli.phar core download --allow-root --version=${BlogVersion}
-                    php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='${DBMasterUserPassword}' --dbhost='${Database.Endpoint.Address}' --allow-root
-                    php wp-cli.phar core install --url='https://${DomainName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}' --skip-email --allow-root
-                    sed -i "/$table_prefix = 'wp_';/a\$_SERVER['HTTPS'] = 'on';" /var/www/html/wp-config.php
+              content: !Sub
+              - |
+                  #!/bin/bash -ex
+                  # ensure than only one machine installs wp
+                  if mkdir /var/www/lock; then
+                    cd /var/www/html
+                    wget -q -T 60 https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+                    if ! php wp-cli.phar core is-installed --allow-root; then
+                      php wp-cli.phar core download --allow-root --version=${BlogVersion}
+                      php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='${DBMasterUserPassword}' --dbhost='${DBHost}' --allow-root
+                      php wp-cli.phar core install --url='https://${DomainName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}' --skip-email --allow-root
+                      sed -i "/$table_prefix = 'wp_';/a\$_SERVER['HTTPS'] = 'on';" /var/www/html/wp-config.php
+                    fi
+                    chown -R apache:apache /var/www/html
+                    chmod u+wrx /var/www/html/wp-content/*
+                    rm -f wp-cli.phar
                   fi
-                  chown -R apache:apache /var/www/html
-                  chmod u+wrx /var/www/html/wp-content/*
-                  rm -f wp-cli.phar
-                fi
+              - BlogVersion: !Ref BlogVersion
+                BlogTitle: !Ref BlogTitle
+                BlogAdminUsername: !Ref BlogAdminUsername
+                BlogAdminPassword: !Ref BlogAdminPassword
+                BlogAdminEMail: !Ref BlogAdminEMail
+                DBMasterUserPassword: !Ref DBMasterUserPassword
+                DBHost: !GetAtt 'Database.Endpoint.Address'
+                DomainName: !Sub
+                - '${SubDomainNameWithDot}${HostedZoneName}'
+                - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+                  HostedZoneName:
+                    'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
               mode: '000500'
               owner: root
               group: root
@@ -999,7 +1006,6 @@ Resources:
         ToPort: 2049
         SourceSecurityGroupId: !Ref WebServerSecurityGroup
   RecordSet:
-    Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
     Properties:
       AliasTarget:
@@ -1008,8 +1014,8 @@ Resources:
       HostedZoneId:
         'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
       Name: !Sub
-      - '${SubDomainName}.${HostedZoneName}'
-      - SubDomainName: !Ref SubDomainName
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
         HostedZoneName:
           'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       Type: A
@@ -1018,8 +1024,16 @@ Resources:
     Properties:
       DistributionConfig:
         Aliases:
-        - !Ref DomainName
-        Comment: !Ref DomainName
+        - !Sub
+          - '${SubDomainNameWithDot}${HostedZoneName}'
+          - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+            HostedZoneName:
+              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        Comment: !Sub
+        - '${SubDomainNameWithDot}${HostedZoneName}'
+        - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+          HostedZoneName:
+            'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
         Origins:
         - DomainName: !GetAtt 'LoadBalancer.DNSName'
           Id: elb

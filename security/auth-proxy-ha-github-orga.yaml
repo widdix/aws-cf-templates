@@ -28,7 +28,7 @@ Metadata:
       - IAMUserSSHAccess
       - SystemsManagerAccess
       - LogsRetentionInDays
-      - SubDomainName
+      - SubDomainNameWithDot
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -92,10 +92,10 @@ Parameters:
     Description: 'Seed string for secure cookies. Create one with python -c ''import os,base64; print base64.b64encode(os.urandom(16))'''
     Type: String
     NoEcho: true
-  SubDomainName:
-    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
+  SubDomainNameWithDot:
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
-    Default: 'jenkins'
+    Default: 'secure.'
 Mappings:
   RegionMap:
     'ap-south-1':
@@ -234,8 +234,8 @@ Resources:
       HostedZoneId:
         'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
       Name: !Sub
-      - '${SubDomainName}.${HostedZoneName}'
-      - SubDomainName: !Ref SubDomainName
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
         HostedZoneName:
           'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       Type: A

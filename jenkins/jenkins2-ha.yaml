@@ -22,7 +22,7 @@ Metadata:
       - KeyName
       - IAMUserSSHAccess
       - SystemsManagerAccess
-      - SubDomainName
+      - SubDomainNameWithDot
     - Label:
         default: 'Master Parameters'
       Parameters:
@@ -88,7 +88,7 @@ Parameters:
     Type: String
     Default: 't2.micro'
   MasterAdminPassword:
-    Description: 'A password for the Jenkins master admin. MUST NOT BE CHANGED!'
+    Description: 'A password for the Jenkins master admin. Must not be changed!'
     Type: String
     NoEcho: true
     MinLength: 8
@@ -102,10 +102,10 @@ Parameters:
     Description: 'Jenkins version number'
     Type: String
     Default: '2.89.2'
-  SubDomainName:
-    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
+  SubDomainNameWithDot:
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
-    Default: 'jenkins'
+    Default: 'jenkins.'
 Mappings:
   RegionMap:
     'ap-south-1':
@@ -321,8 +321,8 @@ Resources:
       HostedZoneId:
         'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
       Name: !Sub
-      - '${SubDomainName}.${HostedZoneName}'
-      - SubDomainName: !Ref SubDomainName
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
         HostedZoneName:
           'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       Type: A
