@@ -23,7 +23,6 @@ Parameters:
   ParentZoneStack:
     Description: 'Stack name of parent zone stack based on vpc/zone-*.yaml template.'
     Type: String
-    Default: ''
   SubDomainNameWithDot:
     Description: 'Primary mame that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain.'
     Type: String

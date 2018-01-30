@@ -26,6 +26,7 @@ public class TestStaticWebsite extends ACloudFormationTest {
             try {
                 this.createStack(stackName,
                         "static-website/static-website.yaml",
+                        new Parameter().withParameterKey("ParentZoneStack").withParameterValue(zoneStackName),
                         new Parameter().withParameterKey("SubDomainNameWithDot").withParameterValue(subDomainName + "."),
                         new Parameter().withParameterKey("EnableRedirectSubDomainName").withParameterValue("true"),
                         new Parameter().withParameterKey("RedirectSubDomainNameWithDot").withParameterValue(redirectSubDomainName + "."),
