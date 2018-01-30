@@ -53,3 +53,4 @@ This template describes a Jenkins master in a highly available manner. If the ma
 
 ## Limitations
 * Jenkins will only run in two Availability Zones, even if your VPC stack has more.
+* Stack updates only work if no agents are running. Scale to zero agents before you update the stack!
