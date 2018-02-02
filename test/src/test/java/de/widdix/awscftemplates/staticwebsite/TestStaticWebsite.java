@@ -15,8 +15,8 @@ public class TestStaticWebsite extends ACloudFormationTest {
     public void test() {
         final String zoneStackName = "zone-" + this.random8String();
         final String stackName = "static-website-" + this.random8String();
-        final String subDomainName = this.generateDomain(stackName);
-        final String redirectSubDomainName = this.generateDomain("www-" + stackName);
+        final String subDomainName = stackName;
+        final String redirectSubDomainName = "www-" + stackName;
         try {
             this.createStack(zoneStackName,
                     "vpc/zone-legacy.yaml",
