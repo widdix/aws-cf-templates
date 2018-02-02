@@ -3,6 +3,7 @@ package de.widdix.awscftemplates.ecs;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import de.taimos.httputils.WS;
 import de.widdix.awscftemplates.ACloudFormationTest;
+import de.widdix.awscftemplates.Config;
 import org.apache.http.HttpResponse;
 import org.junit.Assert;
 import org.junit.Test;
@@ -13,32 +14,39 @@ public class TestECSService extends ACloudFormationTest {
 
     @Test
     public void testClusterAlbHostPattern() {
+        final String zoneStackName = "zone-" + this.random8String();
         final String vpcStackName = "vpc-2azs-" + this.random8String();
         final String clusterStackName = "ecs-cluster-" + this.random8String();
         final String stackName = "ecs-service-" + this.random8String();
         final String classB = "10";
         final String keyName = "key-" + this.random8String();
+        final String subDomainName = stackName;
         try {
             this.createKey(keyName);
             try {
-                this.createStack(vpcStackName,
-                        "vpc/vpc-2azs.yaml",
-                        new Parameter().withParameterKey("ClassB").withParameterValue(classB)
+                this.createStack(zoneStackName,
+                        "vpc/zone-legacy.yaml",
+                        new Parameter().withParameterKey("HostedZoneName").withParameterValue(Config.get(Config.Key.DOMAIN_SUFFIX)),
+                        new Parameter().withParameterKey("HostedZoneId").withParameterValue(Config.get(Config.Key.HOSTED_ZONE_ID))
                 );
                 try {
-                    this.createStack(clusterStackName,
-                            "ecs/cluster.yaml",
-                            new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
-                            new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
+                    this.createStack(vpcStackName,
+                            "vpc/vpc-2azs.yaml",
+                            new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                     );
-                    final String cluster = this.getStackOutputValue(clusterStackName, "Cluster");
-                    final String clusterDNSName = this.getStackOutputValue(clusterStackName, "DNSName");
                     try {
-                        final String domain = this.createDomain(stackName, clusterDNSName);
+                        this.createStack(clusterStackName,
+                                "ecs/cluster.yaml",
+                                new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
+                                new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
+                        );
                         try {
+                            final String domain = subDomainName + "." + Config.get(Config.Key.DOMAIN_SUFFIX);
                             this.createStack(stackName,
                                     "ecs/service-cluster-alb.yaml",
                                     new Parameter().withParameterKey("ParentClusterStack").withParameterValue(clusterStackName),
+                                    new Parameter().withParameterKey("ParentZoneStack").withParameterValue(zoneStackName),
+                                    new Parameter().withParameterKey("SubDomainNameWithDot").withParameterValue(subDomainName + "."),
                                     new Parameter().withParameterKey("Image").withParameterValue("nginx:1.11.5"),
                                     new Parameter().withParameterKey("LoadBalancerPath").withParameterValue(""),
                                     new Parameter().withParameterKey("LoadBalancerHostPattern").withParameterValue(domain)
@@ -59,13 +67,13 @@ public class TestECSService extends ACloudFormationTest {
                             this.deleteStack(stackName);
                         }
                     } finally {
-                        this.deleteDomain(stackName);
+                        this.deleteStack(clusterStackName);
                     }
                 } finally {
-                    this.deleteStack(clusterStackName);
+                    this.deleteStack(vpcStackName);
                 }
             } finally {
-                this.deleteStack(vpcStackName);
+                this.deleteStack(zoneStackName);
             }
         } finally {
             this.deleteKey(keyName);
@@ -144,7 +152,6 @@ public class TestECSService extends ACloudFormationTest {
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
                     );
-                    final String cluster = this.getStackOutputValue(clusterStackName, "Cluster");
                     try {
                         this.createStack(stackName,
                                 "ecs/service-dedicated-alb.yaml",

@@ -113,17 +113,17 @@ public class TestWordpressHA extends ACloudFormationTest {
                                 new Parameter().withParameterKey("BlogAdminEMail").withParameterValue("no-reply@widdix.de")
                         );
                         final String url = "https://" + subDomainName + "." + Config.get(Config.Key.DOMAIN_SUFFIX);
-                            final Callable<String> callable = () -> {
-                                final HttpResponse response = WS.url(url).timeout(10000).get();
-                                // check HTTP response code
-                                if (WS.getStatus(response) != 200) {
-                                    throw new RuntimeException("200 expected, but saw " + WS.getStatus(response));
-                                }
-                                return WS.getResponseAsString(response);
-                            };
-                            final String response = this.retry(callable);
-                            // check if blog title appears in HTML
-                            Assert.assertTrue(response.contains(blogTitle));
+                        final Callable<String> callable = () -> {
+                            final HttpResponse response = WS.url(url).timeout(10000).get();
+                            // check HTTP response code
+                            if (WS.getStatus(response) != 200) {
+                                throw new RuntimeException("200 expected, but saw " + WS.getStatus(response));
+                            }
+                            return WS.getResponseAsString(response);
+                        };
+                        final String response = this.retry(callable);
+                        // check if blog title appears in HTML
+                        Assert.assertTrue(response.contains(blogTitle));
                     } finally {
                         this.deleteStackAndRetryOnFailure(stackName);
                     }
