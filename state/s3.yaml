@@ -5,6 +5,7 @@ Parameters:
   BucketName:
     Description: 'Optional name of the bucket.'
     Type: String
+    Default: ''
   Access:
     Description: 'Access policy of the bucket.'
     Type: String

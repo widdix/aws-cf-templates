@@ -148,6 +148,7 @@ Resources:
         PredefinedMetricSpecification:
           PredefinedMetricType: DynamoDBReadCapacityUtilization
   ReadThrottleEventsAlarm:
+    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Reads are throttled. Lower ReadCapacityUnitsUtilizationTarget or increase MaxReadCapacityUnits.'
@@ -166,6 +167,7 @@ Resources:
       OKActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
   WriteThrottleEventsAlarm:
+    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Writes are throttled. Lower WriteCapacityUnitsUtilizationTarget or increase MaxWriteCapacityUnits.'
@@ -184,6 +186,7 @@ Resources:
       OKActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
   ThrottledRequestsEventsAlarm:
+    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Batch requests are throttled. Lower {Read/Write}CapacityUnitsUtilizationTarget or increase Max{Read/Write}CapacityUnits.'
@@ -202,6 +205,7 @@ Resources:
       OKActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
   UserErrorsAlarm:
+    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'User errors'
@@ -220,6 +224,7 @@ Resources:
       OKActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
   SystemErrorsAlarm:
+    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'System errors'

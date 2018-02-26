@@ -98,8 +98,7 @@ Resources:
       CacheSubnetGroupName: !Ref CacheSubnetGroupName
       Engine: memcached
       EngineVersion: '1.4.34'
-      NotificationTopicArn:
-        'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      NotificationTopicArn: !If [HasAlertTopic, {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}, !Ref 'AWS::NoValue']
       NumCacheNodes: !Ref NumCacheNodes
       PreferredMaintenanceWindow: 'sat:07:00-sat:08:00'
       VpcSecurityGroupIds:

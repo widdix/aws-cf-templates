@@ -219,6 +219,21 @@ Resources:
       Dimensions:
       - Name: DBInstanceIdentifier
         Value: !Ref DBInstance
+  DatabaseEventSubscription:
+    Condition: HasAlertTopic
+    Type: 'AWS::RDS::EventSubscription'
+    Properties:
+      EventCategories:
+      - failover
+      - failure
+      - 'low storage'
+      - maintenance
+      - notification
+      - recovery
+      SnsTopicArn:
+        'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      SourceIds: [!Ref DBInstanceIdentifier]
+      SourceType: 'db-instance'
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'

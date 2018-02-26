@@ -29,7 +29,7 @@ Parameters:
     AllowedValues: [true, false]
     Default: true
   EBSVolumeSize:
-    Description: 'he size of the EBS volume for each data node. The minimum and maximum size of an EBS volume depends on the EBS volume type and the instance type to which it is attached.'
+    Description: 'The size of the EBS volume for each data node. The minimum and maximum size of an EBS volume depends on the EBS volume type and the instance type to which it is attached.'
     Type: Number
     Default: 10
   ClusterInstanceCount:
@@ -39,7 +39,15 @@ Parameters:
   ClusterInstanceType:
     Description: 'The instance type for your data nodes.'
     Type: 'String'
-    Default: 't2.micro.elasticsearch'
+    Default: 't2.small.elasticsearch'
+  DedicatedMasterCount:
+    Description: 'The number of dedicated master nodes (instances) to use in the Amazon ES domain (set to 0 to disable dedicated master nodes).'
+    Type: Number
+    Default: 0
+  DedicatedMasterType:
+    Description: 'The instance type for your dedicated master nodes.'
+    Type: 'String'
+    Default: 't2.small.elasticsearch'
   SubDomainName:
     Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
     Type: String
@@ -49,6 +57,7 @@ Conditions:
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasSingleClusterInstance: !Equals [!Ref ClusterInstanceCount, '1']
+  HasDedicatedMasterNodes: !Not [!Equals [!Ref DedicatedMasterCount, 0]]
   HasAlertTopicAndNotSingleClusterInstance: !And [!Condition HasAlertTopic, !Not [!Condition HasSingleClusterInstance]]
 Resources:
   RecordSet:
@@ -106,6 +115,9 @@ Resources:
         VolumeSize: !Ref EBSVolumeSize
         VolumeType: gp2
       ElasticsearchClusterConfig:
+        DedicatedMasterCount: !If [HasDedicatedMasterNodes, !Ref DedicatedMasterCount, !Ref 'AWS::NoValue']
+        DedicatedMasterEnabled: !If [HasDedicatedMasterNodes, true, false]
+        DedicatedMasterType: !If [HasDedicatedMasterNodes, !Ref DedicatedMasterType, !Ref 'AWS::NoValue']
         InstanceCount: !Ref ClusterInstanceCount
         InstanceType: !Ref ClusterInstanceType
         ZoneAwarenessEnabled: !If [HasSingleClusterInstance, false, true]

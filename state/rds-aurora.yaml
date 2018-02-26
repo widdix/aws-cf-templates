@@ -264,6 +264,18 @@ Resources:
       Dimensions:
       - Name: DBClusterIdentifier
         Value: !Ref DBCluster
+  DatabaseClusterEventSubscription:
+    Condition: HasAlertTopic
+    Type: 'AWS::RDS::EventSubscription'
+    Properties:
+      EventCategories:
+      - failover
+      - failure
+      - notification
+      SnsTopicArn:
+        'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      SourceIds: [!Ref DBCluster]
+      SourceType: 'db-cluster'
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'
