@@ -1,0 +1,41 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'State: S3 bucket, a cloudonaut.io template'
+Parameters:
+  BucketName:
+    Description: 'Optional name of the bucket.'
+    Type: String
+  Access:
+    Description: 'Access policy of the bucket.'
+    Type: String
+    Default: Private
+    AllowedValues: [Private, PublicRead]
+Conditions:
+  HasPublicReadAccess: !Equals [!Ref Access, PublicRead]
+  HasBucketName: !Not [!Equals [!Ref BucketName, '']]
+Resources:
+  Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !If [HasBucketName, !Ref BucketName, !Ref 'AWS::NoValue']
+  BucketPolicy:
+    Condition: HasPublicReadAccess
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Statement:
+        - Principal: '*'
+          Action: 's3:GetObject'
+          Effect: Allow
+          Resource: !Sub '${Bucket.Arn}/*'
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'state/s3'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
+  BucketName:
+    Description: 'Name of the bucket'
+    Value: !Ref Bucket
