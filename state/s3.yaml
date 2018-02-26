@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'State: S3 bucket, a cloudonaut.io template'
+Description: 'State: S3 bucket, a cloudonaut.io template, contributed by https://github.com/ngault'
 Parameters:
   BucketName:
     Description: 'Optional name of the bucket.'
