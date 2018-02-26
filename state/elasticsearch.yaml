@@ -127,9 +127,11 @@ Resources:
       VPCOptions:
         SecurityGroupIds:
         - !Ref SecurityGroup
-        SubnetIds:
-        - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'
-        - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'
+        SubnetIds: !If
+        - HasSingleClusterInstance
+        - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'
+        - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'
+          - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'
   ClusterStatusYellowAlarm:
     Condition: HasAlertTopicAndNotSingleClusterInstance
     Type: 'AWS::CloudWatch::Alarm'
