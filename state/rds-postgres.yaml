@@ -232,7 +232,7 @@ Resources:
       - recovery
       SnsTopicArn:
         'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      SourceIds: [!Ref DBInstanceIdentifier]
+      SourceIds: [!Ref DBInstance]
       SourceType: 'db-instance'
 Outputs:
   TemplateID:
