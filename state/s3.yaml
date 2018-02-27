@@ -25,7 +25,7 @@ Conditions:
   HasPublicReadAccess: !Equals [!Ref Access, PublicRead]
   HasBucketName: !Not [!Equals [!Ref BucketName, '']]
   HasVersioning: !Equals [!Ref Versioning, true]
-  HasNoncurrentVersionExpirationInDays: !Not [!Equals [!Ref NoncurrentVersionExpirationInDays, -1]]
+  HasNoncurrentVersionExpirationInDays: !Not [!Equals [!Ref NoncurrentVersionExpirationInDays, 0]]
 Resources:
   Bucket:
     Type: 'AWS::S3::Bucket'

@@ -24,6 +24,7 @@ public class TestRDSAurora extends ACloudFormationTest {
                             "state/rds-aurora.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName),
+                            new Parameter().withParameterKey("DBName").withParameterValue("db1"),
                             new Parameter().withParameterKey("DBMasterUserPassword").withParameterValue(password)
                     );
                     // TODO how can we check if this stack works? start a bastion host and try to connect?
