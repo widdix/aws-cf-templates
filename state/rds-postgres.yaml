@@ -44,7 +44,7 @@ Parameters:
   DBMasterUsername:
     Description: 'The master user name for the DB instance (ignored when DBSnapshotIdentifier is set).'
     Type: String
-    Default: admin
+    Default: master
   DBMasterUserPassword:
     Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set).'
     Type: String
