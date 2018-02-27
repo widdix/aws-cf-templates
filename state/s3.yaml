@@ -36,7 +36,7 @@ Resources:
         - AbortIncompleteMultipartUpload:
             DaysAfterInitiation: 7
           Status: Enabled
-        - NoncurrentVersionExpirationInDays: !Ref NoncurrentVersionExpirationInDays
+        - NoncurrentVersionExpirationInDays: !If [HasNoncurrentVersionExpirationInDays, !Ref NoncurrentVersionExpirationInDays, 1]
           Status: !If [HasNoncurrentVersionExpirationInDays, Enabled, Disabled]
       VersioningConfiguration:
         Status: !If [HasVersioning, Enabled, Suspended]
