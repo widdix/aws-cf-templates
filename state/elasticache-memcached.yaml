@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'State: ElastiCache memcached, a cloudonaut.io template, contributed by https://github.com/ngault'
+Description: 'State: ElastiCache memcached, a cloudonaut.io template, sponsored by https://github.com/ngault'
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'

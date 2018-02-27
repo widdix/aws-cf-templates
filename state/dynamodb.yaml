@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'State: DynamoDB table, a cloudonaut.io template, contributed by https://github.com/ngault'
+Description: 'State: DynamoDB table, a cloudonaut.io template, sponsored by https://github.com/ngault'
 Parameters:
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
