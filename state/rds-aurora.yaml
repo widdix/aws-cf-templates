@@ -20,20 +20,27 @@ Parameters:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
+  DBSnapshotIdentifier:
+    Description: 'Optional identifier for the DB cluster snapshot from which you want to restore (leave blank to create an empty cluster).'
+    Type: String
+    Default: ''
   DBInstanceClass:
     Description: 'The instance type of database server.'
     Type: String
     Default: 'db.t2.small'
+  DBName:
+    Description: 'Name of the database (ignored when DBSnapshotIdentifier is set).'
+    Type: String
   DBBackupRetentionPeriod:
     Description: 'The number of days to keep snapshots of the database.'
     Type: Number
     Default: 30
   DBMasterUsername:
-    Description: 'The master user name for the DB instance.'
+    Description: 'The master user name for the DB instance (ignored when DBSnapshotIdentifier is set).'
     Type: 'String'
     Default: admin
   DBMasterUserPassword:
-    Description: 'The master password for the DB instance.'
+    Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set).'
     Type: String
     NoEcho: true
   SubDomainName:
@@ -44,6 +51,7 @@ Conditions:
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, '']]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -120,15 +128,16 @@ Resources:
     Type: 'AWS::RDS::DBCluster'
     Properties:
       BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
-      DatabaseName: stagirite
+      DatabaseName: !Ref DBName
       DBClusterParameterGroupName: !Ref DBClusterParameterGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
       Engine: aurora
       EngineVersion: '5.6.10a'
-      MasterUsername: !Ref DBMasterUsername
-      MasterUserPassword: !Ref DBMasterUserPassword
+      MasterUsername: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUsername]
+      MasterUserPassword: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUserPassword]
       PreferredBackupWindow: '09:54-10:24'
       PreferredMaintenanceWindow: 'sat:07:00-sat:07:30'
+      SnapshotIdentifier: !If [HasDBSnapshotIdentifier, !Ref DBSnapshotIdentifier, !Ref 'AWS::NoValue']
       VpcSecurityGroupIds:
       - !Ref ClusterSecurityGroup
   DBParameterGroup:

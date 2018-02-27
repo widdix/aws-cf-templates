@@ -20,8 +20,12 @@ Parameters:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
+  DBSnapshotIdentifier:
+    Description: 'Optional name or Amazon Resource Name (ARN) of the DB snapshot from which you want to restore (leave blank to create an empty database).'
+    Type: String
+    Default: ''
   DBAllocatedStorage:
-    Description: 'The allocated storage size, specified in gigabytes (GB).'
+    Description: 'The allocated storage size, specified in GB (ignored when DBSnapshotIdentifier is set).'
     Type: Number
     Default: 5
     MinValue: 5
@@ -30,19 +34,26 @@ Parameters:
     Description: 'The instance type of database server.'
     Type: String
     Default: 'db.t2.micro'
+  DBName:
+    Description: 'Name of the database (ignored when DBSnapshotIdentifier is set).'
+    Type: String
   DBBackupRetentionPeriod:
     Description: 'The number of days to keep snapshots of the database.'
     Type: Number
     Default: 30
+  DBMasterUsername:
+    Description: 'The master user name for the DB instance (ignored when DBSnapshotIdentifier is set).'
+    Type: String
+    Default: admin
   DBMasterUserPassword:
-    Description: 'The master password for the DB instance.'
+    Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set).'
     Type: String
     NoEcho: true
   DBMultiAZ:
     Description: 'Specifies if the database instance is deployed to multiple Availability Zones for HA.'
     Type: String
-    AllowedValues: [true, false]
     Default: true
+    AllowedValues: [true, false]
   SubDomainName:
     Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
     Type: String
@@ -51,6 +62,7 @@ Conditions:
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, '']]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -100,17 +112,19 @@ Resources:
   DBInstance:
     Type: 'AWS::RDS::DBInstance'
     Properties:
-      AllocatedStorage: !Ref DBAllocatedStorage
+      AllocatedStorage: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBAllocatedStorage]
       AllowMajorVersionUpgrade: false
       AutoMinorVersionUpgrade: true
       BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
+      CopyTagsToSnapshot: true
       DBInstanceClass: !Ref DBInstanceClass
-      DBName: stagirite
+      DBName: !Ref DBName
+      DBSnapshotIdentifier: !If [HasDBSnapshotIdentifier, !Ref DBSnapshotIdentifier, !Ref 'AWS::NoValue']
       DBSubnetGroupName: !Ref DBSubnetGroup
       Engine: postgres
       EngineVersion: '9.6.5'
-      MasterUsername: stagirite
-      MasterUserPassword: !Ref DBMasterUserPassword
+      MasterUsername: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUsername]
+      MasterUserPassword: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUserPassword]
       MultiAZ: !Ref DBMultiAZ
       PreferredBackupWindow: '09:54-10:24'
       PreferredMaintenanceWindow: 'sat:07:00-sat:07:30'
