@@ -37,6 +37,8 @@ If you have an existing VPC you can wrap it into our required form using a legac
 # VPC with private and public subnets in four Availability Zones
 This template describes a VPC with four private and four public subnets.
 
+![Architecture](./img/vpc-4azs.png)
+
 ## Installation Guide
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-4azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-4azs.yaml)
 1. Click **Next** to proceed with the next step of the wizard.

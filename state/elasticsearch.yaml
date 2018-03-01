@@ -1,0 +1,440 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'State: Elasticsearch, a cloudonaut.io template, sponsored by https://github.com/ngault'
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+  ParentClientStack:
+    Description: 'Stack name of parent client stack based on state/client-sg.yaml template.'
+    Type: String
+  ParentZoneStack:
+    Description: 'Optional stack name of parent zone stack based on vpc/vpc-zone-*.yaml template.'
+    Type: String
+    Default: ''
+  ParentSSHBastionStack:
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Type: String
+    Default: ''
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  DomainName:
+    Description: 'A name for the Amazon ES domain.'
+    Type: String
+  EBSEnabled:
+    Description: 'Specifies whether Amazon EBS volumes are attached to data nodes in the Amazon ES domain (some instance types come with instance store that you can use instead).'
+    Type: String
+    AllowedValues: [true, false]
+    Default: true
+  EBSVolumeSize:
+    Description: 'The size of the EBS volume for each data node. The minimum and maximum size of an EBS volume depends on the EBS volume type and the instance type to which it is attached.'
+    Type: Number
+    Default: 10
+  ClusterInstanceCount:
+    Description: 'The number of data nodes (instances) to use in the Amazon ES domain.'
+    Type: Number
+    Default: 1
+  ClusterInstanceType:
+    Description: 'The instance type for your data nodes.'
+    Type: 'String'
+    Default: 't2.small.elasticsearch'
+  DedicatedMasterCount:
+    Description: 'The number of dedicated master nodes (instances) to use in the Amazon ES domain (set to 0 to disable dedicated master nodes).'
+    Type: Number
+    Default: 0
+  DedicatedMasterType:
+    Description: 'The instance type for your dedicated master nodes.'
+    Type: 'String'
+    Default: 't2.small.elasticsearch'
+  SubDomainName:
+    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
+    Type: String
+    Default: elasticsearch
+Conditions:
+  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+  HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasSingleClusterInstance: !Equals [!Ref ClusterInstanceCount, '1']
+  HasDedicatedMasterNodes: !Not [!Equals [!Ref DedicatedMasterCount, 0]]
+  HasAlertTopicAndNotSingleClusterInstance: !And [!Condition HasAlertTopic, !Not [!Condition HasSingleClusterInstance]]
+Resources:
+  RecordSet:
+    Condition: HasZone
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      HostedZoneId:
+        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      Name: !Sub
+      - '${SubDomainName}.${HostedZoneName}'
+      - SubDomainName: !Ref SubDomainName
+        HostedZoneName:
+          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      ResourceRecords:
+      - !GetAtt 'ElasticsearchDomain.DomainEndpoint'
+      TTL: 60
+      Type: CNAME
+  SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Ref 'AWS::StackName'
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        SourceSecurityGroupId:
+          'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+  SecurityGroupInSSHBastion:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasSSHBastionSecurityGroup
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourceSecurityGroupId:
+        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+  ElasticsearchDomain:
+    Type: 'AWS::Elasticsearch::Domain'
+    Properties:
+      AccessPolicies:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: '*'
+          Action:
+          - 'es:ESHttp*'
+          Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${DomainName}/*'
+      DomainName: !Ref 'DomainName'
+      EBSOptions:
+        EBSEnabled: !Ref EBSEnabled
+        VolumeSize: !Ref EBSVolumeSize
+        VolumeType: gp2
+      ElasticsearchClusterConfig:
+        DedicatedMasterCount: !If [HasDedicatedMasterNodes, !Ref DedicatedMasterCount, !Ref 'AWS::NoValue']
+        DedicatedMasterEnabled: !If [HasDedicatedMasterNodes, true, false]
+        DedicatedMasterType: !If [HasDedicatedMasterNodes, !Ref DedicatedMasterType, !Ref 'AWS::NoValue']
+        InstanceCount: !Ref ClusterInstanceCount
+        InstanceType: !Ref ClusterInstanceType
+        ZoneAwarenessEnabled: !If [HasSingleClusterInstance, false, true]
+      ElasticsearchVersion: '5.5'
+      SnapshotOptions:
+        AutomatedSnapshotStartHour: 10
+      VPCOptions:
+        SecurityGroupIds:
+        - !Ref SecurityGroup
+        SubnetIds: !If
+        - HasSingleClusterInstance
+        - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'
+        - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'
+          - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'
+  ClusterStatusYellowAlarm:
+    Condition: HasAlertTopicAndNotSingleClusterInstance
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Replica shards for at least one index are not allocated to nodes in a cluster.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'ClusterStatus.yellow'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Maximum
+      Threshold: 0
+  ClusterStatusRedAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Primary and replica shards of at least one index are not allocated to nodes in a cluster.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'ClusterStatus.red'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Maximum
+      Threshold: 0
+  ClusterCPUUtilizationTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average CPU utilization over last 10 minutes too high.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'CPUUtilization'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 80
+  ClusterCPUCreditBalanceTooLowAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average CPU credit balance over last 10 minutes too low, expect a significant performance drop soon.'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: CPUCreditBalance
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 20
+  ClusterMasterCPUUtilizationTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average CPU utilization over last 10 minutes too high.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'MasterCPUUtilization'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 50
+  ClusterMasterCPUCreditBalanceTooLowAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average CPU credit balance over last 10 minutes too low, expect a significant performance drop soon.'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: MasterCPUCreditBalance
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 20
+  ClusterFreeStorageSpaceTooLowAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Cluster is running out of storage space.'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'FreeStorageSpace'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Minimum
+      Threshold: 2000 # 2 Gigabyte in Megabyte
+  ClusterIndexWritesBlockedTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Cluster is blocking incoming write requests.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'ClusterIndexWritesBlocked'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Maximum
+      Threshold: 0
+  ClusterJVMMemoryPressureTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average JVM memory pressure over last 10 minutes too high.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'JVMMemoryPressure'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 80
+  ClusterMasterJVMMemoryPressureTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average JVM memory pressure over last 10 minutes too high.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'MasterJVMMemoryPressure'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 80
+  ClusterAutomatedSnapshotFailureTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'No automated snapshot was taken for the domain in the previous 36 hours.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'AutomatedSnapshotFailure'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Maximum
+      Threshold: 0
+  ClusterKibanaHealthyNodesTooLowAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Kibana is inaccessible.'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'KibanaHealthyNodes'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Minimum
+      Threshold: 1
+  ClusterKMSKeyErrorAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'KMS customer master key used to encrypt data at rest has been disabled.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'KMSKeyError'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Maximum
+      Threshold: 0
+  ClusterKMSKeyInaccessibleAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'KMS customer master key used to encrypt data at rest has been deleted or revoked its grants to Amazon ES.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'KMSKeyInaccessible'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Maximum
+      Threshold: 0
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'state/elasticsearch'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
+  DNSName:
+    Description: "The domain-specific endpoint that's used to submit index, search, and data upload requests to an Amazon ES domain."
+    Value: !GetAtt 'ElasticsearchDomain.DomainEndpoint'
+    Export:
+      Name: !Sub '${AWS::StackName}-DNSName'

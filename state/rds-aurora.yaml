@@ -1,0 +1,321 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'State: RDS Aurora, a cloudonaut.io template, sponsored by https://github.com/ngault'
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+  ParentClientStack:
+    Description: 'Stack name of parent client stack based on state/client-sg.yaml template.'
+    Type: String
+  ParentZoneStack:
+    Description: 'Optional stack name of parent zone stack based on vpc/vpc-zone-*.yaml template.'
+    Type: String
+    Default: ''
+  ParentSSHBastionStack:
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Type: String
+    Default: ''
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  DBSnapshotIdentifier:
+    Description: 'Optional identifier for the DB cluster snapshot from which you want to restore (leave blank to create an empty cluster).'
+    Type: String
+    Default: ''
+  DBInstanceClass:
+    Description: 'The instance type of database server.'
+    Type: String
+    Default: 'db.t2.small'
+  DBName:
+    Description: 'Name of the database (ignored when DBSnapshotIdentifier is set).'
+    Type: String
+  DBBackupRetentionPeriod:
+    Description: 'The number of days to keep snapshots of the database.'
+    Type: Number
+    Default: 30
+  DBMasterUsername:
+    Description: 'The master user name for the DB instance (ignored when DBSnapshotIdentifier is set).'
+    Type: 'String'
+    Default: master
+  DBMasterUserPassword:
+    Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set).'
+    Type: String
+    NoEcho: true
+  SubDomainName:
+    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
+    Type: String
+    Default: aurora
+Conditions:
+  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+  HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, '']]
+Resources:
+  RecordSet:
+    Condition: HasZone
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      HostedZoneId:
+        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      Name: !Sub
+      - '${SubDomainName}.${HostedZoneName}'
+      - SubDomainName: !Ref SubDomainName
+        HostedZoneName:
+          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      ResourceRecords:
+      - !GetAtt 'DBCluster.Endpoint.Address'
+      TTL: 60
+      Type: CNAME
+  ReadRecordSet:
+    Condition: HasZone
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      HostedZoneId:
+        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      Name: !Sub
+      - 'read-${SubDomainName}.${HostedZoneName}'
+      - SubDomainName: !Ref SubDomainName
+        HostedZoneName:
+          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      ResourceRecords:
+      - !GetAtt 'DBCluster.ReadEndpoint.Address'
+      TTL: 60
+      Type: CNAME
+  ClusterSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Ref 'AWS::StackName'
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 3306
+        ToPort: 3306
+        SourceSecurityGroupId:
+          'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+  ClusterSecurityGroupInSSHBastion:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasSSHBastionSecurityGroup
+    Properties:
+      GroupId: !Ref ClusterSecurityGroup
+      IpProtocol: tcp
+      FromPort: 3306
+      ToPort: 3306
+      SourceSecurityGroupId:
+        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+  DBSubnetGroup:
+    Type: 'AWS::RDS::DBSubnetGroup'
+    Properties:
+      DBSubnetGroupDescription: !Ref 'AWS::StackName'
+      SubnetIds: !Split
+      - ','
+      - 'Fn::ImportValue':
+          !Sub '${ParentVPCStack}-SubnetsPrivate'
+  DBClusterParameterGroup:
+    Type: 'AWS::RDS::DBClusterParameterGroup'
+    Properties:
+      Description: !Ref 'AWS::StackName'
+      Family: 'aurora5.6'
+      Parameters:
+        character_set_client: utf8
+        character_set_database: utf8
+        character_set_filesystem: utf8
+        character_set_server: utf8
+        collation_server: utf8_general_ci
+  DBCluster:
+    Type: 'AWS::RDS::DBCluster'
+    Properties:
+      BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
+      DatabaseName: !Ref DBName
+      DBClusterParameterGroupName: !Ref DBClusterParameterGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      Engine: aurora
+      EngineVersion: '5.6.10a'
+      MasterUsername: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUsername]
+      MasterUserPassword: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUserPassword]
+      PreferredBackupWindow: '09:54-10:24'
+      PreferredMaintenanceWindow: 'sat:07:00-sat:07:30'
+      SnapshotIdentifier: !If [HasDBSnapshotIdentifier, !Ref DBSnapshotIdentifier, !Ref 'AWS::NoValue']
+      VpcSecurityGroupIds:
+      - !Ref ClusterSecurityGroup
+  DBParameterGroup:
+    Type: 'AWS::RDS::DBParameterGroup'
+    Properties:
+      Description: !Ref 'AWS::StackName'
+      Family: 'aurora5.6'
+      Parameters:
+        innodb_lock_wait_timeout: 10
+        log_output: FILE
+        tx_isolation: 'READ-COMMITTED'
+  DBInstanceA:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: true
+      CopyTagsToSnapshot: true
+      DBClusterIdentifier: !Ref DBCluster
+      DBInstanceClass: !Ref DBInstanceClass
+      DBParameterGroupName: !Ref DBParameterGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      Engine: aurora
+  DBInstanceB:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: true
+      CopyTagsToSnapshot: true
+      DBClusterIdentifier: !Ref DBCluster
+      DBInstanceClass: !Ref DBInstanceClass
+      DBParameterGroupName: !Ref DBParameterGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      Engine: aurora
+  DatabaseACPUUtilizationTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average database CPU utilization over last 10 minutes too high.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value: !Ref DBInstanceA
+      EvaluationPeriods: 1
+      MetricName: CPUUtilization
+      Namespace: 'AWS/RDS'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 80
+  DatabaseBCPUUtilizationTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average database CPU utilization over last 10 minutes too high.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value: !Ref DBInstanceB
+      EvaluationPeriods: 1
+      MetricName: CPUUtilization
+      Namespace: 'AWS/RDS'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 80
+  DatabaseACPUCreditBalanceTooLowAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average database CPU credit balance over last 10 minutes too low, expect a significant performance drop soon.'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value: !Ref DBInstanceA
+      EvaluationPeriods: 1
+      MetricName: CPUCreditBalance
+      Namespace: 'AWS/RDS'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 20
+  DatabaseBCPUCreditBalanceTooLowAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average database CPU credit balance over last 10 minutes too low, expect a significant performance drop soon.'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value: !Ref DBInstanceB
+      EvaluationPeriods: 1
+      MetricName: CPUCreditBalance
+      Namespace: 'AWS/RDS'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 20
+  DatabaseAFreeableMemoryTooLowAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average database freeable memory over last 10 minutes too low, performance may suffer.'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value: !Ref DBInstanceA
+      EvaluationPeriods: 1
+      MetricName: FreeableMemory
+      Namespace: 'AWS/RDS'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 64000000 # 64 Megabyte in Byte
+  DatabaseBFreeableMemoryTooLowAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average database freeable memory over last 10 minutes too low, performance may suffer.'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value: !Ref DBInstanceB
+      EvaluationPeriods: 1
+      MetricName: FreeableMemory
+      Namespace: 'AWS/RDS'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 64000000 # 64 Megabyte in Byte
+  DatabaseClusterEventSubscription:
+    Condition: HasAlertTopic
+    Type: 'AWS::RDS::EventSubscription'
+    Properties:
+      EventCategories:
+      - failover
+      - failure
+      - notification
+      SnsTopicArn:
+        'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      SourceIds: [!Ref DBCluster]
+      SourceType: 'db-cluster'
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'state/rds-aurora'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
+  ClusterName:
+    Description: 'The name of the cluster.'
+    Value: !Ref DBCluster
+    Export:
+      Name: !Sub '${AWS::StackName}-ClusterName'
+  DNSName:
+    Description: 'The connection endpoint for the DB cluster.'
+    Value: !GetAtt 'DBCluster.Endpoint.Address'
+    Export:
+      Name: !Sub '${AWS::StackName}-DNSName'
+  ReadDNSName:
+    Description: 'The reader endpoint for the DB cluster.'
+    Value: !GetAtt 'DBCluster.ReadEndpoint.Address'
+    Export:
+      Name: !Sub '${AWS::StackName}-ReadDNSName'

@@ -1,0 +1,26 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'State: Client security group, a cloudonaut.io template, sponsored by https://github.com/ngault'
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+Resources:
+  ClientSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Ref 'AWS::StackName'
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'state/client-sg'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
+  ClientSecurityGroup:
+    Description: 'Use this Security Group to reference client traffic.'
+    Value: !Ref ClientSecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-ClientSecurityGroup'
