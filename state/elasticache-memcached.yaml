@@ -107,53 +107,59 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
-      Namespace: 'AWS/ElastiCache'
-      MetricName: CPUUtilization
-      Statistic: Average
-      Period: 600
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 80
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average CPU utilization over last 10 minutes too high.'
+      ComparisonOperator: GreaterThanThreshold
       Dimensions:
       - Name: CacheClusterId
         Value: !Ref CacheCluster
+      EvaluationPeriods: 1
+      MetricName: CPUUtilization
+      Namespace: 'AWS/ElastiCache'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 80
   ClusterSwapUsageTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average swap usage over last 10 minutes higher than 64 MB, performance may suffer'
-      Namespace: 'AWS/ElastiCache'
-      MetricName: SwapUsage
-      Statistic: Average
-      Period: 600
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 67108864 # 64 MB in Bytes
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average swap usage over last 10 minutes too high, performance may suffer.'
+      ComparisonOperator: GreaterThanThreshold
       Dimensions:
       - Name: CacheClusterId
         Value: !Ref CacheCluster
+      EvaluationPeriods: 1
+      MetricName: SwapUsage
+      Namespace: 'AWS/ElastiCache'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 256000000 # 256 Megabyte in Byte
   ClusterEvictionsTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average evictions over last 10 minutes higher than 1000, memory may to less for all keys'
-      Namespace: 'AWS/ElastiCache'
-      MetricName: Evictions
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 10
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 1000
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Evictions over last 10 minutes too high, memory may to less for all keys.'
+      ComparisonOperator: GreaterThanThreshold
       Dimensions:
       - Name: CacheClusterId
         Value: !Ref CacheCluster
+      EvaluationPeriods: 10
+      MetricName: Evictions
+      Namespace: 'AWS/ElastiCache'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Sum
+      Threshold: 1000
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'

@@ -136,154 +136,296 @@ Resources:
     Condition: HasAlertTopicAndNotSingleClusterInstance
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Replica shards for at least one index are not allocated to nodes in a cluster'
-      Namespace: 'AWS/ES'
-      MetricName: 'ClusterStatus.yellow'
-      Statistic: Maximum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Replica shards for at least one index are not allocated to nodes in a cluster.'
+      ComparisonOperator: GreaterThanThreshold
       Dimensions:
       - Name: ClientId
         Value: !Ref 'AWS::AccountId'
       - Name: DomainName
         Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'ClusterStatus.yellow'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Maximum
+      Threshold: 0
   ClusterStatusRedAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Primary and replica shards of at least one index are not allocated to nodes in a cluster'
-      Namespace: 'AWS/ES'
-      MetricName: 'ClusterStatus.red'
-      Statistic: Maximum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Primary and replica shards of at least one index are not allocated to nodes in a cluster.'
+      ComparisonOperator: GreaterThanThreshold
       Dimensions:
       - Name: ClientId
         Value: !Ref 'AWS::AccountId'
       - Name: DomainName
         Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'ClusterStatus.red'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Maximum
+      Threshold: 0
   ClusterCPUUtilizationTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
-      Namespace: 'AWS/ES'
-      MetricName: 'CPUUtilization'
-      Statistic: Average
-      Period: 600
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 80
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average CPU utilization over last 10 minutes too high.'
+      ComparisonOperator: GreaterThanThreshold
       Dimensions:
       - Name: ClientId
         Value: !Ref 'AWS::AccountId'
       - Name: DomainName
         Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'CPUUtilization'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 80
+  ClusterCPUCreditBalanceTooLowAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average CPU credit balance over last 10 minutes too low, expect a significant performance drop soon.'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: CPUCreditBalance
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 20
+  ClusterMasterCPUUtilizationTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average CPU utilization over last 10 minutes too high.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'MasterCPUUtilization'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 50
+  ClusterMasterCPUCreditBalanceTooLowAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average CPU credit balance over last 10 minutes too low, expect a significant performance drop soon.'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: MasterCPUCreditBalance
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 20
   ClusterFreeStorageSpaceTooLowAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Cluster is running out of storage space'
-      Namespace: 'AWS/ES'
-      MetricName: 'FreeStorageSpace'
-      Statistic: Minimum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: LessThanThreshold
-      Threshold: 2000 # 2GB in MB
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Cluster is running out of storage space.'
+      ComparisonOperator: LessThanThreshold
       Dimensions:
       - Name: ClientId
         Value: !Ref 'AWS::AccountId'
       - Name: DomainName
         Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'FreeStorageSpace'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Minimum
+      Threshold: 2000 # 2 Gigabyte in Megabyte
   ClusterIndexWritesBlockedTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Cluster is blocking incoming write requests'
-      Namespace: 'AWS/ES'
-      MetricName: 'ClusterIndexWritesBlocked'
-      Statistic: Maximum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Cluster is blocking incoming write requests.'
+      ComparisonOperator: GreaterThanThreshold
       Dimensions:
       - Name: ClientId
         Value: !Ref 'AWS::AccountId'
       - Name: DomainName
         Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'ClusterIndexWritesBlocked'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Maximum
+      Threshold: 0
   ClusterJVMMemoryPressureTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average JVM memory pressure over last 10 minutes higher than 80%'
-      Namespace: 'AWS/ES'
-      MetricName: 'JVMMemoryPressure'
-      Statistic: Average
-      Period: 600
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 80
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average JVM memory pressure over last 10 minutes too high.'
+      ComparisonOperator: GreaterThanThreshold
       Dimensions:
       - Name: ClientId
         Value: !Ref 'AWS::AccountId'
       - Name: DomainName
         Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'JVMMemoryPressure'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 80
+  ClusterMasterJVMMemoryPressureTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average JVM memory pressure over last 10 minutes too high.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'MasterJVMMemoryPressure'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 80
   ClusterAutomatedSnapshotFailureTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'No automated snapshot was taken for the domain in the previous 36 hours'
-      Namespace: 'AWS/ES'
-      MetricName: 'AutomatedSnapshotFailure'
-      Statistic: Maximum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'No automated snapshot was taken for the domain in the previous 36 hours.'
+      ComparisonOperator: GreaterThanThreshold
       Dimensions:
       - Name: ClientId
         Value: !Ref 'AWS::AccountId'
       - Name: DomainName
         Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'AutomatedSnapshotFailure'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Maximum
+      Threshold: 0
   ClusterKibanaHealthyNodesTooLowAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Kibana is inaccessible'
-      Namespace: 'AWS/ES'
-      MetricName: 'KibanaHealthyNodes'
-      Statistic: Minimum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: LessThanThreshold
-      Threshold: 1
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Kibana is inaccessible.'
+      ComparisonOperator: LessThanThreshold
       Dimensions:
       - Name: ClientId
         Value: !Ref 'AWS::AccountId'
       - Name: DomainName
         Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'KibanaHealthyNodes'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Minimum
+      Threshold: 1
+  ClusterKMSKeyErrorAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'KMS customer master key used to encrypt data at rest has been disabled.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'KMSKeyError'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Maximum
+      Threshold: 0
+  ClusterKMSKeyInaccessibleAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'KMS customer master key used to encrypt data at rest has been deleted or revoked its grants to Amazon ES.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'KMSKeyInaccessible'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Maximum
+      Threshold: 0
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id'

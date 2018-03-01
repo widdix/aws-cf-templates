@@ -171,108 +171,120 @@ Resources:
       DBParameterGroupName: !Ref DBParameterGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
       Engine: aurora
-  DatabaseClusterBurstBalanceTooLowAlarm:
+  DatabaseACPUUtilizationTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average database cluster storage burst balance over last 10 minutes lower than 20%, expect a significant performance drop soon'
-      Namespace: 'AWS/RDS'
-      MetricName: BurstBalance
-      Statistic: Average
-      Period: 600
-      EvaluationPeriods: 1
-      ComparisonOperator: LessThanThreshold
-      Threshold: 20
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average database CPU utilization over last 10 minutes too high.'
+      ComparisonOperator: GreaterThanThreshold
       Dimensions:
-      - Name: DBClusterIdentifier
-        Value: !Ref DBCluster
-  DatabaseClusterCPUUtilizationTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Average database cluster CPU utilization over last 10 minutes higher than 80%'
-      Namespace: 'AWS/RDS'
+      - Name: DBInstanceIdentifier
+        Value: !Ref DBInstanceA
+      EvaluationPeriods: 1
       MetricName: CPUUtilization
-      Statistic: Average
+      Namespace: 'AWS/RDS'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Period: 600
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
+      Statistic: Average
       Threshold: 80
-      AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      Dimensions:
-      - Name: DBClusterIdentifier
-        Value: !Ref DBCluster
-  DatabaseClusterDiskQueueDepthTooHighAlarm:
+  DatabaseBCPUUtilizationTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average database cluster disk queue depth over last 10 minutes higher than 64, performance may suffer'
-      Namespace: 'AWS/RDS'
-      MetricName: DiskQueueDepth
-      Statistic: Average
-      Period: 600
-      EvaluationPeriods: 1
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average database CPU utilization over last 10 minutes too high.'
       ComparisonOperator: GreaterThanThreshold
-      Threshold: 64
-      AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
-      - Name: DBClusterIdentifier
-        Value: !Ref DBCluster
-  DatabaseClusterFreeableMemoryTooLowAlarm:
+      - Name: DBInstanceIdentifier
+        Value: !Ref DBInstanceB
+      EvaluationPeriods: 1
+      MetricName: CPUUtilization
+      Namespace: 'AWS/RDS'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 80
+  DatabaseACPUCreditBalanceTooLowAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average database cluster freeable memory over last 10 minutes lower than 64 MB, performance may suffer'
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average database CPU credit balance over last 10 minutes too low, expect a significant performance drop soon.'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value: !Ref DBInstanceA
+      EvaluationPeriods: 1
+      MetricName: CPUCreditBalance
       Namespace: 'AWS/RDS'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 20
+  DatabaseBCPUCreditBalanceTooLowAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average database CPU credit balance over last 10 minutes too low, expect a significant performance drop soon.'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value: !Ref DBInstanceB
+      EvaluationPeriods: 1
+      MetricName: CPUCreditBalance
+      Namespace: 'AWS/RDS'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 20
+  DatabaseAFreeableMemoryTooLowAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average database freeable memory over last 10 minutes too low, performance may suffer.'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value: !Ref DBInstanceA
+      EvaluationPeriods: 1
       MetricName: FreeableMemory
-      Statistic: Average
-      Period: 600
-      EvaluationPeriods: 1
-      ComparisonOperator: LessThanThreshold
-      Threshold: 67108864 # 64 MB in Bytes
-      AlarmActions:
+      Namespace: 'AWS/RDS'
+      OKActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      Dimensions:
-      - Name: DBClusterIdentifier
-        Value: !Ref DBCluster
-  DatabaseClusterFreeStorageSpaceTooLowAlarm:
+      Period: 600
+      Statistic: Average
+      Threshold: 64000000 # 64 Megabyte in Byte
+  DatabaseBFreeableMemoryTooLowAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average database cluster free storage space over last 10 minutes lower than 2 GB'
-      Namespace: 'AWS/RDS'
-      MetricName: FreeStorageSpace
-      Statistic: Average
-      Period: 600
-      EvaluationPeriods: 1
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average database freeable memory over last 10 minutes too low, performance may suffer.'
       ComparisonOperator: LessThanThreshold
-      Threshold: 2147483648 # 2 GB in Bytes
-      AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
-      - Name: DBClusterIdentifier
-        Value: !Ref DBCluster
-  DatabaseClusterSwapUsageTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Average database cluster swap usage over last 10 minutes higher than 256 MB, performance may suffer'
-      Namespace: 'AWS/RDS'
-      MetricName: SwapUsage
-      Statistic: Average
-      Period: 600
+      - Name: DBInstanceIdentifier
+        Value: !Ref DBInstanceB
       EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 268435456 # 256 MB in Bytes
-      AlarmActions:
+      MetricName: FreeableMemory
+      Namespace: 'AWS/RDS'
+      OKActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      Dimensions:
-      - Name: DBClusterIdentifier
-        Value: !Ref DBCluster
+      Period: 600
+      Statistic: Average
+      Threshold: 64000000 # 64 Megabyte in Byte
   DatabaseClusterEventSubscription:
     Condition: HasAlertTopic
     Type: 'AWS::RDS::EventSubscription'
