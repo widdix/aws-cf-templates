@@ -22,6 +22,7 @@ Choose from our template catalog:
 * [Jenkins ](./jenkins/)
 * [Operations](./operations/)
 * [Security](./security/)
+* [State / Data](./state/)
 * [Static Website](./static-website/)
 * [Virtual Private Cloud (VPC)](./vpc/)
 * [WordPress](./wordpress/)
