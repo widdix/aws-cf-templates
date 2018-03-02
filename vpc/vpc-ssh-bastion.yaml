@@ -335,6 +335,9 @@ Resources:
                 - 'a_configure_sshd_command'
                 - 'b_configure_sshd_commanduser'
         config:
+          packages:
+            yum:
+              mysql56: []
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
