@@ -17,6 +17,9 @@ Some data stores are integrated into the VPC, others are only accessible via the
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
+## Dependencies
+* `vpc/vpc-*azs.yaml` (**required**)
+
 # DynamoDB table
 
 DynamoDB table with auto scaling for read and write capacity.
@@ -30,6 +33,12 @@ DynamoDB table with auto scaling for read and write capacity.
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
+## Dependencies
+* `operations/alert.yaml` (recommended)
+
+## Limitations
+* No backup
 
 # ElastiCache memcached
 
@@ -46,6 +55,18 @@ Cluster of memcached nodes.
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
+## Dependencies
+* `vpc/vpc-*azs.yaml` (**required**)
+* `state/client-sg.yaml` (**required**)
+* `vpc/zone-*.yaml`
+* `vpc/vpc-ssh-bastion.yaml`
+* `operations/alert.yaml` (recommended)
+
+## Limitations
+* No backup
+* No data replication (use as a in-memory cache only)
+* No auto scaling
 
 # Elasticsearch
 
@@ -64,6 +85,16 @@ Cluster of Elasticsearch nodes.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
+## Dependencies
+* `vpc/vpc-*azs.yaml` (**required**)
+* `state/client-sg.yaml` (**required**)
+* `vpc/zone-*.yaml`
+* `vpc/vpc-ssh-bastion.yaml`
+* `operations/alert.yaml` (recommended)
+
+## Limitations
+* No auto scaling
+
 # RDS Aurora
 
 Two node Aurora cluster for HA.
@@ -80,6 +111,16 @@ Two node Aurora cluster for HA.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
+## Dependencies
+* `vpc/vpc-*azs.yaml` (**required**)
+* `state/client-sg.yaml` (**required**)
+* `vpc/zone-*.yaml`
+* `vpc/vpc-ssh-bastion.yaml`
+* `operations/alert.yaml` (recommended)
+
+## Limitations
+* No auto scaling
+
 # RDS Postgres
 
 Multi-AZ Postgres for HA.
@@ -95,6 +136,16 @@ Multi-AZ Postgres for HA.
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
+## Dependencies
+* `vpc/vpc-*azs.yaml` (**required**)
+* `state/client-sg.yaml` (**required**)
+* `vpc/zone-*.yaml`
+* `vpc/vpc-ssh-bastion.yaml`
+* `operations/alert.yaml` (recommended)
+
+## Limitations
+* No auto scaling
 
 # S3
 

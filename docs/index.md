@@ -8,10 +8,10 @@ Your source for free [AWS CloudFormation](https://aws.amazon.com/cloudformation/
 * Rely on high-quality infrastructure templates: peer-reviewed by an expert (certified AWS solutions architect Professional) and verified with automated tests.
 * All templates are production-ready. If no other limitations are documented, they are:
     * Highly available: no single point of failure
-    * Scalable: increase or decrease the number of instances based on load
+    * Scalable: increase or decrease the capacity based on utilization
     * Frictionless deployment: deliver new versions of your application automatically without downtime
-    * Secure: using the latest operating systems and software components, follow the least privilege principle in all areas
-    * Operations: provide tools like logging, monitoring and alerting to recognize and debug problems
+    * Secure: using the latest operating systems and software components, follow the least privilege principle in all areas, backups enabled
+    * Operations friendly: provide tools like logging, monitoring and alerting to recognize and debug problems
 * Premium Support available: Get help in case of small and big emergencies and submit a feature request.
 
 # Infrastructure Templates
