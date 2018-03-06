@@ -749,15 +749,14 @@ Resources:
       KeyName: !If [HasKeyName, !Ref WebServerKeyName, !Ref 'AWS::NoValue']
       UserData:
         'Fn::Base64': !Sub |
-          #!/bin/bash -x
-          bash -ex << "TRY"
-            while ! nc -z ${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com 2049; do sleep 10; done
-            sleep 10
-            mkdir /var/www
-            mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 "${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com:/" /var/www/
-            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
-          TRY
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+          #!/bin/bash -ex
+          trap '/opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}' ERR
+          while ! nc -z ${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com 2049; do sleep 10; done
+          sleep 10
+          mkdir /var/www
+          mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 "${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com:/" /var/www/
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     DependsOn:

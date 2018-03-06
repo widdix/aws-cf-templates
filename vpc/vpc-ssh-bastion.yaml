@@ -374,13 +374,12 @@ Resources:
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
       UserData:
         'Fn::Base64': !Sub |
-          #!/bin/bash -x
-          bash -ex << "TRY"
-            INSTANCEID=$(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
-            aws --region ${AWS::Region} ec2 associate-address --instance-id $INSTANCEID --allocation-id ${EIP.AllocationId}
-            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
-          TRY
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+          #!/bin/bash -ex
+          trap '/opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}' ERR
+          INSTANCEID=$(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
+          aws --region ${AWS::Region} ec2 associate-address --instance-id $INSTANCEID --allocation-id ${EIP.AllocationId}
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
