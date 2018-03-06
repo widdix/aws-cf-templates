@@ -21,6 +21,10 @@ Metadata:
       - IAMUserSSHAccess
       - LogsRetentionInDays
       - SubDomainName
+      - UserData
+      - IngressTcpPort1
+      - IngressTcpPort2
+      - IngressTcpPort3
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -78,6 +82,22 @@ Parameters:
     Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
     Type: String
     Default: ''
+  UserData:
+    Description: 'Optional Bash script executed on first instance launch.'
+    Type: String
+    Default: ''
+  IngressTcpPort1:
+    Description: 'Optional port allowing ingress TCP traffic.'
+    Type: String
+    Default: ''
+  IngressTcpPort2:
+    Description: 'Optional port allowing ingress TCP traffic.'
+    Type: String
+    Default: ''
+  IngressTcpPort3:
+    Description: 'Optional port allowing ingress TCP traffic.'
+    Type: String
+    Default: ''
 Mappings:
   RegionMap:
     'ap-south-1':
@@ -117,6 +137,9 @@ Conditions:
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+  HasIngressTcpPort1: !Not [!Equals [!Ref IngressTcpPort1, '']]
+  HasIngressTcpPort2: !Not [!Equals [!Ref IngressTcpPort2, '']]
+  HasIngressTcpPort3: !Not [!Equals [!Ref IngressTcpPort3, '']]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -166,6 +189,33 @@ Resources:
       IpProtocol: tcp
       FromPort: 22
       ToPort: 22
+      CidrIp: '0.0.0.0/0'
+  SecurityGroupIngressTcpPort1:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasIngressTcpPort1
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref IngressTcpPort1
+      ToPort: !Ref IngressTcpPort1
+      CidrIp: '0.0.0.0/0'
+  SecurityGroupIngressTcpPort2:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasIngressTcpPort2
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref IngressTcpPort2
+      ToPort: !Ref IngressTcpPort2
+      CidrIp: '0.0.0.0/0'
+  SecurityGroupIngressTcpPort3:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasIngressTcpPort3
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref IngressTcpPort3
+      ToPort: !Ref IngressTcpPort3
       CidrIp: '0.0.0.0/0'
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
@@ -400,9 +450,11 @@ Resources:
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
       UserData:
         'Fn::Base64': !Sub |
-           #!/bin/bash -x
-           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource VirtualMachine --region ${AWS::Region}
-           /opt/aws/bin/cfn-signal -e $? --region ${AWS::Region} --stack ${AWS::StackName} --resource VirtualMachine
+          #!/bin/bash -ex
+          trap '/opt/aws/bin/cfn-signal -e 1 --region ${AWS::Region} --stack ${AWS::StackName} --resource VirtualMachine' ERR
+          ${UserData}
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource VirtualMachine --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e 0 --region ${AWS::Region} --stack ${AWS::StackName} --resource VirtualMachine
       SubnetId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-${SubnetName}'
       Tags:
@@ -452,6 +504,11 @@ Outputs:
   StackName:
     Description: 'Stack name'
     Value: !Sub '${AWS::StackName}'
+  InstanceId:
+    Description: 'The EC2 instance id.'
+    Value: !Ref VirtualMachine
+    Export:
+      Name: !Sub '${AWS::StackName}-InstanceId'
   IPAddress:
     Description: 'The public IP address of the EC2 instance.'
     Value: !Ref ElasticIP
