@@ -342,6 +342,27 @@ Resources:
       Period: 600
       Statistic: Average
       Threshold: 80
+  ClusterMasterNotReachableFromNodeAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Master node stopped or not reachable. Usually the result of a network connectivity issue or AWS dependency problem.'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: ClientId
+        Value: !Ref 'AWS::AccountId'
+      - Name: DomainName
+        Value: !Ref ElasticsearchDomain
+      EvaluationPeriods: 1
+      MetricName: 'MasterReachableFromNode'
+      Namespace: 'AWS/ES'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Minimum
+      Threshold: 1
   ClusterAutomatedSnapshotFailureTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
