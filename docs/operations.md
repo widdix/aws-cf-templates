@@ -8,6 +8,24 @@ This template describes a SNS topic that can be used by many other templates to 
 
 ![Architecture](./img/operations-alert.png)
 
+## marbot
+
+![marbot](https://marbot.io/assets/marbot.png)
+
+Hi, my name is marbot.
+
+I'm a Slack bot supporting your DevOps team to detect and solve incidents on AWS.
+
+I help you to set up AWS monitoring. There are countless possibilities on AWS. Overlooking the important settings is easy. I connect you with all relevant AWS sources. You never miss an incident again.
+
+Don’t get distracted from your deep work, when not absolutely necessary. I do send alerts to a single team member. Of course, I escalate unnoticed alerts to another team member or the whole crew if necessary.
+
+Instead of cluttering up your inbox with emails I do send alerts via Slack. Just re-use your modern team communication solution. Invite me to multiple Slack channels to separate alerts. You can also talk to me.
+
+I add links to AWS Management Console that are relevant to an incident. Contextual links save you time and reduce human error in stressful situations.
+
+[Try marbot for free now!](https://marbot.io/?utm_source=templates&utm_medium=doc&utm_campaign=operations)
+
 ## Installation Guide
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=operations-alert&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/alert.yaml)
 1. Click **Next** to proceed with the next step of the wizard.
