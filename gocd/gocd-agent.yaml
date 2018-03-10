@@ -114,7 +114,6 @@ Resources:
             yum:
               'java-1.8.0-openjdk': []
               'go-agent': []
-              'git': []
           files:
             '/etc/default/go-agent':
               content: !Sub
