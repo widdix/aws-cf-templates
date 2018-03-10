@@ -191,8 +191,8 @@ Resources:
       MaxSize: 2
       DesiredCapacity: 2
       HealthCheckGracePeriod: 900
-      # TODO ??? HealthCheckType: ELB
-      # TODO NotificationConfigurations:ub '${ParentAlertStack}-TopicARN'
+      # TODO HealthCheckType http://localhost:8152/health/v1/isConnectedToServer
+      # TODO NotificationConfigurations:
       VPCZoneIdentifier:
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
       - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
