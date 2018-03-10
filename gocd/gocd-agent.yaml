@@ -1,0 +1,202 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'GoCD: highly available GoCD agent, a cloudonaut.io template'
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+  ParentGoCDServerStack:
+    Description: 'Stack name of the parent GoCD server based on gocd/gocd-server.yaml template.'
+    Type: String
+  KeyName:
+    Description: 'Optional key pair of the ec2-user to establish a SSH connection to the GoCD agent.'
+    Type: String
+    Default: ''
+Mappings:
+  RegionMap:
+    'ap-south-1':
+      AMI: 'ami-531a4c3c'
+    'eu-west-3':
+      AMI: 'ami-8ee056f3'
+    'eu-west-2':
+      AMI: 'ami-403e2524'
+    'eu-west-1':
+      AMI: 'ami-d834aba1'
+    'ap-northeast-2':
+      AMI: 'ami-863090e8'
+    'ap-northeast-1':
+      AMI: 'ami-ceafcba8'
+    'sa-east-1':
+      AMI: 'ami-84175ae8'
+    'ca-central-1':
+      AMI: 'ami-a954d1cd'
+    'ap-southeast-1':
+      AMI: 'ami-68097514'
+    'ap-southeast-2':
+      AMI: 'ami-942dd1f6'
+    'eu-central-1':
+      AMI: 'ami-5652ce39'
+    'us-east-1':
+      AMI: 'ami-97785bed'
+    'us-east-2':
+      AMI: 'ami-f63b1193'
+    'us-west-1':
+      AMI: 'ami-824c4ee2'
+    'us-west-2':
+      AMI: 'ami-f2d3638a'
+Conditions:
+  HasKeyName: !Not [!Equals [!Ref KeyName, '']]
+Resources:
+  AgentSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Ref 'AWS::StackName'
+      SecurityGroupIngress:
+      - SourceSecurityGroupId:
+          'Fn::ImportValue': !Sub '${ParentGoCDServerStack}-ServerSecurityGroup'
+        FromPort: 8153
+        ToPort: 8153
+        IpProtocol: tcp
+      - CidrIp: '0.0.0.0/0' # TODO shutdown SSH to bastion host
+        FromPort: 22
+        ToPort: 22
+        IpProtocol: tcp
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+  AgentInstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Roles:
+      - !Ref AgentRole
+  AgentRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'ec2.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      Policies:
+      - PolicyName: logs
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'logs:CreateLogGroup'
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+            - 'logs:DescribeLogStreams'
+            Resource: 'arn:aws:logs:*:*:*'
+  AgentLaunchConfiguration:
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+    Metadata:
+      'AWS::CloudFormation::Init':
+        configSets:
+          # TODO default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, install, setup, custom, run], [awslogs, mount, install, setup, custom, run]]
+          default: [adduser, addrepo, install, cfnhup]
+        adduser:
+          commands:
+            'a_groupadd':
+              command: 'groupadd -g 497 go'
+              test: 'if grep -q go: /etc/group; then exit 1; else exit 0; fi'
+            'b_useradd':
+              command: 'adduser -u 498 -g 497 -s /bin/bash -d /var/go -c ''GoCD'' go'
+              test: 'if grep -q go: /etc/passwd; then exit 1; else exit 0; fi'
+        addrepo:
+          commands:
+            'a_add':
+              command: 'curl https://download.gocd.org/gocd.repo -o /etc/yum.repos.d/gocd.repo'
+        install:
+          packages:
+            yum:
+              'java-1.8.0-openjdk': []
+              'go-agent': []
+          files:
+            '/etc/default/go-agent':
+              content: !Sub
+              - |
+                  GO_SERVER_URL=${URL}
+                  AGENT_WORK_DIR=/var/lib/${!SERVICE_NAME:-go-agent}
+              - URL:
+                  'Fn::ImportValue': !Sub '${ParentGoCDServerStack}-URL'
+              mode: '000640'
+              owner: root
+              group: go
+          commands:
+            'a_alternatives':
+              command: '/usr/sbin/alternatives --set java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java'
+          services:
+            sysvinit:
+              'go-agent':
+                enabled: true
+                ensureRunning: true
+                files:
+                - '/etc/default/go-agent'
+        cfnhup:
+          files:
+            '/etc/cfn/cfn-hup.conf':
+              content: !Sub |
+                [main]
+                stack=${AWS::StackId}
+                region=${AWS::Region}
+                interval=1
+              mode: '000400'
+              owner: root
+              group: root
+            '/etc/cfn/hooks.d/cfn-auto-reloader.conf':
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.AgentLaunchConfiguration.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=AgentLaunchConfiguration
+                runas=root
+          services:
+            sysvinit:
+              'cfn-hup':
+                enabled: true
+                ensureRunning: true
+                files:
+                - '/etc/cfn/cfn-hup.conf'
+                - '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
+    Properties:
+      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+      IamInstanceProfile: !Ref AgentInstanceProfile
+      InstanceType: 't2.micro'
+      SecurityGroups:
+      - !Ref AgentSecurityGroup
+      KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+      UserData:
+        'Fn::Base64': !Sub |
+          #!/bin/bash -x
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource AgentLaunchConfiguration --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AgentAutoScalingGroup --region ${AWS::Region}
+          # TODO -e $?
+  AgentAutoScalingGroup: # TODO add monitoring
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      LaunchConfigurationName: !Ref AgentLaunchConfiguration
+      MinSize: 1
+      MaxSize: 1
+      DesiredCapacity: 1
+      HealthCheckGracePeriod: 900
+      # TODO ??? HealthCheckType: ELB
+      # TODO NotificationConfigurations:ub '${ParentAlertStack}-TopicARN'
+      VPCZoneIdentifier:
+      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
+      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        PauseTime: PT15M
+        SuspendProcesses:
+        - HealthCheck
+        - ReplaceUnhealthy
+        - AZRebalance
+        - AlarmNotification
+        - ScheduledActions
+        WaitOnResourceSignals: true
