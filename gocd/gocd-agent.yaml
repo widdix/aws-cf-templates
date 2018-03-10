@@ -1,4 +1,5 @@
 ---
+# TODO what about elasticAgent ?
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'GoCD: highly available GoCD agent, a cloudonaut.io template'
 Parameters:
@@ -12,6 +13,9 @@ Parameters:
     Description: 'Optional key pair of the ec2-user to establish a SSH connection to the GoCD agent.'
     Type: String
     Default: ''
+  AgentAutoRegisterKey:
+    Description: 'Shared key between the GoCD agent and GoCD server for auto registration.'
+    Type: String
 Mappings:
   RegionMap:
     'ap-south-1':
@@ -125,6 +129,11 @@ Resources:
               mode: '000640'
               owner: root
               group: go
+            '/var/lib/go-agent/config/autoregister.properties':
+              content: !Sub |
+                agent.auto.register.key=${AgentAutoRegisterKey}
+                agent.auto.register.resources=java
+                agent.auto.register.environments=AWS
           commands:
             'a_alternatives':
               command: '/usr/sbin/alternatives --set java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java'
@@ -178,9 +187,9 @@ Resources:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
       LaunchConfigurationName: !Ref AgentLaunchConfiguration
-      MinSize: 1
-      MaxSize: 1
-      DesiredCapacity: 1
+      MinSize: 2
+      MaxSize: 2
+      DesiredCapacity: 2
       HealthCheckGracePeriod: 900
       # TODO ??? HealthCheckType: ELB
       # TODO NotificationConfigurations:ub '${ParentAlertStack}-TopicARN'
