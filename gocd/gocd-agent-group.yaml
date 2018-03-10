@@ -60,7 +60,7 @@ Resources:
     Properties:
       AdjustmentType: ChangeInCapacity
       AutoScalingGroupName: !Ref AgentAutoScalingGroup
-      Cooldown: 300
+      Cooldown: 60
       ScalingAdjustment: 1
   AgentScheduledJobsHighAlarm:
     Type: 'AWS::CloudWatch::Alarm'
@@ -69,7 +69,7 @@ Resources:
       Statistic: Maximum  # special rule because we scale on build queue length
       Threshold: 1
       AlarmDescription: 'Jobs are waiting for agents.'
-      Period: 120
+      Period: 60
       AlarmActions:
       - !Ref AgentScalingPolicyOut
       Namespace: !Ref 'AWS::StackName'
@@ -149,6 +149,7 @@ Resources:
             yum:
               'java-1.8.0-openjdk': []
               'go-agent': []
+              'git': []
           files:
             '/etc/default/go-agent':
               content: !Sub
@@ -174,7 +175,7 @@ Resources:
                   HOME=/
                   * * * * * root aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name ScheduledJobs --value $(curl --insecure -s -m 60 '${URL}/api/jobs/scheduled.xml' | grep '<job' | wc -l) --unit Count
               - URL:
-                'Fn::ImportValue': !Sub '${ParentGoCDServerStack}-URL'
+                  'Fn::ImportValue': !Sub '${ParentGoCDServerStack}-URL'
               mode: '000600'
               owner: root
               group: root
@@ -252,3 +253,10 @@ Resources:
         - AlarmNotification
         - ScheduledActions
         WaitOnResourceSignals: true
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'gocd/gocd-agent-group'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
