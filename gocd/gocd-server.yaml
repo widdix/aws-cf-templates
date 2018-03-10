@@ -157,13 +157,6 @@ Resources:
             - 'logs:PutLogEvents'
             - 'logs:DescribeLogStreams'
             Resource: 'arn:aws:logs:*:*:*'
-      - PolicyName: cloudwatch
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action: 'cloudwatch:PutMetricData'
-            Resource: '*'
   ServerLaunchConfiguration:
     Type: 'AWS::AutoScaling::LaunchConfiguration'
     Metadata:
@@ -218,17 +211,6 @@ Resources:
               'java-1.8.0-openjdk': []
               'go-server': []
               'git': []
-          files:
-            '/etc/cron.d/gocd-scheduled-jobs':
-              content: !Sub |
-                SHELL=/bin/bash
-                PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin
-                MAILTO=root
-                HOME=/
-                * * * * * root aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name ScheduledJobs --value $(curl -s -m 60 'http://localhost:8153/go/api/jobs/scheduled.xml' | grep '<job' | wc -l) --unit Count
-              mode: '000600'
-              owner: root
-              group: root
           commands:
             'a_alternatives':
               command: '/usr/sbin/alternatives --set java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java'
@@ -266,7 +248,7 @@ Resources:
     Properties:
       ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
       IamInstanceProfile: !Ref ServerInstanceProfile
-      InstanceType: 't2.micro'
+      InstanceType: 't2.small'
       SecurityGroups:
       - !Ref ServerSecurityGroup
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
@@ -274,8 +256,7 @@ Resources:
         'Fn::Base64': !Sub |
           #!/bin/bash -x
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource ServerLaunchConfiguration --region ${AWS::Region}
-          /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource ServerAutoScalingGroup --region ${AWS::Region}
-          # TODO -e $?
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ServerAutoScalingGroup --region ${AWS::Region}
   ServerAutoScalingGroup: # TODO add monitoring
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     DependsOn:

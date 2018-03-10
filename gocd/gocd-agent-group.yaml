@@ -1,7 +1,7 @@
 ---
 # TODO what about elasticAgent ?
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'GoCD: highly available GoCD agent, a cloudonaut.io template'
+Description: 'GoCD: highly available GoCD agent group, a cloudonaut.io template'
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -16,6 +16,10 @@ Parameters:
   AgentAutoRegisterKey:
     Description: 'Shared key between the GoCD agent and GoCD server for auto registration.'
     Type: String
+  AgentAutoRegisterResources:
+    Description: 'Comma separated list resources of the agent GoCd agent group.'
+    Type: String
+    Default: java
 Mappings:
   RegionMap:
     'ap-south-1':
@@ -51,6 +55,26 @@ Mappings:
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
 Resources:
+  AgentScalingPolicyOut:
+    Type: 'AWS::AutoScaling::ScalingPolicy'
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref AgentAutoScalingGroup
+      Cooldown: 300
+      ScalingAdjustment: 1
+  AgentScheduledJobsHighAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      EvaluationPeriods: 1
+      Statistic: Maximum  # special rule because we scale on build queue length
+      Threshold: 1
+      AlarmDescription: 'Jobs are waiting for agents.'
+      Period: 120
+      AlarmActions:
+      - !Ref AgentScalingPolicyOut
+      Namespace: !Ref 'AWS::StackName'
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      MetricName: ScheduledJobs
   AgentSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -94,6 +118,13 @@ Resources:
             - 'logs:PutLogEvents'
             - 'logs:DescribeLogStreams'
             Resource: 'arn:aws:logs:*:*:*'
+      - PolicyName: cloudwatch
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action: 'cloudwatch:PutMetricData'
+            Resource: '*'
   AgentLaunchConfiguration:
     Type: 'AWS::AutoScaling::LaunchConfiguration'
     Metadata:
@@ -132,8 +163,21 @@ Resources:
             '/var/lib/go-agent/config/autoregister.properties':
               content: !Sub |
                 agent.auto.register.key=${AgentAutoRegisterKey}
-                agent.auto.register.resources=java
+                agent.auto.register.resources=${AgentAutoRegisterResources}
                 agent.auto.register.environments=AWS
+            '/etc/cron.d/gocd-scheduled-jobs':
+              content: !Sub
+              - |
+                  SHELL=/bin/bash
+                  PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin
+                  MAILTO=root
+                  HOME=/
+                  * * * * * root aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name ScheduledJobs --value $(curl --insecure -s -m 60 '${URL}/api/jobs/scheduled.xml' | grep '<job' | wc -l) --unit Count
+              - URL:
+                'Fn::ImportValue': !Sub '${ParentGoCDServerStack}-URL'
+              mode: '000600'
+              owner: root
+              group: root
           commands:
             'a_alternatives':
               command: '/usr/sbin/alternatives --set java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java'
@@ -181,15 +225,14 @@ Resources:
         'Fn::Base64': !Sub |
           #!/bin/bash -x
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource AgentLaunchConfiguration --region ${AWS::Region}
-          /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AgentAutoScalingGroup --region ${AWS::Region}
-          # TODO -e $?
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AgentAutoScalingGroup --region ${AWS::Region}
   AgentAutoScalingGroup: # TODO add monitoring
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
       LaunchConfigurationName: !Ref AgentLaunchConfiguration
-      MinSize: 2
-      MaxSize: 2
-      DesiredCapacity: 2
+      MinSize: 1
+      MaxSize: 4
+      DesiredCapacity: 1
       HealthCheckGracePeriod: 900
       # TODO HealthCheckType http://localhost:8152/health/v1/isConnectedToServer
       # TODO NotificationConfigurations:
