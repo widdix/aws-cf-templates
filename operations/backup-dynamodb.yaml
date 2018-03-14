@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Operations: DynamoDB backup with Data Pipeline, a cloudonaut.io template'
+Description: 'Operations: DynamoDB backup with Data Pipeline (deprecated, use operations/backup-dynamodb-native.yaml instead), a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
