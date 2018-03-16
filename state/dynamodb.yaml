@@ -1,0 +1,254 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'State: DynamoDB table, a cloudonaut.io template, sponsored by https://github.com/ngault'
+Parameters:
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  TableName:
+    Description: 'Optional name of the table (auto generated if not set.'
+    Type: String
+    Default: ''
+  PartitionKeyName:
+    Description: 'Name of the partition key.'
+    Type: String
+  PartitionKeyType:
+    Description: 'Type of the partition key.'
+    Type: String
+    Default: S
+    AllowedValues: [S, N, B]
+  SortKeyName:
+    Description: 'Optional name of the sort key.'
+    Type: String
+    Default: ''
+  SortKeyType:
+    Description: 'Type of the sort key (if SortKeyName is set).'
+    Type: String
+    Default: N
+    AllowedValues: [S, N, B]
+  MaxWriteCapacityUnits:
+    Description: 'Maximum write capacity units used during auto scaling.'
+    Type: Number
+    Default: 1
+  MinWriteCapacityUnits:
+    Description: 'Minimum write capacity units used during auto scaling.'
+    Type: Number
+    Default: 1
+  WriteCapacityUnitsUtilizationTarget:
+    Description: 'Target write capacity utilization (in percent) that auto scaling tries to achieve (if you have spiky writes, a lower number is better).'
+    Type: Number
+    Default: 80
+  MaxReadCapacityUnits:
+    Description: 'Maximum read capacity units used during auto scaling.'
+    Type: Number
+    Default: 1
+  MinReadCapacityUnits:
+    Description: 'Minimum read capacity units used during auto scaling.'
+    Type: Number
+    Default: 1
+  ReadCapacityUnitsUtilizationTarget:
+    Description: 'Target read capacity utilization (in percent) that auto scaling tries to achieve (if you have spiky reads, a lower number is better).'
+    Type: Number
+    Default: 80
+Conditions:
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasSortKey: !Not [!Equals [!Ref SortKeyName, '']]
+  HasTableName: !Not [!Equals [!Ref TableName, '']]
+Resources:
+  Table:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: !If [HasTableName, !Ref TableName, !Ref 'AWS::NoValue']
+      AttributeDefinitions: !If
+      - HasSortKey
+      - - AttributeName: !Ref PartitionKeyName
+          AttributeType: !Ref PartitionKeyType
+        - AttributeName: !Ref SortKeyName
+          AttributeType: !Ref SortKeyType
+      - - AttributeName: !Ref PartitionKeyName
+          AttributeType: !Ref PartitionKeyType
+      KeySchema: !If
+      - HasSortKey
+      - - AttributeName: !Ref PartitionKeyName
+          KeyType: HASH
+        - AttributeName: !Ref SortKeyName
+          KeyType: RANGE
+      - - AttributeName: !Ref PartitionKeyName
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: !Ref MinReadCapacityUnits
+        WriteCapacityUnits: !Ref MinWriteCapacityUnits
+  RoleScaling:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              'application-autoscaling.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      Policies:
+      - PolicyName: scaling
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'dynamodb:DescribeTable'
+            - 'dynamodb:UpdateTable'
+            - 'cloudwatch:PutMetricAlarm'
+            - 'cloudwatch:DescribeAlarms'
+            - 'cloudwatch:GetMetricStatistics'
+            - 'cloudwatch:SetAlarmState'
+            - 'cloudwatch:DeleteAlarms'
+            Resource: '*'
+  WriteScalableTarget:
+    Type: 'AWS::ApplicationAutoScaling::ScalableTarget'
+    Properties:
+      MaxCapacity: !Ref MaxWriteCapacityUnits
+      MinCapacity: !Ref MinWriteCapacityUnits
+      ResourceId: !Sub 'table/${Table}'
+      RoleARN: !GetAtt 'RoleScaling.Arn'
+      ScalableDimension: 'dynamodb:table:WriteCapacityUnits'
+      ServiceNamespace: dynamodb
+  ReadScalableTarget:
+    Type: 'AWS::ApplicationAutoScaling::ScalableTarget'
+    Properties:
+      MaxCapacity: !Ref MaxReadCapacityUnits
+      MinCapacity: !Ref MinReadCapacityUnits
+      ResourceId: !Sub 'table/${Table}'
+      RoleARN: !GetAtt 'RoleScaling.Arn'
+      ScalableDimension: 'dynamodb:table:ReadCapacityUnits'
+      ServiceNamespace: dynamodb
+  WriteScalingPolicy:
+    Type: 'AWS::ApplicationAutoScaling::ScalingPolicy'
+    Properties:
+      PolicyName: !Sub '${Table}-WriteScalingPolicy'
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref WriteScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: !Ref WriteCapacityUnitsUtilizationTarget
+        ScaleInCooldown: 600
+        ScaleOutCooldown: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBWriteCapacityUtilization
+  ReadScalingPolicy:
+    Type: 'AWS::ApplicationAutoScaling::ScalingPolicy'
+    Properties:
+      PolicyName: !Sub '${Table}-ReadScalingPolicy'
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref ReadScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: !Ref ReadCapacityUnitsUtilizationTarget
+        ScaleInCooldown: 600
+        ScaleOutCooldown: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBReadCapacityUtilization
+  ReadThrottleEventsAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Reads are throttled. Lower ReadCapacityUnitsUtilizationTarget or increase MaxReadCapacityUnits.'
+      Namespace: 'AWS/DynamoDB'
+      MetricName: ReadThrottleEvents
+      Dimensions:
+      - Name: TableName
+        Value: !Ref Table
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+  WriteThrottleEventsAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Writes are throttled. Lower WriteCapacityUnitsUtilizationTarget or increase MaxWriteCapacityUnits.'
+      Namespace: 'AWS/DynamoDB'
+      MetricName: WriteThrottleEvents
+      Dimensions:
+      - Name: TableName
+        Value: !Ref Table
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+  ThrottledRequestsEventsAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Batch requests are throttled. Lower {Read/Write}CapacityUnitsUtilizationTarget or increase Max{Read/Write}CapacityUnits.'
+      Namespace: 'AWS/DynamoDB'
+      MetricName: ThrottledRequests
+      Dimensions:
+      - Name: TableName
+        Value: !Ref Table
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+  UserErrorsAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'User errors'
+      Namespace: 'AWS/DynamoDB'
+      MetricName: UserErrors
+      Dimensions:
+      - Name: TableName
+        Value: !Ref Table
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+  SystemErrorsAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'System errors'
+      Namespace: 'AWS/DynamoDB'
+      MetricName: SystemErrors
+      Dimensions:
+      - Name: TableName
+        Value: !Ref Table
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'state/dynamodb'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
+  TableName:
+    Description: 'Name of the table'
+    Value: !Ref Table

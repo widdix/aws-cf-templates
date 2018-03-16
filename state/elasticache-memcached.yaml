@@ -1,0 +1,179 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'State: ElastiCache memcached, a cloudonaut.io template, sponsored by https://github.com/ngault'
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+  ParentClientStack:
+    Description: 'Stack name of parent client stack based on state/client-sg.yaml template.'
+    Type: String
+  ParentZoneStack:
+    Description: 'Optional stack name of parent zone stack based on vpc/vpc-zone-*.yaml template.'
+    Type: String
+    Default: ''
+  ParentSSHBastionStack:
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Type: String
+    Default: ''
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  CacheNodeType:
+    Description: 'The compute and memory capacity of the nodes in the node group (shard).'
+    Type: 'String'
+    Default: 'cache.t2.micro'
+  NumCacheNodes:
+    Description: 'The initial number of cache nodes that the cluster has.'
+    Type: 'Number'
+    Default: 1
+  SubDomainName:
+    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
+    Type: String
+    Default: memcached
+Conditions:
+  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+  HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasSingleCacheNode: !Equals [!Ref NumCacheNodes, '1']
+Resources:
+  RecordSet:
+    Condition: HasZone
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      HostedZoneId:
+        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      Name: !Sub
+      - '${SubDomainName}.${HostedZoneName}'
+      - SubDomainName: !Ref SubDomainName
+        HostedZoneName:
+          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      ResourceRecords:
+      - !GetAtt 'CacheCluster.ConfigurationEndpoint.Address'
+      TTL: 60
+      Type: CNAME
+  CacheParameterGroupName:
+    Type: 'AWS::ElastiCache::ParameterGroup'
+    Properties:
+      CacheParameterGroupFamily: 'memcached1.4'
+      Description: !Ref 'AWS::StackName'
+      Properties: {}
+  CacheSubnetGroupName:
+    Type: 'AWS::ElastiCache::SubnetGroup'
+    Properties:
+      Description: !Ref 'AWS::StackName'
+      SubnetIds: !Split
+      - ','
+      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'
+  SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Ref 'AWS::StackName'
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 11211
+        ToPort: 11211
+        SourceSecurityGroupId:
+          'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'
+  SecurityGroupInSSHBastion:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasSSHBastionSecurityGroup
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: 11211
+      ToPort: 11211
+      SourceSecurityGroupId:
+        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+  CacheCluster:
+    Type: 'AWS::ElastiCache::CacheCluster'
+    Properties:
+      AutoMinorVersionUpgrade: true
+      AZMode: !If [HasSingleCacheNode, 'single-az', 'cross-az']
+      CacheNodeType: !Ref CacheNodeType
+      CacheParameterGroupName: !Ref CacheParameterGroupName
+      CacheSubnetGroupName: !Ref CacheSubnetGroupName
+      Engine: memcached
+      EngineVersion: '1.4.34'
+      NotificationTopicArn: !If [HasAlertTopic, {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}, !Ref 'AWS::NoValue']
+      NumCacheNodes: !Ref NumCacheNodes
+      PreferredMaintenanceWindow: 'sat:07:00-sat:08:00'
+      VpcSecurityGroupIds:
+      - !Ref SecurityGroup
+  ClusterCPUUtilizationTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average CPU utilization over last 10 minutes too high.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: CacheClusterId
+        Value: !Ref CacheCluster
+      EvaluationPeriods: 1
+      MetricName: CPUUtilization
+      Namespace: 'AWS/ElastiCache'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 80
+  ClusterSwapUsageTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Average swap usage over last 10 minutes too high, performance may suffer.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: CacheClusterId
+        Value: !Ref CacheCluster
+      EvaluationPeriods: 1
+      MetricName: SwapUsage
+      Namespace: 'AWS/ElastiCache'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 600
+      Statistic: Average
+      Threshold: 256000000 # 256 Megabyte in Byte
+  ClusterEvictionsTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      AlarmDescription: 'Evictions over last 10 minutes too high, memory may to less for all keys.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: CacheClusterId
+        Value: !Ref CacheCluster
+      EvaluationPeriods: 10
+      MetricName: Evictions
+      Namespace: 'AWS/ElastiCache'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Period: 60
+      Statistic: Sum
+      Threshold: 1000
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'state/elasticache-memcached'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
+  ClusterName:
+    Description: 'The name of the cluster'
+    Value: !Ref CacheCluster
+    Export:
+      Name: !Sub '${AWS::StackName}-ClusterName'
+  DNSName:
+    Description: 'he DNS address of the configuration endpoint for the Memcached cache cluster.'
+    Value: !GetAtt 'CacheCluster.ConfigurationEndpoint.Address'
+    Export:
+      Name: !Sub '${AWS::StackName}-DNSName'

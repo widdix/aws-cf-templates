@@ -1,0 +1,63 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'State: S3 bucket, a cloudonaut.io template, sponsored by https://github.com/ngault'
+Parameters:
+  BucketName:
+    Description: 'Optional name of the bucket.'
+    Type: String
+    Default: ''
+  Access:
+    Description: 'Access policy of the bucket.'
+    Type: String
+    Default: Private
+    AllowedValues: [Private, PublicRead]
+  Versioning:
+    Description: 'Enable versioning to keep a backup if objects change.'
+    Type: String
+    Default: true
+    AllowedValues: [true, false]
+  NoncurrentVersionExpirationInDays:
+    Description: 'Remove noncurrent object versions after days (set to 0 to disable).'
+    Type: Number
+    Default: 0
+    MinValue: 0
+Conditions:
+  HasPublicReadAccess: !Equals [!Ref Access, PublicRead]
+  HasBucketName: !Not [!Equals [!Ref BucketName, '']]
+  HasVersioning: !Equals [!Ref Versioning, true]
+  HasNoncurrentVersionExpirationInDays: !Not [!Equals [!Ref NoncurrentVersionExpirationInDays, 0]]
+Resources:
+  Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !If [HasBucketName, !Ref BucketName, !Ref 'AWS::NoValue']
+      LifecycleConfiguration:
+        Rules:
+        - AbortIncompleteMultipartUpload:
+            DaysAfterInitiation: 7
+          Status: Enabled
+        - NoncurrentVersionExpirationInDays: !If [HasNoncurrentVersionExpirationInDays, !Ref NoncurrentVersionExpirationInDays, 1]
+          Status: !If [HasNoncurrentVersionExpirationInDays, Enabled, Disabled]
+      VersioningConfiguration:
+        Status: !If [HasVersioning, Enabled, Suspended]
+  BucketPolicy:
+    Condition: HasPublicReadAccess
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Statement:
+        - Principal: '*'
+          Action: 's3:GetObject'
+          Effect: Allow
+          Resource: !Sub '${Bucket.Arn}/*'
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'state/s3'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
+  BucketName:
+    Description: 'Name of the bucket'
+    Value: !Ref Bucket

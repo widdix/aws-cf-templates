@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Deprecated: Use the new backup feature: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Backup.Tutorial.html Operations: DynamoDB backup with Data Pipeline, a cloudonaut.io template'
+Description: 'Operations: DynamoDB backup with Data Pipeline (deprecated, use operations/backup-dynamodb-native.yaml instead), a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:

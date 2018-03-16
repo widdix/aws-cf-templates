@@ -9,6 +9,7 @@ pages:
 - 'Jenkins': 'jenkins.md'
 - 'Operations': 'operations.md'
 - 'Security': 'security.md'
+- 'State / Data': 'state.md'
 - 'Static Website': 'static-website.md'
 - 'VPC': 'vpc.md'
 - 'WordPress': 'wordpress.md'

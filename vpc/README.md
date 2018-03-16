@@ -18,5 +18,5 @@ $ for region in $regions; do ami=$(aws --region $region ec2 describe-images --fi
 
 #### NATAMI
 ```
-$ for region in $regions; do ami=$(aws --region $region ec2 describe-images --filters "Name=name,Values=amzn-ami-vpc-nat-hvm-2017.09.1.20180108-x86_64-ebs" --query "Images[0].ImageId" --output "text"); printf "'$region':\n  NATAMI: '$ami'\n"; done
+$ for region in $regions; do ami=$(aws --region $region ec2 describe-images --filters "Name=name,Values=amzn-ami-vpc-nat-hvm-2017.09.1.20180115-x86_64-ebs" --query "Images[0].ImageId" --output "text"); printf "'$region':\n  NATAMI: '$ami'\n"; done
 ```

@@ -1,0 +1,136 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Operations: DynamoDB native backup, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentAlertStack
+    - Label:
+        default: 'DynamoDB Parameters'
+      Parameters:
+      - TableName
+Parameters:
+  ParentAlertStack:
+    Description: 'Stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+  TableName:
+    Description: 'DynamoDB table name'
+    Type: String
+Conditions:
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+Resources:
+  LambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'lambda.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+      - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+      - PolicyName: dynamodb
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action: 'dynamodb:CreateBackup'
+            Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}'
+  LambdaRule:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      ScheduleExpression: 'rate(1 day)'
+      State: ENABLED
+      Targets:
+      - Arn: !GetAtt 'LambdaFunction.Arn'
+        Id: lambda
+  LambdaRuleFailedInvocationsTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Invocations failed permanently'
+      Namespace: 'AWS/Events'
+      MetricName: FailedInvocations
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: RuleName
+        Value: !Ref LambdaRule
+  LambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref LambdaFunction
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt 'LambdaRule.Arn'
+  LambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        ZipFile: !Sub |
+          'use strict';
+          const AWS = require('aws-sdk');
+          const dynamodb = new AWS.DynamoDB({apiVersion: '2012-08-10'});
+          exports.handler = (event, context, cb) => {
+            console.log(`Invoke: ${!JSON.stringify(event)}`);
+            dynamodb.createBackup({
+              BackupName: `${TableName}-${!event.id}`,
+              TableName: '${TableName}'
+            }, cb)
+          };
+      Handler: 'index.handler'
+      MemorySize: 128
+      Role: !GetAtt 'LambdaRole.Arn'
+      Runtime: 'nodejs6.10'
+      Timeout: 60
+  LambdaFunctionErrorsTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Invocations failed due to errors in the function'
+      Namespace: 'AWS/Lambda'
+      MetricName: Errors
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref LambdaFunction
+  LambdaFunctionThrottlesTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Invocation attempts that were throttled due to invocation rates exceeding the concurrent limits'
+      Namespace: 'AWS/Lambda'
+      MetricName: Throttles
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref LambdaFunction
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id'
+    Value: 'operations/backup-dynamodb-native'
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
