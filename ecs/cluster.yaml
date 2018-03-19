@@ -1023,7 +1023,7 @@ Resources:
       AdjustmentType: PercentChangeInCapacity
       MinAdjustmentStep: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
-      Cooldown: 300
+      Cooldown: 600
       ScalingAdjustment: 25
   ScaleDownPolicy:
     Type: 'AWS::AutoScaling::ScalingPolicy'
@@ -1031,7 +1031,7 @@ Resources:
       AdjustmentType: PercentChangeInCapacity
       MinAdjustmentStep: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
-      Cooldown: 300
+      Cooldown: 600
       ScalingAdjustment: -25
   ContainerInstancesShortageAlarm:
     Type: 'AWS::CloudWatch::Alarm'
