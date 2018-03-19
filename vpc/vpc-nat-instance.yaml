@@ -136,9 +136,9 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: !Sub
-      - 'NAT instance 10.${ClassB}.0.0/16'
-      - ClassB:
-          'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
+      - 'NAT instance ${CidrBlock}'
+      - CidrBlock:
+          'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'
       SecurityGroupEgress:
       - IpProtocol: udp
         FromPort: 123
@@ -156,24 +156,18 @@ Resources:
       - IpProtocol: udp
         FromPort: 123
         ToPort: 123
-        CidrIp: !Sub
-        - '10.${ClassB}.0.0/16'
-        - ClassB:
-            'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
+        CidrIp:
+          'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'
       - IpProtocol: tcp
         FromPort: 80
         ToPort: 80
-        CidrIp: !Sub
-        - '10.${ClassB}.0.0/16'
-        - ClassB:
-            'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
+        CidrIp:
+          'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'
       - IpProtocol: tcp
         FromPort: 443
         ToPort: 443
-        CidrIp: !Sub
-        - '10.${ClassB}.0.0/16'
-        - ClassB:
-            'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
+        CidrIp:
+          'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
   NATSecurityGroupInSSHBastion:
@@ -470,9 +464,9 @@ Resources:
       Tags:
       - Key: Name
         Value: !Sub
-        - 'NAT instance 10.${ClassB}.0.0/16'
-        - ClassB:
-            'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
+        - 'NAT instance ${CidrBlock}'
+        - CidrBlock:
+            'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'
         PropagateAtLaunch: true
       NotificationConfigurations: !If
       - HasAlertTopic
