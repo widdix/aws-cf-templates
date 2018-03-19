@@ -324,6 +324,11 @@ Resources:
       - ContainerName: main
         ContainerPort: 80
         TargetGroupArn: !Ref LoadBalancerTargetGroup
+      PlacementStrategies:
+      - Type: spread
+        Field: 'attribute:ecs.availability-zone'
+      - Type: spread
+        Field: instanceId
       Role: !GetAtt 'ServiceRole.Arn'
       TaskDefinition: !Ref TaskDefinition
   ScalableTargetRole: # based on http://docs.aws.amazon.com/AmazonECS/latest/developerguide/autoscale_IAM_role.html
