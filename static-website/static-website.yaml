@@ -44,7 +44,7 @@ Parameters:
     Type: String
     Default: ''
   HostedZoneId:
-    Description: 'Deprecated, use ParentZoneStack instead! The Id of the hosted zone managed by AWS Route53.'
+    Description: 'Deprecated in v7, will be removed in v8, use ParentZoneStack instead! The Id of the hosted zone managed by AWS Route53.'
     Type: String
     Default: ''
 Conditions:
