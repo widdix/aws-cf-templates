@@ -821,7 +821,7 @@ Resources:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
       AdjustmentType: PercentChangeInCapacity
-      MinAdjustmentStep: 1
+      MinAdjustmentMagnitude: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
       Cooldown: 900
       ScalingAdjustment: 25
@@ -845,7 +845,7 @@ Resources:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
       AdjustmentType: PercentChangeInCapacity
-      MinAdjustmentStep: 1
+      MinAdjustmentMagnitude: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
       Cooldown: 300
       ScalingAdjustment: -25
