@@ -72,8 +72,11 @@ Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
     Value: 'vpc/vpc-flowlog'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   LogGroupName:
     Description: 'The name of the CloudWatch Logs log group where Amazon EC2 publishes your flow logs.'

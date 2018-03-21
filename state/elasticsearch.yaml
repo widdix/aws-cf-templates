@@ -471,10 +471,13 @@ Resources:
       Threshold: 0
 Outputs:
   TemplateID:
-    Description: 'cloudonaut.io template id'
+    Description: 'cloudonaut.io template id.'
     Value: 'state/elasticsearch'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   DNSName:
     Description: "The domain-specific endpoint that's used to submit index, search, and data upload requests to an Amazon ES domain."

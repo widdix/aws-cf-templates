@@ -1051,10 +1051,13 @@ Resources:
           MinimumProtocolVersion: TLSv1
 Outputs:
   TemplateID:
-    Description: 'cloudonaut.io template id'
+    Description: 'cloudonaut.io template id.'
     Value: 'wordpress/wordpress-ha-aurora'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   CloudFrontID:
     Description: 'The ID of the CloudFront distribution.'
