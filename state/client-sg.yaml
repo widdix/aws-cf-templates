@@ -1,6 +1,13 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'State: Client security group, a cloudonaut.io template, sponsored by https://github.com/ngault'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'

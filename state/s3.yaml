@@ -1,6 +1,17 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'State: S3 bucket, a cloudonaut.io template, sponsored by https://github.com/ngault'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'S3 Parameters'
+      Parameters:
+      - BucketName
+      - Access
+      - Versioning
+      - NoncurrentVersionExpirationInDays
+      - Encryption
 Parameters:
   BucketName:
     Description: 'Optional name of the bucket.'
@@ -21,12 +32,50 @@ Parameters:
     Type: Number
     Default: 0
     MinValue: 0
+  Encryption:
+    Description: 'Enable server side encryption using KMS CMK key.'
+    Type: String
+    Default: false
+    AllowedValues: [true, false]
 Conditions:
   HasPublicReadAccess: !Equals [!Ref Access, PublicRead]
   HasBucketName: !Not [!Equals [!Ref BucketName, '']]
   HasVersioning: !Equals [!Ref Versioning, true]
   HasNoncurrentVersionExpirationInDays: !Not [!Equals [!Ref NoncurrentVersionExpirationInDays, 0]]
+  HasEncryption: !Equals [!Ref Encryption, true]
 Resources:
+  Key:
+    Condition: HasEncryption
+    Type: 'AWS::KMS::Key'
+    Properties:
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+          Action: 'kms:*'
+          Resource: '*'
+        - Effect: Allow
+          Principal:
+            AWS: '*'
+          Action:
+          - 'kms:Encrypt'
+          - 'kms:Decrypt'
+          - 'kms:ReEncrypt*'
+          - 'kms:GenerateDataKey*'
+          - 'kms:DescribeKey'
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'kms:CallerAccount': !Ref 'AWS::AccountId'
+              'kms:ViaService': !Sub 's3.${AWS::Region}.amazonaws.com'
+  KeyAlias:
+    Condition: HasEncryption
+    Type: 'AWS::KMS::Alias'
+    Properties:
+      AliasName: !Sub 'alias/${AWS::StackName}'
+      TargetKeyId: !Ref Key
   Bucket:
     Type: 'AWS::S3::Bucket'
     Properties:
@@ -40,6 +89,7 @@ Resources:
           Status: !If [HasNoncurrentVersionExpirationInDays, Enabled, Disabled]
       VersioningConfiguration:
         Status: !If [HasVersioning, Enabled, Suspended]
+      BucketEncryption: !If [HasEncryption, {ServerSideEncryptionConfiguration: [{ServerSideEncryptionByDefault: {KMSMasterKeyID: !Ref Key, SSEAlgorithm: 'aws:kms'}}]}, !Ref 'AWS::NoValue']
   BucketPolicy:
     Condition: HasPublicReadAccess
     Type: 'AWS::S3::BucketPolicy'

@@ -1,13 +1,34 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'State: DynamoDB table, a cloudonaut.io template, sponsored by https://github.com/ngault'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentAlertStack
+    - Label:
+        default: 'DynamoDB Parameters'
+      Parameters:
+      - TableName
+      - PartitionKeyName
+      - PartitionKeyType
+      - SortKeyName
+      - SortKeyType
+      - MaxWriteCapacityUnits
+      - MinWriteCapacityUnits
+      - WriteCapacityUnitsUtilizationTarget
+      - MaxReadCapacityUnits
+      - MinReadCapacityUnits
+      - ReadCapacityUnitsUtilizationTarget
 Parameters:
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
   TableName:
-    Description: 'Optional name of the table (auto generated if not set.'
+    Description: 'Optional name of the table (auto generated if not set).'
     Type: String
     Default: ''
   PartitionKeyName:
@@ -58,7 +79,7 @@ Conditions:
 Resources:
   Table:
     Type: 'AWS::DynamoDB::Table'
-    Properties:
+    Properties: # TODO add SSESpecification as soon as DynamoDB supports CMK and update docs
       TableName: !If [HasTableName, !Ref TableName, !Ref 'AWS::NoValue']
       AttributeDefinitions: !If
       - HasSortKey
