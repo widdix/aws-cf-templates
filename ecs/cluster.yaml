@@ -1307,6 +1307,13 @@ Resources:
       Role: !GetAtt 'SchedulableContainersLambdaRole.Arn'
       Runtime: 'nodejs6.10'
       Timeout: 60
+  SchedulableContainersLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn: SchedulableContainersLambda
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName: !Join ['', [/aws/lambda/, !Ref 'SchedulableContainersLambda']]
+      RetentionInDays: !Ref LogsRetentionInDays
   SchedulableContainersLambdaErrorsTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
