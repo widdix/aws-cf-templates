@@ -88,7 +88,13 @@ Resources:
           Effect: Allow
           Resource:
           - !Sub 'arn:aws:s3:::${S3Bucket}/*'
-          Principal: '*'
+          Principal:
+            AWS: !Sub 'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudFrontOriginAccessIdentity}'
+  CloudFrontOriginAccessIdentity:
+    Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Ref DomainName
   CloudFrontDistribution:
     Type: 'AWS::CloudFront::Distribution'
     Properties:
@@ -97,10 +103,10 @@ Resources:
         - !Ref DomainName
         Comment: !Ref DomainName
         Origins:
-        - DomainName: !Select [2, !Split ['/', !GetAtt 'S3Bucket.WebsiteURL']]
+        - DomainName: !GetAtt 'S3Bucket.DomainName'
           Id: s3origin
-          CustomOriginConfig:
-            OriginProtocolPolicy: 'http-only'
+          S3OriginConfig:
+            OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
         DefaultCacheBehavior:
           AllowedMethods:
           - DELETE
@@ -165,7 +171,7 @@ Resources:
         - !Ref RedirectDomainName
         Comment: !Ref RedirectDomainName
         Origins:
-        - DomainName: !Select [2, !Split ['/', !GetAtt 'S3BucketRedirect.WebsiteURL']]
+        - DomainName: !GetAtt 'S3BucketRedirect.DomainName'
           Id: s3origin
           CustomOriginConfig:
             OriginProtocolPolicy: 'http-only'
