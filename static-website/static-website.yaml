@@ -92,8 +92,6 @@ Resources:
     Type: 'AWS::S3::Bucket'
     Properties:
       BucketName: !Ref DomainName
-      WebsiteConfiguration:
-        IndexDocument: !Ref IndexDocument
   S3BucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
     Properties:
