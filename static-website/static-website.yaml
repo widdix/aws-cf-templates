@@ -89,7 +89,7 @@ Resources:
           Resource:
           - !Sub 'arn:aws:s3:::${S3Bucket}/*'
           Principal:
-            AWS: !Sub 'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudFrontOriginAccessIdentity}'
+            CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
   CloudFrontOriginAccessIdentity:
     Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
     Properties:
@@ -122,6 +122,7 @@ Resources:
               Forward: none
           TargetOriginId: s3origin
           ViewerProtocolPolicy: 'redirect-to-https'
+        DefaultRootObject: 'index.html'
         Enabled: true
         HttpVersion: http2
         PriceClass: 'PriceClass_All'

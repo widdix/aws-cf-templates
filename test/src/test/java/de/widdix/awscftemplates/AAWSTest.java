@@ -114,6 +114,14 @@ public abstract class AAWSTest extends ATest {
         this.s3.setBucketPolicy(name, policy);
     }
 
+    protected final void createObject(final String bucketName, final String key, final String body) {
+        this.s3.putObject(bucketName, key, body);
+    }
+
+    protected final void deleteObject(final String bucketName, final String key) {
+        this.s3.deleteObject(bucketName, key);
+    }
+
     protected final void emptyBucket(final String name) {
         ObjectListing objectListing = s3.listObjects(name);
         while (true) {

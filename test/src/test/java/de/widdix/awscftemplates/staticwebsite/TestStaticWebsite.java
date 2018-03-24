@@ -26,15 +26,20 @@ public class TestStaticWebsite extends ACloudFormationTest {
                     new Parameter().withParameterKey("HostedZoneId").withParameterValue(Config.get(Config.Key.HOSTED_ZONE_ID))
             );
             final String url = "https://" + domainName;
-            final Callable<HttpResponse> callable = () -> {
-                final HttpResponse response = WS.url(url).timeout(10000).get();
-                // check HTTP response code
-                if (WS.getStatus(response) != 404) {
-                    throw new RuntimeException("404 expected, but saw " + WS.getStatus(response));
-                }
-                return response;
-            };
-            this.retry(callable);
+            try {
+                this.createObject(domainName, "index.html", "hello");
+                final Callable<HttpResponse> callable = () -> {
+                    final HttpResponse response = WS.url(url).timeout(10000).get();
+                    // check HTTP response code
+                    if (WS.getStatus(response) != 200) {
+                        throw new RuntimeException("200 expected, but saw " + WS.getStatus(response));
+                    }
+                    return response;
+                };
+                this.retry(callable);
+            } finally {
+                this.deleteObject(domainName, "index.html");
+            }
         } finally {
             this.deleteStackAndRetryOnFailure(stackName);
         }
