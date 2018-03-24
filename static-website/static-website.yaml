@@ -9,14 +9,6 @@ Metadata:
       Parameters:
       - ParentZoneStack
     - Label:
-        default: 'Lambda@Edge Parameters'
-      Parameters:
-      - LambdaEdgeSubdirectoriesLambdaVersionArn
-    - Label:
-        default: 'CloudFront Parameters'
-      Parameters:
-      - IndexDocument
-    - Label:
         default: 'DNS Parameters'
       Parameters:
       - DomainName
@@ -32,14 +24,6 @@ Parameters:
     Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
     Type: String
     Default: ''
-  LambdaEdgeSubdirectoriesLambdaVersionArn:
-    Description: 'Optional version ARN of Lambda@Edge function based on static-website/lambdaedge-index-document.yaml template and exposed as output LambdaVersionArn.'
-    Type: String
-    Default: ''
-  IndexDocument:
-    Description: 'The name of the index document for the website.'
-    Type: String
-    Default: 'index.html'
   DomainName:
     Description: 'The primary domain name of the static website (e.g. widdix.de).'
     Type: String
@@ -72,7 +56,6 @@ Conditions:
   HasNotZone: !Equals [!Ref ParentZoneStack, '']
   HasRedirectDomainNameAndHasZone: !And [!Condition HasRedirectDomainName, !Condition HasZone]
   HasRedirectDomainNameAndHasNotZone: !And [!Condition HasRedirectDomainName, !Condition HasNotZone]
-  HasLambdaEdgeSubdirectoriesLambdaVersionArn: !Not [!Equals [!Ref LambdaEdgeSubdirectoriesLambdaVersionArn, '']]
 Resources:
   Certificate:
     Condition: HasCreateAcmCertificate
@@ -93,7 +76,7 @@ Resources:
     Properties:
       BucketName: !Ref DomainName
       WebsiteConfiguration:
-        IndexDocument: !Ref IndexDocument
+        IndexDocument: 'index.html'
   S3BucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
     Properties:
@@ -105,13 +88,7 @@ Resources:
           Effect: Allow
           Resource:
           - !Sub 'arn:aws:s3:::${S3Bucket}/*'
-          Principal:
-            CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
-  CloudFrontOriginAccessIdentity:
-    Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
-    Properties:
-      CloudFrontOriginAccessIdentityConfig:
-        Comment: !Ref DomainName
+          Principal: '*'
   CloudFrontDistribution:
     Type: 'AWS::CloudFront::Distribution'
     Properties:
@@ -120,10 +97,10 @@ Resources:
         - !Ref DomainName
         Comment: !Ref DomainName
         Origins:
-        - DomainName: !GetAtt 'S3Bucket.DomainName'
+        - DomainName: !Select [2, !Split ['/', !GetAtt 'S3Bucket.WebsiteURL']]
           Id: s3origin
-          S3OriginConfig:
-            OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
+          CustomOriginConfig:
+            OriginProtocolPolicy: 'http-only'
         DefaultCacheBehavior:
           AllowedMethods:
           - DELETE
@@ -137,14 +114,8 @@ Resources:
             QueryString: false
             Cookies:
               Forward: none
-          LambdaFunctionAssociations: !If
-          - HasLambdaEdgeSubdirectoriesLambdaVersionArn
-          - - EventType: 'origin-request'
-              LambdaFunctionARN: !Ref LambdaEdgeSubdirectoriesLambdaVersionArn
-          - !Ref 'AWS::NoValue'
           TargetOriginId: s3origin
           ViewerProtocolPolicy: 'redirect-to-https'
-        DefaultRootObject: !Ref IndexDocument
         Enabled: true
         HttpVersion: http2
         PriceClass: 'PriceClass_All'
@@ -194,7 +165,7 @@ Resources:
         - !Ref RedirectDomainName
         Comment: !Ref RedirectDomainName
         Origins:
-        - DomainName: !GetAtt 'S3BucketRedirect.DomainName'
+        - DomainName: !Select [2, !Split ['/', !GetAtt 'S3BucketRedirect.WebsiteURL']]
           Id: s3origin
           CustomOriginConfig:
             OriginProtocolPolicy: 'http-only'
