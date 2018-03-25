@@ -15,7 +15,7 @@ Metadata:
     - Label:
         default: 'CloudFront Parameters'
       Parameters:
-      - IndexDocument
+      - DefaultRootObject
     - Label:
         default: 'DNS Parameters'
       Parameters:
@@ -36,8 +36,8 @@ Parameters:
     Description: 'Optional version ARN of Lambda@Edge function based on static-website/lambdaedge-index-document.yaml template and exposed as output LambdaVersionArn.'
     Type: String
     Default: ''
-  IndexDocument:
-    Description: 'The name of the index document for the website.'
+  DefaultRootObject:
+    Description: 'The name of the index document for the website (ignored when LambdaEdgeSubdirectoriesLambdaVersionArn is set).'
     Type: String
     Default: 'index.html'
   DomainName:
@@ -98,11 +98,9 @@ Resources:
       Bucket: !Ref S3Bucket
       PolicyDocument:
         Statement:
-        - Action:
-          - 's3:GetObject'
+        - Action: 's3:GetObject'
           Effect: Allow
-          Resource:
-          - !Sub 'arn:aws:s3:::${S3Bucket}/*'
+          Resource: !Sub 'arn:aws:s3:::${S3Bucket}/*'
           Principal:
             CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
   CloudFrontOriginAccessIdentity:
@@ -117,40 +115,44 @@ Resources:
         Aliases:
         - !Ref DomainName
         Comment: !Ref DomainName
-        Origins:
-        - DomainName: !GetAtt 'S3Bucket.DomainName'
-          Id: s3origin
-          S3OriginConfig:
-            OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
         DefaultCacheBehavior:
           AllowedMethods:
-          - DELETE
           - GET
           - HEAD
           - OPTIONS
-          - PATCH
-          - POST
-          - PUT
+          CachedMethods:
+          - GET
+          - HEAD
+          - OPTIONS
+          Compress: true
+          DefaultTTL: 3600 # in seconds
           ForwardedValues:
-            QueryString: false
             Cookies:
               Forward: none
+            QueryString: false
           LambdaFunctionAssociations: !If
           - HasLambdaEdgeSubdirectoriesLambdaVersionArn
           - - EventType: 'origin-request'
               LambdaFunctionARN: !Ref LambdaEdgeSubdirectoriesLambdaVersionArn
           - !Ref 'AWS::NoValue'
+          MaxTTL: 86400 # in seconds
+          MinTTL: 60 # in seconds
           TargetOriginId: s3origin
           ViewerProtocolPolicy: 'redirect-to-https'
-        DefaultRootObject: !Ref IndexDocument
+        DefaultRootObject: !If [HasLambdaEdgeSubdirectoriesLambdaVersionArn, !Ref 'AWS::NoValue', !Ref DefaultRootObject]
         Enabled: true
         HttpVersion: http2
+        Origins:
+        - DomainName: !GetAtt 'S3Bucket.DomainName'
+          Id: s3origin
+          S3OriginConfig:
+            OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
         PriceClass: 'PriceClass_All'
         ViewerCertificate:
           AcmCertificateArn: !If [HasCreateAcmCertificate, !Ref Certificate, !If [HasAcmCertificateArn, !Ref ExistingCertificate, !Ref 'AWS::NoValue']]
           IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue']
+          MinimumProtocolVersion: 'TLSv1.1_2016'
           SslSupportMethod: 'sni-only'
-          MinimumProtocolVersion: TLSv1
   Route53Record:
     Type: 'AWS::Route53::RecordSetGroup'
     Condition: HasNotZone
@@ -191,34 +193,38 @@ Resources:
         Aliases:
         - !Ref RedirectDomainName
         Comment: !Ref RedirectDomainName
+        DefaultCacheBehavior:
+          AllowedMethods:
+          - GET
+          - HEAD
+          - OPTIONS
+          CachedMethods:
+          - GET
+          - HEAD
+          - OPTIONS
+          Compress: true
+          DefaultTTL: 3600 # in seconds
+          ForwardedValues:
+            Cookies:
+              Forward: none
+            QueryString: false
+          MaxTTL: 86400 # in seconds
+          MinTTL: 60 # in seconds
+          TargetOriginId: s3origin
+          ViewerProtocolPolicy: 'redirect-to-https'
+        Enabled: true
+        HttpVersion: http2
         Origins:
         - DomainName: !GetAtt 'S3BucketRedirect.DomainName'
           Id: s3origin
           CustomOriginConfig:
             OriginProtocolPolicy: 'http-only'
-        DefaultCacheBehavior:
-          AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
-          ForwardedValues:
-            QueryString: false
-            Cookies:
-              Forward: none
-          TargetOriginId: s3origin
-          ViewerProtocolPolicy: 'redirect-to-https'
-        Enabled: true
-        HttpVersion: http2
         PriceClass: 'PriceClass_All'
         ViewerCertificate:
           AcmCertificateArn: !If [HasCreateAcmCertificate, !Ref Certificate, !If [HasAcmCertificateArn, !Ref ExistingCertificate, !Ref 'AWS::NoValue']]
           IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue']
+          MinimumProtocolVersion: 'TLSv1.1_2016'
           SslSupportMethod: 'sni-only'
-          MinimumProtocolVersion: TLSv1
   Route53RecordRedirect:
     Condition: HasRedirectDomainNameAndHasNotZone
     Type: 'AWS::Route53::RecordSetGroup'

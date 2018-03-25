@@ -28,16 +28,38 @@ Resources:
         # If you change the ZipFile, rename the logical id LambdaVersionV1 to trigger a new version creation!
         ZipFile: !Sub |
           'use strict';
-          const regex = /\.[a-z]*$/;
+          const regex = /\.[a-z]{3,4}$/;
+          const indexDocument = '${IndexDocument}';
           exports.handler = (event, context, cb) => {
             console.log(`Invoke: ${!JSON.stringify(event)}`);
             const request = event.Records[0].cf.request;
             if (request.uri.endsWith('/')) {
-              request.uri += '${IndexDocument}';
+              cb(null, Object.assign({}, request, {uri: `${!request.uri}${!indexDocument}`}));
+            } else if (request.uri.endsWith(`/${!indexDocument}`)) {
+              cb(null, {
+                status: '302',
+                statusDescription: 'Found',
+                headers: {
+                  location: [{
+                    key: 'Location',
+                    value: request.uri.substr(0, request.uri.length - indexDocument.length),
+                  }],
+                }
+              });
             } else if (!regex.test(request.uri)) {
-              request.uri += '/${IndexDocument}';
+              cb(null, {
+                status: '302',
+                statusDescription: 'Found',
+                headers: {
+                  location: [{
+                    key: 'Location',
+                    value: `${!request.uri}/`,
+                  }],
+                }
+              });
+            } else {
+              cb(null, request);
             }
-            cb(null, request);
           };
       Handler: 'index.handler'
       MemorySize: 128
