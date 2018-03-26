@@ -7,7 +7,8 @@ import org.junit.Test;
 
 public class TestConfig extends ACloudFormationTest {
 
-    @Ignore // this test is disabled because only one ConfigurationRecorder is allowed and config is already active in all our AWS accounts
+    @Ignore
+    // this test is disabled because only one ConfigurationRecorder is allowed and config is already active in all our AWS accounts
     @Test
     public void test() {
         final String stackName = "config-" + this.random8String();

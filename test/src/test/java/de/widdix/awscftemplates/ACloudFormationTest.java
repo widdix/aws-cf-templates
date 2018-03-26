@@ -6,7 +6,6 @@ import com.amazonaws.services.cloudformation.AmazonCloudFormationClientBuilder;
 import com.amazonaws.services.cloudformation.model.*;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.http.HttpResponse;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,7 +32,7 @@ public abstract class ACloudFormationTest extends AAWSTest {
         super();
     }
 
-    protected final void createStack(final String stackName, final String template, final Parameter...parameters) {
+    protected final void createStack(final String stackName, final String template, final Parameter... parameters) {
         CreateStackRequest req = new CreateStackRequest()
                 .withStackName(stackName)
                 .withParameters(parameters)
@@ -66,7 +65,7 @@ public abstract class ACloudFormationTest extends AAWSTest {
         private final boolean notFoundIsIntermediateStatus;
         private final Set<StackStatus> intermediateStatus;
 
-        FinalStatus(StackStatus finalStatus, boolean notFoundIsFinalStatus, boolean notFoundIsIntermediateStatus, StackStatus...intermediateStatus) {
+        FinalStatus(StackStatus finalStatus, boolean notFoundIsFinalStatus, boolean notFoundIsIntermediateStatus, StackStatus... intermediateStatus) {
             this.finalStatus = finalStatus;
             this.notFoundIsFinalStatus = notFoundIsFinalStatus;
             this.notFoundIsIntermediateStatus = notFoundIsIntermediateStatus;
