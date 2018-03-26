@@ -13,6 +13,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.Callable;
 
 public abstract class ACloudFormationTest extends AAWSTest {
 
@@ -31,7 +32,7 @@ public abstract class ACloudFormationTest extends AAWSTest {
         super();
     }
 
-    protected final void createStack(final String stackName, final String template, final Parameter...parameters) {
+    protected final void createStack(final String stackName, final String template, final Parameter... parameters) {
         CreateStackRequest req = new CreateStackRequest()
                 .withStackName(stackName)
                 .withParameters(parameters)
@@ -64,7 +65,7 @@ public abstract class ACloudFormationTest extends AAWSTest {
         private final boolean notFoundIsIntermediateStatus;
         private final Set<StackStatus> intermediateStatus;
 
-        FinalStatus(StackStatus finalStatus, boolean notFoundIsFinalStatus, boolean notFoundIsIntermediateStatus, StackStatus...intermediateStatus) {
+        FinalStatus(StackStatus finalStatus, boolean notFoundIsFinalStatus, boolean notFoundIsIntermediateStatus, StackStatus... intermediateStatus) {
             this.finalStatus = finalStatus;
             this.notFoundIsFinalStatus = notFoundIsFinalStatus;
             this.notFoundIsIntermediateStatus = notFoundIsIntermediateStatus;
@@ -158,6 +159,14 @@ public abstract class ACloudFormationTest extends AAWSTest {
 
     protected final String getStackOutputValue(final String stackName, final String outputKey) {
         return this.getStackOutputs(stackName).get(outputKey);
+    }
+
+    protected final void deleteStackAndRetryOnFailure(final String stackName) {
+        final Callable<Boolean> callable = () -> {
+            this.deleteStack(stackName);
+            return true;
+        };
+        this.retry(callable);
     }
 
     protected final void deleteStack(final String stackName) {

@@ -63,14 +63,16 @@ Parameters:
 Resources:
   Dummy:
     Type: 'AWS::S3::Bucket'
-    Properties:
-      BucketName: !Ref 'AWS::StackName'
+    Properties: {}
 Outputs:
   TemplateID:
-    Description: 'cloudonaut.io template id'
+    Description: 'cloudonaut.io template id.'
     Value: 'vpc/vpc-2azs-legacy'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   AZs:
     Description: 'AZs'

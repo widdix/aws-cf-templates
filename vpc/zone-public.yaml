@@ -1,0 +1,41 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'VPC: public DNS zone, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Zone Parameters'
+      Parameters:
+      - Name
+Parameters:
+  Name:
+    Description: 'The name of the domain (hosted zone).'
+    Type: String
+Resources:
+  HostedZone:
+    Type: 'AWS::Route53::HostedZone'
+    Properties:
+      HostedZoneConfig:
+        Comment: !Sub "${Name} public DNS zone"
+      Name: !Ref Name
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'vpc/zone-public'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
+  HostedZoneName:
+    Description: 'The name of the hosted zone.'
+    Value: !Ref Name
+    Export:
+      Name: !Sub '${AWS::StackName}-HostedZoneName'
+  HostedZoneId:
+    Description: 'The ID of the hosted zone.'
+    Value: !Ref HostedZone
+    Export:
+      Name: !Sub '${AWS::StackName}-HostedZoneId'

@@ -11,6 +11,7 @@ Metadata:
       - ParentSSHBastionStack
       - ParentAuthProxyStack
       - ParentAlertStack
+      - ParentZoneStack
     - Label:
         default: 'Jenkins Parameters'
       Parameters:
@@ -20,7 +21,7 @@ Metadata:
       Parameters:
       - KeyName
       - IAMUserSSHAccess
-      - NewRelicLicenseKey
+      - SubDomainName
     - Label:
         default: 'Master Parameters'
       Parameters:
@@ -43,6 +44,10 @@ Parameters:
     Default: ''
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  ParentZoneStack:
+    Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
     Type: String
     Default: ''
   KeyName:
@@ -75,53 +80,63 @@ Parameters:
     Type: String
     Default: 't2.micro'
   MasterAdminPassword:
-    Description: 'A password for the Jenkins master admin.'
+    Description: 'A password for the Jenkins master admin. MUST NOT BE CHANGED!'
     Type: String
     NoEcho: true
+    MinLength: 8
+    MaxLength: 32
   MasterLogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain log events in the specified log group.'
     Type: Number
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  MasterVolumeSize:
+    Description: 'The root volume size, in Gibibytes (GiB). Keep in mind that Jenkins home lives on EFS.'
+    Type: Number
+    Default: 8
+    ConstraintDescription: 'Must be in the range [8-1024]'
+    MinValue: 8
+    MaxValue: 1024
   JenkinsVersion:
     Description: 'Jenkins version number'
     Type: String
-    Default: '2.60.3'
-  NewRelicLicenseKey:
-    Description: 'Optional New Relic License Key will install the New Relic Servers for Linux agent.'
+    Default: '2.89.4'
+  SubDomainName:
+    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
     Type: String
-    Default: ''
-    NoEcho: true
+    Default: 'jenkins'
 Mappings:
   RegionMap:
     'ap-south-1':
-      AMI: 'ami-d7abd1b8'
+      AMI: 'ami-531a4c3c'
+    'eu-west-3':
+      AMI: 'ami-8ee056f3'
     'eu-west-2':
-      AMI: 'ami-489f8e2c'
+      AMI: 'ami-403e2524'
     'eu-west-1':
-      AMI: 'ami-ebd02392'
+      AMI: 'ami-d834aba1'
     'ap-northeast-2':
-      AMI: 'ami-8663bae8'
+      AMI: 'ami-863090e8'
     'ap-northeast-1':
-      AMI: 'ami-4af5022c'
+      AMI: 'ami-ceafcba8'
     'sa-east-1':
-      AMI: 'ami-d27203be'
+      AMI: 'ami-84175ae8'
     'ca-central-1':
-      AMI: 'ami-5ac17f3e'
+      AMI: 'ami-a954d1cd'
     'ap-southeast-1':
-      AMI: 'ami-fdb8229e'
+      AMI: 'ami-68097514'
     'ap-southeast-2':
-      AMI: 'ami-30041c53'
+      AMI: 'ami-942dd1f6'
     'eu-central-1':
-      AMI: 'ami-657bd20a'
+      AMI: 'ami-5652ce39'
     'us-east-1':
-      AMI: 'ami-4fffc834'
+      AMI: 'ami-97785bed'
     'us-east-2':
-      AMI: 'ami-ea87a78f'
+      AMI: 'ami-f63b1193'
     'us-west-1':
-      AMI: 'ami-3a674d5a'
+      AMI: 'ami-824c4ee2'
     'us-west-2':
-      AMI: 'ami-aa5ebdd2'
+      AMI: 'ami-f2d3638a'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -129,9 +144,9 @@ Conditions:
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
-  HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
   HasMasterELBSchemeInternal: !Equals [!Ref MasterELBScheme, 'internal']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
 Resources:
   MasterStorageSG:
     Type: 'AWS::EC2::SecurityGroup'
@@ -144,7 +159,14 @@ Resources:
         FromPort: 2049
         ToPort: 2049
         IpProtocol: tcp
-  PercentIOLimitTooHighAlarm:
+  MasterStorage:
+    Type: 'AWS::EFS::FileSystem'
+    Properties:
+      FileSystemTags:
+      - Key: Name
+        Value: 'jenkins-master-storage'
+      PerformanceMode: generalPurpose
+  MasterStoragePercentIOLimitTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -161,13 +183,6 @@ Resources:
       Dimensions:
       - Name: FileSystemId
         Value: !Ref MasterStorage
-  MasterStorage:
-    Type: 'AWS::EFS::FileSystem'
-    Properties:
-      FileSystemTags:
-      - Key: Name
-        Value: 'jenkins-master-storage'
-      PerformanceMode: generalPurpose
   MasterStorageBurstCreditBalanceTooLowAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -176,7 +191,7 @@ Resources:
       Namespace: 'AWS/EFS'
       MetricName: BurstCreditBalance
       Statistic: Average
-      Period: 60
+      Period: 600
       EvaluationPeriods: 1
       ComparisonOperator: LessThanThreshold
       Threshold: 192416666667 # 192 GB in Bytes (last hour where you can burst at 100 MB/sec)
@@ -260,6 +275,55 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt MasterELB.LoadBalancerFullName
+  MasterRejectedConnectionCountTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer rejected connections because the load balancer had reached its maximum number of connections'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: RejectedConnectionCount
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt MasterELB.LoadBalancerFullName
+  MasterTargetConnectionErrorCountTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer could not connect to targets'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: TargetConnectionErrorCount
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt MasterELB.LoadBalancerFullName
+  RecordSet:
+    Condition: HasZone
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      AliasTarget:
+        HostedZoneId: !GetAtt 'MasterELB.CanonicalHostedZoneID'
+        DNSName: !GetAtt 'MasterELB.DNSName'
+      HostedZoneId:
+        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      Name: !Sub
+      - '${SubDomainName}.${HostedZoneName}'
+      - SubDomainName: !Ref SubDomainName
+        HostedZoneName:
+          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      Type: A
   MasterELB:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
@@ -278,15 +342,15 @@ Resources:
   MasterELBTargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
-      HealthCheckIntervalSeconds: 15
+      HealthCheckIntervalSeconds: 30
       HealthCheckPath: '/login'
       HealthCheckPort: 8080
       HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 10
+      HealthCheckTimeoutSeconds: 25
       HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 8
+      UnhealthyThresholdCount: 2
       Matcher:
-        HttpCode: 200
+        HttpCode: '200-299'
       Port: 8080
       Protocol: HTTP
       Tags:
@@ -294,6 +358,9 @@ Resources:
         Value: 'jenkins-master'
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      TargetGroupAttributes:
+      - Key: 'deregistration_delay.timeout_seconds'
+        Value: 30
   MasterELBListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
@@ -404,11 +471,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default:
-            !If
-            - HasNewRelic
-            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, install, setup, newrelic, custom, run], [awslogs, mount, install, setup, newrelic, custom, run]]
-            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, install, setup, custom, run], [awslogs, mount, install, setup, custom, run]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, install, setup, custom, run], [awslogs, mount, install, setup, custom, run]]
         awslogs:
           packages:
             yum:
@@ -470,11 +533,6 @@ Resources:
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
                 log_group_name = ${MasterLogs}
-                [/var/log/newrelic/nrsysmond.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/newrelic/nrsysmond.log
-                log_stream_name = {instance_id}/var/log/newrelic/nrsysmond.log
-                log_group_name = ${MasterLogs}
                 [/var/log/jenkins/jenkins.log]
                 datetime_format = %d %b %Y %H:%M:%S
                 multi_line_start_pattern = {datetime_format}
@@ -495,27 +553,6 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
-        newrelic:
-          packages:
-            rpm:
-              newrelic-sysmond: 'https://download.newrelic.com/pub/newrelic/el5/x86_64/newrelic-sysmond-2.3.0.132-1.x86_64.rpm'
-          files:
-            '/etc/newrelic/nrsysmond.cfg':
-              content: !Sub |
-                license_key=${NewRelicLicenseKey}
-                loglevel=info
-                logfile=/var/log/newrelic/nrsysmond.log
-                labels=StackName:${AWS::StackName};AccountId:${AWS::AccountId};Region:${AWS::Region}
-              mode: '000640'
-              owner: root
-              group: newrelic
-          services:
-            sysvinit:
-              newrelic-sysmond:
-                enabled: true
-                ensureRunning: true
-                files:
-                - '/etc/newrelic/nrsysmond.cfg'
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':
@@ -524,13 +561,13 @@ Resources:
                 if [ -z "$1" ]; then
                   exit 1
                 fi
-                SaveUserName="$1"
-                SaveUserName=${SaveUserName//"+"/".plus."}
-                SaveUserName=${SaveUserName//"="/".equal."}
-                SaveUserName=${SaveUserName//","/".comma."}
-                SaveUserName=${SaveUserName//"@"/".at."}
-                aws iam list-ssh-public-keys --user-name "$SaveUserName" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read KeyId; do
-                  aws iam get-ssh-public-key --user-name "$SaveUserName" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
+                UnsaveUserName="$1"
+                UnsaveUserName=${UnsaveUserName//".plus."/"+"}
+                UnsaveUserName=${UnsaveUserName//".equal."/"="}
+                UnsaveUserName=${UnsaveUserName//".comma."/","}
+                UnsaveUserName=${UnsaveUserName//".at."/"@"}
+                aws iam list-ssh-public-keys --user-name "$UnsaveUserName" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read -r KeyId; do
+                  aws iam get-ssh-public-key --user-name "$UnsaveUserName" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
                 done
               mode: '000755'
               owner: root
@@ -600,7 +637,7 @@ Resources:
         install:
           packages:
             rpm:
-              jenkins: !Sub 'http://pkg.jenkins-ci.org/redhat-stable/jenkins-${JenkinsVersion}-1.1.noarch.rpm'
+              jenkins: !Sub 'https://pkg.jenkins.io/redhat-stable/jenkins-${JenkinsVersion}-1.1.noarch.rpm'
             yum:
               'java-1.8.0-openjdk': []
           files:
@@ -622,7 +659,7 @@ Resources:
                 runas=root
           commands:
             'a_alternatives':
-              command: 'alternatives --set java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java'
+              command: '/usr/sbin/alternatives --set java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java'
           services:
             sysvinit:
               cfn-hup:
@@ -650,6 +687,8 @@ Resources:
                 subversion
                 timestamper
                 ws-cleanup
+                pipeline-aws
+                http_request
               mode: '000400'
               owner: root
               group: root
@@ -682,7 +721,7 @@ Resources:
               command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'j_set_admin_password':
-              command: !Sub 'echo ''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", "${MasterAdminPassword}")'' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" groovy ='
+              command: !Sub 'echo $''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", \''${MasterAdminPassword}\'')'' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" groovy ='
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'k_stop_jenkins':
               command: 'service jenkins stop'
@@ -722,6 +761,11 @@ Resources:
       SecurityGroups:
       - !Ref MasterSG
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+      BlockDeviceMappings:
+      - DeviceName: '/dev/xvda'
+        Ebs:
+          VolumeSize: !Ref MasterVolumeSize
+          VolumeType: gp2
       UserData:
         'Fn::Base64': !Sub |
           #!/bin/bash -x
@@ -762,13 +806,39 @@ Resources:
     UpdatePolicy:
       AutoScalingRollingUpdate:
         PauseTime: PT15M
+        SuspendProcesses:
+        - HealthCheck
+        - ReplaceUnhealthy
+        - AZRebalance
+        - AlarmNotification
+        - ScheduledActions
         WaitOnResourceSignals: true
+  MasterCPUTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Master average CPU utilization over last 10 minutes higher than 80%'
+      Namespace: 'AWS/EC2'
+      MetricName: CPUUtilization
+      Statistic: Average
+      Period: 600
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value: !Ref MasterASG
 Outputs:
   TemplateID:
-    Description: 'cloudonaut.io template id'
+    Description: 'cloudonaut.io template id.'
     Value: 'jenkins/jenkins2-ha'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   AdminUsername:
     Description: 'User name for the Jenkins admin.'
@@ -785,3 +855,8 @@ Outputs:
     Value: !Sub 'http://${MasterELB.DNSName}'
     Export:
       Name: !Sub '${AWS::StackName}-URL'
+  MasterIAMRole:
+    Description: 'Use this IAm Role to reference API calls from the Jenkins master'
+    Value: !GetAtt 'MasterIAMRole.Arn'
+    Export:
+      Name: !Sub '${AWS::StackName}-MasterIAMRole'

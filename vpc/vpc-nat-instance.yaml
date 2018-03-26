@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'VPC: highly available NAT instance for private subnets, a cloudonaut.io template'
+Description: 'VPC: highly available NAT instance, a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -10,6 +10,7 @@ Metadata:
       - ParentVPCStack
       - ParentSSHBastionStack
       - ParentAlertStack
+      - ParentZoneStack
     - Label:
         default: 'EC2 Parameters'
       Parameters:
@@ -18,7 +19,7 @@ Metadata:
       - KeyName
       - IAMUserSSHAccess
       - LogsRetentionInDays
-      - NewRelicLicenseKey
+      - SubDomainName
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -29,6 +30,10 @@ Parameters:
     Default: ''
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  ParentZoneStack:
+    Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
     Type: String
     Default: ''
   SubnetZone:
@@ -60,49 +65,65 @@ Parameters:
     Type: Number
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
-  NewRelicLicenseKey:
-    Description: 'Optional New Relic License Key will install the New Relic Servers for Linux agent.'
+  SubDomainName:
+    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
     Type: String
-    Default: ''
-    NoEcho: true
+    Default: 'nat'
 Mappings:
   RegionMap:
     'ap-south-1':
-      NATAMI: 'ami-96a9d3f9'
+      NATAMI: 'ami-c2e9bead'
+    'eu-west-3':
+      NATAMI: 'ami-0fe35572'
     'eu-west-2':
-      NATAMI: 'ami-868190e2'
+      NATAMI: 'ami-87312ae3'
     'eu-west-1':
-      NATAMI: 'ami-f1d22188'
+      NATAMI: 'ami-a136a9d8'
     'ap-northeast-2':
-      NATAMI: 'ami-a462bbca'
+      NATAMI: 'ami-c52f8fab'
     'ap-northeast-1':
-      NATAMI: 'ami-c4887fa2'
+      NATAMI: 'ami-2c593d4a'
     'sa-east-1':
-      NATAMI: 'ami-9b7504f7'
+      NATAMI: 'ami-be1f52d2'
     'ca-central-1':
-      NATAMI: 'ami-a1be00c5'
+      NATAMI: 'ami-2b4acf4f'
     'ap-southeast-1':
-      NATAMI: 'ami-40bb2123'
+      NATAMI: 'ami-270f735b'
     'ap-southeast-2':
-      NATAMI: 'ami-ef051d8c'
+      NATAMI: 'ami-3d28d45f'
     'eu-central-1':
-      NATAMI: 'ami-eb66cf84'
+      NATAMI: 'ami-5756ca38'
     'us-east-1':
-      NATAMI: 'ami-a7fdcadc'
+      NATAMI: 'ami-8d7655f7'
     'us-east-2':
-      NATAMI: 'ami-4986a62c'
+      NATAMI: 'ami-fc3b1199'
     'us-west-1':
-      NATAMI: 'ami-3e674d5e'
+      NATAMI: 'ami-394e4c59'
     'us-west-2':
-      NATAMI: 'ami-4da24035'
+      NATAMI: 'ami-35d6664d'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
-  HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
 Resources:
+  RecordSet:
+    Condition: HasZone
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      HostedZoneId:
+        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      Name: !Sub
+      - '${SubDomainName}.${HostedZoneName}'
+      - SubDomainName: !Ref SubDomainName
+        HostedZoneName:
+          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      ResourceRecords:
+      - !Ref EIP
+      TTL: 60
+      Type: A
   EIP:
     Type: 'AWS::EC2::EIP'
     Properties:
@@ -245,11 +266,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default:
-            !If
-            - HasNewRelic
-            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, newrelic, config], [awslogs, newrelic, config]]
-            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, config], [awslogs, config]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, config], [awslogs, config]]
         awslogs:
           packages:
             yum:
@@ -311,11 +328,6 @@ Resources:
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
                 log_group_name = ${Logs}
-                [/var/log/newrelic/nrsysmond.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/newrelic/nrsysmond.log
-                log_stream_name = {instance_id}/var/log/newrelic/nrsysmond.log
-                log_group_name = ${Logs}
               mode: '000644'
               owner: root
               group: root
@@ -330,27 +342,6 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
-        newrelic:
-          packages:
-            rpm:
-              newrelic-sysmond: 'https://download.newrelic.com/pub/newrelic/el5/x86_64/newrelic-sysmond-2.3.0.132-1.x86_64.rpm'
-          files:
-            '/etc/newrelic/nrsysmond.cfg':
-              content: !Sub |
-                license_key=${NewRelicLicenseKey}
-                loglevel=info
-                logfile=/var/log/newrelic/nrsysmond.log
-                labels=StackName:${AWS::StackName};AccountId:${AWS::AccountId};Region:${AWS::Region}
-              mode: '000640'
-              owner: root
-              group: newrelic
-          services:
-            sysvinit:
-              newrelic-sysmond:
-                enabled: true
-                ensureRunning: true
-                files:
-                - '/etc/newrelic/nrsysmond.cfg'
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':
@@ -359,13 +350,13 @@ Resources:
                 if [ -z "$1" ]; then
                   exit 1
                 fi
-                SaveUserName="$1"
-                SaveUserName=${SaveUserName//"+"/".plus."}
-                SaveUserName=${SaveUserName//"="/".equal."}
-                SaveUserName=${SaveUserName//","/".comma."}
-                SaveUserName=${SaveUserName//"@"/".at."}
-                aws iam list-ssh-public-keys --user-name "$SaveUserName" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read KeyId; do
-                  aws iam get-ssh-public-key --user-name "$SaveUserName" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
+                UnsaveUserName="$1"
+                UnsaveUserName=${UnsaveUserName//".plus."/"+"}
+                UnsaveUserName=${UnsaveUserName//".equal."/"="}
+                UnsaveUserName=${UnsaveUserName//".comma."/","}
+                UnsaveUserName=${UnsaveUserName//".at."/"@"}
+                aws iam list-ssh-public-keys --user-name "$UnsaveUserName" --query "SSHPublicKeys[?Status == 'Active'].[SSHPublicKeyId]" --output text | while read -r KeyId; do
+                  aws iam get-ssh-public-key --user-name "$UnsaveUserName" --ssh-public-key-id "$KeyId" --encoding SSH --query "SSHPublicKey.SSHPublicKeyBody" --output text
                 done
               mode: '000755'
               owner: root
@@ -453,15 +444,14 @@ Resources:
       UserData:
         'Fn::Base64': !Sub
         - |
-          #!/bin/bash -x
-          bash -ex << "TRY"
-            INSTANCEID=$(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
-            aws --region ${Region} ec2 associate-address --instance-id $INSTANCEID --allocation-id ${EIPAllocationId}
-            aws --region ${Region} ec2 modify-instance-attribute --instance-id $INSTANCEID --source-dest-check "{\"Value\": false}"
-            aws --region ${Region} ec2 replace-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID || aws --region ${Region} ec2 create-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID
-            /opt/aws/bin/cfn-init -v --stack ${StackName} --resource NATLaunchConfiguration --region ${Region}
-          TRY
-          /opt/aws/bin/cfn-signal -e $? --region ${Region} --stack ${StackName} --resource NATAutoScalingGroup
+          #!/bin/bash -ex
+          trap '/opt/aws/bin/cfn-signal -e 1 --region ${Region} --stack ${StackName} --resource NATAutoScalingGroup' ERR
+          INSTANCEID=$(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
+          aws --region ${Region} ec2 associate-address --instance-id $INSTANCEID --allocation-id ${EIPAllocationId}
+          aws --region ${Region} ec2 modify-instance-attribute --instance-id $INSTANCEID --source-dest-check "{\"Value\": false}"
+          aws --region ${Region} ec2 replace-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID || aws --region ${Region} ec2 create-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID
+          /opt/aws/bin/cfn-init -v --stack ${StackName} --resource NATLaunchConfiguration --region ${Region}
+          /opt/aws/bin/cfn-signal -e 0 --region ${Region} --stack ${StackName} --resource NATAutoScalingGroup
         - RouteTablePrivate:
             'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTable${SubnetZone}Private'
           Region:
@@ -501,6 +491,12 @@ Resources:
     UpdatePolicy:
       AutoScalingRollingUpdate:
         PauseTime: PT10M
+        SuspendProcesses:
+        - HealthCheck
+        - ReplaceUnhealthy
+        - AZRebalance
+        - AlarmNotification
+        - ScheduledActions
         WaitOnResourceSignals: true
   CPUTooHighAlarm:
     Condition: HasAlertTopic
@@ -521,10 +517,13 @@ Resources:
         Value: !Ref NATAutoScalingGroup
 Outputs:
   TemplateID:
-    Description: 'cloudonaut.io template id'
+    Description: 'cloudonaut.io template id.'
     Value: 'vpc/vpc-nat-instance'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   IPAddress:
     Description: 'The public IP address of the NAT instance.'

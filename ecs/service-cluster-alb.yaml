@@ -9,6 +9,7 @@ Metadata:
       Parameters:
       - ParentClusterStack
       - ParentAlertStack
+      - ParentZoneStack
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
@@ -17,6 +18,10 @@ Metadata:
       - LoadBalancerPath
       - LoadBalancerHttps
       - LoadBalancerDeregistrationDelay
+    - Label:
+        default: 'Service Parameters'
+      Parameters:
+      - SubDomainName
     - Label:
         default: 'Task Parameters'
       Parameters:
@@ -30,6 +35,10 @@ Parameters:
     Type: String
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  ParentZoneStack:
+    Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
     Type: String
     Default: ''
   LoadBalancerPriority:
@@ -86,12 +95,17 @@ Parameters:
     Default: 2
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
+  SubDomainName:
+    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
+    Type: String
+    Default: ''
 Mappings: {}
 Conditions:
   HasLoadBalancerHttps: !Equals [!Ref LoadBalancerHttps, 'true']
   HasLoadBalancerPath: !Not [!Equals [!Ref LoadBalancerPath, '']]
   HasLoadBalancerHostPattern: !Not [!Equals [!Ref LoadBalancerHostPattern, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
 Resources:
   TaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
@@ -113,6 +127,23 @@ Resources:
             'awslogs-group':
               'Fn::ImportValue': !Sub '${ParentClusterStack}-LogGroup'
             'awslogs-stream-prefix': !Ref 'AWS::StackName'
+  RecordSet:
+    Condition: HasZone
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      AliasTarget:
+        HostedZoneId:
+          'Fn::ImportValue': !Sub '${ParentClusterStack}-CanonicalHostedZoneID'
+        DNSName:
+          'Fn::ImportValue': !Sub '${ParentClusterStack}-DNSName'
+      HostedZoneId:
+        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      Name: !Sub
+      - '${SubDomainName}.${HostedZoneName}'
+      - SubDomainName: !Ref SubDomainName
+        HostedZoneName:
+          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      Type: A
   LoadBalancerTargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
@@ -121,16 +152,96 @@ Resources:
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 10
       HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
       Matcher:
-        HttpCode: '200'
+        HttpCode: '200-299'
       Port: 80
       Protocol: HTTP
-      UnhealthyThresholdCount: 4
       VpcId:
         'Fn::ImportValue': !Sub '${ParentClusterStack}-VPC'
       TargetGroupAttributes:
       - Key: deregistration_delay.timeout_seconds
         Value: !Ref LoadBalancerDeregistrationDelay
+  HTTPCodeELB5XXTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer returns 5XX HTTP status codes'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: HTTPCode_ELB_5XX_Count
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value:
+          'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'
+      - Name: TargetGroup
+        Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
+  HTTPCodeTarget5XXTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: HTTPCode_Target_5XX_Count
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value:
+          'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'
+      - Name: TargetGroup
+        Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
+  RejectedConnectionCountTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer rejected connections because the load balancer had reached its maximum number of connections'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: RejectedConnectionCount
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value:
+          'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'
+      - Name: TargetGroup
+        Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
+  TargetConnectionErrorCountTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer could not connect to targets'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: TargetConnectionErrorCount
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value:
+          'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'
+      - Name: TargetGroup
+        Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
   LoadBalancerHttpListenerRule:
     Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
     Properties:
@@ -213,6 +324,11 @@ Resources:
       - ContainerName: main
         ContainerPort: 80
         TargetGroupArn: !Ref LoadBalancerTargetGroup
+      PlacementStrategies:
+      - Type: spread
+        Field: 'attribute:ecs.availability-zone'
+      - Type: spread
+        Field: instanceId
       Role: !GetAtt 'ServiceRole.Arn'
       TaskDefinition: !Ref TaskDefinition
   ScalableTargetRole: # based on http://docs.aws.amazon.com/AmazonECS/latest/developerguide/autoscale_IAM_role.html
@@ -343,10 +459,13 @@ Resources:
       - !Ref ScaleDownPolicy
 Outputs:
   TemplateID:
-    Description: 'cloudonaut.io template id'
+    Description: 'cloudonaut.io template id.'
     Value: 'ecs/service-cluster-alb'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   DNSName:
     Description: 'The DNS name for the ECS cluster/service load balancer.'

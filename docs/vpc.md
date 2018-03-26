@@ -37,6 +37,8 @@ If you have an existing VPC you can wrap it into our required form using a legac
 # VPC with private and public subnets in four Availability Zones
 This template describes a VPC with four private and four public subnets.
 
+![Architecture](./img/vpc-4azs.png)
+
 ## Installation Guide
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-4azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-4azs.yaml)
 1. Click **Next** to proceed with the next step of the wizard.
@@ -67,6 +69,7 @@ This template describes a NAT Gateway that forwards HTTP, HTTPS and NTP traffic 
 
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
+* `operations/alert.yaml` (recommended)
 
 # NAT instance
 This template describes a **highly available** Network Address Translation (NAT) instance that forwards HTTP, HTTPS and NTP traffic from a single private subnet to the Internet. You need one stack per availability zone. Example: If you use the `vpc-2azs.yaml` template, you will need two Nat Gateway stack in `A` and `B`.
@@ -91,10 +94,24 @@ This template describes a **highly available** Network Address Translation (NAT)
 * `operations/alert.yaml` (recommended)
 
 # SSH bastion host/instance
-This template describes a **highly available** SSH bastion host/instance. SSH Port 22 is open to the world. You can enable the default ec2-user access protected by the referenced EC2 KeyPair. You can also enable personalized SSH access by using the IAM users and their configured public keys. Use `ssh -A user@ip` to enable forwarding of the authentication agent connection when connection to the bastion host.
-**Users are not able to sudo on the bastion host/instance! That's very important for security. Why? SSH places a SSH_AUTH_SOCK file into the /tmp directoy only accessible by the user. If you have root you could use any of those files and jump to other machines as another user!**
+This template describes a **highly available** SSH bastion host/instance. SSH Port 22 is open to the world.
+
+**Users must not be able to become root on the bastion host/instance! That's very important for security. Why? SSH places a SSH_AUTH_SOCK file into the /tmp directoy only accessible by the user. If you have root you could use any of those files and jump to other machines as another user!**
 
 ![Architecture](./img/vpc-ssh-bastion.png)
+
+## Single user: ec2-user
+
+Specify the same `KeyName` parameter for the bastion host and all other stacks you want to connect to.
+
+Use `ssh -J ec2-user@$bastion ec2-user@$target` and replace `$bastion` with the `IPAddress` output of the stack; `$target` with the private IP address of the EC2 instance you want to connect to.
+
+## Personalized users
+
+Enable the `IAMUserSSHAccess` parameter for the bastion host and all other stack you want to connect to.
+
+Use `ssh -J $user@$bastion $target` and replace `$user` with your IAM user name; `$bastion` with the `IPAddress` output of the stack; `$target` with the private IP address of the EC2 instance you want to connect to.
+
 ## Installation Guide
 1. This templates depends on one of our `vpc-*azs.yaml` templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml)
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-ssh-bastion&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-ssh-bastion.yaml)
@@ -148,7 +165,6 @@ This template describes a VPC endpoint to securely route traffic within a VPC fo
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
 
-
 # VPC Flow Logs to CloudWatch Logs
 This template enables [Flow Logs](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/flow-logs.html) for the specified VPC. Flow Logs contain aggregated network traffic data in your VPC.
 
@@ -164,3 +180,35 @@ This template enables [Flow Logs](http://docs.aws.amazon.com/AmazonVPC/latest/Us
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
 Flow Logs will show up in CloudWatch Logs a few minutes after activation.
+
+# Public DNS Zone
+This template creates a Route53 hosted zone that is resolvable from the public Internet. Other templates depend on this template to register their DNS entries (record sets).
+
+## Installation Guide
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-zone-public&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/zone-public.yaml)
+1. Click **Next** to proceed with the next step of the wizard.
+1. Specify a name and all parameters for the stack.
+1. Click **Next** to proceed with the next step of the wizard.
+1. Click **Next** to skip the **Options** step of the wizard.
+1. Click **Create** to start the creation of the stack.
+1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
+If you have an existing Route53 Hosted Zone you can wrap it into our required form using a legacy zone wrapper: [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=zone-legacy&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/zone-legacy.yaml) 
+
+# Private DNS Zone
+This template creates a Route53 hosted zone that is resolvable only from within a VPC. Other templates depend on this template to register their DNS entries (record sets).
+
+## Installation Guide
+1. This templates depends on one of our `vpc-*azs.yaml` templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml)
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-zone-private&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/zone-private.yaml)
+1. Click **Next** to proceed with the next step of the wizard.
+1. Specify a name and all parameters for the stack.
+1. Click **Next** to proceed with the next step of the wizard.
+1. Click **Next** to skip the **Options** step of the wizard.
+1. Click **Create** to start the creation of the stack.
+1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
+If you have an existing Route53 Hosted Zone you can wrap it into our required form using a legacy zone wrapper: [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=zone-legacy&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/zone-legacy.yaml) 
+
+## Dependencies
+* `vpc/vpc-*azs.yaml` (**required**)
