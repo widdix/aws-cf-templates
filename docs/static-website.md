@@ -43,11 +43,7 @@ To improve the default CloudFront behavior, we developed a Lambda@Edge solution 
 
 ## Installation Guide
 
-We highly recommend to use the Lambda@Edge solution. If you don't require proper Index Document / Default Root Object support, you can skip the Lambda@Edge installation
-
-### Lambda@Edge
-
-1. Switch to the us-east-1 (N. Virginia) region
+1. Switch to the us-east-1 (N. Virginia) region.
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=lambdaedge-index-document&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/static-website/lambdaedge-index-document.yaml)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
@@ -56,14 +52,12 @@ We highly recommend to use the Lambda@Edge solution. If you don't require proper
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
-1. Copy the `LambdaVersionArn` output of the stack.
-
-### CloudFront
-
+1. Copy the `LambdaVersionArn` output of the stack to your clipboard.
+1. Switch to the region where you want to S3 bucket with static files to be created in.
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=static-website&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/static-website/static-website.yaml)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
-    a. If you want to use the Lambda@Edge solution, set the `LambdaEdgeSubdirectoriesLambdaVersionArn` to the value of the `LambdaVersionArn` output. 
+    a. Set the `LambdaEdgeSubdirectoriesLambdaVersionArn` to the value of the `LambdaVersionArn` output. 
 1. Click **Next** to proceed with the next step of the wizard.
 1. Click **Next** to skip the **Options** step of the wizard.
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
@@ -71,5 +65,5 @@ We highly recommend to use the Lambda@Edge solution. If you don't require proper
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
 ## Dependencies
+* `static-website/lambdaedge-index-document.yaml` (**required**)
 * `vpc/zone-*.yaml`
-* `static-website/lambdaedge-index-document.yaml`
