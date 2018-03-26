@@ -10,6 +10,10 @@ Metadata:
       - IndexDocument
       - DomainName
       - RedirectDomainName
+    - Label:
+        default: 'Operational Parameters'
+      Parameters:
+      - LogsRetentionInDays
 Parameters:
   IndexDocument:
     Description: 'The name of the index document for the website.'
@@ -22,6 +26,11 @@ Parameters:
     Description: 'Optional domain name redirecting to DomainName (e.g. www.widdix.de).'
     Type: String
     Default: ''
+  LogsRetentionInDays:
+    Description: 'Specifies the number of days you want to retain log events in the specified log group.'
+    Type: Number
+    Default: 14
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
 Resources:
   LambdaRole:
     Type: 'AWS::IAM::Role'
@@ -103,6 +112,11 @@ Resources:
       Role: !GetAtt 'LambdaRole.Arn'
       Runtime: 'nodejs6.10'
       Timeout: 5
+  LambdaLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${LambdaFunction}'
+      RetentionInDays: !Ref LogsRetentionInDays
   LambdaVersionV1:
     Type: 'AWS::Lambda::Version'
     Properties:
