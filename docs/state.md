@@ -38,7 +38,8 @@ DynamoDB table with auto scaling for read and write capacity.
 * `operations/alert.yaml` (recommended)
 
 ## Limitations
-* No backup
+* No backup (see `operations/backup-dynamodb-native.yaml`)
+* No encryption at rest
 
 # ElastiCache memcached
 
@@ -94,6 +95,7 @@ Cluster of Elasticsearch nodes.
 
 ## Limitations
 * No auto scaling
+* No encryption at rest
 
 # RDS Aurora
 

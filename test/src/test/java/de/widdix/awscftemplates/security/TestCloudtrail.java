@@ -19,7 +19,7 @@ public class TestCloudtrail extends ACloudFormationTest {
                 "      \"Service\": \"cloudtrail.amazonaws.com\"\n" +
                 "    },\n" +
                 "    \"Action\": \"s3:GetBucketAcl\",\n" +
-                "    \"Resource\": \"arn:aws:s3:::"+ bucketName + "\"\n" +
+                "    \"Resource\": \"arn:aws:s3:::" + bucketName + "\"\n" +
                 "  }, {\n" +
                 "    \"Sid\": \"AWSCloudTrailWrite\",\n" +
                 "    \"Effect\": \"Allow\",\n" +
@@ -28,7 +28,7 @@ public class TestCloudtrail extends ACloudFormationTest {
                 "    },\n" +
                 "    \"Action\": \"s3:PutObject\",\n" +
                 "    \"Resource\": [\n" +
-                "      \"arn:aws:s3:::"+ bucketName + "/AWSLogs/" + this.getAccount() + "/*\"\n" +
+                "      \"arn:aws:s3:::" + bucketName + "/AWSLogs/" + this.getAccount() + "/*\"\n" +
                 "    ],\n" +
                 "    \"Condition\": {\n" +
                 "      \"StringEquals\": {\n" +
