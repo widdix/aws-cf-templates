@@ -58,7 +58,6 @@ Resources:
           const domainName = '${DomainName}'.toLowerCase();
           const redirectDomainName = '${RedirectDomainName}'.toLowerCase();
           exports.handler = (event, context, cb) => {
-            console.log(`Invoke: ${!JSON.stringify(event)}`);
             const cf = event.Records[0].cf;
             const config = cf.config;
             const request = cf.request;
