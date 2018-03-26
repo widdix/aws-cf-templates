@@ -1308,11 +1308,9 @@ Resources:
       Runtime: 'nodejs6.10'
       Timeout: 60
   SchedulableContainersLogGroup:
-    Type: AWS::Logs::LogGroup
-    DependsOn: SchedulableContainersLambdaV2
-    DeletionPolicy: Retain
+    Type: 'AWS::Logs::LogGroup'
     Properties:
-      LogGroupName: !Sub '/aws/lambda${SchedulableContainersLambdaV2}'
+      LogGroupName: !Sub '/aws/lambda/${SchedulableContainersLambdaV2}'
       RetentionInDays: !Ref LogsRetentionInDays
   SchedulableContainersLambdaErrorsTooHighAlarm:
     Condition: HasAlertTopic
