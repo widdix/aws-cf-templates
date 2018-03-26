@@ -11,7 +11,7 @@ Metadata:
     - Label:
         default: 'Lambda@Edge Parameters'
       Parameters:
-      - LambdaEdgeSubdirectoriesLambdaVersionArn
+      - LambdaEdgeSubdirectoriesVersionArn
     - Label:
         default: 'CloudFront Parameters'
       Parameters:
@@ -32,12 +32,12 @@ Parameters:
     Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
     Type: String
     Default: ''
-  LambdaEdgeSubdirectoriesLambdaVersionArn:
+  LambdaEdgeSubdirectoriesVersionArn:
     Description: 'Optional version ARN of Lambda@Edge function based on static-website/lambdaedge-index-document.yaml template and exposed as output LambdaVersionArn.'
     Type: String
     Default: ''
   DefaultRootObject:
-    Description: 'The name of the index document for the website (ignored when LambdaEdgeSubdirectoriesLambdaVersionArn is set).'
+    Description: 'The name of the index document for the website (ignored when LambdaEdgeSubdirectoriesVersionArn is set).'
     Type: String
     Default: 'index.html'
   DomainName:
@@ -72,7 +72,7 @@ Conditions:
   HasNotZone: !Equals [!Ref ParentZoneStack, '']
   HasRedirectDomainNameAndHasZone: !And [!Condition HasRedirectDomainName, !Condition HasZone]
   HasRedirectDomainNameAndHasNotZone: !And [!Condition HasRedirectDomainName, !Condition HasNotZone]
-  HasLambdaEdgeSubdirectoriesLambdaVersionArn: !Not [!Equals [!Ref LambdaEdgeSubdirectoriesLambdaVersionArn, '']]
+  HasLambdaEdgeSubdirectoriesVersionArn: !Not [!Equals [!Ref LambdaEdgeSubdirectoriesVersionArn, '']]
 Resources:
   Certificate:
     Condition: HasCreateAcmCertificate
@@ -134,17 +134,17 @@ Resources:
               Forward: none
             QueryString: false
           LambdaFunctionAssociations: !If
-          - HasLambdaEdgeSubdirectoriesLambdaVersionArn
+          - HasLambdaEdgeSubdirectoriesVersionArn
           - - EventType: 'viewer-request'
-              LambdaFunctionARN: !Ref LambdaEdgeSubdirectoriesLambdaVersionArn
+              LambdaFunctionARN: !Ref LambdaEdgeSubdirectoriesVersionArn
             - EventType: 'origin-request'
-              LambdaFunctionARN: !Ref LambdaEdgeSubdirectoriesLambdaVersionArn
+              LambdaFunctionARN: !Ref LambdaEdgeSubdirectoriesVersionArn
           - !Ref 'AWS::NoValue'
           MaxTTL: 86400 # in seconds
           MinTTL: 60 # in seconds
           TargetOriginId: s3origin
           ViewerProtocolPolicy: 'redirect-to-https'
-        DefaultRootObject: !If [HasLambdaEdgeSubdirectoriesLambdaVersionArn, !Ref 'AWS::NoValue', !Ref DefaultRootObject]
+        DefaultRootObject: !If [HasLambdaEdgeSubdirectoriesVersionArn, !Ref 'AWS::NoValue', !Ref DefaultRootObject]
         Enabled: true
         HttpVersion: http2
         Origins:
