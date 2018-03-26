@@ -140,35 +140,35 @@ Parameters:
 Mappings:
   RegionMap:
     'ap-south-1':
-      ECSAMI: 'ami-c80b5fa7'
+      ECSAMI: 'ami-2149114e'
     'eu-west-3':
-      ECSAMI: 'ami-bd10a7c0'
+      ECSAMI: 'ami-914afcec'
     'eu-west-2':
-      ECSAMI: 'ami-acd5cdc8'
+      ECSAMI: 'ami-a48d6bc3'
     'eu-west-1':
-      ECSAMI: 'ami-7827b301'
+      ECSAMI: 'ami-bfb5fec6'
     'ap-northeast-2':
-      ECSAMI: 'ami-d6f454b8'
+      ECSAMI: 'ami-ba74d8d4'
     'ap-northeast-1':
-      ECSAMI: 'ami-af46dbc9'
+      ECSAMI: 'ami-5add893c'
     'sa-east-1':
-      ECSAMI: 'ami-ca95d6a6'
+      ECSAMI: 'ami-d3bce9bf'
     'ca-central-1':
-      ECSAMI: 'ami-e8cb4e8c'
+      ECSAMI: 'ami-a535b2c1'
     'ap-southeast-1':
-      ECSAMI: 'ami-fec3b482'
+      ECSAMI: 'ami-acbcefd0'
     'ap-southeast-2':
-      ECSAMI: 'ami-b88e7cda'
+      ECSAMI: 'ami-4cc5072e'
     'eu-central-1':
-      ECSAMI: 'ami-b378e8dc'
+      ECSAMI: 'ami-ac055447'
     'us-east-1':
-      ECSAMI: 'ami-13401669'
+      ECSAMI: 'ami-cb17d8b6'
     'us-east-2':
-      ECSAMI: 'ami-901338f5'
+      ECSAMI: 'ami-1b90a67e'
     'us-west-1':
-      ECSAMI: 'ami-b3adacd3'
+      ECSAMI: 'ami-9cbbaffc'
     'us-west-2':
-      ECSAMI: 'ami-9a02a9e2'
+      ECSAMI: 'ami-05b5277d'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -875,13 +875,12 @@ Resources:
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
       UserData:
         'Fn::Base64': !Sub |
-          #!/bin/bash -x
-          bash -ex << "TRY"
-            echo "ECS_CLUSTER=${Cluster}" >> /etc/ecs/ecs.config
-            yum install -y aws-cfn-bootstrap
-            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
-          TRY
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+          #!/bin/bash -ex
+          trap '/opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}' ERR
+          echo "ECS_CLUSTER=${Cluster}" >> /etc/ecs/ecs.config
+          yum install -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
@@ -1022,17 +1021,17 @@ Resources:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
       AdjustmentType: PercentChangeInCapacity
-      MinAdjustmentStep: 1
+      MinAdjustmentMagnitude: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
-      Cooldown: 300
+      Cooldown: 600
       ScalingAdjustment: 25
   ScaleDownPolicy:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
       AdjustmentType: PercentChangeInCapacity
-      MinAdjustmentStep: 1
+      MinAdjustmentMagnitude: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
-      Cooldown: 300
+      Cooldown: 600
       ScalingAdjustment: -25
   ContainerInstancesShortageAlarm:
     Type: 'AWS::CloudWatch::Alarm'
@@ -1145,7 +1144,7 @@ Resources:
         - 'ECS Container Instance State Change'
       State: ENABLED
       Targets:
-      - Arn: !GetAtt 'SchedulableContainersLambda.Arn'
+      - Arn: !GetAtt 'SchedulableContainersLambdaV2.Arn'
         Id: lambda
   SchedulableContainersRuleFailedInvocationsTooHighAlarm:
     Condition: HasAlertTopic
@@ -1170,7 +1169,7 @@ Resources:
       ScheduleExpression: 'rate(1 minute)'
       State: ENABLED
       Targets:
-      - Arn: !GetAtt 'SchedulableContainersLambda.Arn'
+      - Arn: !GetAtt 'SchedulableContainersLambdaV2.Arn'
         Id: lambda
   SchedulableContainersCronFailedInvocationsTooHighAlarm:
     Condition: HasAlertTopic
@@ -1199,16 +1198,9 @@ Resources:
           Principal:
             Service: 'lambda.amazonaws.com'
           Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+      - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
       Policies:
-      - PolicyName: logs
-        PolicyDocument:
-          Statement:
-          - Effect: Allow
-            Action:
-            - 'logs:CreateLogGroup'
-            - 'logs:CreateLogStream'
-            - 'logs:PutLogEvents'
-            Resource: 'arn:aws:logs:*:*:*'
       - PolicyName: ecs
         PolicyDocument:
           Statement:
@@ -1231,17 +1223,17 @@ Resources:
     Type: 'AWS::Lambda::Permission'
     Properties:
       Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref SchedulableContainersLambda
+      FunctionName: !Ref SchedulableContainersLambdaV2
       Principal: 'events.amazonaws.com'
       SourceArn: !GetAtt 'SchedulableContainersRule.Arn'
   SchedulableContainersLambdaPermission2:
     Type: 'AWS::Lambda::Permission'
     Properties:
       Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref SchedulableContainersLambda
+      FunctionName: !Ref SchedulableContainersLambdaV2
       Principal: 'events.amazonaws.com'
       SourceArn: !GetAtt 'SchedulableContainersCron.Arn'
-  SchedulableContainersLambda:
+  SchedulableContainersLambdaV2:
     Type: 'AWS::Lambda::Function'
     Properties:
       Code:
@@ -1315,6 +1307,11 @@ Resources:
       Role: !GetAtt 'SchedulableContainersLambdaRole.Arn'
       Runtime: 'nodejs6.10'
       Timeout: 60
+  SchedulableContainersLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${SchedulableContainersLambdaV2}'
+      RetentionInDays: !Ref LogsRetentionInDays
   SchedulableContainersLambdaErrorsTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -1331,7 +1328,7 @@ Resources:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
       - Name: FunctionName
-        Value: !Ref SchedulableContainersLambda
+        Value: !Ref SchedulableContainersLambdaV2
   SchedulableContainersLambdaThrottlesTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -1348,13 +1345,16 @@ Resources:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
       - Name: FunctionName
-        Value: !Ref SchedulableContainersLambda
+        Value: !Ref SchedulableContainersLambdaV2
 Outputs:
   TemplateID:
-    Description: 'cloudonaut.io template id'
+    Description: 'cloudonaut.io template id.'
     Value: 'ecs/cluster'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   Cluster:
     Description: 'ECS cluster.'

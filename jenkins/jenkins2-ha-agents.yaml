@@ -30,6 +30,7 @@ Metadata:
       - MasterInstanceType
       - MasterAdminPassword
       - MasterLogsRetentionInDays
+      - MasterVolumeSize
     - Label:
         default: 'Agent Parameters'
       Parameters:
@@ -101,6 +102,13 @@ Parameters:
     Type: Number
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  MasterVolumeSize:
+    Description: 'The root volume size, in Gibibytes (GiB). Keep in mind that Jenkins home lives on EFS.'
+    Type: Number
+    Default: 8
+    ConstraintDescription: 'Must be in the range [8-1024]'
+    MinValue: 8
+    MaxValue: 1024
   AgentSubnetsReach:
     Description: 'Should the agents have direct access to the Internet or do you prefer private subnets with NAT?'
     Type: String
@@ -113,7 +121,7 @@ Parameters:
     Type: String
     Default: 't2.micro'
   AgentVolumeSize:
-    Description: 'The volume size, in Gibibytes (GiB).'
+    Description: 'The root volume size, in Gibibytes (GiB).  Keep in mind that Jenkins home lives on EFS.'
     Type: Number
     Default: 8
     ConstraintDescription: 'Must be in the range [8-1024]'
@@ -152,7 +160,7 @@ Parameters:
   JenkinsVersion:
     Description: 'Jenkins version number'
     Type: String
-    Default: '2.89.2'
+    Default: '2.89.4'
   SubDomainName:
     Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
     Type: String
@@ -160,35 +168,35 @@ Parameters:
 Mappings:
   RegionMap:
     'ap-south-1':
-      AMI: 'ami-4c045023'
+      AMI: 'ami-531a4c3c'
     'eu-west-3':
-      AMI: 'ami-8715a2fa'
+      AMI: 'ami-8ee056f3'
     'eu-west-2':
-      AMI: 'ami-63243c07'
+      AMI: 'ami-403e2524'
     'eu-west-1':
-      AMI: 'ami-075eca7e'
+      AMI: 'ami-d834aba1'
     'ap-northeast-2':
-      AMI: 'ami-7bef4f15'
+      AMI: 'ami-863090e8'
     'ap-northeast-1':
-      AMI: 'ami-19910c7f'
+      AMI: 'ami-ceafcba8'
     'sa-east-1':
-      AMI: 'ami-9582c1f9'
+      AMI: 'ami-84175ae8'
     'ca-central-1':
-      AMI: 'ami-e5cc4981'
+      AMI: 'ami-a954d1cd'
     'ap-southeast-1':
-      AMI: 'ami-1c99ee60'
+      AMI: 'ami-68097514'
     'ap-southeast-2':
-      AMI: 'ami-33996b51'
+      AMI: 'ami-942dd1f6'
     'eu-central-1':
-      AMI: 'ami-06a83869'
+      AMI: 'ami-5652ce39'
     'us-east-1':
-      AMI: 'ami-5583d42f'
+      AMI: 'ami-97785bed'
     'us-east-2':
-      AMI: 'ami-e81b308d'
+      AMI: 'ami-f63b1193'
     'us-west-1':
-      AMI: 'ami-2f99984f'
+      AMI: 'ami-824c4ee2'
     'us-west-2':
-      AMI: 'ami-a142e9d9'
+      AMI: 'ami-f2d3638a'
 Conditions:
   HasZeroAgents: !Equals [!Ref AgentDesiredCapacity, '0']
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
@@ -1071,6 +1079,11 @@ Resources:
       SecurityGroups:
       - !Ref MasterSG
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+      BlockDeviceMappings:
+      - DeviceName: '/dev/xvda'
+        Ebs:
+          VolumeSize: !Ref MasterVolumeSize
+          VolumeType: gp2
       UserData:
         'Fn::Base64': !Sub |
           #!/bin/bash -x
@@ -1940,10 +1953,13 @@ Resources:
       MetricName: BuildActive
 Outputs:
   TemplateID:
-    Description: 'cloudonaut.io template id'
+    Description: 'cloudonaut.io template id.'
     Value: 'jenkins/jenkins2-ha-agents'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   AdminUsername:
     Description: 'User name for the Jenkins admin.'

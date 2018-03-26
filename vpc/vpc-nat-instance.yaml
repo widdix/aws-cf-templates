@@ -72,35 +72,35 @@ Parameters:
 Mappings:
   RegionMap:
     'ap-south-1':
-      NATAMI: 'ami-0c184c63'
+      NATAMI: 'ami-c2e9bead'
     'eu-west-3':
-      NATAMI: 'ami-7612a50b'
+      NATAMI: 'ami-0fe35572'
     'eu-west-2':
-      NATAMI: 'ami-fdd9c199'
+      NATAMI: 'ami-87312ae3'
     'eu-west-1':
-      NATAMI: 'ami-cd5fcbb4'
+      NATAMI: 'ami-a136a9d8'
     'ap-northeast-2':
-      NATAMI: 'ami-90e747fe'
+      NATAMI: 'ami-c52f8fab'
     'ap-northeast-1':
-      NATAMI: 'ami-f1930e97'
+      NATAMI: 'ami-2c593d4a'
     'sa-east-1':
-      NATAMI: 'ami-6083c00c'
+      NATAMI: 'ami-be1f52d2'
     'ca-central-1':
-      NATAMI: 'ami-47cb4e23'
+      NATAMI: 'ami-2b4acf4f'
     'ap-southeast-1':
-      NATAMI: 'ami-5d87f021'
+      NATAMI: 'ami-270f735b'
     'ap-southeast-2':
-      NATAMI: 'ami-e1986a83'
+      NATAMI: 'ami-3d28d45f'
     'eu-central-1':
-      NATAMI: 'ami-bba838d4'
+      NATAMI: 'ami-5756ca38'
     'us-east-1':
-      NATAMI: 'ami-3e83d444'
+      NATAMI: 'ami-8d7655f7'
     'us-east-2':
-      NATAMI: 'ami-2e19324b'
+      NATAMI: 'ami-fc3b1199'
     'us-west-1':
-      NATAMI: 'ami-c59495a5'
+      NATAMI: 'ami-394e4c59'
     'us-west-2':
-      NATAMI: 'ami-0541ea7d'
+      NATAMI: 'ami-35d6664d'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -444,15 +444,14 @@ Resources:
       UserData:
         'Fn::Base64': !Sub
         - |
-          #!/bin/bash -x
-          bash -ex << "TRY"
-            INSTANCEID=$(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
-            aws --region ${Region} ec2 associate-address --instance-id $INSTANCEID --allocation-id ${EIPAllocationId}
-            aws --region ${Region} ec2 modify-instance-attribute --instance-id $INSTANCEID --source-dest-check "{\"Value\": false}"
-            aws --region ${Region} ec2 replace-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID || aws --region ${Region} ec2 create-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID
-            /opt/aws/bin/cfn-init -v --stack ${StackName} --resource NATLaunchConfiguration --region ${Region}
-          TRY
-          /opt/aws/bin/cfn-signal -e $? --region ${Region} --stack ${StackName} --resource NATAutoScalingGroup
+          #!/bin/bash -ex
+          trap '/opt/aws/bin/cfn-signal -e 1 --region ${Region} --stack ${StackName} --resource NATAutoScalingGroup' ERR
+          INSTANCEID=$(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
+          aws --region ${Region} ec2 associate-address --instance-id $INSTANCEID --allocation-id ${EIPAllocationId}
+          aws --region ${Region} ec2 modify-instance-attribute --instance-id $INSTANCEID --source-dest-check "{\"Value\": false}"
+          aws --region ${Region} ec2 replace-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID || aws --region ${Region} ec2 create-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID
+          /opt/aws/bin/cfn-init -v --stack ${StackName} --resource NATLaunchConfiguration --region ${Region}
+          /opt/aws/bin/cfn-signal -e 0 --region ${Region} --stack ${StackName} --resource NATAutoScalingGroup
         - RouteTablePrivate:
             'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTable${SubnetZone}Private'
           Region:
@@ -518,10 +517,13 @@ Resources:
         Value: !Ref NATAutoScalingGroup
 Outputs:
   TemplateID:
-    Description: 'cloudonaut.io template id'
+    Description: 'cloudonaut.io template id.'
     Value: 'vpc/vpc-nat-instance'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   IPAddress:
     Description: 'The public IP address of the NAT instance.'

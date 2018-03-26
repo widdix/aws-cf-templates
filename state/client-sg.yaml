@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'VPC: Endpoint to DynamoDB for private subnets, a cloudonaut.io template'
+Description: 'State: Client security group, a cloudonaut.io template, sponsored by https://github.com/ngault'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -13,28 +13,24 @@ Parameters:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
 Resources:
-  Endpoint:
-    Type: 'AWS::EC2::VPCEndpoint'
+  ClientSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      RouteTableIds: !Split
-      - ','
-      - 'Fn::ImportValue':
-          !Sub '${ParentVPCStack}-RouteTablesPrivate'
-      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.dynamodb'
+      GroupDescription: !Ref 'AWS::StackName'
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
-    Value: 'vpc/vpc-endpoint-dynamodb'
+    Value: 'state/client-sg'
   TemplateVersion:
     Description: 'cloudonaut.io template version.'
     Value: '__VERSION__'
   StackName:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
-  Endpoint:
-    Description: 'The VPC endpoint to DynamoDB.'
-    Value: !Ref Endpoint
+  ClientSecurityGroup:
+    Description: 'Use this Security Group to reference client traffic.'
+    Value: !Ref ClientSecurityGroup
     Export:
-      Name: !Sub '${AWS::StackName}-Endpoint'
+      Name: !Sub '${AWS::StackName}-ClientSecurityGroup'

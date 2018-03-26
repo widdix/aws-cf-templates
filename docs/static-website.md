@@ -14,3 +14,6 @@ This template describes the infrastructure for hosting a static website over HTT
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
+## Dependencies
+* `vpc/zone-*.yaml`
