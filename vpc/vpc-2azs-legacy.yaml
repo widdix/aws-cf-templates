@@ -181,3 +181,8 @@ Outputs:
     Value: !Ref RouteTableBPrivate
     Export:
       Name: !Sub '${AWS::StackName}-RouteTableBPrivate'
+  IPv6Support:
+    Description: 'IPv6 support.'
+    Value: !If [HasIPv6Support, true, false]
+    Export:
+      Name: !Sub '${AWS::StackName}-IPv6Support'
