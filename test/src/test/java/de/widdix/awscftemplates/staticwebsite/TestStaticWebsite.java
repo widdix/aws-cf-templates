@@ -75,7 +75,9 @@ public class TestStaticWebsite extends ACloudFormationTest {
                 this.deleteStackAndRetryOnFailure(stackName);
             }
         } finally {
-            this.deleteStackAndRetryOnFailure(stackNameLambdaEdge);
+            // this stack is not deleted because Lambda@Edge functions take up to 3 hours before they can be deleted
+            // the cleanup Lambda takes care of those stacks
+            // this.deleteStackAndRetryOnFailure(stackNameLambdaEdge);
         }
     }
 
