@@ -215,7 +215,7 @@ Resources:
         Enabled: true
         HttpVersion: http2
         Origins:
-        - DomainName: !GetAtt 'S3BucketRedirect.DomainName'
+        - DomainName: !Select [2, !Split ['/', !GetAtt 'S3BucketRedirect.WebsiteURL']]
           Id: s3origin
           CustomOriginConfig:
             OriginProtocolPolicy: 'http-only'
