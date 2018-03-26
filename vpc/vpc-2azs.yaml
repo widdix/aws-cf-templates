@@ -60,7 +60,7 @@ Resources:
       VpcId: !Ref VPC
       InternetGatewayId: !Ref InternetGateway
   SubnetAPublic:
-    DependsOn: VPCCidrBlock
+    DependsOn: VPCCidrBlock # TODO CFN bug? why can I not get the Ipv6CidrBlocks from the VPCCidrBlock resource? instead I have to ask the VPC resource...
     Type: 'AWS::EC2::Subnet'
     Properties:
       AssignIpv6AddressOnCreation: !If [HasIPv6Support, true, false]
@@ -75,7 +75,7 @@ Resources:
       - Key: Reach
         Value: public
   SubnetAPrivate:
-    DependsOn: VPCCidrBlock
+    DependsOn: VPCCidrBlock # TODO CFN bug? why can I not get the Ipv6CidrBlocks from the VPCCidrBlock resource? instead I have to ask the VPC resource...
     Type: 'AWS::EC2::Subnet'
     Properties:
       AssignIpv6AddressOnCreation: !If [HasIPv6Support, true, false]
@@ -89,7 +89,7 @@ Resources:
       - Key: Reach
         Value: private
   SubnetBPublic:
-    DependsOn: VPCCidrBlock
+    DependsOn: VPCCidrBlock # TODO CFN bug? why can I not get the Ipv6CidrBlocks from the VPCCidrBlock resource? instead I have to ask the VPC resource...
     Type: 'AWS::EC2::Subnet'
     Properties:
       AssignIpv6AddressOnCreation: !If [HasIPv6Support, true, false]
@@ -104,7 +104,7 @@ Resources:
       - Key: Reach
         Value: public
   SubnetBPrivate:
-    DependsOn: VPCCidrBlock
+    DependsOn: VPCCidrBlock # TODO CFN bug? why can I not get the Ipv6CidrBlocks from the VPCCidrBlock resource? instead I have to ask the VPC resource...
     Type: 'AWS::EC2::Subnet'
     Properties:
       AssignIpv6AddressOnCreation: !If [HasIPv6Support, true, false]
@@ -165,28 +165,28 @@ Resources:
     Properties:
       SubnetId: !Ref SubnetBPrivate
       RouteTableId: !Ref RouteTableBPrivate
-  RouteTablePublicInternetRoute: # should be RouteTableAPublicInternetRoute, but logical id was not changed for backward compatibility
+  RouteTablePublicInternetRoute: # should be RouteTablePublicAInternetRoute, but logical id was not changed for backward compatibility
     Type: 'AWS::EC2::Route'
     DependsOn: VPCGatewayAttachment
     Properties:
       RouteTableId: !Ref RouteTablePublic
       DestinationCidrBlock: '0.0.0.0/0'
       GatewayId: !Ref InternetGateway
-  RouteTableAPublicInternetRouteIPv6:
+  RouteTablePublicAInternetRouteIPv6:
     Condition: HasIPv6Support
     Type: 'AWS::EC2::Route'
     Properties:
       RouteTableId: !Ref RouteTablePublic
       DestinationIpv6CidrBlock: '::/0'
       GatewayId: !Ref InternetGateway
-  RouteTableAPrivateInternetRouteIPv6:
+  RouteTablePrivateAInternetRouteIPv6:
     Condition: HasIPv6Support
     Type: 'AWS::EC2::Route'
     Properties:
       RouteTableId: !Ref RouteTablePrivate
       DestinationIpv6CidrBlock: '::/0'
       EgressOnlyInternetGatewayId: !Ref EgressOnlyInternetGateway
-  RouteTablePublicBInternetRoute: # should be RouteTableBPublicInternetRoute, but logical id was not changed for backward compatibility
+  RouteTablePublicBInternetRoute:
     Type: 'AWS::EC2::Route'
     DependsOn: VPCGatewayAttachment
     Properties:
@@ -200,7 +200,7 @@ Resources:
       RouteTableId: !Ref RouteTableBPublic
       DestinationIpv6CidrBlock: '::/0'
       GatewayId: !Ref InternetGateway
-  RouteTableBPrivateInternetRouteIPv6:
+  RouteTablePrivateBInternetRouteIPv6:
     Condition: HasIPv6Support
     Type: 'AWS::EC2::Route'
     Properties:

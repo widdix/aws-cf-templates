@@ -319,6 +319,15 @@ Resources:
       FromPort: 80
       ToPort: 80
       CidrIp: '0.0.0.0/0'
+  ALBSecurityGroupInHttpWorldIPv6:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotAuthProxySecurityGroup
+    Properties:
+      GroupId: !Ref ALBSecurityGroup
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      CidrIpv6: '::/0'
   ALBSecurityGroupInHttpsWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn
@@ -328,6 +337,15 @@ Resources:
       FromPort: 443
       ToPort: 443
       CidrIp: '0.0.0.0/0'
+  ALBSecurityGroupInHttpsWorldIPv6:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn
+    Properties:
+      GroupId: !Ref ALBSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      CidrIpv6: '::/0'
   ALBSecurityGroupInHttpAuthProxy:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasAuthProxySecurityGroup
@@ -378,6 +396,15 @@ Resources:
       FromPort: 22
       ToPort: 22
       CidrIp: '0.0.0.0/0'
+  SecurityGroupInSSHWorldIPv6:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotSSHBastionSecurityGroup
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIpv6: '::/0'
   HTTPCodeELB5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -470,6 +497,7 @@ Resources:
         - ','
         - 'Fn::ImportValue':
             !Sub '${ParentVPCStack}-SubnetsPublic'
+      IpAddressType: dualstack
   DefaultTargetGroup: # this is used as the fall-back target group and is used to health checking the ECS agent. Services use their own ListenerRules to accept traffic based on path prefixes.
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:

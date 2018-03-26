@@ -118,6 +118,7 @@ Resources:
           ViewerProtocolPolicy: 'redirect-to-https'
         Enabled: true
         HttpVersion: http2
+        IPV6Enabled: true
         PriceClass: 'PriceClass_All'
         ViewerCertificate:
           AcmCertificateArn: !If [HasCreateAcmCertificate, !Ref Certificate, !If [HasAcmCertificateArn, !Ref ExistingCertificate, !Ref 'AWS::NoValue']]
@@ -186,6 +187,7 @@ Resources:
           ViewerProtocolPolicy: 'redirect-to-https'
         Enabled: true
         HttpVersion: http2
+        IPV6Enabled: true
         PriceClass: 'PriceClass_All'
         ViewerCertificate:
           AcmCertificateArn: !If [HasCreateAcmCertificate, !Ref Certificate, !If [HasAcmCertificateArn, !Ref ExistingCertificate, !Ref 'AWS::NoValue']]
