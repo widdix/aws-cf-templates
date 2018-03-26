@@ -802,10 +802,13 @@ Resources:
         Value: !Ref AutoScalingGroup
 Outputs:
   TemplateID:
-    Description: 'cloudonaut.io template id'
+    Description: 'cloudonaut.io template id.'
     Value: 'security/auth-proxy-ha-github-orga'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   SecurityGroup:
     Description: 'Use this Security Group to reference incoming traffic from the auth proxy.'

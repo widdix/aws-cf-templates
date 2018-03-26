@@ -499,10 +499,13 @@ Resources:
         Value: !Ref VirtualMachine
 Outputs:
   TemplateID:
-    Description: 'cloudonaut.io template id'
+    Description: 'cloudonaut.io template id.'
     Value: 'ec2/ec2-auto-recovery'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   InstanceId:
     Description: 'The EC2 instance id.'

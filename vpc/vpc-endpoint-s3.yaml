@@ -25,10 +25,13 @@ Resources:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
 Outputs:
   TemplateID:
-    Description: 'cloudonaut.io template id'
+    Description: 'cloudonaut.io template id.'
     Value: 'vpc/vpc-endpoint-s3'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   Endpoint:
     Description: 'The VPC endpoint to S3.'

@@ -69,6 +69,7 @@ This template describes a NAT Gateway that forwards HTTP, HTTPS and NTP traffic 
 
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
+* `operations/alert.yaml` (recommended)
 
 # NAT instance
 This template describes a **highly available** Network Address Translation (NAT) instance that forwards HTTP, HTTPS and NTP traffic from a single private subnet to the Internet. You need one stack per availability zone. Example: If you use the `vpc-2azs.yaml` template, you will need two Nat Gateway stack in `A` and `B`.
