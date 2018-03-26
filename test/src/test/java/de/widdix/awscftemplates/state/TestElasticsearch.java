@@ -12,7 +12,7 @@ public class TestElasticsearch extends ACloudFormationTest {
         final String clientStackName = "client-" + this.random8String();
         final String stackName = "elasticsearch-" + this.random8String();
         try {
-            this.createStack(vpcStackName,"vpc/vpc-2azs.yaml");
+            this.createStack(vpcStackName, "vpc/vpc-2azs.yaml");
             try {
                 this.createStack(clientStackName,
                         "state/client-sg.yaml",

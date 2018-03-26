@@ -32,10 +32,13 @@ Resources:
         VPCRegion: !Ref 'AWS::Region'
 Outputs:
   TemplateID:
-    Description: 'Template id'
+    Description: 'cloudonaut.io template id.'
     Value: 'vpc/zone-private'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   HostedZoneName:
     Description: 'The name of the hosted zone.'

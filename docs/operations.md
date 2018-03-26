@@ -39,7 +39,7 @@ I add links to AWS Management Console that are relevant to an incident. Contextu
 # Backup DynamoDB (Data Pipeline & EMR)
 This template describes a Data Pipeline to backup a single DynamoDB table. The Data Pipeline will spin up a EMR cluster to do the backup.
 
-> Deprecated, use `operations/backup-dynamodb-native.yaml` instead!
+> Deprecated in v7, will be removed in v8, use `operations/backup-dynamodb-native.yaml` instead!
 
 ## Installation Guide
 1. This templates depends on our [`vpc-*azs.yaml`](../vpc/) template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml)

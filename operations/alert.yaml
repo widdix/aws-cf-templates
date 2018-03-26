@@ -126,10 +126,13 @@ Resources:
       TopicArn: !Ref FallbackTopic
 Outputs:
   TemplateID:
-    Description: 'cloudonaut.io template id'
+    Description: 'cloudonaut.io template id.'
     Value: 'operations/alert'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   TopicARN:
     Description: 'The ARN of the alert topic.'
