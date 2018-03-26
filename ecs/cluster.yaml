@@ -1144,7 +1144,7 @@ Resources:
         - 'ECS Container Instance State Change'
       State: ENABLED
       Targets:
-      - Arn: !GetAtt 'SchedulableContainersLambda.Arn'
+      - Arn: !GetAtt 'SchedulableContainersLambdaV2.Arn'
         Id: lambda
   SchedulableContainersRuleFailedInvocationsTooHighAlarm:
     Condition: HasAlertTopic
@@ -1169,7 +1169,7 @@ Resources:
       ScheduleExpression: 'rate(1 minute)'
       State: ENABLED
       Targets:
-      - Arn: !GetAtt 'SchedulableContainersLambda.Arn'
+      - Arn: !GetAtt 'SchedulableContainersLambdaV2.Arn'
         Id: lambda
   SchedulableContainersCronFailedInvocationsTooHighAlarm:
     Condition: HasAlertTopic
@@ -1223,17 +1223,17 @@ Resources:
     Type: 'AWS::Lambda::Permission'
     Properties:
       Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref SchedulableContainersLambda
+      FunctionName: !Ref SchedulableContainersLambdaV2
       Principal: 'events.amazonaws.com'
       SourceArn: !GetAtt 'SchedulableContainersRule.Arn'
   SchedulableContainersLambdaPermission2:
     Type: 'AWS::Lambda::Permission'
     Properties:
       Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref SchedulableContainersLambda
+      FunctionName: !Ref SchedulableContainersLambdaV2
       Principal: 'events.amazonaws.com'
       SourceArn: !GetAtt 'SchedulableContainersCron.Arn'
-  SchedulableContainersLambda:
+  SchedulableContainersLambdaV2:
     Type: 'AWS::Lambda::Function'
     Properties:
       Code:
@@ -1307,6 +1307,13 @@ Resources:
       Role: !GetAtt 'SchedulableContainersLambdaRole.Arn'
       Runtime: 'nodejs6.10'
       Timeout: 60
+  SchedulableContainersLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn: SchedulableContainersLambdaV2
+    DeletionPolicy: Retain
+    Properties:
+      LogGroupName: !Sub '/aws/lambda${SchedulableContainersLambdaV2}'
+      RetentionInDays: !Ref LogsRetentionInDays
   SchedulableContainersLambdaErrorsTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -1323,7 +1330,7 @@ Resources:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
       - Name: FunctionName
-        Value: !Ref SchedulableContainersLambda
+        Value: !Ref SchedulableContainersLambdaV2
   SchedulableContainersLambdaThrottlesTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -1340,7 +1347,7 @@ Resources:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
       - Name: FunctionName
-        Value: !Ref SchedulableContainersLambda
+        Value: !Ref SchedulableContainersLambdaV2
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
