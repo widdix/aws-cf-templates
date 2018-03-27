@@ -959,6 +959,7 @@ Resources:
           Id: elb
           CustomOriginConfig:
             OriginProtocolPolicy: 'https-only'
+            OriginReadTimeout: 60
         DefaultCacheBehavior:
           AllowedMethods:
           - DELETE
