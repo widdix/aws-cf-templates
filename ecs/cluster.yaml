@@ -520,10 +520,6 @@ Resources:
           packages:
             yum:
               awslogs: []
-          # required to allow awslogs agent to pick up new threads
-          commands:
-            ecslogs:
-              command: mkdir /var/log/ecs
           files:
             '/etc/awslogs/awscli.conf':
               content: !Sub |
