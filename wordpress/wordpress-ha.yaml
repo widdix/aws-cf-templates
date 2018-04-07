@@ -32,7 +32,6 @@ Metadata:
       - WebServerIAMUserSSHAccess
       - WebServerInstanceType
       - WebServerLogsRetentionInDays
-      - NewRelicLicenseKey
       - SubDomainName
     - Label:
         default: 'Database Parameters'
@@ -80,13 +79,15 @@ Parameters:
     Description: 'A password for the WordPress admin.'
     Type: String
     NoEcho: true
+    MinLength: 8
+    MaxLength: 32
   BlogAdminEMail:
     Description: 'The email address of the WordPress admin.'
     Type: String
   BlogVersion:
     Description: 'WordPress version number'
     Type: String
-    Default: '4.8.3'
+    Default: '4.9.5'
   WebServerKeyName:
     Description: 'Optional key pair of the ec2-user to establish a SSH connection to the web server.'
     Type: String
@@ -115,45 +116,42 @@ Parameters:
     Description: 'The number of days to keep snapshots of the database.'
     Type: Number
     Default: 30
-  NewRelicLicenseKey:
-    Description: 'Optional New Relic License Key will install the New Relic Servers for Linux agent.'
-    Type: String
-    Default: ''
-    NoEcho: true
   SubDomainName:
-    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (works only when ParentZoneStack is set)'
+    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
     Type: String
     Default: 'www'
 Mappings:
   RegionMap:
     'ap-south-1':
-      AMI: 'ami-4fc58420'
+      AMI: 'ami-531a4c3c'
+    'eu-west-3':
+      AMI: 'ami-8ee056f3'
     'eu-west-2':
-      AMI: 'ami-1a7f6d7e'
+      AMI: 'ami-403e2524'
     'eu-west-1':
-      AMI: 'ami-acd005d5'
+      AMI: 'ami-d834aba1'
     'ap-northeast-2':
-      AMI: 'ami-9bec36f5'
+      AMI: 'ami-863090e8'
     'ap-northeast-1':
-      AMI: 'ami-2a69be4c'
+      AMI: 'ami-ceafcba8'
     'sa-east-1':
-      AMI: 'ami-f1344b9d'
+      AMI: 'ami-84175ae8'
     'ca-central-1':
-      AMI: 'ami-fd55ec99'
+      AMI: 'ami-a954d1cd'
     'ap-southeast-1':
-      AMI: 'ami-0797ea64'
+      AMI: 'ami-68097514'
     'ap-southeast-2':
-      AMI: 'ami-8536d6e7'
+      AMI: 'ami-942dd1f6'
     'eu-central-1':
-      AMI: 'ami-c7ee5ca8'
+      AMI: 'ami-5652ce39'
     'us-east-1':
-      AMI: 'ami-8c1be5f6'
+      AMI: 'ami-97785bed'
     'us-east-2':
-      AMI: 'ami-c5062ba0'
+      AMI: 'ami-f63b1193'
     'us-west-1':
-      AMI: 'ami-02eada62'
+      AMI: 'ami-824c4ee2'
     'us-west-2':
-      AMI: 'ami-e689729e'
+      AMI: 'ami-f2d3638a'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref WebServerKeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref WebServerIAMUserSSHAccess, 'true']
@@ -161,7 +159,6 @@ Conditions:
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
-  HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
 Resources:
@@ -235,6 +232,33 @@ Resources:
         FromPort: 3306
         ToPort: 3306
         SourceSecurityGroupId: !Ref WebServerSecurityGroup
+  DatabaseSecurityGroupInSSHBastion:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasSSHBastionSecurityGroup
+    Properties:
+      GroupId: !Ref DatabaseSecurityGroup
+      IpProtocol: tcp
+      FromPort: 3306
+      ToPort: 3306
+      SourceSecurityGroupId:
+        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+  BackendConnectionErrorsTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Elastic load balancer backend connection errors'
+      Namespace: 'AWS/ELB'
+      MetricName: BackendConnectionErrors
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancerName
+        Value: !Ref LoadBalancer
   HTTPCodeELB5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -262,6 +286,40 @@ Resources:
       Statistic: Sum
       Period: 60
       EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancerName
+        Value: !Ref LoadBalancer
+  SpilloverCountTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Elastic load balancer rejected requests because the surge queue is full.'
+      Namespace: 'AWS/ELB'
+      MetricName: SpilloverCount
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancerName
+        Value: !Ref LoadBalancer
+  SurgeQueueLengthTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Elastic load balancer surge queue is queuing up. Requests will be dropped when more than 1024 requests are queued.'
+      Namespace: 'AWS/ELB'
+      MetricName: SurgeQueueLength
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 512
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
@@ -473,11 +531,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default:
-            !If
-            - HasNewRelic
-            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, newrelic, config], [awslogs, newrelic, config]]
-            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, config], [awslogs, config]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, config], [awslogs, config]]
         awslogs:
           packages:
             yum:
@@ -539,11 +593,6 @@ Resources:
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
                 log_group_name = ${WebServerLogs}
-                [/var/log/newrelic/nrsysmond.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/newrelic/nrsysmond.log
-                log_stream_name = {instance_id}/var/log/newrelic/nrsysmond.log
-                log_group_name = ${WebServerLogs}
                 [/var/log/httpd/access_log]
                 datetime_format = %b %d %H:%M:%S %Y
                 file = /var/log/httpd/access_log
@@ -568,27 +617,6 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
-        newrelic:
-          packages:
-            rpm:
-              newrelic-sysmond: 'https://download.newrelic.com/pub/newrelic/el5/x86_64/newrelic-sysmond-2.3.0.132-1.x86_64.rpm'
-          files:
-            '/etc/newrelic/nrsysmond.cfg':
-              content: !Sub |
-                license_key=${NewRelicLicenseKey}
-                loglevel=info
-                logfile=/var/log/newrelic/nrsysmond.log
-                labels=StackName:${AWS::StackName};AccountId:${AWS::AccountId};Region:${AWS::Region}
-              mode: '000640'
-              owner: root
-              group: newrelic
-          services:
-            sysvinit:
-              newrelic-sysmond:
-                enabled: true
-                ensureRunning: true
-                files:
-                - '/etc/newrelic/nrsysmond.cfg'
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':
@@ -721,15 +749,14 @@ Resources:
       KeyName: !If [HasKeyName, !Ref WebServerKeyName, !Ref 'AWS::NoValue']
       UserData:
         'Fn::Base64': !Sub |
-          #!/bin/bash -x
-          bash -ex << "TRY"
-            while ! nc -z ${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com 2049; do sleep 10; done
-            sleep 10
-            mkdir /var/www
-            mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 "${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com:/" /var/www/
-            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
-          TRY
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+          #!/bin/bash -ex
+          trap '/opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}' ERR
+          while ! nc -z ${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com 2049; do sleep 10; done
+          sleep 10
+          mkdir /var/www
+          mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 "${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com:/" /var/www/
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     DependsOn:
@@ -766,6 +793,12 @@ Resources:
     UpdatePolicy:
       AutoScalingRollingUpdate:
         PauseTime: PT10M
+        SuspendProcesses:
+        - HealthCheck
+        - ReplaceUnhealthy
+        - AZRebalance
+        - AlarmNotification
+        - ScheduledActions
         WaitOnResourceSignals: true
   CPUTooHighAlarm:
     Condition: HasAlertTopic
@@ -788,7 +821,7 @@ Resources:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
       AdjustmentType: PercentChangeInCapacity
-      MinAdjustmentStep: 1
+      MinAdjustmentMagnitude: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
       Cooldown: 900
       ScalingAdjustment: 25
@@ -812,7 +845,7 @@ Resources:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
       AdjustmentType: PercentChangeInCapacity
-      MinAdjustmentStep: 1
+      MinAdjustmentMagnitude: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
       Cooldown: 300
       ScalingAdjustment: -25
@@ -838,15 +871,32 @@ Resources:
       FileSystemTags:
       - Key: Name
         Value: !Sub '${AWS::StackName}-efs'
+  EFSFileSystemPercentIOLimitTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average IO utilization over last 10 minutes higher than 80%'
+      Namespace: 'AWS/EFS'
+      MetricName: PercentIOLimit
+      Statistic: Average
+      Period: 600
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: FileSystemId
+        Value: !Ref EFSFileSystem
   EFSFileSystemBurstCreditBalanceTooLowAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'EFS file system is running out of burst credits.  You can expect a significant performance drop in the next hour.'
+      AlarmDescription: 'EFS file system is running out of burst credits. You can expect a significant performance drop in the next hour.'
       Namespace: 'AWS/EFS'
       MetricName: BurstCreditBalance
       Statistic: Average
-      Period: 60
+      Period: 600
       EvaluationPeriods: 1
       ComparisonOperator: LessThanThreshold
       Threshold: 192416666667 # 192 GB in Bytes (last hour where you can burst at 100 MB/sec)
@@ -909,6 +959,7 @@ Resources:
           Id: elb
           CustomOriginConfig:
             OriginProtocolPolicy: 'https-only'
+            OriginReadTimeout: 60
         DefaultCacheBehavior:
           AllowedMethods:
           - DELETE
@@ -978,10 +1029,13 @@ Resources:
           MinimumProtocolVersion: TLSv1
 Outputs:
   TemplateID:
-    Description: 'cloudonaut.io template id'
+    Description: 'cloudonaut.io template id.'
     Value: 'wordpress/wordpress-ha'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   CloudFrontID:
     Description: 'The ID of the CloudFront distribution.'

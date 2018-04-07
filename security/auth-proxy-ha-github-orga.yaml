@@ -27,7 +27,6 @@ Metadata:
       - KeyName
       - IAMUserSSHAccess
       - LogsRetentionInDays
-      - NewRelicLicenseKey
       - SubDomainName
 Parameters:
   ParentVPCStack:
@@ -68,11 +67,6 @@ Parameters:
     Type: Number
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
-  NewRelicLicenseKey:
-    Description: 'Optional New Relic License Key will install the New Relic Servers for Linux agent.'
-    Type: String
-    Default: ''
-    NoEcho: true
   GitHubOrganization:
     Description: 'GitHub organization name.'
     Type: String
@@ -91,45 +85,46 @@ Parameters:
     Type: String
     NoEcho: true
   SubDomainName:
-    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (works only when ParentZoneStack is set)'
+    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
     Type: String
     Default: 'jenkins'
 Mappings:
   RegionMap:
     'ap-south-1':
-      AMI: 'ami-4fc58420'
+      AMI: 'ami-531a4c3c'
+    'eu-west-3':
+      AMI: 'ami-8ee056f3'
     'eu-west-2':
-      AMI: 'ami-1a7f6d7e'
+      AMI: 'ami-403e2524'
     'eu-west-1':
-      AMI: 'ami-acd005d5'
+      AMI: 'ami-d834aba1'
     'ap-northeast-2':
-      AMI: 'ami-9bec36f5'
+      AMI: 'ami-863090e8'
     'ap-northeast-1':
-      AMI: 'ami-2a69be4c'
+      AMI: 'ami-ceafcba8'
     'sa-east-1':
-      AMI: 'ami-f1344b9d'
+      AMI: 'ami-84175ae8'
     'ca-central-1':
-      AMI: 'ami-fd55ec99'
+      AMI: 'ami-a954d1cd'
     'ap-southeast-1':
-      AMI: 'ami-0797ea64'
+      AMI: 'ami-68097514'
     'ap-southeast-2':
-      AMI: 'ami-8536d6e7'
+      AMI: 'ami-942dd1f6'
     'eu-central-1':
-      AMI: 'ami-c7ee5ca8'
+      AMI: 'ami-5652ce39'
     'us-east-1':
-      AMI: 'ami-8c1be5f6'
+      AMI: 'ami-97785bed'
     'us-east-2':
-      AMI: 'ami-c5062ba0'
+      AMI: 'ami-f63b1193'
     'us-west-1':
-      AMI: 'ami-02eada62'
+      AMI: 'ami-824c4ee2'
     'us-west-2':
-      AMI: 'ami-e689729e'
+      AMI: 'ami-f2d3638a'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
-  HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
 Resources:
@@ -186,6 +181,40 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt LoadBalancer.LoadBalancerFullName
+  RejectedConnectionCountTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer rejected connections because the load balancer had reached its maximum number of connections'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: RejectedConnectionCount
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt LoadBalancer.LoadBalancerFullName
+  TargetConnectionErrorCountTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer could not connect to targets'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: TargetConnectionErrorCount
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt LoadBalancer.LoadBalancerFullName
   RecordSet:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
@@ -214,7 +243,7 @@ Resources:
       Tags:
       - Key: Name
         Value: 'Auth proxy'
-  LoadBalancerTargetGroup:
+  LoadBalancerTargetGroup: # not monitored, but LoadBalancer is monitored!
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
       HealthCheckIntervalSeconds: 15
@@ -223,9 +252,9 @@ Resources:
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 10
       HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 8
+      UnhealthyThresholdCount: 2
       Matcher:
-        HttpCode: 200
+        HttpCode: '200-299'
       Port: 4180
       Protocol: HTTP
       Tags:
@@ -236,7 +265,7 @@ Resources:
       TargetGroupAttributes:
       - Key: 'deregistration_delay.timeout_seconds'
         Value: 30
-  LoadBalancerTargetGroupHttpRedirect:
+  LoadBalancerTargetGroupHttpRedirect: # not monitored, but LoadBalancer is monitored!
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
       HealthCheckIntervalSeconds: 15
@@ -245,9 +274,9 @@ Resources:
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 10
       HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 8
+      UnhealthyThresholdCount: 2
       Matcher:
-        HttpCode: 200
+        HttpCode: '200-299'
       Port: 8080
       Protocol: HTTP
       Tags:
@@ -374,11 +403,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default:
-            !If
-            - HasNewRelic
-            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, newrelic, config], [awslogs, newrelic, config]]
-            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, config], [awslogs, config]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, config], [awslogs, config]]
         awslogs:
           packages:
             yum:
@@ -440,11 +465,6 @@ Resources:
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
                 log_group_name = ${Logs}
-                [/var/log/newrelic/nrsysmond.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/newrelic/nrsysmond.log
-                log_stream_name = {instance_id}/var/log/newrelic/nrsysmond.log
-                log_group_name = ${Logs}
                 [/var/log/oauth2_proxy.log]
                 file = /var/log/oauth2_proxy.log
                 log_stream_name = {instance_id}/var/log/oauth2_proxy.log
@@ -468,27 +488,6 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
-        newrelic:
-          packages:
-            rpm:
-              newrelic-sysmond: 'https://download.newrelic.com/pub/newrelic/el5/x86_64/newrelic-sysmond-2.3.0.132-1.x86_64.rpm'
-          files:
-            '/etc/newrelic/nrsysmond.cfg':
-              content: !Sub |
-                license_key=${NewRelicLicenseKey}
-                loglevel=info
-                logfile=/var/log/newrelic/nrsysmond.log
-                labels=StackName:${AWS::StackName};AccountId:${AWS::AccountId};Region:${AWS::Region}
-              mode: '000640'
-              owner: root
-              group: newrelic
-          services:
-            sysvinit:
-              newrelic-sysmond:
-                enabled: true
-                ensureRunning: true
-                files:
-                - '/etc/newrelic/nrsysmond.cfg'
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':
@@ -557,7 +556,7 @@ Resources:
           users:
             oauth2_proxy: {}
           sources:
-            /opt/oauth2_proxy: 'https://github.com/bitly/oauth2_proxy/releases/download/v2.1/oauth2_proxy-2.1.linux-amd64.go1.6.tar.gz'
+            /opt/oauth2_proxy: 'https://github.com/bitly/oauth2_proxy/releases/download/v2.2/oauth2_proxy-2.2.0.linux-amd64.go1.8.1.tar.gz'
           packages:
             yum:
               nginx: []
@@ -605,7 +604,7 @@ Resources:
                 # Short-Description: Start daemon at boot time
                 # Description:       Enable service provided by daemon.
                 ### END INIT INFO
-                dir="/opt/oauth2_proxy/oauth2_proxy-2.1.linux-amd64.go1.6"
+                dir="/opt/oauth2_proxy/oauth2_proxy-2.2.0.linux-amd64.go1.8.1"
                 cmd="./oauth2_proxy -config=/etc/oauth2_proxy.cfg"
                 user="oauth2_proxy"
                 name=`basename $0`
@@ -777,6 +776,12 @@ Resources:
     UpdatePolicy:
       AutoScalingRollingUpdate:
         PauseTime: PT10M
+        SuspendProcesses:
+        - HealthCheck
+        - ReplaceUnhealthy
+        - AZRebalance
+        - AlarmNotification
+        - ScheduledActions
         WaitOnResourceSignals: true
   CPUTooHighAlarm:
     Condition: HasAlertTopic
@@ -797,10 +802,13 @@ Resources:
         Value: !Ref AutoScalingGroup
 Outputs:
   TemplateID:
-    Description: 'cloudonaut.io template id'
+    Description: 'cloudonaut.io template id.'
     Value: 'security/auth-proxy-ha-github-orga'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   SecurityGroup:
     Description: 'Use this Security Group to reference incoming traffic from the auth proxy.'

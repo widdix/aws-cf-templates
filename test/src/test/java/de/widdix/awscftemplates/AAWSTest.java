@@ -1,20 +1,22 @@
 package de.widdix.awscftemplates;
 
-import com.amazonaws.auth.*;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
-import com.amazonaws.services.s3.model.Region;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.*;
 import com.amazonaws.services.ec2.model.Filter;
+import com.amazonaws.services.route53.AmazonRoute53;
 import com.amazonaws.services.route53.AmazonRoute53ClientBuilder;
 import com.amazonaws.services.route53.model.*;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.*;
+import com.amazonaws.services.s3.model.Region;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
-import com.amazonaws.services.route53.AmazonRoute53;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 
 import java.util.List;
@@ -114,7 +116,17 @@ public abstract class AAWSTest extends ATest {
         this.s3.setBucketPolicy(name, policy);
     }
 
-    protected final void emptyBucket(final String name) {
+    protected final void createObject(final String bucketName, final String key, final String body) {
+        this.s3.putObject(bucketName, key, body);
+    }
+
+    protected final void deleteObject(final String bucketName, final String key) {
+        if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
+            this.s3.deleteObject(bucketName, key);
+        }
+    }
+
+    private void emptyBucket(final String name) {
         ObjectListing objectListing = s3.listObjects(name);
         while (true) {
             objectListing.getObjectSummaries().forEach((summary) -> s3.deleteObject(name, summary.getKey()));
@@ -136,8 +148,10 @@ public abstract class AAWSTest extends ATest {
     }
 
     protected final void deleteBucket(final String name) {
-        this.emptyBucket(name);
-        this.s3.deleteBucket(new DeleteBucketRequest(name));
+        if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
+            this.emptyBucket(name);
+            this.s3.deleteBucket(new DeleteBucketRequest(name));
+        }
     }
 
     protected final Vpc getDefaultVPC() {

@@ -28,7 +28,7 @@ public final class Config {
     }
 
     public static String get(final Key key) {
-        final String env =  System.getenv(key.name);
+        final String env = System.getenv(key.name);
         if (env == null) {
             if (key.defaultValue == null) {
                 throw new RuntimeException("config not found: " + key.name);

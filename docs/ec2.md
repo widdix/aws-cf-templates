@@ -24,3 +24,4 @@ This template describes an EC2 instance with auto-recovery. If the instance fail
 
 ## Limitations
 * The EC2 instance only runs in a single AZ. In case of an AZ outage the instance will be unavailable.
+* No backup

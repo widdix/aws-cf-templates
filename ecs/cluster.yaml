@@ -16,7 +16,6 @@ Metadata:
       Parameters:
       - KeyName
       - IAMUserSSHAccess
-      - NewRelicLicenseKey
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
@@ -66,11 +65,6 @@ Parameters:
     AllowedValues:
     - true
     - false
-  NewRelicLicenseKey:
-    Description: 'Optional New Relic License Key will install the New Relic Servers for Linux agent.'
-    Type: String
-    Default: ''
-    NoEcho: true
   SubnetsReach:
     Description: 'Should the cluster have direct access to the Internet or do you prefer private subnets with NAT?'
     Type: String
@@ -145,30 +139,36 @@ Parameters:
     ConstraintDescription: 'Must be >= 2'
 Mappings:
   RegionMap:
+    'ap-south-1':
+      ECSAMI: 'ami-2149114e'
+    'eu-west-3':
+      ECSAMI: 'ami-914afcec'
     'eu-west-2':
-      ECSAMI: 'ami-ee7d618a'
+      ECSAMI: 'ami-a48d6bc3'
     'eu-west-1':
-      ECSAMI: 'ami-d65dfbaf'
+      ECSAMI: 'ami-bfb5fec6'
     'ap-northeast-2':
-      ECSAMI: 'ami-70d0741e'
+      ECSAMI: 'ami-ba74d8d4'
     'ap-northeast-1':
-      ECSAMI: 'ami-95903df3'
+      ECSAMI: 'ami-5add893c'
+    'sa-east-1':
+      ECSAMI: 'ami-d3bce9bf'
     'ca-central-1':
-      ECSAMI: 'ami-fc5fe798'
+      ECSAMI: 'ami-a535b2c1'
     'ap-southeast-1':
-      ECSAMI: 'ami-c8c98bab'
+      ECSAMI: 'ami-acbcefd0'
     'ap-southeast-2':
-      ECSAMI: 'ami-e3b75981'
+      ECSAMI: 'ami-4cc5072e'
     'eu-central-1':
-      ECSAMI: 'ami-ebfb7e84'
+      ECSAMI: 'ami-ac055447'
     'us-east-1':
-      ECSAMI: 'ami-20ff515a'
+      ECSAMI: 'ami-cb17d8b6'
     'us-east-2':
-      ECSAMI: 'ami-b0527dd5'
+      ECSAMI: 'ami-1b90a67e'
     'us-west-1':
-      ECSAMI: 'ami-b388b4d3'
+      ECSAMI: 'ami-9cbbaffc'
     'us-west-2':
-      ECSAMI: 'ami-3702ca4f'
+      ECSAMI: 'ami-05b5277d'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -176,7 +176,6 @@ Conditions:
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
-  HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
   HasLoadBalancerSchemeInternal: !Equals [!Ref LoadBalancerScheme, 'internal']
   HasLoadBalancerCertificateArn: !Not [!Equals [!Ref LoadBalancerCertificateArn, '']]
   HasAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
@@ -395,7 +394,9 @@ Resources:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
       - Name: LoadBalancer
-        Value: !GetAtt LoadBalancer.LoadBalancerFullName
+        Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
+      - Name: TargetGroup
+        Value: !GetAtt 'DefaultTargetGroup.TargetGroupFullName'
   HTTPCodeTarget5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -412,8 +413,48 @@ Resources:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
       - Name: LoadBalancer
-        Value: !GetAtt LoadBalancer.LoadBalancerFullName
-  LoadBalancer:
+        Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
+      - Name: TargetGroup
+        Value: !GetAtt 'DefaultTargetGroup.TargetGroupFullName'
+  RejectedConnectionCountTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer rejected connections because the load balancer had reached its maximum number of connections'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: RejectedConnectionCount
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
+      - Name: TargetGroup
+        Value: !GetAtt 'DefaultTargetGroup.TargetGroupFullName'
+  TargetConnectionErrorCountTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer could not connect to targets'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: TargetConnectionErrorCount
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
+      - Name: TargetGroup
+        Value: !GetAtt 'DefaultTargetGroup.TargetGroupFullName'
+  LoadBalancer: # not monitored, but DefaultTargetGroup is monitored!
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
       Scheme: !Ref LoadBalancerScheme
@@ -438,8 +479,9 @@ Resources:
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 10
       HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
       Matcher:
-        HttpCode: '200'
+        HttpCode: '200-299'
       Port: 80 # port 80 is a reserved port that is never used by the agent, so we are safe to use it here
       Protocol: HTTP
       VpcId:
@@ -473,11 +515,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default:
-            !If
-            - HasNewRelic
-            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, install, newrelic], [awslogs, install, newrelic]]
-            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, install], [awslogs, install]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, install], [awslogs, install]]
         awslogs:
           packages:
             yum:
@@ -539,11 +577,16 @@ Resources:
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
                 log_group_name = ${LogGroup}
-                [/var/log/newrelic/nrsysmond.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/newrelic/nrsysmond.log
-                log_stream_name = {instance_id}/var/log/newrelic/nrsysmond.log
+                [/var/log/ecs/ecs-init.log]
+                file = /var/log/ecs/ecs-init.log.*
+                log_group_name = /var/log/ecs/ecs-init.log
+                log_stream_name = {instance_id}/var/log/ecs/ecs-init.log
+                datetime_format = %Y-%m-%dT%H:%M:%SZ
+                [/var/log/ecs/ecs-agent.log]
+                file = /var/log/ecs/ecs-agent.log.*
+                log_stream_name = {instance_id}/var/log/ecs/ecs-agent.log
                 log_group_name = ${LogGroup}
+                datetime_format = %Y-%m-%dT%H:%M:%SZ
               mode: '000644'
               owner: root
               group: root
@@ -558,27 +601,6 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
-        newrelic:
-          packages:
-            rpm:
-              newrelic-sysmond: 'https://download.newrelic.com/pub/newrelic/el5/x86_64/newrelic-sysmond-2.3.0.132-1.x86_64.rpm'
-          files:
-            '/etc/newrelic/nrsysmond.cfg':
-              content: !Sub |
-                license_key=${NewRelicLicenseKey}
-                loglevel=info
-                logfile=/var/log/newrelic/nrsysmond.log
-                labels=StackName:${AWS::StackName};AccountId:${AWS::AccountId};Region:${AWS::Region}
-              mode: '000640'
-              owner: root
-              group: newrelic
-          services:
-            sysvinit:
-              newrelic-sysmond:
-                enabled: true
-                ensureRunning: true
-                files:
-                - '/etc/newrelic/nrsysmond.cfg'
         ssh-access:
           packages:
             yum:
@@ -740,7 +762,11 @@ Resources:
                     container_instances: resp1.container_instance_arns,
                   })
                   cis = resp2.container_instances.select {|ci| ci.ec2_instance_id == ec2InstanceId}
-                  return cis.first().container_instance_arn.split("/").last()
+                  if cis.first().nil?
+                    return nil
+                  else
+                    return cis.first().container_instance_arn.split("/").last()
+                  end
                 end
                 def drainContainerInstanceId(containerInstanceId)
                   ecs = Aws::ECS::Client.new()
@@ -780,33 +806,53 @@ Resources:
                   })
                 end
                 def completeLifecycleAction(token, hook, asg)
-                  autoscaling = Aws::AutoScaling::Client.new()
-                  autoscaling.complete_lifecycle_action(
-                    lifecycle_hook_name: hook,
-                    auto_scaling_group_name: asg,
-                    lifecycle_action_token: token,
-                    lifecycle_action_result: 'CONTINUE'
-                  )
+                  begin
+                    autoscaling = Aws::AutoScaling::Client.new()
+                    autoscaling.complete_lifecycle_action(
+                      lifecycle_hook_name: hook,
+                      auto_scaling_group_name: asg,
+                      lifecycle_action_token: token,
+                      lifecycle_action_result: 'CONTINUE'
+                    )
+                    $log.info "Lifecycle action completed"
+                    return true
+                  rescue Exception => e
+                    if e.code == 'ValidationError'
+                      $log.info "Lifecycle action failed validation: #{e.inspect}"
+                      return true
+                    else
+                      raise e
+                    end
+                  end
                 end
                 def pollSQS()
                   poller = Aws::SQS::QueuePoller.new($conf['queueUrl'])
                   poller.poll do |msg|
-                    body = JSON.parse(msg.body)
-                    $log.debug "message #{body}"
-                    if body['Event'] == 'autoscaling:TEST_NOTIFICATION'
-                      $log.info 'received test notification'
-                    else
-                      if body['LifecycleTransition'] == 'autoscaling:EC2_INSTANCE_TERMINATING'
-                        $log.info "lifecycle transition for EC2 instance #{body['EC2InstanceId']}"
-                        containerInstanceId = fetchContainerInstanceId body['EC2InstanceId']
-                        $log.info "lifecycle transition for container instance #{containerInstanceId}"
-                        drainContainerInstanceId containerInstanceId
-                        awaitContainerInstanceIdle containerInstanceId
-                        deregisterContainerInstance containerInstanceId
-                        completeLifecycleAction body['LifecycleActionToken'], body['LifecycleHookName'], body['AutoScalingGroupName']
+                    begin
+                      body = JSON.parse(msg.body)
+                      $log.debug "message #{body}"
+                      if body['Event'] == 'autoscaling:TEST_NOTIFICATION'
+                        $log.info 'received test notification'
                       else
-                        $log.error "received unsupported lifecycle transition: #{body['LifecycleTransition']}"
+                        if body['LifecycleTransition'] == 'autoscaling:EC2_INSTANCE_TERMINATING'
+                          $log.info "lifecycle transition for EC2 instance #{body['EC2InstanceId']}"
+                          containerInstanceId = fetchContainerInstanceId body['EC2InstanceId']
+                          if containerInstanceId.nil?
+                            $log.info "no container instance found for EC2 instance #{body['EC2InstanceId']}"
+                          else
+                            $log.info "lifecycle transition for container instance #{containerInstanceId}"
+                            drainContainerInstanceId containerInstanceId
+                            awaitContainerInstanceIdle containerInstanceId
+                            deregisterContainerInstance containerInstanceId
+                          end
+                          completeLifecycleAction body['LifecycleActionToken'], body['LifecycleHookName'], body['AutoScalingGroupName']
+                        else
+                          $log.error "received unsupported lifecycle transition: #{body['LifecycleTransition']}"
+                        end
                       end
+                    rescue Exception => e
+                      $log.error "message failed: #{e.inspect} #{msg.inspect}"
+                      raise e
                     end
                   end
                 end
@@ -839,13 +885,12 @@ Resources:
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
       UserData:
         'Fn::Base64': !Sub |
-          #!/bin/bash -x
-          bash -ex << "TRY"
-            echo "ECS_CLUSTER=${Cluster}" >> /etc/ecs/ecs.config
-            yum install -y aws-cfn-bootstrap
-            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
-          TRY
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+          #!/bin/bash -ex
+          trap '/opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}' ERR
+          echo "ECS_CLUSTER=${Cluster}" >> /etc/ecs/ecs.config
+          yum install -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
@@ -879,7 +924,30 @@ Resources:
     UpdatePolicy:
       AutoScalingRollingUpdate:
         PauseTime: PT15M
+        SuspendProcesses:
+        - HealthCheck
+        - ReplaceUnhealthy
+        - AZRebalance
+        - AlarmNotification
+        - ScheduledActions
         WaitOnResourceSignals: true
+  CPUTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
+      Namespace: 'AWS/EC2'
+      MetricName: CPUUtilization
+      Statistic: Average
+      Period: 600
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value: !Ref AutoScalingGroup
   AutoScalingGroupLifecycleHookQueue:
     Type: 'AWS::SQS::Queue'
     Properties:
@@ -888,10 +956,44 @@ Resources:
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt 'AutoScalingGroupLifecycleHookDeadLetterQueue.Arn'
         maxReceiveCount: 5
+  AutoScalingGroupLifecycleHookQueueTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Queue contains messages older than 10 minutes, messages are not consumed'
+      Namespace: 'AWS/SQS'
+      MetricName: ApproximateAgeOfOldestMessage
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 600
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: QueueName
+        Value: !GetAtt 'AutoScalingGroupLifecycleHookQueue.QueueName'
   AutoScalingGroupLifecycleHookDeadLetterQueue:
     Type: 'AWS::SQS::Queue'
     Properties:
       QueueName: !Sub '${AWS::StackName}-lifecycle-hook-dlq'
+  AutoScalingGroupLifecycleHookDeadLetterQueueTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Dead letter queue contains messages, message processing failed'
+      Namespace: 'AWS/SQS'
+      MetricName: ApproximateNumberOfMessagesVisible
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: QueueName
+        Value: !GetAtt 'AutoScalingGroupLifecycleHookDeadLetterQueue.QueueName'
   AutoScalingGroupLifecycleHookIAMRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -929,17 +1031,17 @@ Resources:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
       AdjustmentType: PercentChangeInCapacity
-      MinAdjustmentStep: 1
+      MinAdjustmentMagnitude: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
-      Cooldown: 300
+      Cooldown: 600
       ScalingAdjustment: 25
   ScaleDownPolicy:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
       AdjustmentType: PercentChangeInCapacity
-      MinAdjustmentStep: 1
+      MinAdjustmentMagnitude: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
-      Cooldown: 300
+      Cooldown: 600
       ScalingAdjustment: -25
   ContainerInstancesShortageAlarm:
     Type: 'AWS::CloudWatch::Alarm'
@@ -1024,6 +1126,23 @@ Resources:
       Threshold: 90
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+  MemoryUtilizationTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average memory utilization over last 10 minutes higher than 80%'
+      Namespace: 'AWS/ECS'
+      Dimensions:
+      - Name: ClusterName
+        Value: !Ref Cluster
+      MetricName: MemoryUtilization
+      ComparisonOperator: GreaterThanThreshold
+      Statistic: Average
+      Period: 600
+      EvaluationPeriods: 1
+      Threshold: 80
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
   # scaling based on SchedulableContainers is described in detail here: http://garbe.io/blog/2017/04/12/a-better-solution-to-ecs-autoscaling/
   SchedulableContainersRule:
     Type: 'AWS::Events::Rule'
@@ -1035,16 +1154,50 @@ Resources:
         - 'ECS Container Instance State Change'
       State: ENABLED
       Targets:
-      - Arn: !GetAtt 'SchedulableContainersLambda.Arn'
+      - Arn: !GetAtt 'SchedulableContainersLambdaV2.Arn'
         Id: lambda
+  SchedulableContainersRuleFailedInvocationsTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Invocations failed permanently'
+      Namespace: 'AWS/Events'
+      MetricName: FailedInvocations
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: RuleName
+        Value: !Ref SchedulableContainersRule
   SchedulableContainersCron:
     Type: 'AWS::Events::Rule'
     Properties:
       ScheduleExpression: 'rate(1 minute)'
       State: ENABLED
       Targets:
-      - Arn: !GetAtt 'SchedulableContainersLambda.Arn'
+      - Arn: !GetAtt 'SchedulableContainersLambdaV2.Arn'
         Id: lambda
+  SchedulableContainersCronFailedInvocationsTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Invocations failed permanently'
+      Namespace: 'AWS/Events'
+      MetricName: FailedInvocations
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: RuleName
+        Value: !Ref SchedulableContainersCron
   SchedulableContainersLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -1055,16 +1208,9 @@ Resources:
           Principal:
             Service: 'lambda.amazonaws.com'
           Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+      - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
       Policies:
-      - PolicyName: logs
-        PolicyDocument:
-          Statement:
-          - Effect: Allow
-            Action:
-            - 'logs:CreateLogGroup'
-            - 'logs:CreateLogStream'
-            - 'logs:PutLogEvents'
-            Resource: 'arn:aws:logs:*:*:*'
       - PolicyName: ecs
         PolicyDocument:
           Statement:
@@ -1073,7 +1219,10 @@ Resources:
             Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}'
           - Effect: Allow
             Action: 'ecs:DescribeContainerInstances'
-            Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:container-instance/*'
+            Resource: '*'
+            Condition:
+              ArnEquals:
+                'ecs:cluster': !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}'
       - PolicyName: cloudwatch
         PolicyDocument:
           Statement:
@@ -1084,10 +1233,17 @@ Resources:
     Type: 'AWS::Lambda::Permission'
     Properties:
       Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref SchedulableContainersLambda
+      FunctionName: !Ref SchedulableContainersLambdaV2
       Principal: 'events.amazonaws.com'
       SourceArn: !GetAtt 'SchedulableContainersRule.Arn'
-  SchedulableContainersLambda:
+  SchedulableContainersLambdaPermission2:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref SchedulableContainersLambdaV2
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt 'SchedulableContainersCron.Arn'
+  SchedulableContainersLambdaV2:
     Type: 'AWS::Lambda::Function'
     Properties:
       Code:
@@ -1161,18 +1317,65 @@ Resources:
       Role: !GetAtt 'SchedulableContainersLambdaRole.Arn'
       Runtime: 'nodejs6.10'
       Timeout: 60
+  SchedulableContainersLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${SchedulableContainersLambdaV2}'
+      RetentionInDays: !Ref LogsRetentionInDays
+  SchedulableContainersLambdaErrorsTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Invocations failed due to errors in the function'
+      Namespace: 'AWS/Lambda'
+      MetricName: Errors
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref SchedulableContainersLambdaV2
+  SchedulableContainersLambdaThrottlesTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Invocation attempts that were throttled due to invocation rates exceeding the concurrent limits'
+      Namespace: 'AWS/Lambda'
+      MetricName: Throttles
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref SchedulableContainersLambdaV2
 Outputs:
   TemplateID:
-    Description: 'cloudonaut.io template id'
+    Description: 'cloudonaut.io template id.'
     Value: 'ecs/cluster'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   Cluster:
     Description: 'ECS cluster.'
     Value: !Ref Cluster
     Export:
       Name: !Sub '${AWS::StackName}-Cluster'
+  LoadBalancerFullName:
+    Description: 'ALB full name for services.'
+    Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
+    Export:
+      Name: !Sub '${AWS::StackName}-LoadBalancerFullName'
   HttpListener:
     Description: 'ALB HTTP listener for services.'
     Value: !Ref HttpListener

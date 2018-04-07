@@ -20,8 +20,11 @@ Metadata:
       - KeyName
       - IAMUserSSHAccess
       - LogsRetentionInDays
-      - NewRelicLicenseKey
       - SubDomainName
+      - UserData
+      - IngressTcpPort1
+      - IngressTcpPort2
+      - IngressTcpPort3
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -75,53 +78,68 @@ Parameters:
     Type: Number
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
-  NewRelicLicenseKey:
-    Description: 'Optional New Relic License Key will install the New Relic Servers for Linux agent.'
+  SubDomainName:
+    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
     Type: String
     Default: ''
-    NoEcho: true
-  SubDomainName:
-    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (works only when ParentZoneStack is set)'
+  UserData:
+    Description: 'Optional Bash script executed on first instance launch.'
+    Type: String
+    Default: ''
+  IngressTcpPort1:
+    Description: 'Optional port allowing ingress TCP traffic.'
+    Type: String
+    Default: ''
+  IngressTcpPort2:
+    Description: 'Optional port allowing ingress TCP traffic.'
+    Type: String
+    Default: ''
+  IngressTcpPort3:
+    Description: 'Optional port allowing ingress TCP traffic.'
     Type: String
     Default: ''
 Mappings:
   RegionMap:
     'ap-south-1':
-      AMI: 'ami-4fc58420'
+      AMI: 'ami-531a4c3c'
+    'eu-west-3':
+      AMI: 'ami-8ee056f3'
     'eu-west-2':
-      AMI: 'ami-1a7f6d7e'
+      AMI: 'ami-403e2524'
     'eu-west-1':
-      AMI: 'ami-acd005d5'
+      AMI: 'ami-d834aba1'
     'ap-northeast-2':
-      AMI: 'ami-9bec36f5'
+      AMI: 'ami-863090e8'
     'ap-northeast-1':
-      AMI: 'ami-2a69be4c'
+      AMI: 'ami-ceafcba8'
     'sa-east-1':
-      AMI: 'ami-f1344b9d'
+      AMI: 'ami-84175ae8'
     'ca-central-1':
-      AMI: 'ami-fd55ec99'
+      AMI: 'ami-a954d1cd'
     'ap-southeast-1':
-      AMI: 'ami-0797ea64'
+      AMI: 'ami-68097514'
     'ap-southeast-2':
-      AMI: 'ami-8536d6e7'
+      AMI: 'ami-942dd1f6'
     'eu-central-1':
-      AMI: 'ami-c7ee5ca8'
+      AMI: 'ami-5652ce39'
     'us-east-1':
-      AMI: 'ami-8c1be5f6'
+      AMI: 'ami-97785bed'
     'us-east-2':
-      AMI: 'ami-c5062ba0'
+      AMI: 'ami-f63b1193'
     'us-west-1':
-      AMI: 'ami-02eada62'
+      AMI: 'ami-824c4ee2'
     'us-west-2':
-      AMI: 'ami-e689729e'
+      AMI: 'ami-f2d3638a'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
-  HasNewRelic: !Not [!Equals [!Ref NewRelicLicenseKey, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+  HasIngressTcpPort1: !Not [!Equals [!Ref IngressTcpPort1, '']]
+  HasIngressTcpPort2: !Not [!Equals [!Ref IngressTcpPort2, '']]
+  HasIngressTcpPort3: !Not [!Equals [!Ref IngressTcpPort3, '']]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -171,6 +189,33 @@ Resources:
       IpProtocol: tcp
       FromPort: 22
       ToPort: 22
+      CidrIp: '0.0.0.0/0'
+  SecurityGroupIngressTcpPort1:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasIngressTcpPort1
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref IngressTcpPort1
+      ToPort: !Ref IngressTcpPort1
+      CidrIp: '0.0.0.0/0'
+  SecurityGroupIngressTcpPort2:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasIngressTcpPort2
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref IngressTcpPort2
+      ToPort: !Ref IngressTcpPort2
+      CidrIp: '0.0.0.0/0'
+  SecurityGroupIngressTcpPort3:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasIngressTcpPort3
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref IngressTcpPort3
+      ToPort: !Ref IngressTcpPort3
       CidrIp: '0.0.0.0/0'
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
@@ -230,11 +275,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default:
-            !If
-            - HasNewRelic
-            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, newrelic, config], [awslogs, newrelic, config]]
-            - !If [HasIAMUserSSHAccess, [awslogs, ssh-access, config], [awslogs, config]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, config], [awslogs, config]]
         awslogs:
           packages:
             yum:
@@ -296,11 +337,6 @@ Resources:
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
                 log_group_name = ${Logs}
-                [/var/log/newrelic/nrsysmond.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/newrelic/nrsysmond.log
-                log_stream_name = {instance_id}/var/log/newrelic/nrsysmond.log
-                log_group_name = ${Logs}
               mode: '000644'
               owner: root
               group: root
@@ -315,27 +351,6 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
-        newrelic:
-          packages:
-            rpm:
-              newrelic-sysmond: 'https://download.newrelic.com/pub/newrelic/el5/x86_64/newrelic-sysmond-2.3.0.132-1.x86_64.rpm'
-          files:
-            '/etc/newrelic/nrsysmond.cfg':
-              content: !Sub |
-                license_key=${NewRelicLicenseKey}
-                loglevel=info
-                logfile=/var/log/newrelic/nrsysmond.log
-                labels=StackName:${AWS::StackName};AccountId:${AWS::AccountId};Region:${AWS::Region}
-              mode: '000640'
-              owner: root
-              group: newrelic
-          services:
-            sysvinit:
-              newrelic-sysmond:
-                enabled: true
-                ensureRunning: true
-                files:
-                - '/etc/newrelic/nrsysmond.cfg'
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':
@@ -435,9 +450,11 @@ Resources:
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
       UserData:
         'Fn::Base64': !Sub |
-           #!/bin/bash -x
-           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource VirtualMachine --region ${AWS::Region}
-           /opt/aws/bin/cfn-signal -e $? --region ${AWS::Region} --stack ${AWS::StackName} --resource VirtualMachine
+          #!/bin/bash -ex
+          trap '/opt/aws/bin/cfn-signal -e 1 --region ${AWS::Region} --stack ${AWS::StackName} --resource VirtualMachine' ERR
+          ${UserData}
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource VirtualMachine --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e 0 --region ${AWS::Region} --stack ${AWS::StackName} --resource VirtualMachine
       SubnetId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-${SubnetName}'
       Tags:
@@ -482,11 +499,19 @@ Resources:
         Value: !Ref VirtualMachine
 Outputs:
   TemplateID:
-    Description: 'cloudonaut.io template id'
+    Description: 'cloudonaut.io template id.'
     Value: 'ec2/ec2-auto-recovery'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
   StackName:
-    Description: 'Stack name'
+    Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
+  InstanceId:
+    Description: 'The EC2 instance id.'
+    Value: !Ref VirtualMachine
+    Export:
+      Name: !Sub '${AWS::StackName}-InstanceId'
   IPAddress:
     Description: 'The public IP address of the EC2 instance.'
     Value: !Ref ElasticIP
