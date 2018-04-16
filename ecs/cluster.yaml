@@ -9,7 +9,7 @@ Metadata:
       Parameters:
       - ParentVPCStack
       - ParentSSHBastionStack
-      - ParentClientSecurityGroupStack
+      - ParentClientStack
       - ParentAuthProxyStack
       - ParentAlertStack
     - Label:
@@ -47,7 +47,7 @@ Parameters:
     Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
     Type: String
     Default: ''
-  ParentClientSecurityGroupStack:
+  ParentClientStack:
     Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template.'
     Type: String
     Default: ''
@@ -179,8 +179,8 @@ Conditions:
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
-  HasClientSecurityGroup: !Not [!Equals [!Ref ParentClientSecurityGroupStack, '']]
-  HasNotClientSecurityGroup: !Equals [!Ref ParentClientSecurityGroupStack, '']
+  HasClientSecurityGroup: !Not [!Equals [!Ref ParentClientStack, '']]
+  HasNotClientSecurityGroup: !Equals [!Ref ParentClientStack, '']
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
   HasLoadBalancerSchemeInternal: !Equals [!Ref LoadBalancerScheme, 'internal']
@@ -891,7 +891,7 @@ Resources:
         - !Ref SecurityGroup
         - !If
           - HasClientSecurityGroup
-          - 'Fn::ImportValue': !Sub '${ParentClientSecurityGroupStack}-ClientSecurityGroup'
+          - 'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'
           - !Ref 'AWS::NoValue'
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
       UserData:
