@@ -117,8 +117,8 @@ Resources:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
       SecurityGroupIngress:
       - IpProtocol: tcp
-        FromPort: 3306
-        ToPort: 3306
+        FromPort: 5432
+        ToPort: 5432
         SourceSecurityGroupId:
           'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'
   DatabaseSecurityGroupInSSHBastion:
@@ -127,8 +127,8 @@ Resources:
     Properties:
       GroupId: !Ref DatabaseSecurityGroup
       IpProtocol: tcp
-      FromPort: 3306
-      ToPort: 3306
+      FromPort: 5432
+      ToPort: 5432
       SourceSecurityGroupId:
         'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
   Key:
