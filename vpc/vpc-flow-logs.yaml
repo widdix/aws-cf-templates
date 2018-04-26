@@ -71,7 +71,7 @@ Resources:
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
-    Value: 'vpc/vpc-flowlog'
+    Value: 'vpc/vpc-flow-logs'
   TemplateVersion:
     Description: 'cloudonaut.io template version.'
     Value: '__VERSION__'
