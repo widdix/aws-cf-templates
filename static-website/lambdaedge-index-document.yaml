@@ -53,7 +53,7 @@ Resources:
         # If you change the ZipFile, rename the logical id LambdaVersionV1 to trigger a new version creation!
         ZipFile: !Sub |
           'use strict';
-          const regex = /\.[a-z]{3,4}$/;
+          const regex = /\.[a-z]+$/;
           const indexDocument = '${IndexDocument}';
           const domainName = '${DomainName}'.toLowerCase();
           const redirectDomainName = '${RedirectDomainName}'.toLowerCase();
@@ -109,14 +109,14 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'LambdaRole.Arn'
-      Runtime: 'nodejs6.10'
+      Runtime: 'nodejs8.10'
       Timeout: 5
   LambdaLogGroup:
     Type: 'AWS::Logs::LogGroup'
     Properties:
       LogGroupName: !Sub '/aws/lambda/${LambdaFunction}'
       RetentionInDays: !Ref LogsRetentionInDays
-  LambdaVersionV1:
+  LambdaVersionV2:
     Type: 'AWS::Lambda::Version'
     Properties:
       FunctionName: !Ref LambdaFunction
