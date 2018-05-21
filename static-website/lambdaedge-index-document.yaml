@@ -50,7 +50,7 @@ Resources:
     Type: 'AWS::Lambda::Function'
     Properties:
       Code:
-        # If you change the ZipFile, rename the logical id LambdaVersionV1 to trigger a new version creation!
+        # If you change the ZipFile, rename the logical id LambdaVersionV2 to trigger a new version creation!
         ZipFile: !Sub |
           'use strict';
           const regex = /\.[a-z]+$/;
@@ -132,4 +132,4 @@ Outputs:
     Value: !Sub '${AWS::StackName}'
   LambdaVersionArn:
     Description: 'Version ARN of Lambda@Edge function.'
-    Value: !Ref LambdaVersionV1
+    Value: !Ref LambdaVersionV2
