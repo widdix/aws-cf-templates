@@ -27,8 +27,6 @@ Choose from our template catalog:
 * [Virtual Private Cloud (VPC)](./vpc/)
 * [WordPress](./wordpress/)
 
-We are interested in your requirements. [Please use the following survey to upvote and add templates you are impatiently waiting for](https://docs.google.com/forms/d/e/1FAIpQLSerhIuMuCWrHai639FoUOt8ffmMqWr0PWzLhCn3VN29VUi8TA/viewform?usp=send_form)
-
 # How does CloudFormation work
 
 CloudFormation turns a template (JSON or YAML) into a stack like the following figure shows.

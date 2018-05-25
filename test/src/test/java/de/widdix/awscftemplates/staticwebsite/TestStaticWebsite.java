@@ -48,7 +48,7 @@ public class TestStaticWebsite extends ACloudFormationTest {
                     return response;
                 };
                 final Callable<HttpResponse> callable3 = () -> {
-                    final HttpResponse response = WS.url(url3).timeout(10000).get();
+                    final HttpResponse response = WS.url(url3).timeout(10000).followRedirect(false).get();
                     // check HTTP response code
                     if (WS.getStatus(response) != 301) {
                         throw new RuntimeException("301 expected, but saw " + WS.getStatus(response));
