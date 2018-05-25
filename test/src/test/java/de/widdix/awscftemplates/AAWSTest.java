@@ -121,10 +121,12 @@ public abstract class AAWSTest extends ATest {
     }
 
     protected final void deleteObject(final String bucketName, final String key) {
-        this.s3.deleteObject(bucketName, key);
+        if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
+            this.s3.deleteObject(bucketName, key);
+        }
     }
 
-    protected final void emptyBucket(final String name) {
+    private void emptyBucket(final String name) {
         ObjectListing objectListing = s3.listObjects(name);
         while (true) {
             objectListing.getObjectSummaries().forEach((summary) -> s3.deleteObject(name, summary.getKey()));
@@ -146,8 +148,10 @@ public abstract class AAWSTest extends ATest {
     }
 
     protected final void deleteBucket(final String name) {
-        this.emptyBucket(name);
-        this.s3.deleteBucket(new DeleteBucketRequest(name));
+        if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
+            this.emptyBucket(name);
+            this.s3.deleteBucket(new DeleteBucketRequest(name));
+        }
     }
 
     protected final Vpc getDefaultVPC() {
