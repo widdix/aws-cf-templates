@@ -83,7 +83,7 @@ Parameters:
     Type: String
     Default: aurora
   Encryption:
-    Description: 'Enable server side encryption using KMS CMK key.'
+    Description: Description: 'Enable server side encryption using KMS (customer managed) CMK.'
     Type: String
     Default: false
     AllowedValues: [true, false]
