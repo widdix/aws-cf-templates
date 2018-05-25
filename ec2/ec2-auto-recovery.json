@@ -6,6 +6,10 @@
     "KeyName": "",
     "IAMUserSSHAccess": "true",
     "LogsRetentionInDays": "14",
-    "NewRelicLicenseKey": ""
+    "SubDomainName": "",
+    "UserData": "UserData",
+    "IngressTcpPort1": "",
+    "IngressTcpPort2": "",
+    "IngressTcpPort3": ""
   }
 }
