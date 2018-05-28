@@ -26,7 +26,7 @@ This template describes a fault tolerant and scalable ECS cluster on AWS. The cl
 
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
-* `vpc/vpc-ssh-bastion.yaml` (recommended)
+* `vpc/vpc-*-bastion.yaml` (recommended)
 * `security/auth-proxy-*.yaml`
 * `operations/alert.yaml` (recommended)
 

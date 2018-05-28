@@ -90,7 +90,7 @@ This template describes a **highly available** Network Address Translation (NAT)
 
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
-* `vpc/vpc-ssh-bastion.yaml` (recommended)
+* `vpc/vpc-*-bastion.yaml` (recommended)
 * `operations/alert.yaml` (recommended)
 
 # SSH bastion host/instance
