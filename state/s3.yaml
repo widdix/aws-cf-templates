@@ -34,7 +34,7 @@ Parameters:
     Description: 'Access policy of the bucket.'
     Type: String
     Default: Private
-    AllowedValues: [Private, PublicRead]
+    AllowedValues: [Private, PublicRead, CloudFrontRead]
   Versioning:
     Description: 'Enable versioning to keep a backup if objects change.'
     Type: String
@@ -52,6 +52,7 @@ Parameters:
     AllowedValues: [true, false]
 Conditions:
   HasPublicReadAccess: !Equals [!Ref Access, PublicRead]
+  HasCloudFrontReadAccess: !Equals [!Ref Access, CloudFrontRead]
   HasBucketName: !Not [!Equals [!Ref BucketName, '']]
   HasVersioning: !Equals [!Ref Versioning, true]
   HadVersioning: !Equals [!Ref Versioning, 'false-but-was-true']
@@ -64,55 +65,38 @@ Resources:
     Properties:
       KeyPolicy:
         Version: '2012-10-17'
-        Statement: !If
-        - HasPublicReadAccess
-        - - Effect: Allow
-            Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
-            Action: 'kms:*'
-            Resource: '*'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+          Action: 'kms:*'
+          Resource: '*'
+        - Effect: Allow
+          Principal:
+            AWS: '*'
+          Action:
+          - 'kms:Encrypt'
+          - 'kms:Decrypt'
+          - 'kms:ReEncrypt*'
+          - 'kms:GenerateDataKey*'
+          - 'kms:DescribeKey'
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'kms:CallerAccount': !Ref 'AWS::AccountId'
+              'kms:ViaService': !Sub 's3.${AWS::Region}.amazonaws.com'
+        - !If
+          - HasPublicReadAccess
           - Effect: Allow
             Principal:
               AWS: '*'
             Action:
-            - 'kms:Encrypt'
-            - 'kms:Decrypt'
-            - 'kms:ReEncrypt*'
-            - 'kms:GenerateDataKey*'
-            - 'kms:DescribeKey'
-            Resource: '*'
-            Condition:
-              StringEquals:
-                'kms:CallerAccount': !Ref 'AWS::AccountId'
-                'kms:ViaService': !Sub 's3.${AWS::Region}.amazonaws.com'
-          - Effect: Allow
-            Principal:
-              AWS: '*'
-            Action:
             - 'kms:Decrypt'
             Resource: '*'
             Condition:
               StringEquals:
                 'kms:ViaService': !Sub 's3.${AWS::Region}.amazonaws.com'
-        - - Effect: Allow
-            Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
-            Action: 'kms:*'
-            Resource: '*'
-          - Effect: Allow
-            Principal:
-              AWS: '*'
-            Action:
-            - 'kms:Encrypt'
-            - 'kms:Decrypt'
-            - 'kms:ReEncrypt*'
-            - 'kms:GenerateDataKey*'
-            - 'kms:DescribeKey'
-            Resource: '*'
-            Condition:
-              StringEquals:
-                'kms:CallerAccount': !Ref 'AWS::AccountId'
-                'kms:ViaService': !Sub 's3.${AWS::Region}.amazonaws.com'
+          - !Ref 'AWS::NoValue'
   KeyAlias:
     Condition: HasEncryption
     Type: 'AWS::KMS::Alias'
@@ -133,16 +117,44 @@ Resources:
       VersioningConfiguration: !If [HasVersioning, {Status: Enabled}, !If [HadVersioning, {Status: Suspended}, !Ref 'AWS::NoValue']]
       BucketEncryption: !If [HasEncryption, {ServerSideEncryptionConfiguration: [{ServerSideEncryptionByDefault: {KMSMasterKeyID: !Ref Key, SSEAlgorithm: 'aws:kms'}}]}, !Ref 'AWS::NoValue']
   BucketPolicy:
-    Condition: HasPublicReadAccess
     Type: 'AWS::S3::BucketPolicy'
     Properties:
       Bucket: !Ref Bucket
       PolicyDocument:
         Statement:
-        - Principal: '*'
-          Action: 's3:GetObject'
-          Effect: Allow
-          Resource: !Sub '${Bucket.Arn}/*'
+        - !If
+          - HasPublicReadAccess
+          - Principal: '*'
+            Action: 's3:GetObject'
+            Effect: Allow
+            Resource: !Sub '${Bucket.Arn}/*'
+          - !Ref 'AWS::NoValue'
+        - !If
+          - HasCloudFrontReadAccess
+          - Principal:
+              CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
+            Action: 's3:GetObject'
+            Effect: Allow
+            Resource: !Sub '${Bucket.Arn}/*'
+          - !Ref 'AWS::NoValue'
+        - !If
+          - HasEncryption
+          - Principal: '*'
+            Action: 's3:PutObject*'
+            Effect: Deny
+            Resource: !Sub '${Bucket.Arn}/*'
+            Condition:
+              StringNotLike:
+                's3:x-amz-server-side-encryption': ''
+              StringNotEquals:
+                's3:x-amz-server-side-encryption-aws-kms-key-id': !GetAtt 'Key.Arn'
+          - !Ref 'AWS::NoValue'
+  CloudFrontOriginAccessIdentity:
+    Condition: HasCloudFrontReadAccess
+    Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Ref Bucket
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
@@ -156,3 +168,16 @@ Outputs:
   BucketName:
     Description: 'Name of the bucket'
     Value: !Ref Bucket
+    Export:
+      Name: !Sub '${AWS::StackName}-BucketName'
+  BucketDomainName:
+    Description: 'Domain name of the bucket.'
+    Value: !GetAtt 'Bucket.DomainName'
+    Export:
+      Name: !Sub '${AWS::StackName}-BucketDomainName'
+  CloudFrontOriginAccessIdentity:
+    Condition: HasCloudFrontReadAccess
+    Description: 'Origin access identity for secure CloudFront access.'
+    Value: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudFrontOriginAccessIdentity'
