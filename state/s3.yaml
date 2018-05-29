@@ -65,55 +65,38 @@ Resources:
     Properties:
       KeyPolicy:
         Version: '2012-10-17'
-        Statement: !If
-        - HasPublicReadAccess
-        - - Effect: Allow
-            Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
-            Action: 'kms:*'
-            Resource: '*'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+          Action: 'kms:*'
+          Resource: '*'
+        - Effect: Allow
+          Principal:
+            AWS: '*'
+          Action:
+          - 'kms:Encrypt'
+          - 'kms:Decrypt'
+          - 'kms:ReEncrypt*'
+          - 'kms:GenerateDataKey*'
+          - 'kms:DescribeKey'
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'kms:CallerAccount': !Ref 'AWS::AccountId'
+              'kms:ViaService': !Sub 's3.${AWS::Region}.amazonaws.com'
+        - !If
+          - HasPublicReadAccess
           - Effect: Allow
             Principal:
               AWS: '*'
             Action:
-            - 'kms:Encrypt'
-            - 'kms:Decrypt'
-            - 'kms:ReEncrypt*'
-            - 'kms:GenerateDataKey*'
-            - 'kms:DescribeKey'
-            Resource: '*'
-            Condition:
-              StringEquals:
-                'kms:CallerAccount': !Ref 'AWS::AccountId'
-                'kms:ViaService': !Sub 's3.${AWS::Region}.amazonaws.com'
-          - Effect: Allow
-            Principal:
-              AWS: '*'
-            Action:
             - 'kms:Decrypt'
             Resource: '*'
             Condition:
               StringEquals:
                 'kms:ViaService': !Sub 's3.${AWS::Region}.amazonaws.com'
-        - - Effect: Allow
-            Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
-            Action: 'kms:*'
-            Resource: '*'
-          - Effect: Allow
-            Principal:
-              AWS: '*'
-            Action:
-            - 'kms:Encrypt'
-            - 'kms:Decrypt'
-            - 'kms:ReEncrypt*'
-            - 'kms:GenerateDataKey*'
-            - 'kms:DescribeKey'
-            Resource: '*'
-            Condition:
-              StringEquals:
-                'kms:CallerAccount': !Ref 'AWS::AccountId'
-                'kms:ViaService': !Sub 's3.${AWS::Region}.amazonaws.com'
+          - !Ref 'AWS::NoValue'
   KeyAlias:
     Condition: HasEncryption
     Type: 'AWS::KMS::Alias'
@@ -133,29 +116,39 @@ Resources:
           Status: !If [HasNoncurrentVersionExpirationInDays, Enabled, Disabled]
       VersioningConfiguration: !If [HasVersioning, {Status: Enabled}, !If [HadVersioning, {Status: Suspended}, !Ref 'AWS::NoValue']]
       BucketEncryption: !If [HasEncryption, {ServerSideEncryptionConfiguration: [{ServerSideEncryptionByDefault: {KMSMasterKeyID: !Ref Key, SSEAlgorithm: 'aws:kms'}}]}, !Ref 'AWS::NoValue']
-  BucketPolicyPublicReadAccess:
-    Condition: HasPublicReadAccess
+  BucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
     Properties:
       Bucket: !Ref Bucket
       PolicyDocument:
         Statement:
-        - Principal: '*'
-          Action: 's3:GetObject'
-          Effect: Allow
-          Resource: !Sub '${Bucket.Arn}/*'
-  BucketPolicyCloudFrontReadAccess:
-    Condition: HasCloudFrontReadAccess
-    Type: 'AWS::S3::BucketPolicy'
-    Properties:
-      Bucket: !Ref Bucket
-      PolicyDocument:
-        Statement:
-        - Principal:
-            CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
-          Action: 's3:GetObject'
-          Effect: Allow
-          Resource: !Sub '${Bucket.Arn}/*'
+        - !If
+          - HasPublicReadAccess
+          - Principal: '*'
+            Action: 's3:GetObject'
+            Effect: Allow
+            Resource: !Sub '${Bucket.Arn}/*'
+          - !Ref 'AWS::NoValue'
+        - !If
+          - HasCloudFrontReadAccess
+          - Principal:
+              CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
+            Action: 's3:GetObject'
+            Effect: Allow
+            Resource: !Sub '${Bucket.Arn}/*'
+          - !Ref 'AWS::NoValue'
+        - !If
+          - HasEncryption
+          - Principal: '*'
+            Action: 's3:PutObject*'
+            Effect: Deny
+            Resource: !Sub '${Bucket.Arn}/*'
+            Condition:
+              StringNotLike:
+                's3:x-amz-server-side-encryption': ''
+              StringNotEquals:
+                's3:x-amz-server-side-encryption-aws-kms-key-id': !GetAtt 'Key.Arn'
+          - !Ref 'AWS::NoValue'
   CloudFrontOriginAccessIdentity:
     Condition: HasCloudFrontReadAccess
     Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
