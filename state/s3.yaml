@@ -18,6 +18,10 @@ Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
     - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentS3VirusScanStack
+    - Label:
         default: 'S3 Parameters'
       Parameters:
       - BucketName
@@ -26,6 +30,10 @@ Metadata:
       - NoncurrentVersionExpirationInDays
       - Encryption
 Parameters:
+  ParentS3VirusScanStack:
+    Description: 'Optional stack name of parent S3 VirusScan stack based on https://github.com/widdix/aws-s3-virusscan template.'
+    Type: String
+    Default: ''
   BucketName:
     Description: 'Optional name of the bucket.'
     Type: String
@@ -51,6 +59,7 @@ Parameters:
     Default: false
     AllowedValues: [true, false]
 Conditions:
+  HasS3VirusScan: !Not [!Equals [!Ref ParentS3VirusScanStack, '']]
   HasPublicReadAccess: !Equals [!Ref Access, PublicRead]
   HasCloudFrontReadAccess: !Equals [!Ref Access, CloudFrontRead]
   HasBucketName: !Not [!Equals [!Ref BucketName, '']]
@@ -115,6 +124,13 @@ Resources:
           Status: Enabled
         - NoncurrentVersionExpirationInDays: !If [HasNoncurrentVersionExpirationInDays, !Ref NoncurrentVersionExpirationInDays, 1]
           Status: !If [HasNoncurrentVersionExpirationInDays, Enabled, Disabled]
+      NotificationConfiguration: !If
+      - HasS3VirusScan
+      - QueueConfigurations:
+        - Event: 's3:ObjectCreated:*'
+          Queue:
+            'Fn::ImportValue': !Sub '${ParentS3VirusScanStack}-ScanQueueArn'
+      - !Ref 'AWS::NoValue'
       VersioningConfiguration: !If [HasVersioning, {Status: Enabled}, !If [HadVersioning, {Status: Suspended}, !Ref 'AWS::NoValue']]
       BucketEncryption: !If [HasEncryption, {ServerSideEncryptionConfiguration: [{ServerSideEncryptionByDefault: {KMSMasterKeyID: !Ref Key, SSEAlgorithm: 'aws:kms'}}]}, !Ref 'AWS::NoValue']
   BucketPolicy:
