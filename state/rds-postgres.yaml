@@ -74,6 +74,7 @@ Parameters:
   DBName:
     Description: 'Name of the database (ignored when DBSnapshotIdentifier is set).'
     Type: String
+    Default: ''
   DBBackupRetentionPeriod:
     Description: 'The number of days to keep snapshots of the database.'
     Type: Number
@@ -85,6 +86,7 @@ Parameters:
   DBMasterUserPassword:
     Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set).'
     Type: String
+    Default: ''
     NoEcho: true
   DBMultiAZ:
     Description: 'Specifies if the database instance is deployed to multiple Availability Zones for HA.'
@@ -96,7 +98,7 @@ Parameters:
     Type: String
     Default: postgres
   Encryption:
-    Description: 'Enable server side encryption using KMS (customer managed) CMK.'
+    Description: 'Enable server side encryption using a customer-managed KMS key (CMK) created by this template. (ignored if DBSnapshotIdentifier set).'
     Type: String
     Default: false
     AllowedValues: [true, false]
@@ -105,7 +107,9 @@ Conditions:
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, '']]
-  HasEncryption: !Equals [!Ref Encryption, true]
+  CreateKey: !And
+  - !Equals [!Ref Encryption, true]
+  - !Not [!Condition HasDBSnapshotIdentifier]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -145,7 +149,7 @@ Resources:
       SourceSecurityGroupId:
         'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
   Key:
-    Condition: HasEncryption
+    Condition: CreateKey
     Type: 'AWS::KMS::Key'
     Properties:
       KeyPolicy:
@@ -173,7 +177,7 @@ Resources:
               'kms:CallerAccount': !Ref 'AWS::AccountId'
               'kms:ViaService': !Sub 'rds.${AWS::Region}.amazonaws.com'
   KeyAlias:
-    Condition: HasEncryption
+    Condition: CreateKey
     Type: 'AWS::KMS::Alias'
     Properties:
       AliasName: !Sub 'alias/${AWS::StackName}'
@@ -195,19 +199,19 @@ Resources:
       BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
       CopyTagsToSnapshot: true
       DBInstanceClass: !Ref DBInstanceClass
-      DBName: !Ref DBName
+      DBName: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBName]
       DBSnapshotIdentifier: !If [HasDBSnapshotIdentifier, !Ref DBSnapshotIdentifier, !Ref 'AWS::NoValue']
       DBSubnetGroupName: !Ref DBSubnetGroup
       Engine: postgres
       EngineVersion: '9.6.5'
-      KmsKeyId: !If [HasEncryption, !Ref Key, !Ref 'AWS::NoValue']
+      KmsKeyId: !If [CreateKey, !Ref Key, !Ref 'AWS::NoValue']
       MasterUsername: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUsername]
       MasterUserPassword: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUserPassword]
       MultiAZ: !Ref DBMultiAZ
       PreferredBackupWindow: '09:54-10:24'
       PreferredMaintenanceWindow: 'sat:07:00-sat:07:30'
       StorageType: gp2
-      StorageEncrypted: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref Encryption]
+      StorageEncrypted: !If [CreateKey, true, !Ref 'AWS::NoValue']
       VPCSecurityGroups:
       - !Ref DatabaseSecurityGroup
   DatabaseBurstBalanceTooLowAlarm:
