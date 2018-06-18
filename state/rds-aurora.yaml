@@ -64,26 +64,28 @@ Parameters:
     Type: String
     Default: 'db.t2.small'
   DBName:
-    Description: 'Name of the database (ignored when DBSnapshotIdentifier is set).'
+    Description: 'Name of the database (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
     Type: String
+    Default: ''
   DBBackupRetentionPeriod:
     Description: 'The number of days to keep snapshots of the database.'
     Type: Number
     Default: 30
   DBMasterUsername:
-    Description: 'The master user name for the DB instance (ignored when DBSnapshotIdentifier is set).'
+    Description: 'The master user name for the DB instance (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
     Type: 'String'
     Default: master
   DBMasterUserPassword:
-    Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set).'
+    Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
     Type: String
     NoEcho: true
+    Default: ''
   SubDomainName:
     Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
     Type: String
     Default: aurora
   Encryption:
-    Description: 'Enable server side encryption using KMS (customer managed) CMK.'
+    Description: 'Enable server side encryption using KMS (customer managed) CMK (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
     Type: String
     Default: false
     AllowedValues: [true, false]
@@ -93,6 +95,7 @@ Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, '']]
   HasEncryption: !Equals [!Ref Encryption, true]
+  HasEncryptionAndNotDBSnapshotIdentifier: !And [!Condition HasEncryption, !Not [!Condition HasDBSnapshotIdentifier]]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -147,7 +150,7 @@ Resources:
       SourceSecurityGroupId:
         'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
   Key:
-    Condition: HasEncryption
+    Condition: HasEncryptionAndNotDBSnapshotIdentifier
     Type: 'AWS::KMS::Key'
     Properties:
       KeyPolicy:
@@ -175,7 +178,7 @@ Resources:
               'kms:CallerAccount': !Ref 'AWS::AccountId'
               'kms:ViaService': !Sub 'rds.${AWS::Region}.amazonaws.com'
   KeyAlias:
-    Condition: HasEncryption
+    Condition: HasEncryptionAndNotDBSnapshotIdentifier
     Type: 'AWS::KMS::Alias'
     Properties:
       AliasName: !Sub 'alias/${AWS::StackName}'
@@ -203,12 +206,12 @@ Resources:
     Type: 'AWS::RDS::DBCluster'
     Properties:
       BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
-      DatabaseName: !Ref DBName
+      DatabaseName: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBName]
       DBClusterParameterGroupName: !Ref DBClusterParameterGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
       Engine: aurora
       EngineVersion: '5.6.10a'
-      KmsKeyId: !If [HasEncryption, !Ref Key, !Ref 'AWS::NoValue']
+      KmsKeyId: !If [HasEncryptionAndNotDBSnapshotIdentifier, !Ref Key, !Ref 'AWS::NoValue']
       MasterUsername: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUsername]
       MasterUserPassword: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUserPassword]
       PreferredBackupWindow: '09:54-10:24'
