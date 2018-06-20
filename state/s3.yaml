@@ -162,9 +162,8 @@ Resources:
             Effect: Deny
             Resource: !Sub '${Bucket.Arn}/*'
             Condition:
-              StringNotLike:
-                's3:x-amz-server-side-encryption': ''
               StringNotEquals:
+                's3:x-amz-server-side-encryption': ''
                 's3:x-amz-server-side-encryption-aws-kms-key-id': !GetAtt 'Key.Arn'
           - !Ref 'AWS::NoValue'
   CloudFrontOriginAccessIdentity:
