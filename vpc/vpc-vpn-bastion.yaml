@@ -585,11 +585,10 @@ Resources:
               command: !Sub './vpncmd /server localhost /password:${VPNAdminPassword} /adminhub:DEFAULT /cmd SecureNatEnable && touch /mnt/storage/config_enable_secure_nat_done.txt'
               cwd: '/usr/local/vpnserver'
               test: '[ ! -f /mnt/storage/config_enable_secure_nat_done.txt ]'
-            'f_disable_defaut_gateway_client_notification': # needed for split tunnel
-              command: !Sub './vpncmd /server localhost /password:${VPNAdminPassword} /adminhub:DEFAULT /cmd DhcpSet /START:192.168.30.10 /END:192.168.30.200 /MASK:255.255.255.0 /EXPIRE:7200 /GW:none /DNS:192.168.30.1 /DNS2:none /DOMAIN:none /LOG:yes && touch /mnt/storage/config_disable_defaut_gateway_client_notification_done.txt'
+            'f_set_dhcp_set': # needed for split tunnel
+              command: !Sub './vpncmd /server localhost /password:${VPNAdminPassword} /adminhub:DEFAULT /cmd DhcpSet /START:192.168.30.10 /END:192.168.30.200 /MASK:255.255.255.0 /EXPIRE:7200 /GW:none /DNS:192.168.30.1 /DNS2:none /DOMAIN:none /PUSHROUTE:10.0.0.0/255.255.0.0/192.168.30.1 /LOG:yes && touch /mnt/storage/config_disable_defaut_gateway_client_notification_done.txt'
               cwd: '/usr/local/vpnserver'
               test: '[ ! -f /mnt/storage/config_disable_defaut_gateway_client_notification_done.txt ]'
-            # TODO set split tunnel config 10.0.0.0/255.255.0.0/192.168.30.1 see http://www.vpnusers.com/viewtopic.php?f=7&t=60684
             'g_enable_ipsec_psk':
               command: !Sub './vpncmd /server localhost /password:${VPNAdminPassword} /cmd IPsecEnable /L2TP:yes /L2TPRAW:yes /ETHERIP:no /PSK:${VPNPSK} /DEFAULTHUB:DEFAULT && touch /mnt/storage/config_enable_ipsec_psk_done.txt'
               cwd: '/usr/local/vpnserver'
