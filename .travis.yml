@@ -12,5 +12,5 @@ install:
 - 'pip install awscli'
 script:
 - 'yamllint .'
-- 'find . -type f \( -name ''*.yml'' -o -name ''*.yaml'' \) -a ! -name ''.*'' | while read file; do set -ex && grep -q "LICENSE-2.0" "$file"; done;'
-- 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then find . -type f \( -name ''*.yml'' -o -name ''*.yaml'' \) -a ! -name ''.*'' | while read file; do set -ex && aws s3 cp "$file" "s3://travis-aws-cf-templates/$TRAVIS_COMMIT/$file" && aws cloudformation validate-template --template-url "https://s3.amazonaws.com/travis-aws-cf-templates/$TRAVIS_COMMIT/$file" > /dev/null; done; fi'
+- 'find . -type f -name ''*.yaml'' | while read file; do set -ex && grep -q "LICENSE-2.0" "$file"; done;'
+- 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then find . -type f -name ''*.yaml'' | while read file; do set -ex && aws s3 cp "$file" "s3://travis-aws-cf-templates/$TRAVIS_COMMIT/$file" && aws cloudformation validate-template --template-url "https://s3.amazonaws.com/travis-aws-cf-templates/$TRAVIS_COMMIT/$file" > /dev/null; done; fi'
