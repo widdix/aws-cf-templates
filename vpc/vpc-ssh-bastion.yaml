@@ -141,14 +141,18 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: !Sub
-      - 'SSH bastion host/instance 10.${ClassB}.0.0/16'
-      - ClassB:
-          'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
+      - 'SSH bastion host/instance ${CidrBlock}'
+      - CidrBlock:
+          'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: 22
         ToPort: 22
         CidrIp: '0.0.0.0/0'
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIpv6: '::/0'
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
   InstanceProfile:
@@ -458,9 +462,9 @@ Resources:
       Tags:
       - Key: Name
         Value: !Sub
-        - 'SSH bastion host/instance 10.${ClassB}.0.0/16'
-        - ClassB:
-            'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
+        - 'SSH bastion host/instance ${CidrBlock}'
+        - CidrBlock:
+            'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'
         PropagateAtLaunch: true
       NotificationConfigurations: !If
       - HasAlertTopic

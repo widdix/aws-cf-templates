@@ -199,7 +199,7 @@ Resources:
     Properties:
       RetentionInDays: !Ref LogsRetentionInDays
   SecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+    Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: !Ref Name
       VpcId:
@@ -223,6 +223,15 @@ Resources:
       FromPort: 22
       ToPort: 22
       CidrIp: '0.0.0.0/0'
+  SecurityGroupInSSHWorldIPv6:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotSSHBastionSecurityGroup
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIpv6: '::/0'
   SecurityGroupIngressTcpPort1:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasIngressTcpPort1
@@ -232,6 +241,15 @@ Resources:
       FromPort: !Ref IngressTcpPort1
       ToPort: !Ref IngressTcpPort1
       CidrIp: '0.0.0.0/0'
+  SecurityGroupIngressTcpPort1IPv6:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasIngressTcpPort1
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref IngressTcpPort1
+      ToPort: !Ref IngressTcpPort1
+      CidrIpv6: '::/0'
   SecurityGroupIngressTcpPort2:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasIngressTcpPort2
@@ -241,6 +259,15 @@ Resources:
       FromPort: !Ref IngressTcpPort2
       ToPort: !Ref IngressTcpPort2
       CidrIp: '0.0.0.0/0'
+  SecurityGroupIngressTcpPort2IPv6:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasIngressTcpPort2
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref IngressTcpPort2
+      ToPort: !Ref IngressTcpPort2
+      CidrIpv6: '::/0'
   SecurityGroupIngressTcpPort3:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasIngressTcpPort3
@@ -250,6 +277,15 @@ Resources:
       FromPort: !Ref IngressTcpPort3
       ToPort: !Ref IngressTcpPort3
       CidrIp: '0.0.0.0/0'
+  SecurityGroupIngressTcpPort3IPv6:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasIngressTcpPort3
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref IngressTcpPort3
+      ToPort: !Ref IngressTcpPort3
+      CidrIpv6: '::/0'
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:

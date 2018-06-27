@@ -196,6 +196,15 @@ Resources:
       FromPort: 443
       ToPort: 443
       CidrIp: '0.0.0.0/0'
+  LoadBalancerSecurityGroupInWorldIPv6:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotAuthProxySecurityGroup
+    Properties:
+      GroupId: !Ref LoadBalancerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      CidrIpv6: '::/0'
   LoadBalancerSecurityGroupInAuthProxy:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasAuthProxySecurityGroup
@@ -236,6 +245,15 @@ Resources:
       FromPort: 22
       ToPort: 22
       CidrIp: '0.0.0.0/0'
+  WebServerSecurityGroupInSSHWorldIPv6:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotSSHBastionSecurityGroup
+    Properties:
+      GroupId: !Ref WebServerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIpv6: '::/0'
   DatabaseSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -958,7 +976,7 @@ Resources:
       ComparisonOperator: LessThanThreshold
       MetricName: CPUUtilization
   EFSFileSystem:
-    Type: AWS::EFS::FileSystem
+    Type: 'AWS::EFS::FileSystem'
     Properties:
       FileSystemTags:
       - Key: Name
@@ -998,7 +1016,7 @@ Resources:
       - Name: FileSystemId
         Value: !Ref EFSFileSystem
   EFSMountTargetA:
-    Type: AWS::EFS::MountTarget
+    Type: 'AWS::EFS::MountTarget'
     Properties:
       FileSystemId: !Ref EFSFileSystem
       SubnetId:
@@ -1006,7 +1024,7 @@ Resources:
       SecurityGroups:
       - !Ref EFSSecurityGroup
   EFSMountTargetB:
-    Type: AWS::EFS::MountTarget
+    Type: 'AWS::EFS::MountTarget'
     Properties:
       FileSystemId: !Ref EFSFileSystem
       SubnetId:
@@ -1014,7 +1032,7 @@ Resources:
       SecurityGroups:
       - !Ref EFSSecurityGroup
   EFSSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+    Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Allowing access to EFS
       VpcId:
@@ -1121,6 +1139,7 @@ Resources:
           Compress: true
         Enabled: true
         HttpVersion: http2
+        IPV6Enabled: true
         PriceClass: 'PriceClass_All'
         ViewerCertificate:
           AcmCertificateArn: !Ref CloudFrontAcmCertificate
