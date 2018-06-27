@@ -29,19 +29,19 @@ Metadata:
       - FallbackEmail
 Parameters:
   Email:
-    Description: 'Optional email address that will receive alerts'
+    Description: 'Optional email address that will receive alerts.'
     Type: String
     Default: ''
   HttpEndpoint:
-    Description: 'Optional HTTP endpoint that will receive alerts via POST requests'
+    Description: 'Optional HTTP endpoint that will receive alerts via POST requests.'
     Type: String
     Default: ''
   HttpsEndpoint:
-    Description: 'Optional HTTPS endpoint that will receive alerts via POST requests (can be a marbot.io endpoint)'
+    Description: 'Optional HTTPS endpoint that will receive alerts via POST requests (can be a marbot.io endpoint).'
     Type: String
     Default: ''
   FallbackEmail:
-    Description: 'Optional email address that will receive alerts if alerts can not be delivered'
+    Description: 'Optional email address that will receive alerts if alerts can not be delivered.'
     Type: String
     Default: ''
 Conditions:

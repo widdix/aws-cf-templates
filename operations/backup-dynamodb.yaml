@@ -39,13 +39,13 @@ Parameters:
     Description: 'Stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
   TableName:
-    Description: 'DynamoDB table name'
+    Description: 'DynamoDB table name.'
     Type: String
   ReadThroughputPercent:
-    Description: 'DynamoDB read throughput percent'
+    Description: 'DynamoDB read throughput percent.'
     Type: Number
     Default: 0.25
-    ConstraintDescription: 'Must be in the range [0.1-1]'
+    ConstraintDescription: 'Must be in the range [0.1-1].'
     MinValue: 0.1
     MaxValue: 1
   InstanceType:

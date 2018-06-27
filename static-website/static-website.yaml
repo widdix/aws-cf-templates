@@ -24,9 +24,9 @@ Metadata:
     - Label:
         default: 'DNS Parameters'
       Parameters:
-      - DomainName
-      - RedirectDomainName
-      - HostedZoneId
+      - SubDomainNameWithDot
+      - EnableRedirectSubDomainName
+      - RedirectSubDomainNameWithDot
     - Label:
         default: 'SSL/TLS Parameters'
       Parameters:
@@ -34,18 +34,23 @@ Metadata:
       - ExistingCertificate
 Parameters:
   ParentZoneStack:
-    Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
+    Description: 'Stack name of parent zone stack based on vpc/zone-*.yaml template.'
     Type: String
-    Default: ''
-  DomainName:
-    Description: 'The primary domain name of the static website (e.g. widdix.de).'
+  SubDomainNameWithDot:
+    Description: 'Primary mame that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain.'
     Type: String
-  RedirectDomainName:
-    Description: 'Optional domain name redirecting to DomainName (e.g. www.widdix.de).'
+    Default: 'www.'
+  EnableRedirectSubDomainName:
+    Description: 'Sometimes, you want one (sub)domain to redirect to the primary name. E.g., if your primary website is www.widdix.net, you want widdix.net to redirect to www.widdix.net.'
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  RedirectSubDomainNameWithDot:
+    Description: 'Optional name that is used to create the DNS entry with trailing dot, e.g. ${RedirectSubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain.'
     Type: String
     Default: ''
   CertificateType:
-    Description: 'Indicates whether to use the certificate from the AWS Certificate Manager or AWS Identity and Access Management. CreateAcmCertificate only works in the us-east-1 region.'
+    Description: 'Indicates whether to use the certificate from the AWS Certificate Manager or AWS Identity and Access Management. CreateAcmCertificate only works in the us-east-1 region!'
     Type: String
     Default: IamCertificateId
     AllowedValues:
@@ -53,41 +58,72 @@ Parameters:
     - IamCertificateId
     - CreateAcmCertificate
   ExistingCertificate:
-    Description: 'Optional ACM Certificate ARN or IAM Certificate ID. Must be created in the us-east-1 region!'
-    Type: String
-    Default: ''
-  HostedZoneId:
-    Description: 'Deprecated in v7, will be removed in v8, use ParentZoneStack instead! The Id of the hosted zone managed by AWS Route53.'
+    Description: 'Optional ACM Certificate ARN or IAM Certificate ID. Certificate must be created in the us-east-1 region!'
     Type: String
     Default: ''
 Conditions:
-  HasRedirectDomainName: !Not [!Equals [!Ref RedirectDomainName, '']]
+  HasRedirectDomainName: !Equals [!Ref EnableRedirectSubDomainName, 'true']
   HasAcmCertificateArn: !Equals [!Ref CertificateType, 'AcmCertificateArn']
   HasIamCertificateId: !Equals [!Ref CertificateType, 'IamCertificateId']
   HasCreateAcmCertificate: !Equals [!Ref CertificateType, 'CreateAcmCertificate']
-  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
-  HasNotZone: !Equals [!Ref ParentZoneStack, '']
-  HasRedirectDomainNameAndHasZone: !And [!Condition HasRedirectDomainName, !Condition HasZone]
-  HasRedirectDomainNameAndHasNotZone: !And [!Condition HasRedirectDomainName, !Condition HasNotZone]
 Resources:
   Certificate:
     Condition: HasCreateAcmCertificate
     Type: 'AWS::CertificateManager::Certificate'
     Properties:
-      DomainName: !Ref DomainName
+      DomainName: !Sub
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+        HostedZoneName:
+          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       DomainValidationOptions: !If
       - HasRedirectDomainName
-      - - DomainName: !Ref DomainName
-          ValidationDomain: !Ref DomainName
-        - DomainName: !Ref RedirectDomainName
-          ValidationDomain: !Ref DomainName
-      - - DomainName: !Ref DomainName
-          ValidationDomain: !Ref DomainName
-      SubjectAlternativeNames: !If [HasRedirectDomainName, [!Ref RedirectDomainName], []]
+      - - DomainName: !Sub
+          - '${SubDomainNameWithDot}${HostedZoneName}'
+          - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+            HostedZoneName:
+              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+          ValidationDomain: !Sub
+          - '${SubDomainNameWithDot}${HostedZoneName}'
+          - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+            HostedZoneName:
+              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        - DomainName: !Sub
+          - '${RedirectSubDomainNameWithDot}${HostedZoneName}'
+          - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
+            HostedZoneName:
+              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+          ValidationDomain: !Sub
+          - '${SubDomainNameWithDot}${HostedZoneName}'
+          - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+            HostedZoneName:
+              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      - - DomainName: !Sub
+          - '${SubDomainNameWithDot}${HostedZoneName}'
+          - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+            HostedZoneName:
+              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+          ValidationDomain: !Sub
+          - '${SubDomainNameWithDot}${HostedZoneName}'
+          - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+            HostedZoneName:
+              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      SubjectAlternativeNames: !If
+      - HasRedirectDomainName
+      - - !Sub
+          - '${RedirectSubDomainNameWithDot}${HostedZoneName}'
+          - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
+            HostedZoneName:
+              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      - []
   S3Bucket:
     Type: 'AWS::S3::Bucket'
     Properties:
-      BucketName: !Ref DomainName
+      BucketName: !Sub
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+        HostedZoneName:
+          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       WebsiteConfiguration:
         IndexDocument: 'index.html'
   S3BucketPolicy:
@@ -107,8 +143,16 @@ Resources:
     Properties:
       DistributionConfig:
         Aliases:
-        - !Ref DomainName
-        Comment: !Ref DomainName
+        - !Sub
+          - '${SubDomainNameWithDot}${HostedZoneName}'
+          - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+            HostedZoneName:
+              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        Comment: !Sub
+        - '${SubDomainNameWithDot}${HostedZoneName}'
+        - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+          HostedZoneName:
+            'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
         Origins:
         - DomainName: !Select [2, !Split ['/', !GetAtt 'S3Bucket.WebsiteURL']]
           Id: s3origin
@@ -137,25 +181,17 @@ Resources:
           IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue']
           SslSupportMethod: 'sni-only'
           MinimumProtocolVersion: TLSv1
-  Route53Record:
-    Type: 'AWS::Route53::RecordSetGroup'
-    Condition: HasNotZone
-    Properties:
-      HostedZoneId: !Ref HostedZoneId
-      RecordSets:
-      - Name: !Ref DomainName
-        Type: A
-        AliasTarget:
-          HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
-          DNSName: !GetAtt 'CloudFrontDistribution.DomainName'
   Route53RecordV2:
     Type: 'AWS::Route53::RecordSetGroup'
-    Condition: HasZone
     Properties:
       HostedZoneId:
         'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
       RecordSets:
-      - Name: !Ref DomainName
+      - Name: !Sub
+        - '${SubDomainNameWithDot}${HostedZoneName}'
+        - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+          HostedZoneName:
+            'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
         Type: A
         AliasTarget:
           HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
@@ -164,10 +200,18 @@ Resources:
     Condition: HasRedirectDomainName
     Type: 'AWS::S3::Bucket'
     Properties:
-      BucketName: !Ref RedirectDomainName
+      BucketName: !Sub
+      - '${RedirectSubDomainNameWithDot}${HostedZoneName}'
+      - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
+        HostedZoneName:
+          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       WebsiteConfiguration:
         RedirectAllRequestsTo:
-          HostName: !Ref DomainName
+          HostName: !Sub
+          - '${SubDomainNameWithDot}${HostedZoneName}'
+          - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+            HostedZoneName:
+              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
           Protocol: https
   CloudFrontDistributionRedirect:
     Condition: HasRedirectDomainName
@@ -175,8 +219,16 @@ Resources:
     Properties:
       DistributionConfig:
         Aliases:
-        - !Ref RedirectDomainName
-        Comment: !Ref RedirectDomainName
+        - !Sub
+          - '${RedirectSubDomainNameWithDot}${HostedZoneName}'
+          - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
+            HostedZoneName:
+              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        Comment: !Sub
+        - '${RedirectSubDomainNameWithDot}${HostedZoneName}'
+        - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
+          HostedZoneName:
+            'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
         Origins:
         - DomainName: !Select [2, !Split ['/', !GetAtt 'S3BucketRedirect.WebsiteURL']]
           Id: s3origin
@@ -205,25 +257,18 @@ Resources:
           IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue']
           SslSupportMethod: 'sni-only'
           MinimumProtocolVersion: TLSv1
-  Route53RecordRedirect:
-    Condition: HasRedirectDomainNameAndHasNotZone
-    Type: 'AWS::Route53::RecordSetGroup'
-    Properties:
-      HostedZoneId: !Ref HostedZoneId
-      RecordSets:
-      - Name: !Ref RedirectDomainName
-        Type: A
-        AliasTarget:
-          HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
-          DNSName: !GetAtt 'CloudFrontDistributionRedirect.DomainName'
   Route53RecordRedirectV2:
-    Condition: HasRedirectDomainNameAndHasZone
+    Condition: HasRedirectDomainName
     Type: 'AWS::Route53::RecordSetGroup'
     Properties:
       HostedZoneId:
         'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
       RecordSets:
-      - Name: !Ref RedirectDomainName
+      - Name: !Sub
+        - '${RedirectSubDomainNameWithDot}${HostedZoneName}'
+        - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
+          HostedZoneName:
+            'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
         Type: A
         AliasTarget:
           HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
@@ -240,6 +285,10 @@ Outputs:
     Value: !Sub '${AWS::StackName}'
   URL:
     Description: 'URL to static website.'
-    Value: !Sub 'https://${DomainName}'
+    Value: !Sub
+    - '${SubDomainNameWithDot}${HostedZoneName}'
+    - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+      HostedZoneName:
+        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
     Export:
       Name: !Sub '${AWS::StackName}-URL'
