@@ -22,6 +22,14 @@ Metadata:
       Parameters:
       - ParentZoneStack
     - Label:
+        default: 'Lambda@Edge Parameters'
+      Parameters:
+      - LambdaEdgeSubdirectoriesVersionArn
+    - Label:
+        default: 'CloudFront Parameters'
+      Parameters:
+      - DefaultRootObject
+    - Label:
         default: 'DNS Parameters'
       Parameters:
       - SubDomainNameWithDot
@@ -40,6 +48,14 @@ Parameters:
     Description: 'Primary mame that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain.'
     Type: String
     Default: 'www.'
+  LambdaEdgeSubdirectoriesVersionArn:
+    Description: 'Optional version ARN of Lambda@Edge function based on static-website/lambdaedge-index-document.yaml template and exposed as output LambdaVersionArn.'
+    Type: String
+    Default: ''
+  DefaultRootObject:
+    Description: 'The name of the index document for the website (ignored when LambdaEdgeSubdirectoriesVersionArn is set).'
+    Type: String
+    Default: 'index.html'
   EnableRedirectSubDomainName:
     Description: 'Sometimes, you want one (sub)domain to redirect to the primary name. E.g., if your primary website is www.widdix.net, you want widdix.net to redirect to www.widdix.net.'
     Type: String
@@ -66,6 +82,7 @@ Conditions:
   HasAcmCertificateArn: !Equals [!Ref CertificateType, 'AcmCertificateArn']
   HasIamCertificateId: !Equals [!Ref CertificateType, 'IamCertificateId']
   HasCreateAcmCertificate: !Equals [!Ref CertificateType, 'CreateAcmCertificate']
+  HasLambdaEdgeSubdirectoriesVersionArn: !Not [!Equals [!Ref LambdaEdgeSubdirectoriesVersionArn, '']]
 Resources:
   Certificate:
     Condition: HasCreateAcmCertificate
@@ -124,63 +141,92 @@ Resources:
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
         HostedZoneName:
           'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
-      WebsiteConfiguration:
-        IndexDocument: 'index.html'
   S3BucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
     Properties:
       Bucket: !Ref S3Bucket
       PolicyDocument:
         Statement:
-        - Action:
-          - 's3:GetObject'
+        - Action: 's3:GetObject'
           Effect: Allow
-          Resource:
-          - !Sub 'arn:aws:s3:::${S3Bucket}/*'
-          Principal: '*'
-  CloudFrontDistribution:
-    Type: 'AWS::CloudFront::Distribution'
+          Resource: !Sub 'arn:aws:s3:::${S3Bucket}/*'
+          Principal:
+            CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
+  CloudFrontOriginAccessIdentity:
+    Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
     Properties:
-      DistributionConfig:
-        Aliases:
-        - !Sub
-          - '${SubDomainNameWithDot}${HostedZoneName}'
-          - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-            HostedZoneName:
-              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      CloudFrontOriginAccessIdentityConfig:
         Comment: !Sub
         - '${SubDomainNameWithDot}${HostedZoneName}'
         - SubDomainNameWithDot: !Ref SubDomainNameWithDot
           HostedZoneName:
             'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
-        Origins:
-        - DomainName: !Select [2, !Split ['/', !GetAtt 'S3Bucket.WebsiteURL']]
-          Id: s3origin
-          CustomOriginConfig:
-            OriginProtocolPolicy: 'http-only'
+  CloudFrontDistribution:
+    Type: 'AWS::CloudFront::Distribution'
+    Properties:
+      DistributionConfig:
+        Aliases: !If
+        - HasRedirectDomainName
+        - - !Sub
+            - '${SubDomainNameWithDot}${HostedZoneName}'
+            - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+              HostedZoneName:
+                'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+          - !Sub
+            - '${RedirectSubDomainNameWithDot}${HostedZoneName}'
+            - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
+              HostedZoneName:
+                'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        - - !Sub
+            - '${SubDomainNameWithDot}${HostedZoneName}'
+            - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+              HostedZoneName:
+                'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        Comment: !Sub
+        - '${SubDomainNameWithDot}${HostedZoneName}'
+        - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+          HostedZoneName:
+            'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
         DefaultCacheBehavior:
           AllowedMethods:
-          - DELETE
           - GET
           - HEAD
           - OPTIONS
-          - PATCH
-          - POST
-          - PUT
+          CachedMethods:
+          - GET
+          - HEAD
+          - OPTIONS
+          Compress: true
+          DefaultTTL: 3600 # in seconds
           ForwardedValues:
-            QueryString: false
             Cookies:
               Forward: none
+            QueryString: false
+          LambdaFunctionAssociations: !If
+          - HasLambdaEdgeSubdirectoriesVersionArn
+          - - EventType: 'viewer-request'
+              LambdaFunctionARN: !Ref LambdaEdgeSubdirectoriesVersionArn
+            - EventType: 'origin-request'
+              LambdaFunctionARN: !Ref LambdaEdgeSubdirectoriesVersionArn
+          - !Ref 'AWS::NoValue'
+          MaxTTL: 86400 # in seconds
+          MinTTL: 60 # in seconds
           TargetOriginId: s3origin
           ViewerProtocolPolicy: 'redirect-to-https'
+        DefaultRootObject: !If [HasLambdaEdgeSubdirectoriesVersionArn, !Ref 'AWS::NoValue', !Ref DefaultRootObject]
         Enabled: true
         HttpVersion: http2
+        Origins:
+        - DomainName: !GetAtt 'S3Bucket.DomainName'
+          Id: s3origin
+          S3OriginConfig:
+            OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
         PriceClass: 'PriceClass_All'
         ViewerCertificate:
           AcmCertificateArn: !If [HasCreateAcmCertificate, !Ref Certificate, !If [HasAcmCertificateArn, !Ref ExistingCertificate, !Ref 'AWS::NoValue']]
           IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue']
+          MinimumProtocolVersion: 'TLSv1.1_2016'
           SslSupportMethod: 'sni-only'
-          MinimumProtocolVersion: TLSv1
   Route53RecordV2:
     Type: 'AWS::Route53::RecordSetGroup'
     Properties:
@@ -196,67 +242,6 @@ Resources:
         AliasTarget:
           HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
           DNSName: !GetAtt 'CloudFrontDistribution.DomainName'
-  S3BucketRedirect:
-    Condition: HasRedirectDomainName
-    Type: 'AWS::S3::Bucket'
-    Properties:
-      BucketName: !Sub
-      - '${RedirectSubDomainNameWithDot}${HostedZoneName}'
-      - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
-      WebsiteConfiguration:
-        RedirectAllRequestsTo:
-          HostName: !Sub
-          - '${SubDomainNameWithDot}${HostedZoneName}'
-          - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-            HostedZoneName:
-              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
-          Protocol: https
-  CloudFrontDistributionRedirect:
-    Condition: HasRedirectDomainName
-    Type: 'AWS::CloudFront::Distribution'
-    Properties:
-      DistributionConfig:
-        Aliases:
-        - !Sub
-          - '${RedirectSubDomainNameWithDot}${HostedZoneName}'
-          - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
-            HostedZoneName:
-              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
-        Comment: !Sub
-        - '${RedirectSubDomainNameWithDot}${HostedZoneName}'
-        - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
-          HostedZoneName:
-            'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
-        Origins:
-        - DomainName: !Select [2, !Split ['/', !GetAtt 'S3BucketRedirect.WebsiteURL']]
-          Id: s3origin
-          CustomOriginConfig:
-            OriginProtocolPolicy: 'http-only'
-        DefaultCacheBehavior:
-          AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
-          ForwardedValues:
-            QueryString: false
-            Cookies:
-              Forward: none
-          TargetOriginId: s3origin
-          ViewerProtocolPolicy: 'redirect-to-https'
-        Enabled: true
-        HttpVersion: http2
-        PriceClass: 'PriceClass_All'
-        ViewerCertificate:
-          AcmCertificateArn: !If [HasCreateAcmCertificate, !Ref Certificate, !If [HasAcmCertificateArn, !Ref ExistingCertificate, !Ref 'AWS::NoValue']]
-          IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue']
-          SslSupportMethod: 'sni-only'
-          MinimumProtocolVersion: TLSv1
   Route53RecordRedirectV2:
     Condition: HasRedirectDomainName
     Type: 'AWS::Route53::RecordSetGroup'
@@ -272,7 +257,7 @@ Resources:
         Type: A
         AliasTarget:
           HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
-          DNSName: !GetAtt 'CloudFrontDistributionRedirect.DomainName'
+          DNSName: !GetAtt 'CloudFrontDistribution.DomainName'
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
@@ -286,7 +271,7 @@ Outputs:
   URL:
     Description: 'URL to static website.'
     Value: !Sub
-    - '${SubDomainNameWithDot}${HostedZoneName}'
+    - 'https://${SubDomainNameWithDot}${HostedZoneName}'
     - SubDomainNameWithDot: !Ref SubDomainNameWithDot
       HostedZoneName:
         'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
