@@ -8,9 +8,6 @@ import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.*;
 import com.amazonaws.services.ec2.model.Filter;
-import com.amazonaws.services.route53.AmazonRoute53;
-import com.amazonaws.services.route53.AmazonRoute53ClientBuilder;
-import com.amazonaws.services.route53.model.*;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.*;
@@ -30,8 +27,6 @@ public abstract class AAWSTest extends ATest {
 
     private AmazonEC2 ec2;
 
-    private AmazonRoute53 route53;
-
     private final AmazonS3 s3;
 
     private final AWSSecurityTokenService sts;
@@ -45,7 +40,6 @@ public abstract class AAWSTest extends ATest {
             this.credentialsProvider = new DefaultAWSCredentialsProviderChain();
         }
         this.ec2 = AmazonEC2ClientBuilder.standard().withCredentials(this.credentialsProvider).build();
-        this.route53 = AmazonRoute53ClientBuilder.standard().withCredentials(this.credentialsProvider).build();
         this.s3 = AmazonS3ClientBuilder.standard().withCredentials(this.credentialsProvider).build();
         this.sts = AWSSecurityTokenServiceClientBuilder.standard().withCredentials(this.credentialsProvider).build();
     }
@@ -60,54 +54,6 @@ public abstract class AAWSTest extends ATest {
         if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
             this.ec2.deleteKeyPair(new DeleteKeyPairRequest().withKeyName(keyName));
             System.out.println("keypair[" + keyName + "] deleted");
-        }
-    }
-
-    private void waitForDomain(final String name, final String changeId, final ChangeStatus finalStatus) {
-        System.out.println("waitForDomain[" + name + "]: to reach status " + finalStatus);
-        while (true) {
-            try {
-                Thread.sleep(5000);
-            } catch (final InterruptedException e) {
-                // continue
-            }
-            final GetChangeResult res = this.route53.getChange(new GetChangeRequest().withId(changeId));
-            final ChangeStatus currentStatus = ChangeStatus.fromValue(res.getChangeInfo().getStatus());
-            if (finalStatus == currentStatus) {
-                System.out.println("waitForDomain[" + name + "]: final status reached.");
-                return;
-            } else {
-                System.out.println("waitForDomain[" + name + "]: continue to wait (still in intermediate status " + currentStatus + ") ...");
-            }
-        }
-    }
-
-    protected final String generateDomain(final String prefix) {
-        return prefix + "." + Config.get(Config.Key.DOMAIN_SUFFIX);
-    }
-
-    protected final String createDomain(final String prefix, final String host) {
-        final String name = this.generateDomain(prefix);
-        final ResourceRecord rr = new ResourceRecord(host);
-        final ResourceRecordSet rrs = new ResourceRecordSet(name, RRType.CNAME).withTTL(60L).withResourceRecords(rr);
-        final Change create = new Change().withAction(ChangeAction.CREATE).withResourceRecordSet(rrs);
-        final ChangeBatch changeBatch = new ChangeBatch().withChanges(create);
-        final ChangeResourceRecordSetsRequest req = new ChangeResourceRecordSetsRequest().withHostedZoneId(Config.get(Config.Key.HOSTED_ZONE_ID)).withChangeBatch(changeBatch);
-        final ChangeResourceRecordSetsResult res = this.route53.changeResourceRecordSets(req);
-        this.waitForDomain(name, res.getChangeInfo().getId(), ChangeStatus.INSYNC);
-        return name;
-    }
-
-    protected final void deleteDomain(final String prefix) {
-        if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
-            final String name = this.generateDomain(prefix);
-            final ListResourceRecordSetsResult res1 = this.route53.listResourceRecordSets(new ListResourceRecordSetsRequest().withHostedZoneId(Config.get(Config.Key.HOSTED_ZONE_ID)).withStartRecordName(name));
-            final ResourceRecordSet rrs = res1.getResourceRecordSets().get(0);
-            final Change delete = new Change().withAction(ChangeAction.DELETE).withResourceRecordSet(rrs);
-            final ChangeBatch changeBatch = new ChangeBatch().withChanges(delete);
-            final ChangeResourceRecordSetsRequest req = new ChangeResourceRecordSetsRequest().withHostedZoneId(Config.get(Config.Key.HOSTED_ZONE_ID)).withChangeBatch(changeBatch);
-            final ChangeResourceRecordSetsResult res2 = this.route53.changeResourceRecordSets(req);
-            this.waitForDomain(name, res2.getChangeInfo().getId(), ChangeStatus.INSYNC);
         }
     }
 
