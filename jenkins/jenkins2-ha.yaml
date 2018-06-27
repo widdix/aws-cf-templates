@@ -494,46 +494,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, ['journald-cloudwatch-logs', awslogs, ssh-access, mount, install, setup, custom, run], ['journald-cloudwatch-logs', awslogs, mount, install, setup, custom, run]]
-        'journald-cloudwatch-logs':
-          sources:
-            '/root': 'https://github.com/saymedia/journald-cloudwatch-logs/releases/download/v0.0.1/journald-cloudwatch-logs-linux.zip'
-          files:
-            '/usr/local/etc/journald-cloudwatch-logs.conf':
-              content: !Sub |
-                log_group = "${MasterLogs}"
-                state_file = "/var/lib/journald-cloudwatch-logs/state"
-            '/usr/lib/systemd/system/journald-cloudwatch-logs.service':
-              content: |
-                [Unit]
-                Description=journald-cloudwatch-logs
-                After=network-online.target
-
-                [Service]
-                Type=simple
-                ExecStart=/usr/local/bin/journald-cloudwatch-logs /usr/local/etc/journald-cloudwatch-logs.conf
-                Restart=always
-                RestartSec=3
-
-                [Install]
-                WantedBy=multi-user.target
-          commands:
-            'a_create_state_dir':
-              command: 'mkdir /var/lib/journald-cloudwatch-logs'
-              test: '[ ! -d /var/lib/journald-cloudwatch-logs ]'
-            'b_create_state_file':
-              command: 'touch /var/lib/journald-cloudwatch-logs/state'
-              test: '[ ! -f /var/lib/journald-cloudwatch-logs/state ]'
-            'd_mv_bin':
-              command: 'mv /root/journald-cloudwatch-logs/journald-cloudwatch-logs /usr/local/bin/journald-cloudwatch-logs'
-              test: '[ ! -f /usr/local/bin/journald-cloudwatch-logs ]'
-          services:
-            sysvinit:
-              'journald-cloudwatch-logs':
-                enabled: true
-                ensureRunning: true
-                files:
-                - '/usr/local/etc/journald-cloudwatch-logs.conf'
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, install, setup, custom, run], [awslogs, mount, install, setup, custom, run]]
         awslogs:
           packages:
             yum:
