@@ -32,10 +32,10 @@ Parameters:
     Description: 'The name of the index document for the website.'
     Type: String
     Default: 'index.html'
-  DomainName: # TODO use zone
+  DomainName: # TODO use zone?
     Description: 'The primary domain name of the static website (e.g. widdix.de).'
     Type: String
-  RedirectDomainName: # TODO use zone
+  RedirectDomainName: # TODO use zone?
     Description: 'Optional domain name redirecting to DomainName (e.g. www.widdix.de).'
     Type: String
     Default: ''
