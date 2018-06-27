@@ -39,7 +39,7 @@ DynamoDB table with auto scaling for read and write capacity.
 
 ## Limitations
 * No backup (see `operations/backup-dynamodb-native.yaml`)
-* No encryption at rest
+* Encryption at rest with AWS managed CMK (customer managed is not supported)
 
 # ElastiCache memcached
 
@@ -95,7 +95,6 @@ Cluster of Elasticsearch nodes.
 
 ## Limitations
 * No auto scaling
-* No encryption at rest
 
 # RDS Aurora
 
