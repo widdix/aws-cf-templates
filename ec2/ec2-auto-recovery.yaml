@@ -167,13 +167,24 @@ Resources:
           'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       ResourceRecords:
       - !Ref ElasticIP
-      TTL: 60
+      TTL: '60'
       Type: A
   ElasticIP:
     Type: 'AWS::EC2::EIP'
     Properties:
-      InstanceId: !Ref VirtualMachine
       Domain: vpc
+  NetworkInterface:
+    Type: 'AWS::EC2::NetworkInterface'
+    Properties:
+      GroupSet:
+      - !Ref SecurityGroup
+      SubnetId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-${SubnetName}'
+  EIPAssociation:
+    Type: 'AWS::EC2::EIPAssociation'
+    Properties:
+      AllocationId: !GetAtt 'ElasticIP.AllocationId'
+      NetworkInterfaceId: !Ref NetworkInterface
   Logs:
     Type: 'AWS::Logs::LogGroup'
     Properties:
@@ -284,6 +295,7 @@ Resources:
           Resource:
           - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
   VirtualMachine:
+    DependsOn: EIPAssociation
     Type: 'AWS::EC2::Instance'
     Metadata:
       'AWS::CloudFormation::Init':
@@ -458,9 +470,10 @@ Resources:
       IamInstanceProfile: !Ref InstanceProfile
       ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
       InstanceType: !Ref InstanceType
-      SecurityGroupIds:
-      - !Ref SecurityGroup
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+      NetworkInterfaces:
+      - DeviceIndex: '0'
+        NetworkInterfaceId: !Ref NetworkInterface
       UserData:
         'Fn::Base64': !Sub |
           #!/bin/bash -ex
@@ -468,8 +481,6 @@ Resources:
           ${UserData}
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource VirtualMachine --region ${AWS::Region}
           /opt/aws/bin/cfn-signal -e 0 --region ${AWS::Region} --stack ${AWS::StackName} --resource VirtualMachine
-      SubnetId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-${SubnetName}'
       Tags:
       - Key: Name
         Value: !Ref Name
