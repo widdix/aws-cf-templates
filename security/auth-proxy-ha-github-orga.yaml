@@ -445,30 +445,28 @@ Resources:
               content: !Sub |
                 [general]
                 state_file = /var/lib/awslogs/agent-state
-                [/var/log/messages]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/messages
-                log_stream_name = {instance_id}/var/log/messages
-                log_group_name = ${Logs}
-                [/var/log/secure]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/secure
-                log_stream_name = {instance_id}/var/log/secure
-                log_group_name = ${Logs}
-                [/var/log/cron]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cron
-                log_stream_name = {instance_id}/var/log/cron
-                log_group_name = ${Logs}
-                [/var/log/cloud-init.log]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cloud-init.log
-                log_stream_name = {instance_id}/var/log/cloud-init.log
-                log_group_name = ${Logs}
-                [/var/log/cfn-init.log]
+                [/var/log/amazon/ssm/amazon-ssm-agent.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init.log
-                log_stream_name = {instance_id}/var/log/cfn-init.log
+                file = /var/log/amazon/ssm/amazon-ssm-agent.log
+                log_stream_name = {instance_id}/var/log/amazon/ssm/amazon-ssm-agent.log
+                log_group_name = ${Logs}
+                [/var/log/amazon/ssm/errors.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/amazon/ssm/errors.log
+                log_stream_name = {instance_id}/var/log/amazon/ssm/errors.log
+                log_group_name = ${Logs}
+                [/var/log/audit/audit.log]
+                file = /var/log/audit/audit.log
+                log_stream_name = {instance_id}/var/log/audit/audit.log
+                log_group_name = ${Logs}
+                [/var/log/awslogs.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/awslogs.log
+                log_stream_name = {instance_id}/var/log/awslogs.log
+                log_group_name = ${Logs}
+                [/var/log/boot.log]
+                file = /var/log/boot.log
+                log_stream_name = {instance_id}/var/log/boot.log
                 log_group_name = ${Logs}
                 [/var/log/cfn-hup.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
@@ -480,14 +478,59 @@ Resources:
                 file = /var/log/cfn-init-cmd.log
                 log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
                 log_group_name = ${Logs}
+                [/var/log/cfn-init.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init.log
+                log_stream_name = {instance_id}/var/log/cfn-init.log
+                log_group_name = ${Logs}
+                [/var/log/cfn-wire.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-wire.log
+                log_stream_name = {instance_id}/var/log/cfn-wire.log
+                log_group_name = ${Logs}
                 [/var/log/cloud-init-output.log]
                 file = /var/log/cloud-init-output.log
                 log_stream_name = {instance_id}/var/log/cloud-init-output.log
+                log_group_name = ${Logs}
+                [/var/log/cloud-init.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cloud-init.log
+                log_stream_name = {instance_id}/var/log/cloud-init.log
+                log_group_name = ${Logs}
+                [/var/log/cron]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cron
+                log_stream_name = {instance_id}/var/log/cron
                 log_group_name = ${Logs}
                 [/var/log/dmesg]
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
                 log_group_name = ${Logs}
+                [/var/log/grubby_prune_debug]
+                file = /var/log/grubby_prune_debug
+                log_stream_name = {instance_id}/var/log/grubby_prune_debug
+                log_group_name = ${Logs}
+                [/var/log/maillog]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/maillog
+                log_stream_name = {instance_id}/var/log/maillog
+                log_group_name = ${Logs}
+                [/var/log/messages]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/messages
+                log_stream_name = {instance_id}/var/log/messages
+                log_group_name = ${Logs}
+                [/var/log/secure]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/secure
+                log_stream_name = {instance_id}/var/log/secure
+                log_group_name = ${Logs}
+                [/var/log/yum.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/yum.log
+                log_stream_name = {instance_id}/var/log/yum.log
+                log_group_name = ${Logs}
+                
                 [/var/log/oauth2_proxy.log]
                 file = /var/log/oauth2_proxy.log
                 log_stream_name = {instance_id}/var/log/oauth2_proxy.log

@@ -152,7 +152,7 @@ Parameters:
     MinValue: 2
     ConstraintDescription: 'Must be >= 2'
 Mappings:
-  RegionMap: # TODO update to Amazon Linux 2
+  RegionMap: # TODO update to Amazon Linux 2 (don't forget to adjust awslogs config as well)
     'ap-south-1':
       ECSAMI: 'ami-c7072aa8'
     'eu-west-3':

@@ -84,7 +84,7 @@ Parameters:
     Type: String
     Default: 'nat.'
 Mappings:
-  RegionMap: # TODO update to Amazon Linux 2
+  RegionMap: # TODO update to Amazon Linux 2 (don't forget to adjust awslogs config as well)
     'ap-south-1':
       NATAMI: 'ami-7fd5f610'
     'eu-west-3':

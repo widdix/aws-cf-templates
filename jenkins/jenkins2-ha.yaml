@@ -557,6 +557,15 @@ Resources:
                 file = /var/log/amazon/ssm/amazon-ssm-agent.log
                 log_stream_name = {instance_id}/var/log/amazon/ssm/amazon-ssm-agent.log
                 log_group_name = ${MasterLogs}
+                [/var/log/amazon/ssm/errors.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/amazon/ssm/errors.log
+                log_stream_name = {instance_id}/var/log/amazon/ssm/errors.log
+                log_group_name = ${MasterLogs}
+                [/var/log/audit/audit.log]
+                file = /var/log/audit/audit.log
+                log_stream_name = {instance_id}/var/log/audit/audit.log
+                log_group_name = ${MasterLogs}
                 [/var/log/awslogs.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
                 file = /var/log/awslogs.log
@@ -595,6 +604,11 @@ Resources:
                 file = /var/log/cloud-init.log
                 log_stream_name = {instance_id}/var/log/cloud-init.log
                 log_group_name = ${MasterLogs}
+                [/var/log/cron]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cron
+                log_stream_name = {instance_id}/var/log/cron
+                log_group_name = ${MasterLogs}
                 [/var/log/dmesg]
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
@@ -603,11 +617,27 @@ Resources:
                 file = /var/log/grubby_prune_debug
                 log_stream_name = {instance_id}/var/log/grubby_prune_debug
                 log_group_name = ${MasterLogs}
+                [/var/log/maillog]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/maillog
+                log_stream_name = {instance_id}/var/log/maillog
+                log_group_name = ${MasterLogs}
+                [/var/log/messages]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/messages
+                log_stream_name = {instance_id}/var/log/messages
+                log_group_name = ${MasterLogs}
+                [/var/log/secure]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/secure
+                log_stream_name = {instance_id}/var/log/secure
+                log_group_name = ${MasterLogs}
                 [/var/log/yum.log]
                 datetime_format = %b %d %H:%M:%S
                 file = /var/log/yum.log
                 log_stream_name = {instance_id}/var/log/yum.log
                 log_group_name = ${MasterLogs}
+                
                 [/var/log/jenkins/jenkins.log]
                 datetime_format = %d %b %Y %H:%M:%S
                 multi_line_start_pattern = {datetime_format}
