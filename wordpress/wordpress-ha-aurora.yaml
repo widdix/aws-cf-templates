@@ -702,7 +702,7 @@ Resources:
                 file = /var/log/yum.log
                 log_stream_name = {instance_id}/var/log/yum.log
                 log_group_name = ${WebServerLogs}
-                
+
                 [/var/log/httpd/access_log]
                 datetime_format = %b %d %H:%M:%S %Y
                 file = /var/log/httpd/access_log

@@ -637,7 +637,7 @@ Resources:
                 file = /var/log/yum.log
                 log_stream_name = {instance_id}/var/log/yum.log
                 log_group_name = ${MasterLogs}
-                
+
                 [/var/log/jenkins/jenkins.log]
                 datetime_format = %d %b %Y %H:%M:%S
                 multi_line_start_pattern = {datetime_format}

@@ -530,7 +530,7 @@ Resources:
                 file = /var/log/yum.log
                 log_stream_name = {instance_id}/var/log/yum.log
                 log_group_name = ${Logs}
-                
+
                 [/var/log/oauth2_proxy.log]
                 file = /var/log/oauth2_proxy.log
                 log_stream_name = {instance_id}/var/log/oauth2_proxy.log
