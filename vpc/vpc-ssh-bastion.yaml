@@ -402,7 +402,7 @@ Resources:
         config:
           packages:
             yum:
-              mysql56: []
+              mariadb: []
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
