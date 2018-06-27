@@ -85,14 +85,20 @@ Parameters:
     Description: 'Target read capacity utilization (in percent) that auto scaling tries to achieve (if you have spiky reads, a lower number is better).'
     Type: Number
     Default: 80
+  Encryption:
+    Description: 'Enable server side encryption using KMS (AWS managed) CMK.'
+    Type: String
+    Default: false
+    AllowedValues: [aws, false]
 Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasSortKey: !Not [!Equals [!Ref SortKeyName, '']]
   HasTableName: !Not [!Equals [!Ref TableName, '']]
+  HasAwsManagedEncryption: !Equals [!Ref Encryption, aws]
 Resources:
   Table:
     Type: 'AWS::DynamoDB::Table'
-    Properties: # TODO add SSESpecification as soon as DynamoDB supports CMK and update docs
+    Properties:
       TableName: !If [HasTableName, !Ref TableName, !Ref 'AWS::NoValue']
       AttributeDefinitions: !If
       - HasSortKey
@@ -113,6 +119,8 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: !Ref MinReadCapacityUnits
         WriteCapacityUnits: !Ref MinWriteCapacityUnits
+      SSESpecification:
+        SSEEnabled: !If [HasAwsManagedEncryption, true, false]
   RoleScaling:
     Type: 'AWS::IAM::Role'
     Properties:
