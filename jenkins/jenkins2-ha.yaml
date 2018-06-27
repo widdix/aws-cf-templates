@@ -129,35 +129,35 @@ Parameters:
 Mappings:
   RegionMap:
     'ap-south-1':
-      AMI: 'ami-7d95b612'
+      AMI: 'ami-d783a9b8'
     'eu-west-3':
-      AMI: 'ami-a88233d5'
+      AMI: 'ami-2cf54551'
     'eu-west-2':
-      AMI: 'ami-924aa8f5'
+      AMI: 'ami-b8b45ddf'
     'eu-west-1':
-      AMI: 'ami-921423eb'
+      AMI: 'ami-466768ac'
     'ap-northeast-2':
-      AMI: 'ami-d117bebf'
+      AMI: 'ami-afd86dc1'
     'ap-northeast-1':
-      AMI: 'ami-2724cf58'
+      AMI: 'ami-e99f4896'
     'sa-east-1':
-      AMI: 'ami-4fd48923'
+      AMI: 'ami-6dca9001'
     'ca-central-1':
-      AMI: 'ami-c59818a1'
+      AMI: 'ami-0ee86a6a'
     'ap-southeast-1':
-      AMI: 'ami-a7f0c4db'
+      AMI: 'ami-05868579'
     'ap-southeast-2':
-      AMI: 'ami-c267b0a0'
+      AMI: 'ami-39f8215b'
     'eu-central-1':
-      AMI: 'ami-43eec3a8'
+      AMI: 'ami-7c4f7097'
     'us-east-1':
-      AMI: 'ami-afd15ed0'
+      AMI: 'ami-b70554c8'
     'us-east-2':
-      AMI: 'ami-2a0f324f'
+      AMI: 'ami-8c122be9'
     'us-west-1':
-      AMI: 'ami-00d8c660'
+      AMI: 'ami-e0ba5c83'
     'us-west-2':
-      AMI: 'ami-31394949'
+      AMI: 'ami-a9d09ed1'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
