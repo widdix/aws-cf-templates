@@ -23,6 +23,7 @@ Metadata:
       - AZA
       - AZB
       - ClassB
+      - Ipv6CidrBlock
       - VPC
       - SubnetAPublic
       - RouteTableAPublic
@@ -46,6 +47,10 @@ Parameters:
     ConstraintDescription: 'Must be in the range [0-255]'
     MinValue: 0
     MaxValue: 255
+  Ipv6CidrBlock:
+    Description: 'Optional set of IPv6 addresses for the VPC (e.g., 2600:1f18:277f:e700::/56, leave empty if VPC does not support IPv6).'
+    Type: String
+    Default: ''
   VPC:
     Description: 'VPC'
     Type: 'AWS::EC2::VPC::Id'
@@ -73,6 +78,8 @@ Parameters:
   RouteTableBPrivate:
     Description: 'Route table B private.'
     Type: String
+Conditions:
+  HasIPv6Support: !Not [!Equals [!Ref Ipv6CidrBlock, '']]
 Resources:
   Dummy:
     Type: 'AWS::S3::Bucket'
@@ -107,6 +114,12 @@ Outputs:
     Value: !Ref ClassB
     Export:
       Name: !Sub '${AWS::StackName}-ClassB'
+  Ipv6CidrBlock:
+    Description: 'The set of IPv6 addresses for the VPC.'
+    Condition: HasIPv6Support
+    Value: !Ref Ipv6CidrBlock
+    Export:
+      Name: !Sub '${AWS::StackName}-Ipv6CidrBlock'
   VPC:
     Description: 'VPC.'
     Value: !Ref VPC
@@ -182,3 +195,8 @@ Outputs:
     Value: !Ref RouteTableBPrivate
     Export:
       Name: !Sub '${AWS::StackName}-RouteTableBPrivate'
+  IPv6Support:
+    Description: 'IPv6 support.'
+    Value: !If [HasIPv6Support, true, false]
+    Export:
+      Name: !Sub '${AWS::StackName}-IPv6Support'
