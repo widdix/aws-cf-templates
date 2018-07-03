@@ -336,7 +336,7 @@ Resources:
       - !Ref LoadBalancerSecurityGroup
       Scheme: 'internet-facing'
   LoadBalancerListener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
       DefaultActions:
       - Type: forward
@@ -973,7 +973,7 @@ Resources:
       ComparisonOperator: LessThanThreshold
       MetricName: CPUUtilization
   EFSFileSystem:
-    Type: AWS::EFS::FileSystem
+    Type: 'AWS::EFS::FileSystem'
     Properties:
       FileSystemTags:
       - Key: Name
@@ -1013,7 +1013,7 @@ Resources:
       - Name: FileSystemId
         Value: !Ref EFSFileSystem
   EFSMountTargetA:
-    Type: AWS::EFS::MountTarget
+    Type: 'AWS::EFS::MountTarget'
     Properties:
       FileSystemId: !Ref EFSFileSystem
       SubnetId:
@@ -1021,7 +1021,7 @@ Resources:
       SecurityGroups:
       - !Ref EFSSecurityGroup
   EFSMountTargetB:
-    Type: AWS::EFS::MountTarget
+    Type: 'AWS::EFS::MountTarget'
     Properties:
       FileSystemId: !Ref EFSFileSystem
       SubnetId:
@@ -1029,7 +1029,7 @@ Resources:
       SecurityGroups:
       - !Ref EFSSecurityGroup
   EFSMountTargetC:
-    Type: AWS::EFS::MountTarget
+    Type: 'AWS::EFS::MountTarget'
     Properties:
       FileSystemId: !Ref EFSFileSystem
       SubnetId:
@@ -1037,7 +1037,7 @@ Resources:
       SecurityGroups:
       - !Ref EFSSecurityGroup
   EFSSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+    Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Allowing access to EFS
       VpcId:

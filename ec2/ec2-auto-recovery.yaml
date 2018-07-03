@@ -199,7 +199,7 @@ Resources:
     Properties:
       RetentionInDays: !Ref LogsRetentionInDays
   SecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+    Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: !Ref Name
       VpcId:
