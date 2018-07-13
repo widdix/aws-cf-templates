@@ -43,6 +43,7 @@ Metadata:
       Parameters:
       - WebServerKeyName
       - WebServerIAMUserSSHAccess
+      - WebServerSystemsManagerAccess
       - WebServerInstanceType
       - WebServerLogsRetentionInDays
     - Label:
@@ -105,6 +106,13 @@ Parameters:
     Description: 'Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).'
     Type: String
     Default: false
+    AllowedValues:
+    - true
+    - false
+  WebServerSystemsManagerAccess:
+    Description: 'Enable AWS Systems Manager agent and authorization.'
+    Type: String
+    Default: true
     AllowedValues:
     - true
     - false
@@ -171,6 +179,7 @@ Mappings:
 Conditions:
   HasKeyName: !Not [!Equals [!Ref WebServerKeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref WebServerIAMUserSSHAccess, 'true']
+  HasSystemsManagerAccess: !Equals [!Ref WebServerSystemsManagerAccess, 'true']
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
@@ -519,6 +528,7 @@ Resources:
           Action:
           - 'sts:AssumeRole'
       Path: '/'
+      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []]
       Policies:
       - PolicyName: logs
         PolicyDocument:
@@ -844,6 +854,9 @@ Resources:
               httpd:
                 enabled: true
                 ensureRunning: true
+              amazon-ssm-agent:
+                enabled: !If [HasSystemsManagerAccess, true, false]
+                ensureRunning: !If [HasSystemsManagerAccess, true, false]
     Properties:
       AssociatePublicIpAddress: true
       IamInstanceProfile: !Ref WebServerInstanceProfile
