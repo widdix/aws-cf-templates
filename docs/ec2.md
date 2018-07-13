@@ -19,7 +19,7 @@ This template describes an EC2 instance with auto-recovery. If the instance fail
 
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
-* `vpc/vpc-ssh-bastion.yaml` (recommended)
+* `vpc/vpc-*-bastion.yaml` (recommended)
 * `operations/alert.yaml` (recommended)
 
 ## Limitations

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'EC2: instance with auto-recovery, a cloudonaut.io template'
+Description: 'VPC: highly available SoftEther VPN bastion host/instance, a cloudonaut.io template, sponsored by https://github.com/ngault'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -21,32 +21,28 @@ Metadata:
         default: 'Parent Stacks'
       Parameters:
       - ParentVPCStack
-      - ParentSSHBastionStack
       - ParentAlertStack
       - ParentZoneStack
     - Label:
         default: 'EC2 Parameters'
       Parameters:
       - InstanceType
-      - Name
-      - SubnetName
       - KeyName
       - IAMUserSSHAccess
       - SystemsManagerAccess
       - LogsRetentionInDays
       - SubDomainNameWithDot
-      - UserData
-      - IngressTcpPort1
-      - IngressTcpPort2
-      - IngressTcpPort3
+    - Label:
+        default: 'VPN Parameters'
+      Parameters:
+      - VPNPSK
+      - VPNUserName
+      - VPNUserPassword
+      - VPNAdminPassword
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
-  ParentSSHBastionStack:
-    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-*-bastion.yaml template.'
-    Type: String
-    Default: ''
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
@@ -56,7 +52,7 @@ Parameters:
     Type: String
     Default: ''
   KeyName:
-    Description: 'Optional key pair of the ec2-user to establish a SSH connection to the EC2 instance.'
+    Description: 'Optional key pair of the ec2-user to establish a SSH connection to SoftEther VPN.'
     Type: String
     Default: ''
   IAMUserSSHAccess:
@@ -74,26 +70,9 @@ Parameters:
     - true
     - false
   InstanceType:
-    Description: 'The instance type for the EC2 instance.'
+    Description: 'Instance type of SoftEther VPN.'
     Type: String
     Default: 't2.micro'
-  Name:
-    Description: 'The name for the EC2 instance.'
-    Type: String
-    Default: 'test'
-  SubnetName:
-    Description: 'Subnet name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
-    Type: String
-    Default: SubnetAPublic
-    AllowedValues:
-    - SubnetAPublic
-    - SubnetAPrivate
-    - SubnetBPublic
-    - SubnetBPrivate
-    - SubnetCPublic
-    - SubnetCPrivate
-    - SubnetDPublic
-    - SubnetDPrivate
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain log events.'
     Type: Number
@@ -102,23 +81,22 @@ Parameters:
   SubDomainNameWithDot:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
-    Default: ''
-  UserData:
-    Description: 'Optional Bash script executed on first instance launch.'
+    Default: 'vpn.'
+  VPNPSK:
+    Description: 'Specify the IPsec Pre-Shared Key.'
     Type: String
-    Default: ''
-  IngressTcpPort1:
-    Description: 'Optional port allowing ingress TCP traffic.'
+    NoEcho: true
+  VPNUserName:
+    Description: 'VPN user name.'
     Type: String
-    Default: ''
-  IngressTcpPort2:
-    Description: 'Optional port allowing ingress TCP traffic.'
+  VPNUserPassword:
+    Description: 'VPN user password.'
     Type: String
-    Default: ''
-  IngressTcpPort3:
-    Description: 'Optional port allowing ingress TCP traffic.'
+    NoEcho: true
+  VPNAdminPassword:
+    Description: 'SoftEther VPN admin password.'
     Type: String
-    Default: ''
+    NoEcho: true
 Mappings:
   RegionMap:
     'ap-south-1':
@@ -155,14 +133,77 @@ Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
   HasSystemsManagerAccess: !Equals [!Ref SystemsManagerAccess, 'true']
-  HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
-  HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
-  HasIngressTcpPort1: !Not [!Equals [!Ref IngressTcpPort1, '']]
-  HasIngressTcpPort2: !Not [!Equals [!Ref IngressTcpPort2, '']]
-  HasIngressTcpPort3: !Not [!Equals [!Ref IngressTcpPort3, '']]
 Resources:
+  StorageSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Sub '${AWS::StackName}-storage'
+      VpcId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      SecurityGroupIngress:
+      - SourceSecurityGroupId: !Ref SecurityGroup
+        FromPort: 2049
+        ToPort: 2049
+        IpProtocol: tcp
+  Storage:
+    Type: 'AWS::EFS::FileSystem'
+    Properties:
+      FileSystemTags:
+      - Key: Name
+        Value: !Ref 'AWS::StackName'
+      PerformanceMode: generalPurpose
+  StoragePercentIOLimitTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average IO utilization over last 10 minutes higher than 80%'
+      Namespace: 'AWS/EFS'
+      MetricName: PercentIOLimit
+      Statistic: Average
+      Period: 600
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: FileSystemId
+        Value: !Ref Storage
+  StorageBurstCreditBalanceTooLowAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'EFS file system is running out of burst credits. You can expect a significant performance drop in the next hour.'
+      Namespace: 'AWS/EFS'
+      MetricName: BurstCreditBalance
+      Statistic: Average
+      Period: 600
+      EvaluationPeriods: 1
+      ComparisonOperator: LessThanThreshold
+      Threshold: 192416666667 # 192 GB in Bytes (last hour where you can burst at 100 MB/sec)
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      Dimensions:
+      - Name: FileSystemId
+        Value: !Ref Storage
+  StorageMountTargetA:
+    Type: 'AWS::EFS::MountTarget'
+    Properties:
+      FileSystemId: !Ref Storage
+      SecurityGroups:
+      - !Ref StorageSG
+      SubnetId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
+  StorageMountTargetB:
+    Type: 'AWS::EFS::MountTarget'
+    Properties:
+      FileSystemId: !Ref Storage
+      SecurityGroups:
+      - !Ref StorageSG
+      SubnetId:
+        'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
   RecordSet:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
@@ -175,25 +216,13 @@ Resources:
         HostedZoneName:
           'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       ResourceRecords:
-      - !Ref ElasticIP
+      - !Ref EIP
       TTL: '60'
       Type: A
-  ElasticIP:
+  EIP:
     Type: 'AWS::EC2::EIP'
     Properties:
       Domain: vpc
-  NetworkInterface:
-    Type: 'AWS::EC2::NetworkInterface'
-    Properties:
-      GroupSet:
-      - !Ref SecurityGroup
-      SubnetId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-${SubnetName}'
-  EIPAssociation:
-    Type: 'AWS::EC2::EIPAssociation'
-    Properties:
-      AllocationId: !GetAtt 'ElasticIP.AllocationId'
-      NetworkInterfaceId: !Ref NetworkInterface
   Logs:
     Type: 'AWS::Logs::LogGroup'
     Properties:
@@ -201,59 +230,45 @@ Resources:
   SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupDescription: !Ref Name
+      GroupDescription: !Ref 'AWS::StackName'
+      SecurityGroupIngress:
+      - CidrIp: '0.0.0.0/0'
+        IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+      - CidrIp: '0.0.0.0/0'
+        IpProtocol: tcp
+        FromPort: 992
+        ToPort: 992
+      - CidrIp: '0.0.0.0/0'
+        IpProtocol: tcp
+        FromPort: 5555
+        ToPort: 5555
+      - CidrIp: 0.0.0.0/0
+        IpProtocol: udp
+        FromPort: 500
+        ToPort: 500
+      - CidrIp: 0.0.0.0/0
+        IpProtocol: udp
+        FromPort: 1194
+        ToPort: 1194
+      - CidrIp: 0.0.0.0/0
+        IpProtocol: udp
+        FromPort: 4500
+        ToPort: 4500
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
   SecurityGroupInSSHBastion:
     Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasSSHBastionSecurityGroup
     Properties:
       GroupId: !Ref SecurityGroup
       IpProtocol: tcp
       FromPort: 22
       ToPort: 22
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
-  SecurityGroupInSSHWorld:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasNotSSHBastionSecurityGroup
-    Properties:
-      GroupId: !Ref SecurityGroup
-      IpProtocol: tcp
-      FromPort: 22
-      ToPort: 22
-      CidrIp: '0.0.0.0/0'
-  SecurityGroupIngressTcpPort1:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasIngressTcpPort1
-    Properties:
-      GroupId: !Ref SecurityGroup
-      IpProtocol: tcp
-      FromPort: !Ref IngressTcpPort1
-      ToPort: !Ref IngressTcpPort1
-      CidrIp: '0.0.0.0/0'
-  SecurityGroupIngressTcpPort2:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasIngressTcpPort2
-    Properties:
-      GroupId: !Ref SecurityGroup
-      IpProtocol: tcp
-      FromPort: !Ref IngressTcpPort2
-      ToPort: !Ref IngressTcpPort2
-      CidrIp: '0.0.0.0/0'
-  SecurityGroupIngressTcpPort3:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasIngressTcpPort3
-    Properties:
-      GroupId: !Ref SecurityGroup
-      IpProtocol: tcp
-      FromPort: !Ref IngressTcpPort3
-      ToPort: !Ref IngressTcpPort3
-      CidrIp: '0.0.0.0/0'
+      SourceSecurityGroupId: !Ref SecurityGroup
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
-      Path: '/'
       Roles:
       - !Ref IAMRole
   IAMRole:
@@ -264,13 +279,19 @@ Resources:
         Statement:
         - Effect: Allow
           Principal:
-            Service:
-            - 'ec2.amazonaws.com'
-          Action:
-          - 'sts:AssumeRole'
-      Path: '/'
+            Service: 'ec2.amazonaws.com'
+          Action: 'sts:AssumeRole'
       ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []]
       Policies:
+      - PolicyName: 'ec2'
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'ec2:AssociateAddress'
+            - 'ec2:ModifyInstanceAttribute'
+            Resource: '*'
       - PolicyName: logs
         PolicyDocument:
           Version: '2012-10-17'
@@ -281,8 +302,7 @@ Resources:
             - 'logs:CreateLogStream'
             - 'logs:PutLogEvents'
             - 'logs:DescribeLogStreams'
-            Resource:
-            - 'arn:aws:logs:*:*:*'
+            Resource: 'arn:aws:logs:*:*:*'
   IAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
     Condition: HasIAMUserSSHAccess
@@ -294,23 +314,19 @@ Resources:
         Version: '2012-10-17'
         Statement:
         - Effect: Allow
-          Action:
-          - 'iam:ListUsers'
-          Resource:
-          - '*'
+          Action: 'iam:ListUsers'
+          Resource: '*'
         - Effect: Allow
           Action:
           - 'iam:ListSSHPublicKeys'
           - 'iam:GetSSHPublicKey'
-          Resource:
-          - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
-  VirtualMachine:
-    DependsOn: EIPAssociation
-    Type: 'AWS::EC2::Instance'
+          Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
+  LaunchConfiguration:
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, config], [awslogs, config]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, install, config], [awslogs, mount, install, config]]
         awslogs:
           packages:
             yum:
@@ -414,6 +430,27 @@ Resources:
                 file = /var/log/yum.log
                 log_stream_name = {instance_id}/var/log/yum.log
                 log_group_name = ${Logs}
+
+                [/var/log/amazon/efs/mount.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/amazon/efs/mount.log
+                log_stream_name = {instance_id}/var/log/amazon/efs/mount.log
+                log_group_name = ${Logs}
+                [/usr/local/vpnserver/packet_log/DEFAULT/pkt.log]
+                datetime_format = %Y-%m-%d,%H:%M:%S
+                file = /usr/local/vpnserver/packet_log/DEFAULT/pkt_*.log
+                log_stream_name = {instance_id}/usr/local/vpnserver/packet_log/DEFAULT/pkt.log
+                log_group_name = ${Logs}
+                [/usr/local/vpnserver/security_log/DEFAULT/sec.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /usr/local/vpnserver/security_log/DEFAULT/sec_*.log
+                log_stream_name = {instance_id}/usr/local/vpnserver/security_log/DEFAULT/sec.log
+                log_group_name = ${Logs}
+                [/usr/local/vpnserver/server_log/vpn.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /usr/local/vpnserver/server_log/vpn_*.log
+                log_stream_name = {instance_id}/usr/local/vpnserver/server_log/vpn.log
+                log_group_name = ${Logs}
               mode: '000644'
               owner: root
               group: root
@@ -492,6 +529,78 @@ Resources:
                 commands:
                 - 'a_configure_sshd_command'
                 - 'b_configure_sshd_commanduser'
+        mount:
+          packages:
+            yum:
+              'amazon-efs-utils': []
+          commands:
+            'a_mount':
+              command: !Sub 'mkdir /mnt/storage && echo "${Storage} /mnt/storage efs defaults,_netdev 0 0" >> /etc/fstab && mount -a -t efs'
+              test: '[ ! -d /mnt/storage ]'
+            'b_mkdir_backup':
+              command: 'mkdir backup.vpn_server.config && chmod 700 backup.vpn_server.config'
+              cwd: '/mnt/storage'
+              test: '[ ! -d /mnt/storage/backup.vpn_server.config ]'
+        install:
+          sources:
+            '/usr/local/src/softether': 'http://www.softether-download.com/files/softether/v4.25-9656-rtm-2018.01.15-tree/Linux/SoftEther_VPN_Server/64bit_-_Intel_x64_or_AMD64/softether-vpnserver-v4.25-9656-rtm-2018.01.15-linux-x64-64bit.tar.gz'
+          files:
+            '/etc/init.d/vpnserver':
+              content: |
+                #!/bin/sh
+                # chkconfig: 2345 99 01
+                # description: SoftEther VPN Server
+                DAEMON=/usr/local/vpnserver/vpnserver
+                LOCK=/var/lock/subsys/vpnserver
+                test -x $DAEMON || exit 0
+                case "$1" in
+                start)
+                $DAEMON start
+                touch $LOCK
+                ;;
+                stop)
+                $DAEMON stop
+                rm $LOCK
+                ;;
+                restart)
+                $DAEMON stop
+                sleep 3
+                $DAEMON start
+                ;;
+                *)
+                echo "Usage: $0 {start|stop|restart}"
+                exit 1
+                esac
+                exit 0
+              mode: '000755'
+              owner: root
+              group: root
+          commands:
+            'a_install_dev_tools':
+              command: 'yum -y group install "Development Tools"' # can this be reduced to yum install gcc make? see 7.3.3 https://www.softether.org/4-docs/1-manual/7._Installing_SoftEther_VPN_Server/7.3_Install_on_Linux_and_Initial_Configurations
+              test: '[ ! -d /usr/local/vpnserver ]'
+            'b_make':
+              command: 'yes 1 | make'
+              cwd: '/usr/local/src/softether/vpnserver'
+              test: '[ ! -d /usr/local/vpnserver ]'
+            'c_chmod':
+              command: 'chmod 600 * && chmod 700 vpncmd vpnserver'
+              cwd: '/usr/local/src/softether/vpnserver'
+              test: '[ ! -d /usr/local/vpnserver ]'
+            'd_move':
+              command: 'mv /usr/local/src/softether/vpnserver /usr/local/vpnserver'
+              test: '[ ! -d /usr/local/vpnserver ]'
+            'e_mount_config_backup':
+              command: 'mkdir /usr/local/vpnserver/backup.vpn_server.config && mount --bind /mnt/storage/backup.vpn_server.config /usr/local/vpnserver/backup.vpn_server.config'
+              test: '[ ! -d /usr/local/vpnserver/backup.vpn_server.config ]'
+            'f_link_config':
+              command: 'ln -s /mnt/storage/vpn_server.config /usr/local/vpnserver/vpn_server.config'
+              test: '[ ! -f /usr/local/vpnserver/vpn_server.config ]'
+          services:
+            sysvinit:
+              vpnserver:
+                enabled: true
+                ensureRunning: true
         config:
           files:
             '/etc/cfn/cfn-hup.conf':
@@ -507,9 +616,44 @@ Resources:
               content: !Sub |
                 [cfn-auto-reloader-hook]
                 triggers=post.update
-                path=Resources.VirtualMachine.Metadata.AWS::CloudFormation::Init
-                action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=VirtualMachine
+                path=Resources.LaunchConfiguration.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=LaunchConfiguration
                 runas=root
+          commands:
+            'a_await_vpnserver':
+              command: 'while ! (echo > /dev/tcp/localhost/443) >/dev/null 2>&1; do sleep 10; done'
+            'b_set_password':
+              command: !Sub './vpncmd /server localhost /cmd ServerPasswordSet ${VPNAdminPassword} && touch /mnt/storage/config_set_password_done.txt'
+              cwd: '/usr/local/vpnserver'
+              test: '[ ! -f /mnt/storage/config_set_password_done.txt ]'
+            'c_create_local_bridge': # tap prevents high cpu usage http://forum.softether.org/viewtopic.php?t=2922
+              command: !Sub './vpncmd /server localhost /password:${VPNAdminPassword} /cmd BridgeCreate DEFAULT /device:tap /TAP:yes && touch /mnt/storage/config_create_local_bridge_done.txt'
+              cwd: '/usr/local/vpnserver'
+              test: '[ ! -f /mnt/storage/config_create_local_bridge_done.txt ]'
+            'd_disable_kernel_mode_secure_nat': # prevents high CPU usage http://www.vpnusers.com/viewtopic.php?f=7&t=1216&p=10815
+              command: !Sub './vpncmd /server localhost /password:${VPNAdminPassword} /adminhub:DEFAULT /cmd ExtOptionSet DisableKernelModeSecureNAT /VALUE:1 && touch /mnt/storage/config_disable_kernel_mode_secure_nat_done.txt'
+              cwd: '/usr/local/vpnserver'
+              test: '[ ! -f /mnt/storage/config_disable_kernel_mode_secure_nat_done.txt ]'
+            'e_enable_secure_nat':
+              command: !Sub './vpncmd /server localhost /password:${VPNAdminPassword} /adminhub:DEFAULT /cmd SecureNatEnable && touch /mnt/storage/config_enable_secure_nat_done.txt'
+              cwd: '/usr/local/vpnserver'
+              test: '[ ! -f /mnt/storage/config_enable_secure_nat_done.txt ]'
+            'f_set_dhcp_set': # needed for split tunnel
+              command: !Sub './vpncmd /server localhost /password:${VPNAdminPassword} /adminhub:DEFAULT /cmd DhcpSet /START:192.168.30.10 /END:192.168.30.200 /MASK:255.255.255.0 /EXPIRE:7200 /GW:none /DNS:192.168.30.1 /DNS2:none /DOMAIN:none /PUSHROUTE:10.0.0.0/255.255.0.0/192.168.30.1 /LOG:yes && touch /mnt/storage/config_disable_defaut_gateway_client_notification_done.txt'
+              cwd: '/usr/local/vpnserver'
+              test: '[ ! -f /mnt/storage/config_disable_defaut_gateway_client_notification_done.txt ]'
+            'g_enable_ipsec_psk':
+              command: !Sub './vpncmd /server localhost /password:${VPNAdminPassword} /cmd IPsecEnable /L2TP:yes /L2TPRAW:yes /ETHERIP:no /PSK:${VPNPSK} /DEFAULTHUB:DEFAULT && touch /mnt/storage/config_enable_ipsec_psk_done.txt'
+              cwd: '/usr/local/vpnserver'
+              test: '[ ! -f /mnt/storage/config_enable_ipsec_psk_done.txt ]'
+            'h_create_user':
+              command: !Sub './vpncmd /server localhost /password:${VPNAdminPassword} /adminhub:DEFAULT /cmd UserCreate ${VPNUserName} /GROUP:none /REALNAME:none /NOTE:none && touch /mnt/storage/config_create_user_done.txt'
+              cwd: '/usr/local/vpnserver'
+              test: '[ ! -f /mnt/storage/config_create_user_done.txt ]'
+            'i_set_user_password':
+              command: !Sub './vpncmd /server localhost /password:${VPNAdminPassword} /adminhub:DEFAULT /cmd UserPasswordSet ${VPNUserName} /PASSWORD:${VPNUserPassword} && touch /mnt/storage/config_set_user_password_done.txt'
+              cwd: '/usr/local/vpnserver'
+              test: '[ ! -f /mnt/storage/config_set_user_password_done.txt ]'
           services:
             sysvinit:
               cfn-hup:
@@ -522,43 +666,62 @@ Resources:
                 enabled: !If [HasSystemsManagerAccess, true, false]
                 ensureRunning: !If [HasSystemsManagerAccess, true, false]
     Properties:
+      AssociatePublicIpAddress: true
+      EbsOptimized: false
       IamInstanceProfile: !Ref InstanceProfile
       ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
       InstanceType: !Ref InstanceType
+      SecurityGroups:
+      - !Ref SecurityGroup
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
-      NetworkInterfaces:
-      - DeviceIndex: '0'
-        NetworkInterfaceId: !Ref NetworkInterface
       UserData:
         'Fn::Base64': !Sub |
           #!/bin/bash -ex
-          trap '/opt/aws/bin/cfn-signal -e 1 --region ${AWS::Region} --stack ${AWS::StackName} --resource VirtualMachine' ERR
-          ${UserData}
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource VirtualMachine --region ${AWS::Region}
-          /opt/aws/bin/cfn-signal -e 0 --region ${AWS::Region} --stack ${AWS::StackName} --resource VirtualMachine
+          trap '/opt/aws/bin/cfn-signal -e 1 --region ${AWS::Region} --stack ${AWS::StackName} --resource AutoScalingGroup' ERR
+          INSTANCEID=$(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
+          aws --region ${AWS::Region} ec2 associate-address --instance-id $INSTANCEID --allocation-id ${EIP.AllocationId}
+          aws --region ${AWS::Region} ec2 modify-instance-attribute --instance-id $INSTANCEID --source-dest-check "{\"Value\": false}"
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e 0 --region ${AWS::Region} --stack ${AWS::StackName} --resource AutoScalingGroup
+  AutoScalingGroup:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    DependsOn:
+    - StorageMountTargetA
+    - StorageMountTargetB
+    Properties:
+      DesiredCapacity: '1'
+      LaunchConfigurationName: !Ref LaunchConfiguration
+      MaxSize: '1'
+      MinSize: '1'
       Tags:
       - Key: Name
-        Value: !Ref Name
+        Value: 'SoftEther VPN'
+        PropagateAtLaunch: true
+      NotificationConfigurations: !If
+      - HasAlertTopic
+      - - NotificationTypes:
+          - 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR'
+          - 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR'
+          TopicARN:
+            'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - []
+      VPCZoneIdentifier:
+      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
+      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
     CreationPolicy:
       ResourceSignal:
         Count: 1
         Timeout: PT10M
-  RecoveryAlarm:
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Recovering instance when underlying hardware fails.'
-      Namespace: 'AWS/EC2'
-      MetricName: StatusCheckFailed_System
-      Statistic: Minimum
-      Period: 60
-      EvaluationPeriods: 5
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - !Sub 'arn:aws:automate:${AWS::Region}:ec2:recover'
-      Dimensions:
-      - Name: InstanceId
-        Value: !Ref VirtualMachine
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        PauseTime: PT10M
+        SuspendProcesses:
+        - HealthCheck
+        - ReplaceUnhealthy
+        - AZRebalance
+        - AlarmNotification
+        - ScheduledActions
+        WaitOnResourceSignals: true
   CPUTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -574,25 +737,25 @@ Resources:
       AlarmActions:
       - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
       Dimensions:
-      - Name: InstanceId
-        Value: !Ref VirtualMachine
+      - Name: AutoScalingGroupName
+        Value: !Ref AutoScalingGroup
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
-    Value: 'ec2/ec2-auto-recovery'
+    Value: 'vpc/vpc-vpn-bastion'
   TemplateVersion:
     Description: 'cloudonaut.io template version.'
     Value: '__VERSION__'
   StackName:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
-  InstanceId:
-    Description: 'The EC2 instance id.'
-    Value: !Ref VirtualMachine
+  SecurityGroup:
+    Description: 'Use this Security Group to reference incoming traffic from SoftEther VPN.'
+    Value: !Ref SecurityGroup
     Export:
-      Name: !Sub '${AWS::StackName}-InstanceId'
+      Name: !Sub '${AWS::StackName}-SecurityGroup'
   IPAddress:
-    Description: 'The public IP address of the EC2 instance.'
-    Value: !Ref ElasticIP
+    Description: 'The public IP address of SoftEther VPN.'
+    Value: !Ref EIP
     Export:
       Name: !Sub '${AWS::StackName}-IPAddress'

@@ -58,7 +58,7 @@ This template describes a **highly available** authentication proxy that forward
 
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
-* `vpc/vpc-ssh-bastion.yaml` (recommended)
+* `vpc/vpc-*-bastion.yaml` (recommended)
 * `operations/alert.yaml` (recommended)
 
 ## Limitations

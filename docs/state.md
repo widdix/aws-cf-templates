@@ -61,7 +61,7 @@ Cluster of memcached nodes.
 * `vpc/vpc-*azs.yaml` (**required**)
 * `state/client-sg.yaml` (**required**)
 * `vpc/zone-*.yaml`
-* `vpc/vpc-ssh-bastion.yaml`
+* `vpc/vpc-*-bastion.yaml`
 * `operations/alert.yaml` (recommended)
 
 ## Limitations
@@ -90,7 +90,7 @@ Cluster of Elasticsearch nodes.
 * `vpc/vpc-*azs.yaml` (**required**)
 * `state/client-sg.yaml` (**required**)
 * `vpc/zone-*.yaml`
-* `vpc/vpc-ssh-bastion.yaml`
+* `vpc/vpc-*-bastion.yaml`
 * `operations/alert.yaml` (recommended)
 
 ## Limitations
@@ -116,7 +116,7 @@ Two node Aurora cluster for HA.
 * `vpc/vpc-*azs.yaml` (**required**)
 * `state/client-sg.yaml` (**required**)
 * `vpc/zone-*.yaml`
-* `vpc/vpc-ssh-bastion.yaml`
+* `vpc/vpc-*-bastion.yaml`
 * `operations/alert.yaml` (recommended)
 
 ## Limitations
@@ -142,7 +142,7 @@ Multi-AZ Postgres for HA.
 * `vpc/vpc-*azs.yaml` (**required**)
 * `state/client-sg.yaml` (**required**)
 * `vpc/zone-*.yaml`
-* `vpc/vpc-ssh-bastion.yaml`
+* `vpc/vpc-*-bastion.yaml`
 * `operations/alert.yaml` (recommended)
 
 ## Limitations
