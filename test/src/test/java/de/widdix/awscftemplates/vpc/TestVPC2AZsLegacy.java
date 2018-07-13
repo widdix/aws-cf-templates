@@ -23,6 +23,7 @@ public class TestVPC2AZsLegacy extends AVPCTest {
                         new Parameter().withParameterKey("AZA").withParameterValue(vpcOutputs.get("AZA")),
                         new Parameter().withParameterKey("AZB").withParameterValue(vpcOutputs.get("AZB")),
                         new Parameter().withParameterKey("ClassB").withParameterValue(vpcOutputs.get("ClassB")),
+                        new Parameter().withParameterKey("CidrBlock").withParameterValue(vpcOutputs.get("CidrBlock")),
                         new Parameter().withParameterKey("VPC").withParameterValue(vpcOutputs.get("VPC")),
                         new Parameter().withParameterKey("SubnetAPublic").withParameterValue(vpcOutputs.get("SubnetAPublic")),
                         new Parameter().withParameterKey("RouteTableAPublic").withParameterValue(vpcOutputs.get("RouteTableAPublic")),
