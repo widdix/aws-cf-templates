@@ -1,6 +1,6 @@
 <iframe src="https://ghbtns.com/github-btn.html?user=widdix&repo=aws-cf-templates&type=star&count=true&size=large" frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
 
-> **New**: Manage Free Templates for AWS CloudFormation with the [widdix CLI](../cli/)
+> **New**: Manage Free Templates for AWS CloudFormation with the [widdix CLI](./cli/)
 
 # Migrate from v6 to v7
 
@@ -25,7 +25,7 @@
 
 The new static website makes use of Lambda@Edge.
 
-1. For each `static-website/static-website` stack, you have to create an additional stack in `us-east-1` based on the new `static-website/lambdaedge-index-document.yaml` template. [Learn more](../static-website/)
+1. For each `static-website/static-website` stack, you have to create an additional stack in `us-east-1` based on the new `static-website/lambdaedge-index-document.yaml` template. [Learn more](./static-website/)
 2. If you are using the `RedirectDomainName` parameter in `static-website/static-website`, update the stack with the new template version and remove the `RedirectDomainName` parameter value. After the stack is updated (usually takes 15-30 mins because of CloudFront!), continue with the next step.
 3. The optional parameter `LambdaEdgeSubdirectoriesVersionArn` was added. The value should be the `LambdaVersionArn` output of the `static-website/lambdaedge-index-document` stack.
 4. The `DefaultRootObject` parameter was added but is only used if `LambdaEdgeSubdirectoriesVersionArn` is not set. Usually you will set this to something like `index.html` which is the default as well.
