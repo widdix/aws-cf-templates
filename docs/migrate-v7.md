@@ -4,7 +4,7 @@
 
 # Migrate from v6 to v7
 
-## ec2/ec2-auto-recovery, jenkins/jenkins2-ha-agents, jenkins/jenkins2-ha, security/auth-proxy-ha-github-orga, vpc/vpc-ssh-bastion
+## ec2/ec2-auto-recovery, security/auth-proxy-ha-github-orga, vpc/vpc-ssh-bastion
 
 1. Amazon Linux is updated to Amazon Linux 2.
 2. The parameter `SubDomainName` was renamed to `SubDomainNameWithDot` and now expects that your name end with a dot. E.g., if the value of `SubDomainName` is `ssh.`, set `SubDomainNameWithDot` to `ssh.`.
@@ -13,6 +13,13 @@
 ## ecs/service-cluster-alb, ecs/service-dedicated-alb, vpc/vpc-nat-instance
 
 1. The parameter `SubDomainName` was renamed to `SubDomainNameWithDot` and now expects that your name end with a dot. E.g., if the value of `SubDomainName` is `ssh.`, set `SubDomainNameWithDot` to `ssh.`.
+
+## jenkins/jenkins-*
+
+1. Amazon Linux is updated to Amazon Linux 2.
+2. The parameter `SubDomainName` was renamed to `SubDomainNameWithDot` and now expects that your name end with a dot. E.g., if the value of `SubDomainName` is `ssh.`, set `SubDomainNameWithDot` to `ssh.`.
+3. `SystemsManagerAccess` will be enabled by default.
+4. The parameter `JenkinsVersion` was removed to make updates possible.
 
 ## static-website/static-website
 
@@ -42,6 +49,7 @@ The new static website makes use of Lambda@Edge.
 3. The parameter `SubDomainName` is replaced by `SubDomainNameWithDot`. E.g., if the value of `SubDomainName` is `ssh.`, set `SubDomainNameWithDot` to `ssh.`.
 4. The parameter `DBMasterUserPassword` was added (was hard coded to `wordpress` before).
 5. `SystemsManagerAccess` will be enabled by default.
+6. The parameter `BlogVersion` was removed to make updates possible.
 
 # Deprecation warnings
 

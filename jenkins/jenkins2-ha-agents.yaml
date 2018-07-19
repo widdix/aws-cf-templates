@@ -26,10 +26,6 @@ Metadata:
       - ParentAlertStack
       - ParentZoneStack
     - Label:
-        default: 'Jenkins Parameters'
-      Parameters:
-      - JenkinsVersion
-    - Label:
         default: 'EC2 Parameters'
       Parameters:
       - KeyName
@@ -178,10 +174,6 @@ Parameters:
     Type: Number
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
-  JenkinsVersion:
-    Description: 'Jenkins version number'
-    Type: String
-    Default: '2.121.1'
   SubDomainNameWithDot:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
@@ -802,7 +794,7 @@ Resources:
         install:
           packages:
             rpm:
-              jenkins: !Sub 'https://pkg.jenkins.io/redhat-stable/jenkins-${JenkinsVersion}-1.1.noarch.rpm'
+              jenkins: 'https://pkg.jenkins.io/redhat-stable/jenkins-2.121.2-1.1.noarch.rpm'
             yum:
               'java-1.8.0-openjdk': []
           files:
