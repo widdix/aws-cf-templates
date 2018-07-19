@@ -28,7 +28,7 @@ Metadata:
     - Label:
         default: 'Domain Name and SSL certificates'
       Parameters:
-      - DomainName
+      - SubDomainNameWithDot
       - CloudFrontAcmCertificate
       - ElbAcmCertificate
     - Label:
@@ -43,20 +43,21 @@ Metadata:
       Parameters:
       - WebServerKeyName
       - WebServerIAMUserSSHAccess
+      - WebServerSystemsManagerAccess
       - WebServerInstanceType
       - WebServerLogsRetentionInDays
-      - SubDomainName
     - Label:
         default: 'Database Parameters'
       Parameters:
       - DBServerInstanceType
       - DBBackupRetentionPeriod
+      - DBMasterUserPassword
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
   ParentSSHBastionStack:
-    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-*-bastion.yaml template.'
     Type: String
     Default: ''
   ParentAuthProxyStack:
@@ -68,17 +69,13 @@ Parameters:
     Type: String
     Default: ''
   ParentZoneStack:
-    Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
-    Type: String
-    Default: ''
-  DomainName:
-    Description: 'The primary domain name of the blog.'
+    Description: 'Stack name of parent zone stack based on vpc/zone-*.yaml template.'
     Type: String
   CloudFrontAcmCertificate:
-    Description: 'The ACM Certificate ARN of certificate for the CloudFront distribution.Must be created in the us-east-1 region!'
+    Description: 'The ACM Certificate ARN for the CloudFront distribution. Must be created in the us-east-1 region!'
     Type: String
   ElbAcmCertificate:
-    Description: 'The ACM Certificate ARN of certificate for the ELB. Must be created in the same region as this stack!'
+    Description: 'The ACM Certificate ARN for the ELB. Must be created in the same region as this stack!'
     Type: String
   BlogTitle:
     Description: 'The title of the WordPress blog.'
@@ -97,10 +94,6 @@ Parameters:
   BlogAdminEMail:
     Description: 'The email address of the WordPress admin.'
     Type: String
-  BlogVersion:
-    Description: 'WordPress version number'
-    Type: String
-    Default: '4.9.6'
   WebServerKeyName:
     Description: 'Optional key pair of the ec2-user to establish a SSH connection to the web server.'
     Type: String
@@ -109,6 +102,13 @@ Parameters:
     Description: 'Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).'
     Type: String
     Default: false
+    AllowedValues:
+    - true
+    - false
+  WebServerSystemsManagerAccess:
+    Description: 'Enable AWS Systems Manager agent and authorization.'
+    Type: String
+    Default: true
     AllowedValues:
     - true
     - false
@@ -129,51 +129,58 @@ Parameters:
     Description: 'The number of days to keep snapshots of the database.'
     Type: Number
     Default: 30
-  SubDomainName:
-    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
+  DBMasterUserPassword:
+    Description: 'The master password for the DB instance. Must not be changed!'
     Type: String
-    Default: 'www'
+    Default: wordpress
+    NoEcho: true
+    MinLength: 8
+    MaxLength: 32
+  SubDomainNameWithDot:
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain.'
+    Type: String
+    Default: 'www.'
 Mappings:
   RegionMap:
     'ap-south-1':
-      AMI: 'ami-76d6f519'
+      AMI: 'ami-d783a9b8'
     'eu-west-3':
-      AMI: 'ami-969c2deb'
+      AMI: 'ami-2cf54551'
     'eu-west-2':
-      AMI: 'ami-a36f8dc4'
+      AMI: 'ami-b8b45ddf'
     'eu-west-1':
-      AMI: 'ami-ca0135b3'
+      AMI: 'ami-466768ac'
     'ap-northeast-2':
-      AMI: 'ami-c10fa6af'
+      AMI: 'ami-afd86dc1'
     'ap-northeast-1':
-      AMI: 'ami-92df37ed'
+      AMI: 'ami-e99f4896'
     'sa-east-1':
-      AMI: 'ami-3885d854'
+      AMI: 'ami-6dca9001'
     'ca-central-1':
-      AMI: 'ami-338a0a57'
+      AMI: 'ami-0ee86a6a'
     'ap-southeast-1':
-      AMI: 'ami-de90a5a2'
+      AMI: 'ami-05868579'
     'ap-southeast-2':
-      AMI: 'ami-423bec20'
+      AMI: 'ami-39f8215b'
     'eu-central-1':
-      AMI: 'ami-9a91b371'
+      AMI: 'ami-7c4f7097'
     'us-east-1':
-      AMI: 'ami-14c5486b'
+      AMI: 'ami-b70554c8'
     'us-east-2':
-      AMI: 'ami-922914f7'
+      AMI: 'ami-8c122be9'
     'us-west-1':
-      AMI: 'ami-25110f45'
+      AMI: 'ami-e0ba5c83'
     'us-west-2':
-      AMI: 'ami-e251209a'
+      AMI: 'ami-a9d09ed1'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref WebServerKeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref WebServerIAMUserSSHAccess, 'true']
+  HasSystemsManagerAccess: !Equals [!Ref WebServerSystemsManagerAccess, 'true']
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
-  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
 Resources:
   WebServerLogs:
     Type: 'AWS::Logs::LogGroup'
@@ -378,7 +385,7 @@ Resources:
       DBName: wordpress
       Engine: MySQL
       MasterUsername: wordpress
-      MasterUserPassword: wordpress
+      MasterUserPassword: !Ref DBMasterUserPassword
       VPCSecurityGroups:
       - !Ref DatabaseSecurityGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
@@ -505,6 +512,7 @@ Resources:
           Action:
           - 'sts:AssumeRole'
       Path: '/'
+      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []]
       Policies:
       - PolicyName: logs
         PolicyDocument:
@@ -544,7 +552,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, config], [awslogs, config]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, extras, config], [awslogs, extras, config]]
         awslogs:
           packages:
             yum:
@@ -563,30 +571,28 @@ Resources:
               content: !Sub |
                 [general]
                 state_file = /var/lib/awslogs/agent-state
-                [/var/log/messages]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/messages
-                log_stream_name = {instance_id}/var/log/messages
-                log_group_name = ${WebServerLogs}
-                [/var/log/secure]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/secure
-                log_stream_name = {instance_id}/var/log/secure
-                log_group_name = ${WebServerLogs}
-                [/var/log/cron]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cron
-                log_stream_name = {instance_id}/var/log/cron
-                log_group_name = ${WebServerLogs}
-                [/var/log/cloud-init.log]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cloud-init.log
-                log_stream_name = {instance_id}/var/log/cloud-init.log
-                log_group_name = ${WebServerLogs}
-                [/var/log/cfn-init.log]
+                [/var/log/amazon/ssm/amazon-ssm-agent.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init.log
-                log_stream_name = {instance_id}/var/log/cfn-init.log
+                file = /var/log/amazon/ssm/amazon-ssm-agent.log
+                log_stream_name = {instance_id}/var/log/amazon/ssm/amazon-ssm-agent.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/amazon/ssm/errors.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/amazon/ssm/errors.log
+                log_stream_name = {instance_id}/var/log/amazon/ssm/errors.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/audit/audit.log]
+                file = /var/log/audit/audit.log
+                log_stream_name = {instance_id}/var/log/audit/audit.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/awslogs.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/awslogs.log
+                log_stream_name = {instance_id}/var/log/awslogs.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/boot.log]
+                file = /var/log/boot.log
+                log_stream_name = {instance_id}/var/log/boot.log
                 log_group_name = ${WebServerLogs}
                 [/var/log/cfn-hup.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
@@ -598,14 +604,59 @@ Resources:
                 file = /var/log/cfn-init-cmd.log
                 log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
                 log_group_name = ${WebServerLogs}
+                [/var/log/cfn-init.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init.log
+                log_stream_name = {instance_id}/var/log/cfn-init.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/cfn-wire.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-wire.log
+                log_stream_name = {instance_id}/var/log/cfn-wire.log
+                log_group_name = ${WebServerLogs}
                 [/var/log/cloud-init-output.log]
                 file = /var/log/cloud-init-output.log
                 log_stream_name = {instance_id}/var/log/cloud-init-output.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/cloud-init.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cloud-init.log
+                log_stream_name = {instance_id}/var/log/cloud-init.log
+                log_group_name = ${WebServerLogs}
+                [/var/log/cron]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cron
+                log_stream_name = {instance_id}/var/log/cron
                 log_group_name = ${WebServerLogs}
                 [/var/log/dmesg]
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
                 log_group_name = ${WebServerLogs}
+                [/var/log/grubby_prune_debug]
+                file = /var/log/grubby_prune_debug
+                log_stream_name = {instance_id}/var/log/grubby_prune_debug
+                log_group_name = ${WebServerLogs}
+                [/var/log/maillog]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/maillog
+                log_stream_name = {instance_id}/var/log/maillog
+                log_group_name = ${WebServerLogs}
+                [/var/log/messages]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/messages
+                log_stream_name = {instance_id}/var/log/messages
+                log_group_name = ${WebServerLogs}
+                [/var/log/secure]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/secure
+                log_stream_name = {instance_id}/var/log/secure
+                log_group_name = ${WebServerLogs}
+                [/var/log/yum.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/yum.log
+                log_stream_name = {instance_id}/var/log/yum.log
+                log_group_name = ${WebServerLogs}
+
                 [/var/log/httpd/access_log]
                 datetime_format = %b %d %H:%M:%S %Y
                 file = /var/log/httpd/access_log
@@ -621,7 +672,7 @@ Resources:
               group: root
           services:
             sysvinit:
-              awslogs:
+              awslogsd:
                 enabled: true
                 ensureRunning: true
                 packages:
@@ -694,16 +745,21 @@ Resources:
                 commands:
                 - 'a_configure_sshd_command'
                 - 'b_configure_sshd_commanduser'
+        extras:
+          commands:
+            a_enable_php:
+              command: 'amazon-linux-extras enable php7.2'
+              test: "! grep -Fxq '[amzn2extra-php7.2]' /etc/yum.repos.d/amzn2-extras.repo"
         config:
           packages:
             yum:
-              php70: []
-              php70-gd: []
-              php70-opcache: []
-              php70-mysqlnd: []
-              php70-mbstring: []
-              mysql56: []
-              httpd24: []
+              php: []
+              php-gd: []
+              php-opcache: []
+              php-mysqlnd: []
+              php-mbstring: []
+              mariadb: []
+              httpd: []
           files:
             '/root/php.sh':
               content: !Sub |
@@ -716,13 +772,13 @@ Resources:
                 sed -i 's/upload_max_filesize = 2M/upload_max_filesize = 200M/' /etc/php.ini
                 sed -i 's/max_file_uploads = 20/max_file_uploads = 200/' /etc/php.ini
 
-                sed -i 's/opcache.memory_consumption=128/opcache.memory_consumption=256/g' /etc/php-7.0.d/10-opcache.ini
-                sed -i 's/opcache.interned_strings_buffer=8/opcache.interned_strings_buffer=16/g' /etc/php-7.0.d/10-opcache.ini
-                sed -i 's/opcache.max_accelerated_files=4000/opcache.max_accelerated_files=10000/g' /etc/php-7.0.d/10-opcache.ini
-                sed -i 's/;opcache.max_wasted_percentage=5/opcache.max_wasted_percentage=10/g' /etc/php-7.0.d/10-opcache.ini
-                sed -i 's/;opcache.validate_timestamps=1/opcache.validate_timestamps=1/g' /etc/php-7.0.d/10-opcache.ini
-                sed -i 's/;opcache.revalidate_freq=2/opcache.revalidate_freq=60/g' /etc/php-7.0.d/10-opcache.ini
-                sed -i 's/;opcache.fast_shutdown=0/opcache.fast_shutdown=0/g' /etc/php-7.0.d/10-opcache.ini
+                sed -i 's/opcache.memory_consumption=128/opcache.memory_consumption=256/g' /etc/php.d/10-opcache.ini
+                sed -i 's/opcache.interned_strings_buffer=8/opcache.interned_strings_buffer=16/g' /etc/php.d/10-opcache.ini
+                sed -i 's/opcache.max_accelerated_files=4000/opcache.max_accelerated_files=10000/g' /etc/php.d/10-opcache.ini
+                sed -i 's/;opcache.max_wasted_percentage=5/opcache.max_wasted_percentage=10/g' /etc/php.d/10-opcache.ini
+                sed -i 's/;opcache.validate_timestamps=1/opcache.validate_timestamps=1/g' /etc/php.d/10-opcache.ini
+                sed -i 's/;opcache.revalidate_freq=2/opcache.revalidate_freq=60/g' /etc/php.d/10-opcache.ini
+                sed -i 's/;opcache.fast_shutdown=0/opcache.fast_shutdown=0/g' /etc/php.d/10-opcache.ini
               mode: '000500'
               owner: root
               group: root
@@ -737,22 +793,34 @@ Resources:
               owner: root
               group: root
             '/root/wordpress.sh':
-              content: !Sub |
-                #!/bin/bash -ex
-                # ensure than only one machine installs wp
-                if mkdir /var/www/lock; then
-                  cd /var/www/html
-                  wget -q -T 60 https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-                  if ! php wp-cli.phar core is-installed --allow-root; then
-                    php wp-cli.phar core download --allow-root --version=${BlogVersion}
-                    php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='wordpress' --dbhost='${Database.Endpoint.Address}' --allow-root
-                    php wp-cli.phar core install --url='https://${DomainName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}' --skip-email --allow-root
-                    sed -i "/$table_prefix = 'wp_';/a\$_SERVER['HTTPS'] = 'on';" /var/www/html/wp-config.php
+              content: !Sub
+              - |
+                  #!/bin/bash -ex
+                  # ensure than only one machine installs wp
+                  if mkdir /var/www/lock; then
+                    cd /var/www/html
+                    wget -q -T 60 https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+                    if ! php wp-cli.phar core is-installed --allow-root; then
+                      php wp-cli.phar core download --allow-root --version=4.9.7
+                      php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='${DBMasterUserPassword}' --dbhost='${DBHost}' --allow-root
+                      php wp-cli.phar core install --url='https://${DomainName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}' --skip-email --allow-root
+                      sed -i "/$table_prefix = 'wp_';/a\$_SERVER['HTTPS'] = 'on';" /var/www/html/wp-config.php
+                    fi
+                    chown -R apache:apache /var/www/html
+                    chmod u+wrx /var/www/html/wp-content/*
+                    rm -f wp-cli.phar
                   fi
-                  chown -R apache:apache /var/www/html
-                  chmod u+wrx /var/www/html/wp-content/*
-                  rm wp-cli.phar
-                fi
+              - BlogTitle: !Ref BlogTitle
+                BlogAdminUsername: !Ref BlogAdminUsername
+                BlogAdminPassword: !Ref BlogAdminPassword
+                BlogAdminEMail: !Ref BlogAdminEMail
+                DBMasterUserPassword: !Ref DBMasterUserPassword
+                DBHost: !GetAtt 'Database.Endpoint.Address'
+                DomainName: !Sub
+                - '${SubDomainNameWithDot}${HostedZoneName}'
+                - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+                  HostedZoneName:
+                    'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
               mode: '000500'
               owner: root
               group: root
@@ -768,6 +836,9 @@ Resources:
               httpd:
                 enabled: true
                 ensureRunning: true
+              amazon-ssm-agent:
+                enabled: !If [HasSystemsManagerAccess, true, false]
+                ensureRunning: !If [HasSystemsManagerAccess, true, false]
     Properties:
       AssociatePublicIpAddress: true
       IamInstanceProfile: !Ref WebServerInstanceProfile
@@ -780,7 +851,7 @@ Resources:
         'Fn::Base64': !Sub |
           #!/bin/bash -ex
           trap '/opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}' ERR
-          while ! nc -z ${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com 2049; do sleep 10; done
+          while ! (echo > /dev/tcp/${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com/2049) >/dev/null 2>&1; do sleep 10; done
           sleep 10
           mkdir /var/www
           mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 "${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com:/" /var/www/
@@ -895,7 +966,7 @@ Resources:
       ComparisonOperator: LessThanThreshold
       MetricName: CPUUtilization
   EFSFileSystem:
-    Type: AWS::EFS::FileSystem
+    Type: 'AWS::EFS::FileSystem'
     Properties:
       FileSystemTags:
       - Key: Name
@@ -935,7 +1006,7 @@ Resources:
       - Name: FileSystemId
         Value: !Ref EFSFileSystem
   EFSMountTargetA:
-    Type: AWS::EFS::MountTarget
+    Type: 'AWS::EFS::MountTarget'
     Properties:
       FileSystemId: !Ref EFSFileSystem
       SubnetId:
@@ -943,7 +1014,7 @@ Resources:
       SecurityGroups:
       - !Ref EFSSecurityGroup
   EFSMountTargetB:
-    Type: AWS::EFS::MountTarget
+    Type: 'AWS::EFS::MountTarget'
     Properties:
       FileSystemId: !Ref EFSFileSystem
       SubnetId:
@@ -951,7 +1022,7 @@ Resources:
       SecurityGroups:
       - !Ref EFSSecurityGroup
   EFSSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+    Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Allowing access to EFS
       VpcId:
@@ -962,7 +1033,6 @@ Resources:
         ToPort: 2049
         SourceSecurityGroupId: !Ref WebServerSecurityGroup
   RecordSet:
-    Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
     Properties:
       AliasTarget:
@@ -971,8 +1041,8 @@ Resources:
       HostedZoneId:
         'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
       Name: !Sub
-      - '${SubDomainName}.${HostedZoneName}'
-      - SubDomainName: !Ref SubDomainName
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
         HostedZoneName:
           'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       Type: A
@@ -981,8 +1051,16 @@ Resources:
     Properties:
       DistributionConfig:
         Aliases:
-        - !Ref DomainName
-        Comment: !Ref DomainName
+        - !Sub
+          - '${SubDomainNameWithDot}${HostedZoneName}'
+          - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+            HostedZoneName:
+              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        Comment: !Sub
+        - '${SubDomainNameWithDot}${HostedZoneName}'
+        - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+          HostedZoneName:
+            'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
         Origins:
         - DomainName: !GetAtt 'LoadBalancer.DNSName'
           Id: elb

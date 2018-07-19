@@ -1,5 +1,7 @@
 <iframe src="https://ghbtns.com/github-btn.html?user=widdix&repo=aws-cf-templates&type=star&count=true&size=large" frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
 
+> **New**: Manage Free Templates for AWS CloudFormation with the [widdix CLI](../cli/)
+
 ![Demo](./img/jenkins-demo.gif)
 
 # Jenkins 2.0: highly available master
@@ -21,7 +23,7 @@ This template describes a Jenkins master in a highly available manner. If the ma
 
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
-* `vpc/vpc-ssh-bastion.yaml` (recommended)
+* `vpc/vpc-*-bastion.yaml` (recommended)
 * `security/auth-proxy-*.yaml`
 * `operations/alert.yaml` (recommended)
 
@@ -48,10 +50,11 @@ This template describes a Jenkins master in a highly available manner. If the ma
 
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
-* `vpc/vpc-ssh-bastion.yaml` (recommended)
+* `vpc/vpc-*-bastion.yaml` (recommended)
 * `security/auth-proxy-*.yaml`
 * `operations/alert.yaml` (recommended)
 
 ## Limitations
 * Jenkins will only run in two Availability Zones, even if your VPC stack has more.
+* Stack updates only work if no agents are running. Scale to zero agents before you update the stack!
 * No backup

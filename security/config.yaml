@@ -24,7 +24,7 @@ Metadata:
       - ExternalConfigBucket
 Parameters:
   DeliveryFrequency:
-    Description: 'The frequency with which AWS Config delivers configuration snapshots'
+    Description: 'The frequency with which AWS Config delivers configuration snapshots.'
     Type: String
     Default: Six_Hours
     AllowedValues:

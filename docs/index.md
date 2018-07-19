@@ -14,6 +14,14 @@ Your source for free [AWS CloudFormation](https://aws.amazon.com/cloudformation/
     * Operations friendly: provide tools like logging, monitoring and alerting to recognize and debug problems
 * Premium Support available: Get help in case of small and big emergencies and submit a feature request.
 
+# Related projects
+
+## widdix CLI
+[widdix, a CLI tool to manage Free Templates for AWS CloudFormation](./cli/).
+
+## cfn-modules
+[Easy-going CloudFormation](https://github.com/cfn-modules/docs): Modular, production ready, open source.
+
 # Infrastructure Templates
 Choose from our template catalog:
 

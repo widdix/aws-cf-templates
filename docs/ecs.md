@@ -1,5 +1,7 @@
 <iframe src="https://ghbtns.com/github-btn.html?user=widdix&repo=aws-cf-templates&type=star&count=true&size=large" frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
 
+> **New**: Manage Free Templates for AWS CloudFormation with the [widdix CLI](../cli/)
+
 [EC2 Container Service (ECS)](https://aws.amazon.com/ecs/) is a highly scalable, fast, container management service that makes it easy to run, stop, and manage Docker containers on a cluster of Amazon EC2 instances. To run an application on ECS you need the following components:
 
 * Docker image published to [Docker Hub](https://hub.docker.com/) or [EC2 Container Registry (ECR)](https://aws.amazon.com/ecr/)
@@ -26,7 +28,7 @@ This template describes a fault tolerant and scalable ECS cluster on AWS. The cl
 
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
-* `vpc/vpc-ssh-bastion.yaml` (recommended)
+* `vpc/vpc-*-bastion.yaml` (recommended)
 * `security/auth-proxy-*.yaml`
 * `operations/alert.yaml` (recommended)
 

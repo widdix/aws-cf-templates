@@ -34,7 +34,7 @@ Metadata:
     - Label:
         default: 'Service Parameters'
       Parameters:
-      - SubDomainName
+      - SubDomainNameWithDot
     - Label:
         default: 'Task Parameters'
       Parameters:
@@ -108,8 +108,8 @@ Parameters:
     Default: 2
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
-  SubDomainName:
-    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
+  SubDomainNameWithDot:
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
     Default: ''
 Mappings: {}
@@ -152,8 +152,8 @@ Resources:
       HostedZoneId:
         'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
       Name: !Sub
-      - '${SubDomainName}.${HostedZoneName}'
-      - SubDomainName: !Ref SubDomainName
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
         HostedZoneName:
           'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       Type: A

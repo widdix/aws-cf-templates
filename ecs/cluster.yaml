@@ -29,6 +29,7 @@ Metadata:
       Parameters:
       - KeyName
       - IAMUserSSHAccess
+      # TODO - SystemsManagerAccess
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
@@ -56,7 +57,7 @@ Parameters:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
   ParentSSHBastionStack:
-    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-*-bastion.yaml template.'
     Type: String
     Default: ''
   ParentAuthProxyStack:
@@ -151,7 +152,7 @@ Parameters:
     MinValue: 2
     ConstraintDescription: 'Must be >= 2'
 Mappings:
-  RegionMap:
+  RegionMap: # TODO update to Amazon Linux 2 (don't forget to adjust awslogs config as well)
     'ap-south-1':
       ECSAMI: 'ami-c7072aa8'
     'eu-west-3':
@@ -686,10 +687,8 @@ Resources:
             yum:
               ruby: []
             rubygems:
-              'aws-sdk':
-              - '3.0.1'
-              daemons:
-              - '1.2.4'
+              'aws-sdk': ['3.0.1']
+              daemons: ['1.2.4']
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |

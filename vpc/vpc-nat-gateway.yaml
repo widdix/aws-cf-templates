@@ -57,7 +57,7 @@ Resources:
       SubnetId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-Subnet${SubnetZone}Public'
   Route:
-    Type: AWS::EC2::Route
+    Type: 'AWS::EC2::Route'
     Properties:
       RouteTableId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTable${SubnetZone}Private'
