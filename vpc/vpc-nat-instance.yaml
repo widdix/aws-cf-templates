@@ -149,10 +149,7 @@ Resources:
   NATSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupDescription: !Sub
-      - 'NAT instance ${CidrBlock}'
-      - CidrBlock:
-          'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'
+      GroupDescription: !Ref 'AWS::StackName'
       SecurityGroupEgress:
       - IpProtocol: udp
         FromPort: 123

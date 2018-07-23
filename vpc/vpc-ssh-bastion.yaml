@@ -140,10 +140,7 @@ Resources:
   SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupDescription: !Sub
-      - 'SSH bastion host/instance ${CidrBlock}'
-      - CidrBlock:
-          'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'
+      GroupDescription: !Ref 'AWS::StackName'
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: 22
