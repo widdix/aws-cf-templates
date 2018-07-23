@@ -34,7 +34,7 @@ Metadata:
       - DBBackupRetentionPeriod
       - DBMasterUsername
       - DBMasterUserPassword
-      - SubDomainName
+      - SubDomainNameWithDot
       - Encryption
 Parameters:
   ParentVPCStack:
@@ -80,10 +80,14 @@ Parameters:
     Type: String
     NoEcho: true
     Default: ''
-  SubDomainName:
-    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
+  SubDomainNameWithDot:
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
-    Default: aurora
+    Default: 'aurora.'
+  ReadSubDomainNameWithDot:
+    Description: 'Name that is used to create the read DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
+    Type: String
+    Default: 'read-aurora.'
   Encryption:
     Description: 'Enable server side encryption using KMS (customer managed) CMK (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
     Type: String
@@ -104,13 +108,13 @@ Resources:
       HostedZoneId:
         'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
       Name: !Sub
-      - '${SubDomainName}.${HostedZoneName}'
-      - SubDomainName: !Ref SubDomainName
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
         HostedZoneName:
           'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       ResourceRecords:
       - !GetAtt 'DBCluster.Endpoint.Address'
-      TTL: 60
+      TTL: '60'
       Type: CNAME
   ReadRecordSet:
     Condition: HasZone
@@ -119,13 +123,13 @@ Resources:
       HostedZoneId:
         'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
       Name: !Sub
-      - 'read-${SubDomainName}.${HostedZoneName}'
-      - SubDomainName: !Ref SubDomainName
+      - '${ReadSubDomainNameWithDot}${HostedZoneName}'
+      - ReadSubDomainNameWithDot: !Ref ReadSubDomainNameWithDot
         HostedZoneName:
           'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       ResourceRecords:
       - !GetAtt 'DBCluster.ReadEndpoint.Address'
-      TTL: 60
+      TTL: '60'
       Type: CNAME
   ClusterSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'

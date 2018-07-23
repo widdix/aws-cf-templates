@@ -35,7 +35,7 @@ Metadata:
       - ClusterInstanceType
       - DedicatedMasterCount
       - DedicatedMasterType
-      - SubDomainName
+      - SubDomainNameWithDot
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -83,10 +83,10 @@ Parameters:
     Description: 'The instance type for your dedicated master nodes.'
     Type: 'String'
     Default: 't2.small.elasticsearch'
-  SubDomainName:
-    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
+  SubDomainNameWithDot:
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
-    Default: elasticsearch
+    Default: 'elasticsearch.'
   Encryption:
     Description: 'Enable server side encryption using KMS (customer managed) CMK. Only works with certain instance types (https://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/aes-supported-instance-types.html)'
     Type: String
@@ -108,13 +108,13 @@ Resources:
       HostedZoneId:
         'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
       Name: !Sub
-      - '${SubDomainName}.${HostedZoneName}'
-      - SubDomainName: !Ref SubDomainName
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
         HostedZoneName:
           'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       ResourceRecords:
       - !GetAtt 'ElasticsearchDomain.DomainEndpoint'
-      TTL: 60
+      TTL: '60'
       Type: CNAME
   SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'

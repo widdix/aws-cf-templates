@@ -7,17 +7,22 @@
 ## ec2/ec2-auto-recovery, security/auth-proxy-ha-github-orga, vpc/vpc-ssh-bastion
 
 1. Amazon Linux is updated to Amazon Linux 2.
-2. The parameter `SubDomainName` was renamed to `SubDomainNameWithDot` and now expects that your name end with a dot. E.g., if the value of `SubDomainName` is `ssh.`, set `SubDomainNameWithDot` to `ssh.`.
+2. The parameter `SubDomainName` was renamed to `SubDomainNameWithDot` and now expects that your name end with a dot. E.g., if the value of `SubDomainName` is `ssh`, set `SubDomainNameWithDot` to `ssh.`.
 3. `SystemsManagerAccess` will be enabled by default.
 
-## ecs/service-cluster-alb, ecs/service-dedicated-alb, vpc/vpc-nat-instance
+## ecs/service-cluster-alb, ecs/service-dedicated-alb, vpc/vpc-nat-instance, state/rds-postgres, state/elasticsearch, state/elasticache-memcached
 
-1. The parameter `SubDomainName` was renamed to `SubDomainNameWithDot` and now expects that your name end with a dot. E.g., if the value of `SubDomainName` is `ssh.`, set `SubDomainNameWithDot` to `ssh.`.
+1. The parameter `SubDomainName` was renamed to `SubDomainNameWithDot` and now expects that your name end with a dot. E.g., if the value of `SubDomainName` is `ssh`, set `SubDomainNameWithDot` to `ssh.`.
+
+## state/rds-aurora
+
+1. The parameter `SubDomainName` was renamed to `SubDomainNameWithDot` and now expects that your name end with a dot. E.g., if the value of `SubDomainName` is `ssh`, set `SubDomainNameWithDot` to `ssh.`.
+2. The implicit name of the Aurora read endpoint is now explicit and can be configured with the `ReadSubDomainNameWithDot` parameter. E.g., if the value of `SubDomainName` is `aurora`, set `ReadSubDomainNameWithDot` to `read-aurora.` to get the same name as before.
 
 ## jenkins/jenkins-*
 
 1. Amazon Linux is updated to Amazon Linux 2.
-2. The parameter `SubDomainName` was renamed to `SubDomainNameWithDot` and now expects that your name end with a dot. E.g., if the value of `SubDomainName` is `ssh.`, set `SubDomainNameWithDot` to `ssh.`.
+2. The parameter `SubDomainName` was renamed to `SubDomainNameWithDot` and now expects that your name end with a dot. E.g., if the value of `SubDomainName` is `ssh`, set `SubDomainNameWithDot` to `ssh.`.
 3. `SystemsManagerAccess` will be enabled by default.
 4. The parameter `JenkinsVersion` was removed to make updates possible.
 
@@ -30,7 +35,7 @@ The new static website makes use of Lambda@Edge.
 3. The optional parameter `LambdaEdgeSubdirectoriesVersionArn` was added. The value should be the `LambdaVersionArn` output of the `static-website/lambdaedge-index-document` stack.
 4. The `DefaultRootObject` parameter was added but is only used if `LambdaEdgeSubdirectoriesVersionArn` is not set. Usually you will set this to something like `index.html` which is the default as well.
 5. The following parameters have been removed:
-    1. `DomainName` is replaced by `SubDomainNameWithDot` and now expects that your name end with a dot. E.g., if the value of `SubDomainName` is `ssh.`, set `SubDomainNameWithDot` to `ssh.`.
+    1. `DomainName` is replaced by `SubDomainNameWithDot` and now expects that your name end with a dot. E.g., if the value of `SubDomainName` is `ssh`, set `SubDomainNameWithDot` to `ssh.`.
     2. `RedirectDomainName` is replaced by `EnableRedirectSubDomainName` and `RedirectSubDomainNameWithDot`. If you want to have a second domain to redirect to the primary domain, enable `EnableRedirectSubDomainName` and provide the `RedirectSubDomainNameWithDot` as well.
     3. `HostedZoneId` is replaced by `ParentZoneStack`
 
@@ -46,7 +51,7 @@ The new static website makes use of Lambda@Edge.
 
 1. Amazon Linux is updated to Amazon Linux 2.
 2. The parameter `DomainName` was renamed to `SubDomainNameWithDot` and `ParentZoneStack` is now required (was optional before). E.g., if the value of `DomainName` is `www.widdix.de`, set `SubDomainNameWithDot` to `www.` and the `ParentZoneStack` should have the `Name` parameter set to `widdix.de`.
-3. The parameter `SubDomainName` is replaced by `SubDomainNameWithDot`. E.g., if the value of `SubDomainName` is `ssh.`, set `SubDomainNameWithDot` to `ssh.`.
+3. The parameter `SubDomainName` is replaced by `SubDomainNameWithDot`. E.g., if the value of `SubDomainName` is `ssh`, set `SubDomainNameWithDot` to `ssh.`.
 4. The parameter `DBMasterUserPassword` was added (was hard coded to `wordpress` before).
 5. `SystemsManagerAccess` will be enabled by default.
 6. The parameter `BlogVersion` was removed to make updates possible.

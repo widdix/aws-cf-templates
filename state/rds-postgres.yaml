@@ -36,7 +36,7 @@ Metadata:
       - DBMasterUsername
       - DBMasterUserPassword
       - DBMultiAZ
-      - SubDomainName
+      - SubDomainNameWithDot
       - Encryption
 Parameters:
   ParentVPCStack:
@@ -93,10 +93,10 @@ Parameters:
     Type: String
     Default: true
     AllowedValues: [true, false]
-  SubDomainName:
-    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
+  SubDomainNameWithDot:
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
-    Default: postgres
+    Default: 'postgres.'
   Encryption:
     Description: 'Enable server side encryption using KMS (customer managed) CMK (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
     Type: String
@@ -117,13 +117,13 @@ Resources:
       HostedZoneId:
         'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
       Name: !Sub
-      - '${SubDomainName}.${HostedZoneName}'
-      - SubDomainName: !Ref SubDomainName
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
         HostedZoneName:
           'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       ResourceRecords:
       - !GetAtt 'DBInstance.Endpoint.Address'
-      TTL: 60
+      TTL: '60'
       Type: CNAME
   DatabaseSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
