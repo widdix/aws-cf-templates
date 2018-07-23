@@ -190,8 +190,7 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: 'wordpress-elb'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
   LoadBalancerSecurityGroupInWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasNotAuthProxySecurityGroup
@@ -209,14 +208,12 @@ Resources:
       IpProtocol: tcp
       FromPort: 80
       ToPort: 80
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
   WebServerSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: 'wordpress-ec2'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
       - FromPort: 80
         IpProtocol: tcp
@@ -230,8 +227,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 22
       ToPort: 22
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
   WebServerSecurityGroupInSSHWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasNotSSHBastionSecurityGroup
@@ -245,8 +241,7 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: 'wordpress-rds'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: 3306
@@ -260,8 +255,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 3306
       ToPort: 3306
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
   BackendConnectionErrorsTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -275,7 +269,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancerName
         Value: !Ref LoadBalancer
@@ -292,7 +286,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancerName
         Value: !Ref LoadBalancer
@@ -309,7 +303,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancerName
         Value: !Ref LoadBalancer
@@ -326,7 +320,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancerName
         Value: !Ref LoadBalancer
@@ -343,7 +337,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancerName
         Value: !Ref LoadBalancer
@@ -351,20 +345,20 @@ Resources:
     Type: 'AWS::ElasticLoadBalancing::LoadBalancer'
     Properties:
       Subnets:
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'}
+      - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'}
       Listeners:
-      - InstancePort: 80
+      - InstancePort: '80'
         InstanceProtocol: HTTP
-        LoadBalancerPort: 443
+        LoadBalancerPort: '443'
         Protocol: HTTPS
         SSLCertificateId: !Ref ElbAcmCertificate
       HealthCheck:
-        HealthyThreshold: 2
-        Interval: 5
+        HealthyThreshold: '2'
+        Interval: '5'
         Target: 'TCP:80'
-        Timeout: 3
-        UnhealthyThreshold: 2
+        Timeout: '3'
+        UnhealthyThreshold: '2'
       SecurityGroups:
       - !Ref LoadBalancerSecurityGroup
       Scheme: 'internet-facing'
@@ -374,12 +368,12 @@ Resources:
     Properties:
       DBSubnetGroupDescription: 'DB subnet group'
       SubnetIds:
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'
+      - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'}
+      - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'}
   Database:
     Type: 'AWS::RDS::DBInstance'
     Properties:
-      AllocatedStorage: 5
+      AllocatedStorage: '5'
       BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
       DBInstanceClass: !Ref DBServerInstanceType
       DBName: wordpress
@@ -404,7 +398,7 @@ Resources:
       ComparisonOperator: LessThanThreshold
       Threshold: 20
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: DBInstanceIdentifier
         Value: !Ref Database
@@ -421,7 +415,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 80
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: DBInstanceIdentifier
         Value: !Ref Database
@@ -438,7 +432,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 64
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: DBInstanceIdentifier
         Value: !Ref Database
@@ -455,7 +449,7 @@ Resources:
       ComparisonOperator: LessThanThreshold
       Threshold: 67108864 # 64 MB in Bytes
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: DBInstanceIdentifier
         Value: !Ref Database
@@ -472,7 +466,7 @@ Resources:
       ComparisonOperator: LessThanThreshold
       Threshold: 2147483648 # 2 GB in Bytes
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: DBInstanceIdentifier
         Value: !Ref Database
@@ -489,7 +483,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 268435456 # 256 MB in Bytes
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: DBInstanceIdentifier
         Value: !Ref Database
@@ -819,8 +813,7 @@ Resources:
                 DomainName: !Sub
                 - '${SubDomainNameWithDot}${HostedZoneName}'
                 - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-                  HostedZoneName:
-                    'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+                  HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
               mode: '000500'
               owner: root
               group: root
@@ -866,10 +859,10 @@ Resources:
       LoadBalancerNames:
       - !Ref LoadBalancer
       LaunchConfigurationName: !Ref LaunchConfiguration
-      MinSize: 2
-      MaxSize: 4
-      DesiredCapacity: 2
-      Cooldown: 60
+      MinSize: '2'
+      MaxSize: '4'
+      DesiredCapacity: '2'
+      Cooldown: '60'
       HealthCheckGracePeriod: 300
       HealthCheckType: ELB
       NotificationConfigurations: !If
@@ -877,12 +870,11 @@ Resources:
       - - NotificationTypes:
           - 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR'
           - 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR'
-          TopicARN:
-            'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      - !Ref 'AWS::NoValue'
+          TopicARN: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      - []
       VPCZoneIdentifier:
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'}
+      - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'}
       Tags:
       - PropagateAtLaunch: true
         Value: wordpress
@@ -913,7 +905,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 80
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: AutoScalingGroupName
         Value: !Ref AutoScalingGroup
@@ -923,7 +915,7 @@ Resources:
       AdjustmentType: PercentChangeInCapacity
       MinAdjustmentMagnitude: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
-      Cooldown: 900
+      Cooldown: '900'
       ScalingAdjustment: 25
   CPUHighAlarm:
     Type: 'AWS::CloudWatch::Alarm'
@@ -947,7 +939,7 @@ Resources:
       AdjustmentType: PercentChangeInCapacity
       MinAdjustmentMagnitude: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
-      Cooldown: 300
+      Cooldown: '300'
       ScalingAdjustment: -25
   CPULowAlarm:
     Type: 'AWS::CloudWatch::Alarm'
@@ -984,7 +976,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 80
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: FileSystemId
         Value: !Ref EFSFileSystem
@@ -1001,7 +993,7 @@ Resources:
       ComparisonOperator: LessThanThreshold
       Threshold: 192416666667 # 192 GB in Bytes (last hour where you can burst at 100 MB/sec)
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: FileSystemId
         Value: !Ref EFSFileSystem
@@ -1009,24 +1001,21 @@ Resources:
     Type: 'AWS::EFS::MountTarget'
     Properties:
       FileSystemId: !Ref EFSFileSystem
-      SubnetId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
+      SubnetId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'}
       SecurityGroups:
       - !Ref EFSSecurityGroup
   EFSMountTargetB:
     Type: 'AWS::EFS::MountTarget'
     Properties:
       FileSystemId: !Ref EFSFileSystem
-      SubnetId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      SubnetId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'}
       SecurityGroups:
       - !Ref EFSSecurityGroup
   EFSSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Allowing access to EFS
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: 2049
@@ -1038,13 +1027,11 @@ Resources:
       AliasTarget:
         HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
         DNSName: !GetAtt 'CloudFrontDistribution.DomainName'
-      HostedZoneId:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       Name: !Sub
       - '${SubDomainNameWithDot}${HostedZoneName}'
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       Type: A
   CloudFrontDistribution:
     Type: 'AWS::CloudFront::Distribution'
@@ -1054,13 +1041,11 @@ Resources:
         - !Sub
           - '${SubDomainNameWithDot}${HostedZoneName}'
           - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-            HostedZoneName:
-              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+            HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
         Comment: !Sub
         - '${SubDomainNameWithDot}${HostedZoneName}'
         - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-          HostedZoneName:
-            'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+          HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
         Origins:
         - DomainName: !GetAtt 'LoadBalancer.DNSName'
           Id: elb

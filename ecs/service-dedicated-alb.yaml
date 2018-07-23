@@ -132,15 +132,13 @@ Resources:
           LogDriver: awslogs
           Options:
             'awslogs-region': !Ref 'AWS::Region'
-            'awslogs-group':
-              'Fn::ImportValue': !Sub '${ParentClusterStack}-LogGroup'
+            'awslogs-group': {'Fn::ImportValue': !Sub '${ParentClusterStack}-LogGroup'}
             'awslogs-stream-prefix': !Ref 'AWS::StackName'
   ALBSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: 'ecs-cluster-alb'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
   ALBSecurityGroupInHttpWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasNotAuthProxySecurityGroup
@@ -167,8 +165,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 80
       ToPort: 80
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
   ALBSecurityGroupInHttpsAuthProxy:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasAuthProxySecurityGroupAndLoadBalancerCertificateArn
@@ -177,13 +174,11 @@ Resources:
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
   SecurityGroupInALB:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Properties:
-      GroupId:
-        'Fn::ImportValue': !Sub '${ParentClusterStack}-SecurityGroup'
+      GroupId: {'Fn::ImportValue': !Sub '${ParentClusterStack}-SecurityGroup'}
       IpProtocol: tcp
       FromPort: 0
       ToPort: 65535
@@ -201,8 +196,7 @@ Resources:
         HttpCode: '200-299'
       Port: 80
       Protocol: HTTP
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       TargetGroupAttributes:
       - Key: deregistration_delay.timeout_seconds
         Value: !Ref LoadBalancerDeregistrationDelay
@@ -219,7 +213,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt LoadBalancer.LoadBalancerFullName
@@ -236,7 +230,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt LoadBalancer.LoadBalancerFullName
@@ -253,7 +247,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt LoadBalancer.LoadBalancerFullName
@@ -270,7 +264,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt LoadBalancer.LoadBalancerFullName
@@ -281,13 +275,11 @@ Resources:
       AliasTarget:
         HostedZoneId: !GetAtt 'LoadBalancer.CanonicalHostedZoneID'
         DNSName: !GetAtt 'LoadBalancer.DNSName'
-      HostedZoneId:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       Name: !Sub
       - '${SubDomainNameWithDot}${HostedZoneName}'
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       Type: A
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
@@ -297,14 +289,8 @@ Resources:
       - !Ref ALBSecurityGroup
       Subnets: !If
       - HasLoadBalancerSchemeInternal
-      - !Split
-        - ','
-        - 'Fn::ImportValue':
-            !Sub '${ParentVPCStack}-SubnetsPrivate'
-      - !Split
-        - ','
-        - 'Fn::ImportValue':
-            !Sub '${ParentVPCStack}-SubnetsPublic'
+      - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
+      - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPublic'}]
   HttpListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
@@ -342,8 +328,7 @@ Resources:
     Type: 'AWS::ECS::Service'
     DependsOn: HttpListener
     Properties:
-      Cluster:
-        'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'
+      Cluster: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 50
@@ -395,8 +380,7 @@ Resources:
       MinCapacity: !Ref MinCapacity
       ResourceId: !Sub
       - 'service/${Cluster}/${Service}'
-      - Cluster:
-          'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'
+      - Cluster: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
         Service: !GetAtt 'Service.Name'
       RoleARN: !GetAtt 'ScalableTargetRole.Arn'
       ScalableDimension: 'ecs:service:DesiredCount'
@@ -435,8 +419,7 @@ Resources:
       Namespace: 'AWS/ECS'
       Dimensions:
       - Name: ClusterName
-        Value:
-          'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'
+        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
       - Name: ServiceName
         Value: !GetAtt 'Service.Name'
       MetricName: CPUUtilization
@@ -446,7 +429,7 @@ Resources:
       EvaluationPeriods: 1
       Threshold: 80
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
   CPUUtilizationHighAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -454,8 +437,7 @@ Resources:
       Namespace: 'AWS/ECS'
       Dimensions:
       - Name: ClusterName
-        Value:
-          'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'
+        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
       - Name: ServiceName
         Value: !GetAtt 'Service.Name'
       MetricName: CPUUtilization
@@ -473,8 +455,7 @@ Resources:
       Namespace: 'AWS/ECS'
       Dimensions:
       - Name: ClusterName
-        Value:
-          'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'
+        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
       - Name: ServiceName
         Value: !GetAtt 'Service.Name'
       MetricName: CPUUtilization

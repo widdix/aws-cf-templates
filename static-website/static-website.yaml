@@ -91,47 +91,39 @@ Resources:
       DomainName: !Sub
       - '${SubDomainNameWithDot}${HostedZoneName}'
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       DomainValidationOptions: !If
       - HasRedirectDomainName
       - - DomainName: !Sub
           - '${SubDomainNameWithDot}${HostedZoneName}'
           - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-            HostedZoneName:
-              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+            HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
           ValidationDomain: !Sub
           - '${SubDomainNameWithDot}${HostedZoneName}'
           - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-            HostedZoneName:
-              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+            HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
         - DomainName: !Sub
           - '${RedirectSubDomainNameWithDot}${HostedZoneName}'
           - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
-            HostedZoneName:
-              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+            HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
           ValidationDomain: !Sub
           - '${SubDomainNameWithDot}${HostedZoneName}'
           - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-            HostedZoneName:
-              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+            HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       - - DomainName: !Sub
           - '${SubDomainNameWithDot}${HostedZoneName}'
           - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-            HostedZoneName:
-              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+            HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
           ValidationDomain: !Sub
           - '${SubDomainNameWithDot}${HostedZoneName}'
           - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-            HostedZoneName:
-              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+            HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       SubjectAlternativeNames: !If
       - HasRedirectDomainName
       - - !Sub
           - '${RedirectSubDomainNameWithDot}${HostedZoneName}'
           - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
-            HostedZoneName:
-              'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+            HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       - []
   S3Bucket:
     Type: 'AWS::S3::Bucket'
@@ -139,8 +131,7 @@ Resources:
       BucketName: !Sub
       - '${SubDomainNameWithDot}${HostedZoneName}'
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
   S3BucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
     Properties:
@@ -159,8 +150,7 @@ Resources:
         Comment: !Sub
         - '${SubDomainNameWithDot}${HostedZoneName}'
         - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-          HostedZoneName:
-            'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+          HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
   CloudFrontDistribution:
     Type: 'AWS::CloudFront::Distribution'
     Properties:
@@ -170,23 +160,19 @@ Resources:
         - - !Sub
             - '${SubDomainNameWithDot}${HostedZoneName}'
             - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-              HostedZoneName:
-                'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+              HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
           - !Sub
             - '${RedirectSubDomainNameWithDot}${HostedZoneName}'
             - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
-              HostedZoneName:
-                'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+              HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
         - - !Sub
             - '${SubDomainNameWithDot}${HostedZoneName}'
             - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-              HostedZoneName:
-                'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+              HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
         Comment: !Sub
         - '${SubDomainNameWithDot}${HostedZoneName}'
         - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-          HostedZoneName:
-            'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+          HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
         DefaultCacheBehavior:
           AllowedMethods:
           - GET
@@ -208,7 +194,7 @@ Resources:
               LambdaFunctionARN: !Ref LambdaEdgeSubdirectoriesVersionArn
             - EventType: 'origin-request'
               LambdaFunctionARN: !Ref LambdaEdgeSubdirectoriesVersionArn
-          - !Ref 'AWS::NoValue'
+          - []
           MaxTTL: 86400 # in seconds
           MinTTL: 60 # in seconds
           TargetOriginId: s3origin
@@ -230,14 +216,12 @@ Resources:
   Route53RecordV2:
     Type: 'AWS::Route53::RecordSetGroup'
     Properties:
-      HostedZoneId:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       RecordSets:
       - Name: !Sub
         - '${SubDomainNameWithDot}${HostedZoneName}'
         - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-          HostedZoneName:
-            'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+          HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
         Type: A
         AliasTarget:
           HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
@@ -246,14 +230,12 @@ Resources:
     Condition: HasRedirectDomainName
     Type: 'AWS::Route53::RecordSetGroup'
     Properties:
-      HostedZoneId:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       RecordSets:
       - Name: !Sub
         - '${RedirectSubDomainNameWithDot}${HostedZoneName}'
         - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
-          HostedZoneName:
-            'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+          HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
         Type: A
         AliasTarget:
           HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
@@ -273,7 +255,6 @@ Outputs:
     Value: !Sub
     - 'https://${SubDomainNameWithDot}${HostedZoneName}'
     - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-      HostedZoneName:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
     Export:
       Name: !Sub '${AWS::StackName}-URL'

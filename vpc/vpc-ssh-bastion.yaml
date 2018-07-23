@@ -118,16 +118,14 @@ Resources:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
     Properties:
-      HostedZoneId:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       Name: !Sub
       - '${SubDomainNameWithDot}${HostedZoneName}'
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
       - !Ref EIP
-      TTL: 60
+      TTL: '60'
       Type: A
   EIP:
     Type: 'AWS::EC2::EIP'
@@ -146,8 +144,7 @@ Resources:
         FromPort: 22
         ToPort: 22
         CidrIp: '0.0.0.0/0'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
@@ -448,29 +445,24 @@ Resources:
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
-      DesiredCapacity: 1
+      DesiredCapacity: '1'
       LaunchConfigurationName: !Ref LaunchConfiguration
-      MaxSize: 1
-      MinSize: 1
+      MaxSize: '1'
+      MinSize: '1'
       Tags:
       - Key: Name
         Value: !Sub
         - 'SSH bastion host/instance ${CidrBlock}'
-        - CidrBlock:
-            'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'
+        - CidrBlock: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
         PropagateAtLaunch: true
       NotificationConfigurations: !If
       - HasAlertTopic
       - - NotificationTypes:
           - 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR'
           - 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR'
-          TopicARN:
-            'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      - !Ref 'AWS::NoValue'
-      VPCZoneIdentifier: !Split
-      - ','
-      - 'Fn::ImportValue':
-          !Sub '${ParentVPCStack}-SubnetsPublic'
+          TopicARN: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      - []
+      VPCZoneIdentifier: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPublic'}]
     CreationPolicy:
       ResourceSignal:
         Count: 1
@@ -498,7 +490,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 80
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: AutoScalingGroupName
         Value: !Ref AutoScalingGroup

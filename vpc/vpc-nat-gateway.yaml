@@ -54,13 +54,11 @@ Resources:
     Type: 'AWS::EC2::NatGateway'
     Properties:
       AllocationId: !GetAtt 'EIP.AllocationId'
-      SubnetId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-Subnet${SubnetZone}Public'
+      SubnetId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-Subnet${SubnetZone}Public'}
   Route:
     Type: 'AWS::EC2::Route'
     Properties:
-      RouteTableId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTable${SubnetZone}Private'
+      RouteTableId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTable${SubnetZone}Private'}
       DestinationCidrBlock: '0.0.0.0/0'
       NatGatewayId: !Ref NatGateway
   AlarmNatGatewayErrorPortAllocation:
@@ -76,7 +74,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: NatGatewayId
         Value: !Ref NatGateway
@@ -93,7 +91,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: NatGatewayId
         Value: !Ref NatGateway

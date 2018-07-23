@@ -166,8 +166,7 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: 'jenkins-master'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
       - SourceSecurityGroupId: !Ref MasterSG
         FromPort: 2049
@@ -193,7 +192,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 80
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: FileSystemId
         Value: !Ref MasterStorage
@@ -210,7 +209,7 @@ Resources:
       ComparisonOperator: LessThanThreshold
       Threshold: 192416666667 # 192 GB in Bytes (last hour where you can burst at 100 MB/sec)
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: FileSystemId
         Value: !Ref MasterStorage
@@ -220,22 +219,19 @@ Resources:
       FileSystemId: !Ref MasterStorage
       SecurityGroups:
       - !Ref MasterStorageSG
-      SubnetId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetA${MasterSubnetsReach}'
+      SubnetId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetA${MasterSubnetsReach}'}
   MasterStorageMountTargetB:
     Type: 'AWS::EFS::MountTarget'
     Properties:
       FileSystemId: !Ref MasterStorage
       SecurityGroups:
       - !Ref MasterStorageSG
-      SubnetId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetB${MasterSubnetsReach}'
+      SubnetId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetB${MasterSubnetsReach}'}
   MasterELBSG:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: 'jenkins-elb-master'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
   MasterELBSGInWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasNotAuthProxySecurityGroup
@@ -253,8 +249,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 80
       ToPort: 80
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
   MasterHTTPCodeELB5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -268,7 +263,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt MasterELB.LoadBalancerFullName
@@ -285,7 +280,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt MasterELB.LoadBalancerFullName
@@ -302,7 +297,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt MasterELB.LoadBalancerFullName
@@ -319,7 +314,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt MasterELB.LoadBalancerFullName
@@ -330,13 +325,11 @@ Resources:
       AliasTarget:
         HostedZoneId: !GetAtt 'MasterELB.CanonicalHostedZoneID'
         DNSName: !GetAtt 'MasterELB.DNSName'
-      HostedZoneId:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       Name: !Sub
       - '${SubDomainNameWithDot}${HostedZoneName}'
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       Type: A
   MasterELB:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
@@ -346,10 +339,10 @@ Resources:
       - !Ref MasterELBSG
       Subnets: !If
       - HasMasterELBSchemeInternal
-      - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'
-        - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'
-      - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
-        - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      - - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'}
+        - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'}
+      - - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'}
+        - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'}
       Tags:
       - Key: Name
         Value: 'jenkins-master'
@@ -358,7 +351,7 @@ Resources:
     Properties:
       HealthCheckIntervalSeconds: 30
       HealthCheckPath: '/login'
-      HealthCheckPort: 8080
+      HealthCheckPort: '8080'
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 25
       HealthyThresholdCount: 2
@@ -370,11 +363,10 @@ Resources:
       Tags:
       - Key: Name
         Value: 'jenkins-master'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       TargetGroupAttributes:
       - Key: 'deregistration_delay.timeout_seconds'
-        Value: 30
+        Value: '30'
   MasterELBListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
@@ -451,8 +443,7 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: 'jenkins-master'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
       - SourceSecurityGroupId: !Ref MasterELBSG
         FromPort: 8080
@@ -466,8 +457,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 22
       ToPort: 22
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
   MasterSGInSSHWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasNotSSHBastionSecurityGroup
@@ -836,9 +826,9 @@ Resources:
     - MasterStorageMountTargetB
     Properties:
       LaunchConfigurationName: !Ref MasterLC
-      MinSize: 1
-      MaxSize: 1
-      DesiredCapacity: 1
+      MinSize: '1'
+      MaxSize: '1'
+      DesiredCapacity: '1'
       HealthCheckGracePeriod: 900
       HealthCheckType: ELB
       NotificationConfigurations: !If
@@ -846,12 +836,11 @@ Resources:
       - - NotificationTypes:
           - 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR'
           - 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR'
-          TopicARN:
-            'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      - !Ref 'AWS::NoValue'
+          TopicARN: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      - []
       VPCZoneIdentifier:
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetA${MasterSubnetsReach}'
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetB${MasterSubnetsReach}'
+      - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetA${MasterSubnetsReach}'}
+      - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetB${MasterSubnetsReach}'}
       TargetGroupARNs:
       - !Ref MasterELBTargetGroup
       Tags:
@@ -884,7 +873,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 80
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: AutoScalingGroupName
         Value: !Ref MasterASG

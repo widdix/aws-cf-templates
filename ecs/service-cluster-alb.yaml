@@ -137,25 +137,20 @@ Resources:
           LogDriver: awslogs
           Options:
             'awslogs-region': !Ref 'AWS::Region'
-            'awslogs-group':
-              'Fn::ImportValue': !Sub '${ParentClusterStack}-LogGroup'
+            'awslogs-group': {'Fn::ImportValue': !Sub '${ParentClusterStack}-LogGroup'}
             'awslogs-stream-prefix': !Ref 'AWS::StackName'
   RecordSet:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
     Properties:
       AliasTarget:
-        HostedZoneId:
-          'Fn::ImportValue': !Sub '${ParentClusterStack}-CanonicalHostedZoneID'
-        DNSName:
-          'Fn::ImportValue': !Sub '${ParentClusterStack}-DNSName'
-      HostedZoneId:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+        HostedZoneId: {'Fn::ImportValue': !Sub '${ParentClusterStack}-CanonicalHostedZoneID'}
+        DNSName: {'Fn::ImportValue': !Sub '${ParentClusterStack}-DNSName'}
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       Name: !Sub
       - '${SubDomainNameWithDot}${HostedZoneName}'
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       Type: A
   LoadBalancerTargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
@@ -170,8 +165,7 @@ Resources:
         HttpCode: '200-299'
       Port: 80
       Protocol: HTTP
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentClusterStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentClusterStack}-VPC'}
       TargetGroupAttributes:
       - Key: deregistration_delay.timeout_seconds
         Value: !Ref LoadBalancerDeregistrationDelay
@@ -188,11 +182,10 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
-        Value:
-          'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'
+        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'}
       - Name: TargetGroup
         Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
   HTTPCodeTarget5XXTooHighAlarm:
@@ -208,11 +201,10 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
-        Value:
-          'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'
+        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'}
       - Name: TargetGroup
         Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
   RejectedConnectionCountTooHighAlarm:
@@ -228,11 +220,10 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
-        Value:
-          'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'
+        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'}
       - Name: TargetGroup
         Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
   TargetConnectionErrorCountTooHighAlarm:
@@ -248,11 +239,10 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
-        Value:
-          'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'
+        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'}
       - Name: TargetGroup
         Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
   LoadBalancerHttpListenerRule:
@@ -280,8 +270,7 @@ Resources:
             Values:
             - !Ref LoadBalancerHostPattern
         - [] # neither LoadBalancerHostPattern nor LoadBalancerPath specified
-      ListenerArn:
-        'Fn::ImportValue': !Sub '${ParentClusterStack}-HttpListener'
+      ListenerArn: {'Fn::ImportValue': !Sub '${ParentClusterStack}-HttpListener'}
       Priority: !Ref LoadBalancerPriority
   LoadBalancerHttpsListenerRule:
     Condition: HasLoadBalancerHttps
@@ -309,8 +298,7 @@ Resources:
             Values:
             - !Ref LoadBalancerHostPattern
         - [] # neither LoadBalancerHostPattern nor LoadBalancerPath specified
-      ListenerArn:
-        'Fn::ImportValue': !Sub '${ParentClusterStack}-HttpsListener'
+      ListenerArn: {'Fn::ImportValue': !Sub '${ParentClusterStack}-HttpsListener'}
       Priority: !Ref LoadBalancerPriority
   ServiceRole:
     Type: 'AWS::IAM::Role'
@@ -327,8 +315,7 @@ Resources:
   Service:
     Type: 'AWS::ECS::Service'
     Properties:
-      Cluster:
-        'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'
+      Cluster: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 50
@@ -380,8 +367,7 @@ Resources:
       MinCapacity: !Ref MinCapacity
       ResourceId: !Sub
       - 'service/${Cluster}/${Service}'
-      - Cluster:
-          'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'
+      - Cluster: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
         Service: !GetAtt 'Service.Name'
       RoleARN: !GetAtt 'ScalableTargetRole.Arn'
       ScalableDimension: 'ecs:service:DesiredCount'
@@ -420,8 +406,7 @@ Resources:
       Namespace: 'AWS/ECS'
       Dimensions:
       - Name: ClusterName
-        Value:
-          'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'
+        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
       - Name: ServiceName
         Value: !GetAtt 'Service.Name'
       MetricName: CPUUtilization
@@ -431,7 +416,7 @@ Resources:
       EvaluationPeriods: 1
       Threshold: 80
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
   CPUUtilizationHighAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -439,8 +424,7 @@ Resources:
       Namespace: 'AWS/ECS'
       Dimensions:
       - Name: ClusterName
-        Value:
-          'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'
+        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
       - Name: ServiceName
         Value: !GetAtt 'Service.Name'
       MetricName: CPUUtilization
@@ -458,8 +442,7 @@ Resources:
       Namespace: 'AWS/ECS'
       Dimensions:
       - Name: ClusterName
-        Value:
-          'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'
+        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
       - Name: ServiceName
         Value: !GetAtt 'Service.Name'
       MetricName: CPUUtilization
@@ -482,16 +465,14 @@ Outputs:
     Value: !Sub '${AWS::StackName}'
   DNSName:
     Description: 'The DNS name for the ECS cluster/service load balancer.'
-    Value:
-      'Fn::ImportValue': !Sub '${ParentClusterStack}-DNSName'
+    Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-DNSName'}
     Export:
       Name: !Sub '${AWS::StackName}-DNSName'
   URL:
     Description: 'URL to the ECS service.' # TODO does not work with LoadBalancerHostPattern
     Value: !Sub
     - '${ClusterURL}/${LoadBalancerPath}/'
-    - ClusterURL:
-        'Fn::ImportValue': !Sub '${ParentClusterStack}-URL'
+    - ClusterURL: {'Fn::ImportValue': !Sub '${ParentClusterStack}-URL'}
       LoadBalancerPath: !Ref LoadBalancerPath
     Export:
       Name: !Sub '${AWS::StackName}-URL'

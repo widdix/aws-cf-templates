@@ -105,13 +105,11 @@ Resources:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
     Properties:
-      HostedZoneId:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       Name: !Sub
       - '${SubDomainNameWithDot}${HostedZoneName}'
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
       - !GetAtt 'DBCluster.Endpoint.Address'
       TTL: '60'
@@ -120,13 +118,11 @@ Resources:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
     Properties:
-      HostedZoneId:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       Name: !Sub
       - '${ReadSubDomainNameWithDot}${HostedZoneName}'
       - ReadSubDomainNameWithDot: !Ref ReadSubDomainNameWithDot
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
       - !GetAtt 'DBCluster.ReadEndpoint.Address'
       TTL: '60'
@@ -139,10 +135,8 @@ Resources:
       - IpProtocol: tcp
         FromPort: 3306
         ToPort: 3306
-        SourceSecurityGroupId:
-          'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+        SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
   ClusterSecurityGroupInSSHBastion:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasSSHBastionSecurityGroup
@@ -151,8 +145,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 3306
       ToPort: 3306
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
   Key:
     Condition: HasEncryptionAndNotDBSnapshotIdentifier
     Type: 'AWS::KMS::Key'
@@ -191,10 +184,7 @@ Resources:
     Type: 'AWS::RDS::DBSubnetGroup'
     Properties:
       DBSubnetGroupDescription: !Ref 'AWS::StackName'
-      SubnetIds: !Split
-      - ','
-      - 'Fn::ImportValue':
-          !Sub '${ParentVPCStack}-SubnetsPrivate'
+      SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
   DBClusterParameterGroup:
     Type: 'AWS::RDS::DBClusterParameterGroup'
     Properties:
@@ -230,7 +220,7 @@ Resources:
       Description: !Ref 'AWS::StackName'
       Family: 'aurora5.6'
       Parameters:
-        innodb_lock_wait_timeout: 10
+        innodb_lock_wait_timeout: '10'
         log_output: FILE
         tx_isolation: 'READ-COMMITTED'
   DBInstanceA:
@@ -260,7 +250,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average database CPU utilization over last 10 minutes too high.'
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
@@ -270,7 +260,7 @@ Resources:
       MetricName: CPUUtilization
       Namespace: 'AWS/RDS'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 80
@@ -279,7 +269,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average database CPU utilization over last 10 minutes too high.'
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
@@ -289,7 +279,7 @@ Resources:
       MetricName: CPUUtilization
       Namespace: 'AWS/RDS'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 80
@@ -298,7 +288,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average database CPU credit balance over last 10 minutes too low, expect a significant performance drop soon.'
       ComparisonOperator: LessThanThreshold
       Dimensions:
@@ -308,7 +298,7 @@ Resources:
       MetricName: CPUCreditBalance
       Namespace: 'AWS/RDS'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 20
@@ -317,7 +307,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average database CPU credit balance over last 10 minutes too low, expect a significant performance drop soon.'
       ComparisonOperator: LessThanThreshold
       Dimensions:
@@ -327,7 +317,7 @@ Resources:
       MetricName: CPUCreditBalance
       Namespace: 'AWS/RDS'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 20
@@ -336,7 +326,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average database freeable memory over last 10 minutes too low, performance may suffer.'
       ComparisonOperator: LessThanThreshold
       Dimensions:
@@ -346,7 +336,7 @@ Resources:
       MetricName: FreeableMemory
       Namespace: 'AWS/RDS'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 64000000 # 64 Megabyte in Byte
@@ -355,7 +345,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average database freeable memory over last 10 minutes too low, performance may suffer.'
       ComparisonOperator: LessThanThreshold
       Dimensions:
@@ -365,7 +355,7 @@ Resources:
       MetricName: FreeableMemory
       Namespace: 'AWS/RDS'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 64000000 # 64 Megabyte in Byte
@@ -377,8 +367,7 @@ Resources:
       - failover
       - failure
       - notification
-      SnsTopicArn:
-        'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      SnsTopicArn: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       SourceIds: [!Ref DBCluster]
       SourceType: 'db-cluster'
 Outputs:

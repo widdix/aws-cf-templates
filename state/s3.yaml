@@ -128,8 +128,7 @@ Resources:
       - HasS3VirusScan
       - QueueConfigurations:
         - Event: 's3:ObjectCreated:*'
-          Queue:
-            'Fn::ImportValue': !Sub '${ParentS3VirusScanStack}-ScanQueueArn'
+          Queue: {'Fn::ImportValue': !Sub '${ParentS3VirusScanStack}-ScanQueueArn'}
       - !Ref 'AWS::NoValue'
       VersioningConfiguration: !If [HasVersioning, {Status: Enabled}, !If [HadVersioning, {Status: Suspended}, !Ref 'AWS::NoValue']]
       BucketEncryption: !If [HasEncryption, {ServerSideEncryptionConfiguration: [{ServerSideEncryptionByDefault: {KMSMasterKeyID: !Ref Key, SSEAlgorithm: 'aws:kms'}}]}, !Ref 'AWS::NoValue']

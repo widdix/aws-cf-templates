@@ -167,13 +167,11 @@ Resources:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
     Properties:
-      HostedZoneId:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       Name: !Sub
       - '${SubDomainNameWithDot}${HostedZoneName}'
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
       - !Ref ElasticIP
       TTL: '60'
@@ -187,8 +185,7 @@ Resources:
     Properties:
       GroupSet:
       - !Ref SecurityGroup
-      SubnetId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-${SubnetName}'
+      SubnetId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-${SubnetName}'}
   EIPAssociation:
     Type: 'AWS::EC2::EIPAssociation'
     Properties:
@@ -202,8 +199,7 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: !Ref Name
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
   SecurityGroupInSSHBastion:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasSSHBastionSecurityGroup
@@ -212,8 +208,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 22
       ToPort: 22
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
   SecurityGroupInSSHWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasNotSSHBastionSecurityGroup
@@ -572,7 +567,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 80
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: InstanceId
         Value: !Ref VirtualMachine

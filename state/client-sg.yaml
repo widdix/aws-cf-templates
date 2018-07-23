@@ -30,8 +30,7 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: !Ref 'AWS::StackName'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'

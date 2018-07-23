@@ -72,13 +72,11 @@ Resources:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
     Properties:
-      HostedZoneId:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       Name: !Sub
       - '${SubDomainNameWithDot}${HostedZoneName}'
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
       - !GetAtt 'CacheCluster.ConfigurationEndpoint.Address'
       TTL: '60'
@@ -93,21 +91,17 @@ Resources:
     Type: 'AWS::ElastiCache::SubnetGroup'
     Properties:
       Description: !Ref 'AWS::StackName'
-      SubnetIds: !Split
-      - ','
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'
+      SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
   SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: !Ref 'AWS::StackName'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: 11211
         ToPort: 11211
-        SourceSecurityGroupId:
-          'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'
+        SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
   SecurityGroupInSSHBastion:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasSSHBastionSecurityGroup
@@ -116,8 +110,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 11211
       ToPort: 11211
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
   CacheCluster:
     Type: 'AWS::ElastiCache::CacheCluster'
     Properties:
@@ -138,7 +131,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average CPU utilization over last 10 minutes too high.'
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
@@ -148,7 +141,7 @@ Resources:
       MetricName: CPUUtilization
       Namespace: 'AWS/ElastiCache'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 80
@@ -157,7 +150,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average swap usage over last 10 minutes too high, performance may suffer.'
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
@@ -167,7 +160,7 @@ Resources:
       MetricName: SwapUsage
       Namespace: 'AWS/ElastiCache'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 256000000 # 256 Megabyte in Byte
@@ -176,7 +169,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Evictions over last 10 minutes too high, memory may to less for all keys.'
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
@@ -186,7 +179,7 @@ Resources:
       MetricName: Evictions
       Namespace: 'AWS/ElastiCache'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 60
       Statistic: Sum
       Threshold: 1000

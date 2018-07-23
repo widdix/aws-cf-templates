@@ -140,8 +140,7 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: !Sub '${AWS::StackName}-storage'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
       - SourceSecurityGroupId: !Ref SecurityGroup
         FromPort: 2049
@@ -167,7 +166,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 80
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: FileSystemId
         Value: !Ref Storage
@@ -184,7 +183,7 @@ Resources:
       ComparisonOperator: LessThanThreshold
       Threshold: 192416666667 # 192 GB in Bytes (last hour where you can burst at 100 MB/sec)
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: FileSystemId
         Value: !Ref Storage
@@ -194,27 +193,23 @@ Resources:
       FileSystemId: !Ref Storage
       SecurityGroups:
       - !Ref StorageSG
-      SubnetId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
+      SubnetId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'}
   StorageMountTargetB:
     Type: 'AWS::EFS::MountTarget'
     Properties:
       FileSystemId: !Ref Storage
       SecurityGroups:
       - !Ref StorageSG
-      SubnetId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      SubnetId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'}
   RecordSet:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
     Properties:
-      HostedZoneId:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       Name: !Sub
       - '${SubDomainNameWithDot}${HostedZoneName}'
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
       - !Ref EIP
       TTL: '60'
@@ -256,8 +251,7 @@ Resources:
         IpProtocol: udp
         FromPort: 4500
         ToPort: 4500
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
   SecurityGroupInSSHBastion:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Properties:
@@ -702,12 +696,11 @@ Resources:
       - - NotificationTypes:
           - 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR'
           - 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR'
-          TopicARN:
-            'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+          TopicARN: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       - []
       VPCZoneIdentifier:
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'}
+      - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'}
     CreationPolicy:
       ResourceSignal:
         Count: 1
@@ -735,7 +728,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 80
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: AutoScalingGroupName
         Value: !Ref AutoScalingGroup

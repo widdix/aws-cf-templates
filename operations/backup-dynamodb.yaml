@@ -96,6 +96,7 @@ Resources:
     Type: 'AWS::DataPipeline::Pipeline'
     Properties:
       Name: !Ref 'AWS::StackName'
+      ParameterObjects: []
       PipelineObjects:
       - Id: Failure
         Name: Failure
@@ -103,8 +104,7 @@ Resources:
         - Key: type
           StringValue: SnsAlarm
         - Key: topicArn
-          StringValue:
-            'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+          StringValue: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
         - Key: subject
           StringValue: !Sub 'DynamoDB backup failure in ${AWS::StackName}'
         - Key: message
@@ -121,7 +121,7 @@ Resources:
         - Key: coreInstanceType
           StringValue: !Ref InstanceType
         - Key: coreInstanceCount
-          StringValue: 1
+          StringValue: '1'
         - Key: masterInstanceType
           StringValue: !Ref InstanceType
         - Key: amiVersion
@@ -131,13 +131,12 @@ Resources:
         - Key: resourceRole
           StringValue: !Ref DataPipelineDefaultResourceInstanceProfile
         - Key: subnetId
-          StringValue:
-            'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
+          StringValue: {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'}
       - Id: TableBackupActivity
         Name: TableBackupActivity
         Fields:
         - Key: resizeClusterBeforeRunning
-          StringValue: true
+          StringValue: 'true'
         - Key: step
           StringValue: !Sub 's3://dynamodb-emr-${AWS::Region}/emr-ddb-storage-handler/2.1.0/emr-ddb-2.1.0.jar,org.apache.hadoop.dynamodb.tools.DynamoDbExport,#{output.directoryPath},#{input.tableName},#{input.readThroughputPercent}'
         - Key: input
@@ -147,7 +146,7 @@ Resources:
         - Key: type
           StringValue: EmrActivity
         - Key: maximumRetries
-          StringValue: 2
+          StringValue: '2'
         - Key: runsOn
           RefValue: EmrClusterForBackup
       - Id: DefaultSchedule

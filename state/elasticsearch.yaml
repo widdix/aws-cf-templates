@@ -105,13 +105,11 @@ Resources:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
     Properties:
-      HostedZoneId:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       Name: !Sub
       - '${SubDomainNameWithDot}${HostedZoneName}'
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
       - !GetAtt 'ElasticsearchDomain.DomainEndpoint'
       TTL: '60'
@@ -124,10 +122,8 @@ Resources:
       - IpProtocol: tcp
         FromPort: 443
         ToPort: 443
-        SourceSecurityGroupId:
-          'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+        SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
   SecurityGroupInSSHBastion:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasSSHBastionSecurityGroup
@@ -136,8 +132,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
   Key:
     Condition: HasEncryption
     Type: 'AWS::KMS::Key'
@@ -205,15 +200,15 @@ Resources:
         - !Ref SecurityGroup
         SubnetIds: !If
         - HasSingleClusterInstance
-        - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'
-        - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'
-          - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'
+        - - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'}
+        - - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'}
+          - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'}
   ClusterStatusYellowAlarm:
     Condition: HasAlertTopicAndNotSingleClusterInstance
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Replica shards for at least one index are not allocated to nodes in a cluster.'
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
@@ -225,7 +220,7 @@ Resources:
       MetricName: 'ClusterStatus.yellow'
       Namespace: 'AWS/ES'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 60
       Statistic: Maximum
       Threshold: 0
@@ -234,7 +229,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Primary and replica shards of at least one index are not allocated to nodes in a cluster.'
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
@@ -246,7 +241,7 @@ Resources:
       MetricName: 'ClusterStatus.red'
       Namespace: 'AWS/ES'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 60
       Statistic: Maximum
       Threshold: 0
@@ -255,7 +250,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average CPU utilization over last 10 minutes too high.'
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
@@ -267,7 +262,7 @@ Resources:
       MetricName: 'CPUUtilization'
       Namespace: 'AWS/ES'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 80
@@ -276,7 +271,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average CPU credit balance over last 10 minutes too low, expect a significant performance drop soon.'
       ComparisonOperator: LessThanThreshold
       Dimensions:
@@ -288,7 +283,7 @@ Resources:
       MetricName: CPUCreditBalance
       Namespace: 'AWS/ES'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 20
@@ -297,7 +292,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average CPU utilization over last 10 minutes too high.'
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
@@ -309,7 +304,7 @@ Resources:
       MetricName: 'MasterCPUUtilization'
       Namespace: 'AWS/ES'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 50
@@ -318,7 +313,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average CPU credit balance over last 10 minutes too low, expect a significant performance drop soon.'
       ComparisonOperator: LessThanThreshold
       Dimensions:
@@ -330,7 +325,7 @@ Resources:
       MetricName: MasterCPUCreditBalance
       Namespace: 'AWS/ES'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 20
@@ -339,7 +334,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Cluster is running out of storage space.'
       ComparisonOperator: LessThanThreshold
       Dimensions:
@@ -351,7 +346,7 @@ Resources:
       MetricName: 'FreeStorageSpace'
       Namespace: 'AWS/ES'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 60
       Statistic: Minimum
       Threshold: 2000 # 2 Gigabyte in Megabyte
@@ -360,7 +355,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Cluster is blocking incoming write requests.'
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
@@ -372,7 +367,7 @@ Resources:
       MetricName: 'ClusterIndexWritesBlocked'
       Namespace: 'AWS/ES'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 60
       Statistic: Maximum
       Threshold: 0
@@ -381,7 +376,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average JVM memory pressure over last 10 minutes too high.'
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
@@ -393,7 +388,7 @@ Resources:
       MetricName: 'JVMMemoryPressure'
       Namespace: 'AWS/ES'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 80
@@ -402,7 +397,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average JVM memory pressure over last 10 minutes too high.'
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
@@ -414,7 +409,7 @@ Resources:
       MetricName: 'MasterJVMMemoryPressure'
       Namespace: 'AWS/ES'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 80
@@ -423,7 +418,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Master node stopped or not reachable. Usually the result of a network connectivity issue or AWS dependency problem.'
       ComparisonOperator: LessThanThreshold
       Dimensions:
@@ -435,7 +430,7 @@ Resources:
       MetricName: 'MasterReachableFromNode'
       Namespace: 'AWS/ES'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 60
       Statistic: Minimum
       Threshold: 1
@@ -444,7 +439,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'No automated snapshot was taken for the domain in the previous 36 hours.'
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
@@ -456,7 +451,7 @@ Resources:
       MetricName: 'AutomatedSnapshotFailure'
       Namespace: 'AWS/ES'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 60
       Statistic: Maximum
       Threshold: 0
@@ -465,7 +460,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Kibana is inaccessible.'
       ComparisonOperator: LessThanThreshold
       Dimensions:
@@ -477,7 +472,7 @@ Resources:
       MetricName: 'KibanaHealthyNodes'
       Namespace: 'AWS/ES'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 60
       Statistic: Minimum
       Threshold: 1
@@ -486,7 +481,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'KMS customer master key used to encrypt data at rest has been disabled.'
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
@@ -498,7 +493,7 @@ Resources:
       MetricName: 'KMSKeyError'
       Namespace: 'AWS/ES'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 60
       Statistic: Maximum
       Threshold: 0
@@ -507,7 +502,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'KMS customer master key used to encrypt data at rest has been deleted or revoked its grants to Amazon ES.'
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
@@ -519,7 +514,7 @@ Resources:
       MetricName: 'KMSKeyInaccessible'
       Namespace: 'AWS/ES'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 60
       Statistic: Maximum
       Threshold: 0

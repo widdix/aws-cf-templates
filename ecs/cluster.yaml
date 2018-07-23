@@ -322,8 +322,7 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: 'ecs-cluster-alb'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
   ALBSecurityGroupInHttpWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasNotAuthProxySecurityGroup
@@ -350,8 +349,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 80
       ToPort: 80
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
   ALBSecurityGroupInHttpsAuthProxy:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasAuthProxySecurityGroupAndLoadBalancerCertificateArn
@@ -360,14 +358,12 @@ Resources:
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
   SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: 'ecs-cluster'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
       - SourceSecurityGroupId: !Ref ALBSecurityGroup
         FromPort: 0
@@ -381,8 +377,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 22
       ToPort: 22
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
   SecurityGroupInSSHWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasNotSSHBastionSecurityGroup
@@ -405,7 +400,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
@@ -424,7 +419,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
@@ -443,7 +438,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
@@ -462,7 +457,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
@@ -476,19 +471,13 @@ Resources:
       - !Ref ALBSecurityGroup
       Subnets: !If
       - HasLoadBalancerSchemeInternal
-      - !Split
-        - ','
-        - 'Fn::ImportValue':
-            !Sub '${ParentVPCStack}-SubnetsPrivate'
-      - !Split
-        - ','
-        - 'Fn::ImportValue':
-            !Sub '${ParentVPCStack}-SubnetsPublic'
+      - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
+      - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPublic'}]
   DefaultTargetGroup: # this is used as the fall-back target group and is used to health checking the ECS agent. Services use their own ListenerRules to accept traffic based on path prefixes.
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
       HealthCheckIntervalSeconds: 15
-      HealthCheckPort: 51678
+      HealthCheckPort: '51678'
       HealthCheckPath: '/'
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 10
@@ -498,11 +487,10 @@ Resources:
         HttpCode: '200-299'
       Port: 80 # port 80 is a reserved port that is never used by the agent, so we are safe to use it here
       Protocol: HTTP
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       TargetGroupAttributes:
       - Key: 'deregistration_delay.timeout_seconds'
-        Value: 0
+        Value: '0'
   HttpListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
@@ -919,13 +907,9 @@ Resources:
       - - NotificationTypes:
           - 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR'
           - 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR'
-          TopicARN:
-            'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      - !Ref 'AWS::NoValue'
-      VPCZoneIdentifier: !Split
-      - ','
-      - 'Fn::ImportValue':
-          !Sub '${ParentVPCStack}-Subnets${SubnetsReach}'
+          TopicARN: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      - []
+      VPCZoneIdentifier: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-Subnets${SubnetsReach}'}]
       Tags:
       - Key: Name
         Value: 'ecs-cluster'
@@ -956,7 +940,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 80
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: AutoScalingGroupName
         Value: !Ref AutoScalingGroup
@@ -981,7 +965,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 600
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: QueueName
         Value: !GetAtt 'AutoScalingGroupLifecycleHookQueue.QueueName'
@@ -1002,7 +986,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: QueueName
         Value: !GetAtt 'AutoScalingGroupLifecycleHookDeadLetterQueue.QueueName'
@@ -1045,7 +1029,7 @@ Resources:
       AdjustmentType: PercentChangeInCapacity
       MinAdjustmentMagnitude: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
-      Cooldown: 600
+      Cooldown: '600'
       ScalingAdjustment: 25
   ScaleDownPolicy:
     Type: 'AWS::AutoScaling::ScalingPolicy'
@@ -1053,7 +1037,7 @@ Resources:
       AdjustmentType: PercentChangeInCapacity
       MinAdjustmentMagnitude: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
-      Cooldown: 600
+      Cooldown: '600'
       ScalingAdjustment: -25
   ContainerInstancesShortageAlarm:
     Type: 'AWS::CloudWatch::Alarm'
@@ -1103,7 +1087,7 @@ Resources:
       EvaluationPeriods: 1
       Threshold: 90
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
   CPUUtilizationTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -1120,7 +1104,7 @@ Resources:
       EvaluationPeriods: 1
       Threshold: 80
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
   MemoryReservationTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -1137,7 +1121,7 @@ Resources:
       EvaluationPeriods: 1
       Threshold: 90
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
   MemoryUtilizationTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -1154,7 +1138,7 @@ Resources:
       EvaluationPeriods: 1
       Threshold: 80
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
   # scaling based on SchedulableContainers is described in detail here: http://garbe.io/blog/2017/04/12/a-better-solution-to-ecs-autoscaling/
   SchedulableContainersRule:
     Type: 'AWS::Events::Rule'
@@ -1181,7 +1165,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: RuleName
         Value: !Ref SchedulableContainersRule
@@ -1206,7 +1190,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: RuleName
         Value: !Ref SchedulableContainersCron
@@ -1347,7 +1331,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: FunctionName
         Value: !Ref SchedulableContainersLambdaV2
@@ -1364,7 +1348,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: FunctionName
         Value: !Ref SchedulableContainersLambdaV2
@@ -1406,8 +1390,7 @@ Outputs:
       Name: !Sub '${AWS::StackName}-CanonicalHostedZoneID'
   VPC:
     Description: 'VPC of ECS cluster.'
-    Value:
-      'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+    Value: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
     Export:
       Name: !Sub '${AWS::StackName}-VPC'
   SecurityGroup:
