@@ -28,6 +28,7 @@ Metadata:
       - Access
       - Versioning
       - NoncurrentVersionExpirationInDays
+      - ExpirationInDays
       - Encryption
 Parameters:
   ParentS3VirusScanStack:
@@ -42,7 +43,7 @@ Parameters:
     Description: 'Access policy of the bucket.'
     Type: String
     Default: Private
-    AllowedValues: [Private, PublicRead, CloudFrontRead]
+    AllowedValues: [Private, PublicRead, CloudFrontRead, ElbAccessLogWrite]
   Versioning:
     Description: 'Enable versioning to keep a backup if objects change.'
     Type: String
@@ -50,6 +51,11 @@ Parameters:
     AllowedValues: [true, false, 'false-but-was-true']
   NoncurrentVersionExpirationInDays:
     Description: 'Remove noncurrent object versions after days (set to 0 to disable).'
+    Type: Number
+    Default: 0
+    MinValue: 0
+  ExpirationInDays:
+    Description: 'Remove objects after days (set to 0 to disable).'
     Type: Number
     Default: 0
     MinValue: 0
@@ -62,12 +68,14 @@ Conditions:
   HasS3VirusScan: !Not [!Equals [!Ref ParentS3VirusScanStack, '']]
   HasPublicReadAccess: !Equals [!Ref Access, PublicRead]
   HasCloudFrontReadAccess: !Equals [!Ref Access, CloudFrontRead]
+  HasElbAccessLogWriteAccess: !Equals [!Ref Access, ElbAccessLogWrite]
   HasBucketName: !Not [!Equals [!Ref BucketName, '']]
   HasVersioning: !Equals [!Ref Versioning, true]
   HadVersioning: !Equals [!Ref Versioning, 'false-but-was-true']
   HasNoncurrentVersionExpirationInDays: !Not [!Equals [!Ref NoncurrentVersionExpirationInDays, 0]]
+  HasExpirationInDays: !Not [!Equals [!Ref ExpirationInDays, 0]]
   HasEncryption: !Equals [!Ref Encryption, true]
-  NeedsBucketPolicy: !Or [!Condition HasPublicReadAccess, !Condition HasCloudFrontReadAccess, !Condition HasEncryption]
+  NeedsBucketPolicy: !Or [!Condition HasPublicReadAccess, !Condition HasCloudFrontReadAccess, !Condition HasEncryption, !Condition HasElbAccessLogWriteAccess]
 Resources:
   Key:
     Condition: HasEncryption
@@ -124,6 +132,8 @@ Resources:
           Status: Enabled
         - NoncurrentVersionExpirationInDays: !If [HasNoncurrentVersionExpirationInDays, !Ref NoncurrentVersionExpirationInDays, 1]
           Status: !If [HasNoncurrentVersionExpirationInDays, Enabled, Disabled]
+        - ExpirationInDays: !If [HasExpirationInDays, !Ref ExpirationInDays, 1]
+          Status: !If [HasExpirationInDays, Enabled, Disabled]
       NotificationConfiguration: !If
       - HasS3VirusScan
       - QueueConfigurations:
@@ -151,6 +161,30 @@ Resources:
           - Principal:
               CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
             Action: 's3:GetObject'
+            Effect: Allow
+            Resource: !Sub '${Bucket.Arn}/*'
+          - !Ref 'AWS::NoValue'
+        - !If
+          - HasElbAccessLogWriteAccess
+          - Principal:
+              AWS: # https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html#access-logging-bucket-permissions
+              - '127311923021' # us-east-1
+              - '033677994240' # us-east-2
+              - '027434742980' # us-west-1
+              - '797873946194' # us-west-2
+              - '985666609251' # ca-central-1
+              - '054676820928' # eu-central-1
+              - '156460612806' # eu-west-1
+              - '652711504416' # eu-west-2
+              - '009996457667' # eu-west-3
+              - '582318560864' # ap-northeast-1
+              - '600734575887' # ap-northeast-2
+              - '383597477331' # ap-northeast-3
+              - '114774131450' # ap-southeast-1
+              - '783225319266' # ap-southeast-2
+              - '718504428378' # ap-south-1
+              - '507241528517' # sa-east-1
+            Action: 's3:PutObject'
             Effect: Allow
             Resource: !Sub '${Bucket.Arn}/*'
           - !Ref 'AWS::NoValue'
