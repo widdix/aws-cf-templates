@@ -11,7 +11,7 @@ Your source for free [AWS CloudFormation](https://aws.amazon.com/cloudformation/
     * Scalable: increase or decrease the capacity based on utilization
     * Frictionless deployment: deliver new versions of your application automatically without downtime
     * Secure: using the latest operating systems and software components, follow the least privilege principle in all areas, backups enabled
-    * Operations friendly: provide tools like logging, monitoring and alerting to recognize and debug problems
+    * Operator-friendly: provide tools like logging, monitoring and alerting to recognize and debug problems
 * Premium Support available: Get help in case of small and big emergencies and submit a feature request.
 
 # Related projects
