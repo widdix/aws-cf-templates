@@ -143,7 +143,7 @@ If you want to use an external S3 bucket, the bucket needs to have the following
         ]
       },
       "Action": "s3:GetBucketAcl",
-      "Resource": "arn:aws:s3:::$ExternalTrailBucket"
+      "Resource": "arn:aws:s3:::$ExternalConfigBucket"
     },
     {
       "Sid": " AWSConfigBucketDelivery",
