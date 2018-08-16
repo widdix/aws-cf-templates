@@ -29,6 +29,7 @@ Metadata:
         default: 'CloudFront Parameters'
       Parameters:
       - DefaultRootObject
+      - DefaultErrorPagePath
     - Label:
         default: 'DNS Parameters'
       Parameters:
@@ -56,6 +57,10 @@ Parameters:
     Description: 'The name of the index document for the website (ignored when LambdaEdgeSubdirectoriesVersionArn is set).'
     Type: String
     Default: 'index.html'
+  DefaultErrorPagePath:
+    Description: 'The path of the error page for the website (e.g. /error.html).'
+    Type: String
+    Default: ''
   EnableRedirectSubDomainName:
     Description: 'Sometimes, you want one (sub)domain to redirect to the primary name. E.g., if your primary website is www.widdix.net, you want widdix.net to redirect to www.widdix.net.'
     Type: String
@@ -83,6 +88,7 @@ Conditions:
   HasIamCertificateId: !Equals [!Ref CertificateType, 'IamCertificateId']
   HasCreateAcmCertificate: !Equals [!Ref CertificateType, 'CreateAcmCertificate']
   HasLambdaEdgeSubdirectoriesVersionArn: !Not [!Equals [!Ref LambdaEdgeSubdirectoriesVersionArn, '']]
+  HasDefaultErrorPagePath: !Not [!Equals [!Ref DefaultErrorPagePath, '']]
 Resources:
   Certificate:
     Condition: HasCreateAcmCertificate
@@ -173,6 +179,12 @@ Resources:
         - '${SubDomainNameWithDot}${HostedZoneName}'
         - SubDomainNameWithDot: !Ref SubDomainNameWithDot
           HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+        CustomErrorResponses: !If
+        - HasDefaultErrorPagePath
+        - - ErrorCode: 403 # not found
+            ResponseCode: 404
+            ResponsePagePath: !Ref DefaultErrorPagePath
+        - []
         DefaultCacheBehavior:
           AllowedMethods:
           - GET
