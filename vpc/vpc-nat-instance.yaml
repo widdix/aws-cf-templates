@@ -86,35 +86,35 @@ Parameters:
 Mappings:
   RegionMap: # TODO update to Amazon Linux 2 (don't forget to adjust awslogs config as well)
     'ap-south-1':
-      NATAMI: 'ami-7fd5f610'
+      NATAMI: 'ami-0aba92643213491b9'
     'eu-west-3':
-      NATAMI: 'ami-519c2d2c'
+      NATAMI: 'ami-0050bb60cea70c5b3'
     'eu-west-2':
-      NATAMI: 'ami-756d8f12'
+      NATAMI: 'ami-e6768381'
     'eu-west-1':
-      NATAMI: 'ami-650c381c'
+      NATAMI: 'ami-0ea87e2bfa81ca08a'
     'ap-northeast-2':
-      NATAMI: 'ami-8e0fa6e0'
+      NATAMI: 'ami-08cfa02141f9e9bee'
     'ap-northeast-1':
-      NATAMI: 'ami-cdd63eb2'
+      NATAMI: 'ami-0cf78ae724f63bac0'
     'sa-east-1':
-      NATAMI: 'ami-0b81dc67'
+      NATAMI: 'ami-09c013530239687aa'
     'ca-central-1':
-      NATAMI: 'ami-e3890987'
+      NATAMI: 'ami-b61b96d2'
     'ap-southeast-1':
-      NATAMI: 'ami-3093a64c'
+      NATAMI: 'ami-0cf24653bcf894797'
     'ap-southeast-2':
-      NATAMI: 'ami-943cebf6'
+      NATAMI: 'ami-00c1445796bc0a29f'
     'eu-central-1':
-      NATAMI: 'ami-0097b5eb'
+      NATAMI: 'ami-06465d49ba60cf770'
     'us-east-1':
-      NATAMI: 'ami-54ca472b'
+      NATAMI: 'ami-0422d936d535c63b1'
     'us-east-2':
-      NATAMI: 'ami-882914ed'
+      NATAMI: 'ami-0f9c61b5a562a16af'
     'us-west-1':
-      NATAMI: 'ami-1a0e107a'
+      NATAMI: 'ami-0d4027d2cdbca669d'
     'us-west-2':
-      NATAMI: 'ami-78502100'
+      NATAMI: 'ami-40d1f038'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
