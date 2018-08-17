@@ -186,7 +186,7 @@ Resources:
               - '507241528517' # sa-east-1
             Action: 's3:PutObject'
             Effect: Allow
-            Resource: !Sub '${Bucket.Arn}/*'
+            Resource: !Sub '${Bucket.Arn}/*AWSLogs/${AWS::AccountId}/*'
           - !Ref 'AWS::NoValue'
         - !If
           - HasEncryption
