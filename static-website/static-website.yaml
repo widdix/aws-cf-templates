@@ -270,3 +270,8 @@ Outputs:
       HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
     Export:
       Name: !Sub '${AWS::StackName}-URL'
+  DistributionId:
+    Description: 'CloudFront distribution id'
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: !Sub '${AWS::StackName}-DistributionId'
