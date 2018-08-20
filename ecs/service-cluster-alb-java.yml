@@ -178,6 +178,10 @@ Resources:
         HttpCode: '200-299'
       Port: 80
       Protocol: HTTP
+      Tags: 
+        - 
+          Key: "Service"
+          Value: !Ref 'AWS::StackName'
       VpcId: {'Fn::ImportValue': !Sub '${ParentClusterStack}-VPC'}
       TargetGroupAttributes:
       - Key: deregistration_delay.timeout_seconds

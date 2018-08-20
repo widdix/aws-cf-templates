@@ -128,6 +128,10 @@ Resources:
         - ContainerPort: 80 # if you change this, you also must change the AWS::ECS::Service
           Protocol: tcp
         Essential: true
+        Ulimits:
+          - Name: 'nofile'
+            SoftLimit: 262144
+            HardLimit: 262144
         LogConfiguration:
           LogDriver: awslogs
           Options:
@@ -187,7 +191,7 @@ Resources:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
       HealthCheckIntervalSeconds: 15
-      HealthCheckPath: '/'
+      HealthCheckPath: '/version.txt'
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 10
       HealthyThresholdCount: 2
@@ -196,6 +200,10 @@ Resources:
         HttpCode: '200-299'
       Port: 80
       Protocol: HTTP
+      Tags: 
+        - 
+          Key: "Service"
+          Value: !Ref 'AWS::StackName'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       TargetGroupAttributes:
       - Key: deregistration_delay.timeout_seconds
