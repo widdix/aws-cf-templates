@@ -40,6 +40,7 @@ Metadata:
       Parameters:
       - Image
       - EnvValue
+      - RamValue
       - DesiredCount
       - MaxCapacity
       - MinCapacity
@@ -98,6 +99,14 @@ Parameters:
     AllowedValues:
     - stage
     - production
+  RamValue:
+    Description: 'container memory'
+    Type: Number
+    Default: 512
+    AllowedValues:
+    - 512
+    - 768
+    - 1024
   DesiredCount:
     Description: 'The number of simultaneous tasks, that you want to run on the cluster.'
     Type: Number
@@ -136,7 +145,7 @@ Resources:
       ContainerDefinitions:
       - Name: main # if you change this, you also must change the AWS::ECS::Service
         Image: !Ref Image
-        Memory: 512
+        Memory: !Ref RamValue
         PortMappings:
         - ContainerPort: 8080 # if you change this, you also must change the AWS::ECS::Service
           Protocol: tcp
