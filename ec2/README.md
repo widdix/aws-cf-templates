@@ -1,6 +1,6 @@
 # EC2 Templates for AWS CloudFormation
 
-Find the documentation here: http://templates.cloudonaut.io/en/stable/ec2/
+Find the documentation here: https://templates.cloudonaut.io/en/stable/ec2/
 
 ## Developer notes
 

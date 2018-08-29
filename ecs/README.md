@@ -1,6 +1,6 @@
 # ECS Templates for AWS CloudFormation
 
-Find the documentation here: http://templates.cloudonaut.io/en/stable/ecs/
+Find the documentation here: https://templates.cloudonaut.io/en/stable/ecs/
 
 ## Developer notes
 

@@ -1,6 +1,6 @@
 # Jenkins Templates for AWS CloudFormation
 
-Find the documentation here: http://templates.cloudonaut.io/en/stable/jenkins/
+Find the documentation here: https://templates.cloudonaut.io/en/stable/jenkins/
 
 ## Developer notes
 
