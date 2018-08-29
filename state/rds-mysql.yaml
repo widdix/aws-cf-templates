@@ -130,8 +130,8 @@ Resources:
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
       - IpProtocol: tcp
-        FromPort: 5432
-        ToPort: 5432
+        FromPort: 3306
+        ToPort: 3306
         SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
   DatabaseSecurityGroupInSSHBastion:
     Type: 'AWS::EC2::SecurityGroupIngress'
@@ -139,8 +139,8 @@ Resources:
     Properties:
       GroupId: !Ref DatabaseSecurityGroup
       IpProtocol: tcp
-      FromPort: 5432
-      ToPort: 5432
+      FromPort: 3306
+      ToPort: 3306
       SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
   Key:
     Condition: HasEncryptionAndNotDBSnapshotIdentifier
