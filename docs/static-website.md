@@ -13,7 +13,35 @@ S3 and CloudFront behave differently when it comes to index document support in 
 
 ### S3 Website Hosting behavior with Index Document (not provided by the template!)
 
+| Resource             | Response                   | Comment                                                                                     |
+| -------------------- | -------------------------- | ------------------------------------------------------------------------------------------- |
+| `/`                  | 200 Content of index.html  |                                                                                             |
+| `/index.html`        | 200 Content of index.html  | Not SEO friendly because of duplicate content on `/`, should redirect to `/`                |
+| `/folder`            | 302 Redirect to `/folder/` |                                                                                             |
+| `/folder/`           | 200 Content of index.html  |                                                                                             |
+| `/folder/index.html` | 200 Content of index.html  | Not SEO friendly because of duplicate content on `/folder/`, should redirect to `/folder/`  |
 
+### CloudFront with Default Root Object (provided by the template static-website.yaml template!)
+
+| Resource             | Response                   | Comment                                                                                     |
+| -------------------- | -------------------------- | ------------------------------------------------------------------------------------------- |
+| `/`                  | 200 Content of index.html  |                                                                                             |
+| `/index.html`        | 200 Content of index.html  | Not SEO friendly because of duplicate content on `/`, should redirect to `/`                |
+| `/folder`            | 403 Error                  | Not user friendly                                                                           |
+| `/folder/`           | 403 Error                  | Not user friendly                                                                           |
+| `/folder/index.html` | 200 Content of index.html  | Not user friendly                                                                           |
+
+### Lambda@Edge solution (provided by the template static-website.yaml and lambdaedge-index-document.yaml template!)
+
+To improve the default CloudFront behavior, we developed a Lambda@Edge solution that gives you the following search engine optimized result.
+
+| Resource             | Response                   |
+| -------------------- | -------------------------- |
+| `/`                  | 200 Content of index.html  |
+| `/index.html`        | 302 Redirect to `/`        |
+| `/folder`            | 302 Redirect to `/folder/` |
+| `/folder/`           | 200 Content of index.html  |
+| `/folder/index.html` | 302 Redirect to `/folder/` |
 
 ## Installation Guide
 
