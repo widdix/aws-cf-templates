@@ -756,7 +756,7 @@ Resources:
               httpd: []
           files:
             '/root/php.sh':
-              content: !Sub |
+              content: |
                 #!/bin/bash -ex
                 sed -i 's/max_execution_time = 30/max_execution_time = 300/' /etc/php.ini
                 sed -i 's/max_input_time = 60/max_input_time = 300/' /etc/php.ini
@@ -777,7 +777,7 @@ Resources:
               owner: root
               group: root
             '/etc/httpd/conf.d/wordpress.conf':
-              content: !Sub |
+              content: |
                 <Directory "/var/www/html">
                 Options Indexes FollowSymLinks
                 AllowOverride All
