@@ -154,35 +154,35 @@ Parameters:
 Mappings:
   RegionMap: # TODO update to Amazon Linux 2 (don't forget to adjust awslogs config as well)
     'ap-south-1':
-      ECSAMI: 'ami-0c814df738f3c9fd5'
+      ECSAMI: 'ami-056a07eb5b1d13734'
     'eu-west-3':
-      ECSAMI: 'ami-0e4185127a627bbac'
+      ECSAMI: 'ami-024c0b7d07abc6526'
     'eu-west-2':
-      ECSAMI: 'ami-c3ea1fa4'
+      ECSAMI: 'ami-005307409c5f6e76c'
     'eu-west-1':
-      ECSAMI: 'ami-0612d1ef7f8e72c06'
+      ECSAMI: 'ami-0dbcd2533bc72c3f6'
     'ap-northeast-2':
-      ECSAMI: 'ami-02b0706448bd6fb5e'
+      ECSAMI: 'ami-0060ad36f655af38b'
     'ap-northeast-1':
-      ECSAMI: 'ami-256c15c8'
+      ECSAMI: 'ami-0d5f884dada5562c6'
     'sa-east-1':
-      ECSAMI: 'ami-085384d0e5fd5ae0a'
+      ECSAMI: 'ami-0078e33a9103e1e58'
     'ca-central-1':
-      ECSAMI: 'ami-cf60edab'
+      ECSAMI: 'ami-0d50dee936e241e7e'
     'ap-southeast-1':
-      ECSAMI: 'ami-0e1566e9c8eb85002'
+      ECSAMI: 'ami-065c0bd2832a70f9d'
     'ap-southeast-2':
-      ECSAMI: 'ami-df49e9bd'
+      ECSAMI: 'ami-0aa8b7a8042811ddf'
     'eu-central-1':
-      ECSAMI: 'ami-c7e9e72c'
+      ECSAMI: 'ami-03804565a6baf6d30'
     'us-east-1':
-      ECSAMI: 'ami-112e366e'
+      ECSAMI: 'ami-0254e5972ebcd132c'
     'us-east-2':
-      ECSAMI: 'ami-0e65e665ff5f3fc5f'
+      ECSAMI: 'ami-0a0d2004b44b9287c'
     'us-west-1':
-      ECSAMI: 'ami-dd0de2be'
+      ECSAMI: 'ami-0de5608ca20c07aa2'
     'us-west-2':
-      ECSAMI: 'ami-a1f8dfd9'
+      ECSAMI: 'ami-093381d21a4fc38d1'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
