@@ -584,6 +584,11 @@ Resources:
                 log_group_name = /var/log/ecs/ecs-init.log
                 log_stream_name = {instance_id}/var/log/ecs/ecs-init.log
                 datetime_format = %Y-%m-%dT%H:%M:%SZ
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/config/ecs.conf':
+              content: !Sub |
                 [/var/log/ecs/ecs-agent.log]
                 file = /var/log/ecs/ecs-agent.log.*
                 log_stream_name = {instance_id}/var/log/ecs/ecs-agent.log
@@ -603,6 +608,7 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
+                - '/etc/awslogs/config/ecs.conf'
         ssh-access:
           packages:
             yum:
