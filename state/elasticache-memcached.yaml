@@ -232,7 +232,7 @@ Resources:
       LogGroupName: !Sub '/aws/lambda/${CustomResourceLambdaFunction}'
       RetentionInDays: !Ref LogsRetentionInDays
   PreferredAvailabilityZonesSelector:
-    Type: 'Custom::PasswordPolicy'
+    Type: 'Custom::PreferredAvailabilityZonesSelector'
     DependsOn: CustomResourceLambdaLogGroup
     Version: '1.0'
     Properties:
