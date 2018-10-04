@@ -324,10 +324,15 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-AZC'
   ClassB:
-    Description: 'Class B.'
+    Description: 'Deprecated in v7, will be removed in v8, use CidrBlock instead! Class B.'
     Value: !Ref ClassB
     Export:
       Name: !Sub '${AWS::StackName}-ClassB'
+  CidrBlock:
+    Description: 'The set of IP addresses for the VPC.'
+    Value: !GetAtt 'VPC.CidrBlock'
+    Export:
+      Name: !Sub '${AWS::StackName}-CidrBlock'
   VPC:
     Description: 'VPC.'
     Value: !Ref VPC
@@ -343,16 +348,6 @@ Outputs:
     Value: !Join [',', [!Ref SubnetAPrivate, !Ref SubnetBPrivate, !Ref SubnetCPrivate]]
     Export:
       Name: !Sub '${AWS::StackName}-SubnetsPrivate'
-  RouteTablePrivate: # deprecated in v4, will be removed in v5
-    Description: 'Route table private (deprecated in v4, will be removed in v5).'
-    Value: !Ref RouteTablePrivate
-    Export:
-      Name: !Sub '${AWS::StackName}-RouteTablePrivate'
-  RouteTablePublic: # deprecated in v4, will be removed in v5
-    Description: 'Route table public (deprecated in v4, will be removed in v5).'
-    Value: !Ref RouteTablePublic
-    Export:
-      Name: !Sub '${AWS::StackName}-RouteTablePublic'
   RouteTablesPrivate:
     Description: 'Route tables private.'
     Value: !Join [',', [!Ref RouteTablePrivate, !Ref RouteTableBPrivate, !Ref RouteTableCPrivate]]

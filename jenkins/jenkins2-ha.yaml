@@ -26,15 +26,12 @@ Metadata:
       - ParentAlertStack
       - ParentZoneStack
     - Label:
-        default: 'Jenkins Parameters'
-      Parameters:
-      - JenkinsVersion
-    - Label:
         default: 'EC2 Parameters'
       Parameters:
       - KeyName
       - IAMUserSSHAccess
-      - SubDomainName
+      - SystemsManagerAccess
+      - SubDomainNameWithDot
     - Label:
         default: 'Master Parameters'
       Parameters:
@@ -48,7 +45,7 @@ Parameters:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
   ParentSSHBastionStack:
-    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-*-bastion.yaml template.'
     Type: String
     Default: ''
   ParentAuthProxyStack:
@@ -74,6 +71,13 @@ Parameters:
     AllowedValues:
     - true
     - false
+  SystemsManagerAccess:
+    Description: 'Enable AWS Systems Manager agent and authorization.'
+    Type: String
+    Default: true
+    AllowedValues:
+    - true
+    - false
   MasterSubnetsReach:
     Description: 'Should the master have direct access to the Internet or do you prefer private subnets with NAT?'
     Type: String
@@ -93,7 +97,7 @@ Parameters:
     Type: String
     Default: 't2.micro'
   MasterAdminPassword:
-    Description: 'A password for the Jenkins master admin. MUST NOT BE CHANGED!'
+    Description: 'A password for the Jenkins master admin. Must not be changed!'
     Type: String
     NoEcho: true
     MinLength: 8
@@ -110,49 +114,46 @@ Parameters:
     ConstraintDescription: 'Must be in the range [8-1024]'
     MinValue: 8
     MaxValue: 1024
-  JenkinsVersion:
-    Description: 'Jenkins version number'
+  SubDomainNameWithDot:
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
-    Default: '2.121.1'
-  SubDomainName:
-    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
-    Type: String
-    Default: 'jenkins'
+    Default: 'jenkins.'
 Mappings:
   RegionMap:
     'ap-south-1':
-      AMI: 'ami-76d6f519'
+      AMI: 'ami-d783a9b8'
     'eu-west-3':
-      AMI: 'ami-969c2deb'
+      AMI: 'ami-2cf54551'
     'eu-west-2':
-      AMI: 'ami-a36f8dc4'
+      AMI: 'ami-b8b45ddf'
     'eu-west-1':
-      AMI: 'ami-ca0135b3'
+      AMI: 'ami-466768ac'
     'ap-northeast-2':
-      AMI: 'ami-c10fa6af'
+      AMI: 'ami-afd86dc1'
     'ap-northeast-1':
-      AMI: 'ami-92df37ed'
+      AMI: 'ami-e99f4896'
     'sa-east-1':
-      AMI: 'ami-3885d854'
+      AMI: 'ami-6dca9001'
     'ca-central-1':
-      AMI: 'ami-338a0a57'
+      AMI: 'ami-0ee86a6a'
     'ap-southeast-1':
-      AMI: 'ami-de90a5a2'
+      AMI: 'ami-05868579'
     'ap-southeast-2':
-      AMI: 'ami-423bec20'
+      AMI: 'ami-39f8215b'
     'eu-central-1':
-      AMI: 'ami-9a91b371'
+      AMI: 'ami-7c4f7097'
     'us-east-1':
-      AMI: 'ami-14c5486b'
+      AMI: 'ami-b70554c8'
     'us-east-2':
-      AMI: 'ami-922914f7'
+      AMI: 'ami-8c122be9'
     'us-west-1':
-      AMI: 'ami-25110f45'
+      AMI: 'ami-e0ba5c83'
     'us-west-2':
-      AMI: 'ami-e251209a'
+      AMI: 'ami-a9d09ed1'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
+  HasSystemsManagerAccess: !Equals [!Ref SystemsManagerAccess, 'true']
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
@@ -165,8 +166,7 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: 'jenkins-master'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
       - SourceSecurityGroupId: !Ref MasterSG
         FromPort: 2049
@@ -192,7 +192,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 80
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: FileSystemId
         Value: !Ref MasterStorage
@@ -209,7 +209,7 @@ Resources:
       ComparisonOperator: LessThanThreshold
       Threshold: 192416666667 # 192 GB in Bytes (last hour where you can burst at 100 MB/sec)
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: FileSystemId
         Value: !Ref MasterStorage
@@ -219,22 +219,19 @@ Resources:
       FileSystemId: !Ref MasterStorage
       SecurityGroups:
       - !Ref MasterStorageSG
-      SubnetId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetA${MasterSubnetsReach}'
+      SubnetId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetA${MasterSubnetsReach}'}
   MasterStorageMountTargetB:
     Type: 'AWS::EFS::MountTarget'
     Properties:
       FileSystemId: !Ref MasterStorage
       SecurityGroups:
       - !Ref MasterStorageSG
-      SubnetId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetB${MasterSubnetsReach}'
+      SubnetId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetB${MasterSubnetsReach}'}
   MasterELBSG:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: 'jenkins-elb-master'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
   MasterELBSGInWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasNotAuthProxySecurityGroup
@@ -252,8 +249,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 80
       ToPort: 80
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
   MasterHTTPCodeELB5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -267,7 +263,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt MasterELB.LoadBalancerFullName
@@ -284,7 +280,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt MasterELB.LoadBalancerFullName
@@ -301,7 +297,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt MasterELB.LoadBalancerFullName
@@ -318,7 +314,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt MasterELB.LoadBalancerFullName
@@ -329,13 +325,11 @@ Resources:
       AliasTarget:
         HostedZoneId: !GetAtt 'MasterELB.CanonicalHostedZoneID'
         DNSName: !GetAtt 'MasterELB.DNSName'
-      HostedZoneId:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       Name: !Sub
-      - '${SubDomainName}.${HostedZoneName}'
-      - SubDomainName: !Ref SubDomainName
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       Type: A
   MasterELB:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
@@ -345,10 +339,10 @@ Resources:
       - !Ref MasterELBSG
       Subnets: !If
       - HasMasterELBSchemeInternal
-      - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'
-        - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'
-      - - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'
-        - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'
+      - - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'}
+        - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'}
+      - - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'}
+        - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'}
       Tags:
       - Key: Name
         Value: 'jenkins-master'
@@ -357,7 +351,7 @@ Resources:
     Properties:
       HealthCheckIntervalSeconds: 30
       HealthCheckPath: '/login'
-      HealthCheckPort: 8080
+      HealthCheckPort: '8080'
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 25
       HealthyThresholdCount: 2
@@ -369,11 +363,10 @@ Resources:
       Tags:
       - Key: Name
         Value: 'jenkins-master'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       TargetGroupAttributes:
       - Key: 'deregistration_delay.timeout_seconds'
-        Value: 30
+        Value: '30'
   MasterELBListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
@@ -402,6 +395,7 @@ Resources:
           Action:
           - 'sts:AssumeRole'
       Path: '/'
+      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []]
       Policies:
       - PolicyName: logs
         PolicyDocument:
@@ -449,8 +443,7 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: 'jenkins-master'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
       - SourceSecurityGroupId: !Ref MasterELBSG
         FromPort: 8080
@@ -464,8 +457,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 22
       ToPort: 22
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
   MasterSGInSSHWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasNotSSHBastionSecurityGroup
@@ -503,30 +495,28 @@ Resources:
               content: !Sub |
                 [general]
                 state_file = /var/lib/awslogs/agent-state
-                [/var/log/messages]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/messages
-                log_stream_name = {instance_id}/var/log/messages
-                log_group_name = ${MasterLogs}
-                [/var/log/secure]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/secure
-                log_stream_name = {instance_id}/var/log/secure
-                log_group_name = ${MasterLogs}
-                [/var/log/cron]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cron
-                log_stream_name = {instance_id}/var/log/cron
-                log_group_name = ${MasterLogs}
-                [/var/log/cloud-init.log]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cloud-init.log
-                log_stream_name = {instance_id}/var/log/cloud-init.log
-                log_group_name = ${MasterLogs}
-                [/var/log/cfn-init.log]
+                [/var/log/amazon/ssm/amazon-ssm-agent.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init.log
-                log_stream_name = {instance_id}/var/log/cfn-init.log
+                file = /var/log/amazon/ssm/amazon-ssm-agent.log
+                log_stream_name = {instance_id}/var/log/amazon/ssm/amazon-ssm-agent.log
+                log_group_name = ${MasterLogs}
+                [/var/log/amazon/ssm/errors.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/amazon/ssm/errors.log
+                log_stream_name = {instance_id}/var/log/amazon/ssm/errors.log
+                log_group_name = ${MasterLogs}
+                [/var/log/audit/audit.log]
+                file = /var/log/audit/audit.log
+                log_stream_name = {instance_id}/var/log/audit/audit.log
+                log_group_name = ${MasterLogs}
+                [/var/log/awslogs.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/awslogs.log
+                log_stream_name = {instance_id}/var/log/awslogs.log
+                log_group_name = ${MasterLogs}
+                [/var/log/boot.log]
+                file = /var/log/boot.log
+                log_stream_name = {instance_id}/var/log/boot.log
                 log_group_name = ${MasterLogs}
                 [/var/log/cfn-hup.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
@@ -538,14 +528,59 @@ Resources:
                 file = /var/log/cfn-init-cmd.log
                 log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
                 log_group_name = ${MasterLogs}
+                [/var/log/cfn-init.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init.log
+                log_stream_name = {instance_id}/var/log/cfn-init.log
+                log_group_name = ${MasterLogs}
+                [/var/log/cfn-wire.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-wire.log
+                log_stream_name = {instance_id}/var/log/cfn-wire.log
+                log_group_name = ${MasterLogs}
                 [/var/log/cloud-init-output.log]
                 file = /var/log/cloud-init-output.log
                 log_stream_name = {instance_id}/var/log/cloud-init-output.log
+                log_group_name = ${MasterLogs}
+                [/var/log/cloud-init.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cloud-init.log
+                log_stream_name = {instance_id}/var/log/cloud-init.log
+                log_group_name = ${MasterLogs}
+                [/var/log/cron]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cron
+                log_stream_name = {instance_id}/var/log/cron
                 log_group_name = ${MasterLogs}
                 [/var/log/dmesg]
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
                 log_group_name = ${MasterLogs}
+                [/var/log/grubby_prune_debug]
+                file = /var/log/grubby_prune_debug
+                log_stream_name = {instance_id}/var/log/grubby_prune_debug
+                log_group_name = ${MasterLogs}
+                [/var/log/maillog]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/maillog
+                log_stream_name = {instance_id}/var/log/maillog
+                log_group_name = ${MasterLogs}
+                [/var/log/messages]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/messages
+                log_stream_name = {instance_id}/var/log/messages
+                log_group_name = ${MasterLogs}
+                [/var/log/secure]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/secure
+                log_stream_name = {instance_id}/var/log/secure
+                log_group_name = ${MasterLogs}
+                [/var/log/yum.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/yum.log
+                log_stream_name = {instance_id}/var/log/yum.log
+                log_group_name = ${MasterLogs}
+
                 [/var/log/jenkins/jenkins.log]
                 datetime_format = %d %b %Y %H:%M:%S
                 multi_line_start_pattern = {datetime_format}
@@ -557,7 +592,7 @@ Resources:
               group: root
           services:
             sysvinit:
-              awslogs:
+              awslogsd:
                 enabled: true
                 ensureRunning: true
                 packages:
@@ -645,12 +680,12 @@ Resources:
               command: 'mkdir /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins'
               test: '[ ! -d /var/lib/jenkins ]'
             'd_mountpoint_mount':
-              command: !Sub 'while ! nc -z ${MasterStorage}.efs.${AWS::Region}.amazonaws.com 2049; do sleep 10; done && sleep 10 && mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 "${MasterStorage}.efs.${AWS::Region}.amazonaws.com:/" /var/lib/jenkins'
+              command: !Sub 'while ! (echo > /dev/tcp/${MasterStorage}.efs.${AWS::Region}.amazonaws.com/2049) >/dev/null 2>&1; do sleep 10; done && sleep 10 && mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 "${MasterStorage}.efs.${AWS::Region}.amazonaws.com:/" /var/lib/jenkins'
               test: 'if mount | grep -q /var/lib/jenkins; then exit 1; else exit 0; fi'
         install:
           packages:
             rpm:
-              jenkins: !Sub 'https://pkg.jenkins.io/redhat-stable/jenkins-${JenkinsVersion}-1.1.noarch.rpm'
+              jenkins: 'https://pkg.jenkins.io/redhat-stable/jenkins-2.138.1-1.1.noarch.rpm'
             yum:
               'java-1.8.0-openjdk': []
           files:
@@ -670,9 +705,6 @@ Resources:
                 path=Resources.MasterLC.Metadata.AWS::CloudFormation::Init
                 action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=MasterLC
                 runas=root
-          commands:
-            'a_alternatives':
-              command: '/usr/sbin/alternatives --set java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java'
           services:
             sysvinit:
               cfn-hup:
@@ -681,6 +713,9 @@ Resources:
                 files:
                 - '/etc/cfn/cfn-hup.conf'
                 - '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
+              amazon-ssm-agent:
+                enabled: !If [HasSystemsManagerAccess, true, false]
+                ensureRunning: !If [HasSystemsManagerAccess, true, false]
         setup:
           files:
             '/root/plugins.txt':
@@ -791,9 +826,9 @@ Resources:
     - MasterStorageMountTargetB
     Properties:
       LaunchConfigurationName: !Ref MasterLC
-      MinSize: 1
-      MaxSize: 1
-      DesiredCapacity: 1
+      MinSize: '1'
+      MaxSize: '1'
+      DesiredCapacity: '1'
       HealthCheckGracePeriod: 900
       HealthCheckType: ELB
       NotificationConfigurations: !If
@@ -801,12 +836,11 @@ Resources:
       - - NotificationTypes:
           - 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR'
           - 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR'
-          TopicARN:
-            'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      - !Ref 'AWS::NoValue'
+          TopicARN: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      - []
       VPCZoneIdentifier:
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetA${MasterSubnetsReach}'
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetB${MasterSubnetsReach}'
+      - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetA${MasterSubnetsReach}'}
+      - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetB${MasterSubnetsReach}'}
       TargetGroupARNs:
       - !Ref MasterELBTargetGroup
       Tags:
@@ -839,7 +873,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 80
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: AutoScalingGroupName
         Value: !Ref MasterASG

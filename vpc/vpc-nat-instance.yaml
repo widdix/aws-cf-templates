@@ -31,14 +31,15 @@ Metadata:
       - NATInstanceType
       - KeyName
       - IAMUserSSHAccess
+      # TODO - SystemsManagerAccess
       - LogsRetentionInDays
-      - SubDomainName
+      - SubDomainNameWithDot
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
   ParentSSHBastionStack:
-    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-*-bastion.yaml template.'
     Type: String
     Default: ''
   ParentAlertStack:
@@ -78,42 +79,42 @@ Parameters:
     Type: Number
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
-  SubDomainName:
-    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
+  SubDomainNameWithDot:
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
-    Default: 'nat'
+    Default: 'nat.'
 Mappings:
-  RegionMap:
+  RegionMap: # TODO update to Amazon Linux 2 (don't forget to adjust awslogs config as well)
     'ap-south-1':
-      NATAMI: 'ami-7fd5f610'
+      NATAMI: 'ami-0aba92643213491b9'
     'eu-west-3':
-      NATAMI: 'ami-519c2d2c'
+      NATAMI: 'ami-0050bb60cea70c5b3'
     'eu-west-2':
-      NATAMI: 'ami-756d8f12'
+      NATAMI: 'ami-e6768381'
     'eu-west-1':
-      NATAMI: 'ami-650c381c'
+      NATAMI: 'ami-0ea87e2bfa81ca08a'
     'ap-northeast-2':
-      NATAMI: 'ami-8e0fa6e0'
+      NATAMI: 'ami-08cfa02141f9e9bee'
     'ap-northeast-1':
-      NATAMI: 'ami-cdd63eb2'
+      NATAMI: 'ami-0cf78ae724f63bac0'
     'sa-east-1':
-      NATAMI: 'ami-0b81dc67'
+      NATAMI: 'ami-09c013530239687aa'
     'ca-central-1':
-      NATAMI: 'ami-e3890987'
+      NATAMI: 'ami-b61b96d2'
     'ap-southeast-1':
-      NATAMI: 'ami-3093a64c'
+      NATAMI: 'ami-0cf24653bcf894797'
     'ap-southeast-2':
-      NATAMI: 'ami-943cebf6'
+      NATAMI: 'ami-00c1445796bc0a29f'
     'eu-central-1':
-      NATAMI: 'ami-0097b5eb'
+      NATAMI: 'ami-06465d49ba60cf770'
     'us-east-1':
-      NATAMI: 'ami-54ca472b'
+      NATAMI: 'ami-0422d936d535c63b1'
     'us-east-2':
-      NATAMI: 'ami-882914ed'
+      NATAMI: 'ami-0f9c61b5a562a16af'
     'us-west-1':
-      NATAMI: 'ami-1a0e107a'
+      NATAMI: 'ami-0d4027d2cdbca669d'
     'us-west-2':
-      NATAMI: 'ami-78502100'
+      NATAMI: 'ami-40d1f038'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -126,16 +127,14 @@ Resources:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
     Properties:
-      HostedZoneId:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       Name: !Sub
-      - '${SubDomainName}.${HostedZoneName}'
-      - SubDomainName: !Ref SubDomainName
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
       - !Ref EIP
-      TTL: 60
+      TTL: '60'
       Type: A
   EIP:
     Type: 'AWS::EC2::EIP'
@@ -148,10 +147,7 @@ Resources:
   NATSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupDescription: !Sub
-      - 'NAT instance 10.${ClassB}.0.0/16'
-      - ClassB:
-          'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
+      GroupDescription: !Ref 'AWS::StackName'
       SecurityGroupEgress:
       - IpProtocol: udp
         FromPort: 123
@@ -169,26 +165,16 @@ Resources:
       - IpProtocol: udp
         FromPort: 123
         ToPort: 123
-        CidrIp: !Sub
-        - '10.${ClassB}.0.0/16'
-        - ClassB:
-            'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
+        CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
       - IpProtocol: tcp
         FromPort: 80
         ToPort: 80
-        CidrIp: !Sub
-        - '10.${ClassB}.0.0/16'
-        - ClassB:
-            'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
+        CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
       - IpProtocol: tcp
         FromPort: 443
         ToPort: 443
-        CidrIp: !Sub
-        - '10.${ClassB}.0.0/16'
-        - ClassB:
-            'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+        CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
   NATSecurityGroupInSSHBastion:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasSSHBastionSecurityGroup
@@ -197,8 +183,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 22
       ToPort: 22
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
   NATSecurityGroupInSSHWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasNotSSHBastionSecurityGroup
@@ -465,38 +450,32 @@ Resources:
           aws --region ${Region} ec2 replace-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID || aws --region ${Region} ec2 create-route --route-table-id ${RouteTablePrivate} --destination-cidr-block "0.0.0.0/0" --instance-id $INSTANCEID
           /opt/aws/bin/cfn-init -v --stack ${StackName} --resource NATLaunchConfiguration --region ${Region}
           /opt/aws/bin/cfn-signal -e 0 --region ${Region} --stack ${StackName} --resource NATAutoScalingGroup
-        - RouteTablePrivate:
-            'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTable${SubnetZone}Private'
-          Region:
-            !Ref 'AWS::Region'
-          StackName:
-            !Ref 'AWS::StackName'
-          EIPAllocationId:
-            !Sub '${EIP.AllocationId}'
+        - RouteTablePrivate: {'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTable${SubnetZone}Private'}
+          Region: !Ref 'AWS::Region'
+          StackName: !Ref 'AWS::StackName'
+          EIPAllocationId: !GetAtt 'EIP.AllocationId'
   NATAutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
-      DesiredCapacity: 1
+      DesiredCapacity: '1'
       LaunchConfigurationName: !Ref NATLaunchConfiguration
-      MaxSize: 1
-      MinSize: 1
+      MaxSize: '1'
+      MinSize: '1'
       Tags:
       - Key: Name
         Value: !Sub
-        - 'NAT instance 10.${ClassB}.0.0/16'
-        - ClassB:
-            'Fn::ImportValue': !Sub '${ParentVPCStack}-ClassB'
+        - 'NAT instance ${CidrBlock}'
+        - CidrBlock: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
         PropagateAtLaunch: true
       NotificationConfigurations: !If
       - HasAlertTopic
       - - NotificationTypes:
           - 'autoscaling:EC2_INSTANCE_LAUNCH_ERROR'
           - 'autoscaling:EC2_INSTANCE_TERMINATE_ERROR'
-          TopicARN:
-            'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
-      - !Ref 'AWS::NoValue'
+          TopicARN: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      - []
       VPCZoneIdentifier:
-      - 'Fn::ImportValue': !Sub '${ParentVPCStack}-Subnet${SubnetZone}Public'
+      - {'Fn::ImportValue': !Sub '${ParentVPCStack}-Subnet${SubnetZone}Public'}
     CreationPolicy:
       ResourceSignal:
         Count: 1
@@ -524,7 +503,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 80
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: AutoScalingGroupName
         Value: !Ref NATAutoScalingGroup

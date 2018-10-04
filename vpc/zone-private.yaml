@@ -40,8 +40,7 @@ Resources:
         Comment: !Sub "${Name} private DNS zone"
       Name: !Ref Name
       VPCs:
-      - VPCId:
-          'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+      - VPCId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
         VPCRegion: !Ref 'AWS::Region'
 Outputs:
   TemplateID:

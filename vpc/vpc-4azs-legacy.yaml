@@ -25,6 +25,7 @@ Metadata:
       - AZC
       - AZD
       - ClassB
+      - CidrBlock
       - VPC
       - SubnetAPublic
       - RouteTableAPublic
@@ -56,12 +57,15 @@ Parameters:
     Description: 'AZ of D'
     Type: 'AWS::EC2::AvailabilityZone::Name'
   ClassB:
-    Description: 'Class B of VPC (10.XXX.0.0/16)'
+    Description: 'Deprecated in v7, will be removed in v8! Class B of VPC (10.XXX.0.0/16)'
     Type: Number
     Default: 0
     ConstraintDescription: 'Must be in the range [0-255]'
     MinValue: 0
     MaxValue: 255
+  CidrBlock:
+    Description: 'The set of IP addresses for the VPC (e.g., 10.0.0.0/16).'
+    Type: String
   VPC:
     Description: 'VPC'
     Type: 'AWS::EC2::VPC::Id'
@@ -153,10 +157,15 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-AZD'
   ClassB:
-    Description: 'Class B.'
+    Description: 'Deprecated in v7, will be removed in v8, use CidrBlock instead! Class B.'
     Value: !Ref ClassB
     Export:
       Name: !Sub '${AWS::StackName}-ClassB'
+  CidrBlock:
+    Description: 'The set of IP addresses for the VPC.'
+    Value: !Ref CidrBlock
+    Export:
+      Name: !Sub '${AWS::StackName}-CidrBlock'
   VPC:
     Description: 'VPC.'
     Value: !Ref VPC
@@ -172,16 +181,6 @@ Outputs:
     Value: !Join [',', [!Ref SubnetAPrivate, !Ref SubnetBPrivate, !Ref SubnetCPrivate, !Ref SubnetDPrivate]]
     Export:
       Name: !Sub '${AWS::StackName}-SubnetsPrivate'
-  RouteTablePrivate: # deprecated in v4, will be removed in v5
-    Description: 'Route table private (deprecated in v4, will be removed in v5).'
-    Value: !Ref RouteTableAPrivate
-    Export:
-      Name: !Sub '${AWS::StackName}-RouteTablePrivate'
-  RouteTablePublic: # deprecated in v4, will be removed in v5
-    Description: 'Route table public (deprecated in v4, will be removed in v5).'
-    Value: !Ref RouteTableAPublic
-    Export:
-      Name: !Sub '${AWS::StackName}-RouteTablePublic'
   RouteTablesPrivate:
     Description: 'Route tables private.'
     Value: !Join [',', [!Ref RouteTableAPrivate, !Ref RouteTableBPrivate, !Ref RouteTableCPrivate, !Ref RouteTableDPrivate]]
