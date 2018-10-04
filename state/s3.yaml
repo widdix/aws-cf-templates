@@ -152,7 +152,7 @@ Resources:
       Bucket: !Ref Bucket
       PolicyDocument:
         Statement:
-          Principal: '*'
+        - Principal: '*'
           Action: 's3:PutObject*'
           Effect: Deny
           Resource: !Sub '${Bucket.Arn}/*'
@@ -167,7 +167,8 @@ Resources:
       Bucket: !Ref Bucket
       PolicyDocument:
         Statement:
-        - Action: 's3:GetObject'
+        - Principal: '*'
+          Action: 's3:GetObject'
           Effect: Allow
           Resource: !Sub '${Bucket.Arn}/*'
   BucketPolicyCloudFrontRead:
