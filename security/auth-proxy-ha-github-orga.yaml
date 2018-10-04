@@ -623,7 +623,7 @@ Resources:
               nginx: []
           files:
             '/etc/nginx/conf.d/http2https.conf':
-              content: !Sub |
+              content: |
                 server {
                   listen 8080 default_server;
                   server_name _;
@@ -654,7 +654,7 @@ Resources:
               owner: root
               group: root
             '/etc/init.d/oauth2_proxy':
-              content: !Sub |
+              content: |
                 #!/bin/sh
                 ### BEGIN INIT INFO
                 # Provides:
