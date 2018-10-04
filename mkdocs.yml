@@ -13,6 +13,8 @@ pages:
 - 'Static Website': 'static-website.md'
 - 'VPC': 'vpc.md'
 - 'WordPress': 'wordpress.md'
+- 'widdix CLI': 'cli.md'
+- 'Migrate to v7': 'migrate-v7.md'
 - 'Migrate to v6': 'migrate-v6.md'
 - 'Migrate to v5': 'migrate-v5.md'
 - 'Migrate to v4': 'migrate-v4.md'
