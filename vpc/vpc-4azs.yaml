@@ -1,4 +1,17 @@
 ---
+# Copyright 2018 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'VPC: public and private subnets in four availability zones, a cloudonaut.io template'
 Metadata:
@@ -380,10 +393,15 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-AZD'
   ClassB:
-    Description: 'Class B.'
+    Description: 'Deprecated in v7, will be removed in v8, use CidrBlock instead! Class B.'
     Value: !Ref ClassB
     Export:
       Name: !Sub '${AWS::StackName}-ClassB'
+  CidrBlock:
+    Description: 'The set of IP addresses for the VPC.'
+    Value: !GetAtt 'VPC.CidrBlock'
+    Export:
+      Name: !Sub '${AWS::StackName}-CidrBlock'
   VPC:
     Description: 'VPC.'
     Value: !Ref VPC
@@ -399,16 +417,6 @@ Outputs:
     Value: !Join [',', [!Ref SubnetAPrivate, !Ref SubnetBPrivate, !Ref SubnetCPrivate, !Ref SubnetDPrivate]]
     Export:
       Name: !Sub '${AWS::StackName}-SubnetsPrivate'
-  RouteTablePrivate: # deprecated in v4, will be removed in v5
-    Description: 'Route table private (deprecated in v4, will be removed in v5).'
-    Value: !Ref RouteTablePrivate
-    Export:
-      Name: !Sub '${AWS::StackName}-RouteTablePrivate'
-  RouteTablePublic: # deprecated in v4, will be removed in v5
-    Description: 'Route table public (deprecated in v4, will be removed in v5).'
-    Value: !Ref RouteTablePublic
-    Export:
-      Name: !Sub '${AWS::StackName}-RouteTablePublic'
   RouteTablesPrivate:
     Description: 'Route tables private.'
     Value: !Join [',', [!Ref RouteTablePrivate, !Ref RouteTableBPrivate, !Ref RouteTableCPrivate, !Ref RouteTableDPrivate]]

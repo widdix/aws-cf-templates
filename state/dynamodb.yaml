@@ -1,4 +1,17 @@
 ---
+# Copyright 2018 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'State: DynamoDB table, a cloudonaut.io template, sponsored by https://github.com/ngault'
 Metadata:
@@ -72,14 +85,20 @@ Parameters:
     Description: 'Target read capacity utilization (in percent) that auto scaling tries to achieve (if you have spiky reads, a lower number is better).'
     Type: Number
     Default: 80
+  Encryption:
+    Description: 'Enable server side encryption using KMS (AWS managed) CMK.'
+    Type: String
+    Default: false
+    AllowedValues: [aws, false]
 Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasSortKey: !Not [!Equals [!Ref SortKeyName, '']]
   HasTableName: !Not [!Equals [!Ref TableName, '']]
+  HasAwsManagedEncryption: !Equals [!Ref Encryption, aws]
 Resources:
   Table:
     Type: 'AWS::DynamoDB::Table'
-    Properties: # TODO add SSESpecification as soon as DynamoDB supports CMK and update docs
+    Properties:
       TableName: !If [HasTableName, !Ref TableName, !Ref 'AWS::NoValue']
       AttributeDefinitions: !If
       - HasSortKey
@@ -100,6 +119,8 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: !Ref MinReadCapacityUnits
         WriteCapacityUnits: !Ref MinWriteCapacityUnits
+      SSESpecification:
+        SSEEnabled: !If [HasAwsManagedEncryption, true, false]
   RoleScaling:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -184,9 +205,9 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
   WriteThrottleEventsAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -203,9 +224,9 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
   ThrottledRequestsEventsAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -222,9 +243,9 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
   UserErrorsAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -241,9 +262,9 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
   SystemErrorsAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -260,9 +281,9 @@ Resources:
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'

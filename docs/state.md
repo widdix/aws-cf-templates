@@ -1,5 +1,7 @@
 <iframe src="https://ghbtns.com/github-btn.html?user=widdix&repo=aws-cf-templates&type=star&count=true&size=large" frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
 
+> **New**: Manage Free Templates for AWS CloudFormation with the [widdix CLI](./cli/)
+
 AWS offers many services to store state / data. Some are persistent, others are not.
 
 # Client Security Group
@@ -39,7 +41,7 @@ DynamoDB table with auto scaling for read and write capacity.
 
 ## Limitations
 * No backup (see `operations/backup-dynamodb-native.yaml`)
-* No encryption at rest
+* Encryption at rest with AWS managed CMK (customer managed is not supported)
 
 # ElastiCache memcached
 
@@ -61,7 +63,7 @@ Cluster of memcached nodes.
 * `vpc/vpc-*azs.yaml` (**required**)
 * `state/client-sg.yaml` (**required**)
 * `vpc/zone-*.yaml`
-* `vpc/vpc-ssh-bastion.yaml`
+* `vpc/vpc-*-bastion.yaml`
 * `operations/alert.yaml` (recommended)
 
 ## Limitations
@@ -90,12 +92,11 @@ Cluster of Elasticsearch nodes.
 * `vpc/vpc-*azs.yaml` (**required**)
 * `state/client-sg.yaml` (**required**)
 * `vpc/zone-*.yaml`
-* `vpc/vpc-ssh-bastion.yaml`
+* `vpc/vpc-*-bastion.yaml`
 * `operations/alert.yaml` (recommended)
 
 ## Limitations
 * No auto scaling
-* No encryption at rest
 
 # RDS Aurora
 
@@ -117,7 +118,7 @@ Two node Aurora cluster for HA.
 * `vpc/vpc-*azs.yaml` (**required**)
 * `state/client-sg.yaml` (**required**)
 * `vpc/zone-*.yaml`
-* `vpc/vpc-ssh-bastion.yaml`
+* `vpc/vpc-*-bastion.yaml`
 * `operations/alert.yaml` (recommended)
 
 ## Limitations
@@ -143,7 +144,7 @@ Multi-AZ Postgres for HA.
 * `vpc/vpc-*azs.yaml` (**required**)
 * `state/client-sg.yaml` (**required**)
 * `vpc/zone-*.yaml`
-* `vpc/vpc-ssh-bastion.yaml`
+* `vpc/vpc-*-bastion.yaml`
 * `operations/alert.yaml` (recommended)
 
 ## Limitations

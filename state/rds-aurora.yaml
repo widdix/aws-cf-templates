@@ -1,4 +1,17 @@
 ---
+# Copyright 2018 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'State: RDS Aurora, a cloudonaut.io template, sponsored by https://github.com/ngault'
 Metadata:
@@ -21,7 +34,8 @@ Metadata:
       - DBBackupRetentionPeriod
       - DBMasterUsername
       - DBMasterUserPassword
-      - SubDomainName
+      - SubDomainNameWithDot
+      - ReadSubDomainNameWithDot
       - Encryption
 Parameters:
   ParentVPCStack:
@@ -35,7 +49,7 @@ Parameters:
     Type: String
     Default: ''
   ParentSSHBastionStack:
-    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-ssh-bastion.yaml template.'
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-*-bastion.yaml template.'
     Type: String
     Default: ''
   ParentAlertStack:
@@ -51,26 +65,32 @@ Parameters:
     Type: String
     Default: 'db.t2.small'
   DBName:
-    Description: 'Name of the database (ignored when DBSnapshotIdentifier is set).'
+    Description: 'Name of the database (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
     Type: String
+    Default: ''
   DBBackupRetentionPeriod:
     Description: 'The number of days to keep snapshots of the database.'
     Type: Number
     Default: 30
   DBMasterUsername:
-    Description: 'The master user name for the DB instance (ignored when DBSnapshotIdentifier is set).'
+    Description: 'The master user name for the DB instance (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
     Type: 'String'
     Default: master
   DBMasterUserPassword:
-    Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set).'
+    Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
     Type: String
     NoEcho: true
-  SubDomainName:
-    Description: 'Name that is used to create the DNS entry ${SubDomainName}.${HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
+    Default: ''
+  SubDomainNameWithDot:
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
-    Default: aurora
+    Default: 'aurora.'
+  ReadSubDomainNameWithDot:
+    Description: 'Name that is used to create the read DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
+    Type: String
+    Default: 'read-aurora.'
   Encryption:
-    Description: 'Enable server side encryption using KMS CMK key.'
+    Description: 'Enable server side encryption using KMS (customer managed) CMK (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
     Type: String
     Default: false
     AllowedValues: [true, false]
@@ -80,36 +100,33 @@ Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, '']]
   HasEncryption: !Equals [!Ref Encryption, true]
+  HasEncryptionAndNotDBSnapshotIdentifier: !And [!Condition HasEncryption, !Not [!Condition HasDBSnapshotIdentifier]]
 Resources:
   RecordSet:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
     Properties:
-      HostedZoneId:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       Name: !Sub
-      - '${SubDomainName}.${HostedZoneName}'
-      - SubDomainName: !Ref SubDomainName
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
       - !GetAtt 'DBCluster.Endpoint.Address'
-      TTL: 60
+      TTL: '60'
       Type: CNAME
   ReadRecordSet:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
     Properties:
-      HostedZoneId:
-        'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       Name: !Sub
-      - 'read-${SubDomainName}.${HostedZoneName}'
-      - SubDomainName: !Ref SubDomainName
-        HostedZoneName:
-          'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
+      - '${ReadSubDomainNameWithDot}${HostedZoneName}'
+      - ReadSubDomainNameWithDot: !Ref ReadSubDomainNameWithDot
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
       - !GetAtt 'DBCluster.ReadEndpoint.Address'
-      TTL: 60
+      TTL: '60'
       Type: CNAME
   ClusterSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -119,10 +136,8 @@ Resources:
       - IpProtocol: tcp
         FromPort: 3306
         ToPort: 3306
-        SourceSecurityGroupId:
-          'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'
-      VpcId:
-        'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
+        SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
   ClusterSecurityGroupInSSHBastion:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasSSHBastionSecurityGroup
@@ -131,10 +146,9 @@ Resources:
       IpProtocol: tcp
       FromPort: 3306
       ToPort: 3306
-      SourceSecurityGroupId:
-        'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
   Key:
-    Condition: HasEncryption
+    Condition: HasEncryptionAndNotDBSnapshotIdentifier
     Type: 'AWS::KMS::Key'
     Properties:
       KeyPolicy:
@@ -162,7 +176,7 @@ Resources:
               'kms:CallerAccount': !Ref 'AWS::AccountId'
               'kms:ViaService': !Sub 'rds.${AWS::Region}.amazonaws.com'
   KeyAlias:
-    Condition: HasEncryption
+    Condition: HasEncryptionAndNotDBSnapshotIdentifier
     Type: 'AWS::KMS::Alias'
     Properties:
       AliasName: !Sub 'alias/${AWS::StackName}'
@@ -171,10 +185,7 @@ Resources:
     Type: 'AWS::RDS::DBSubnetGroup'
     Properties:
       DBSubnetGroupDescription: !Ref 'AWS::StackName'
-      SubnetIds: !Split
-      - ','
-      - 'Fn::ImportValue':
-          !Sub '${ParentVPCStack}-SubnetsPrivate'
+      SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
   DBClusterParameterGroup:
     Type: 'AWS::RDS::DBClusterParameterGroup'
     Properties:
@@ -190,12 +201,12 @@ Resources:
     Type: 'AWS::RDS::DBCluster'
     Properties:
       BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
-      DatabaseName: !Ref DBName
+      DatabaseName: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBName]
       DBClusterParameterGroupName: !Ref DBClusterParameterGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
       Engine: aurora
       EngineVersion: '5.6.10a'
-      KmsKeyId: !If [HasEncryption, !Ref Key, !Ref 'AWS::NoValue']
+      KmsKeyId: !If [HasEncryptionAndNotDBSnapshotIdentifier, !Ref Key, !Ref 'AWS::NoValue']
       MasterUsername: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUsername]
       MasterUserPassword: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUserPassword]
       PreferredBackupWindow: '09:54-10:24'
@@ -210,7 +221,7 @@ Resources:
       Description: !Ref 'AWS::StackName'
       Family: 'aurora5.6'
       Parameters:
-        innodb_lock_wait_timeout: 10
+        innodb_lock_wait_timeout: '10'
         log_output: FILE
         tx_isolation: 'READ-COMMITTED'
   DBInstanceA:
@@ -240,7 +251,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average database CPU utilization over last 10 minutes too high.'
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
@@ -250,7 +261,7 @@ Resources:
       MetricName: CPUUtilization
       Namespace: 'AWS/RDS'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 80
@@ -259,7 +270,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average database CPU utilization over last 10 minutes too high.'
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
@@ -269,7 +280,7 @@ Resources:
       MetricName: CPUUtilization
       Namespace: 'AWS/RDS'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 80
@@ -278,7 +289,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average database CPU credit balance over last 10 minutes too low, expect a significant performance drop soon.'
       ComparisonOperator: LessThanThreshold
       Dimensions:
@@ -288,7 +299,7 @@ Resources:
       MetricName: CPUCreditBalance
       Namespace: 'AWS/RDS'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 20
@@ -297,7 +308,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average database CPU credit balance over last 10 minutes too low, expect a significant performance drop soon.'
       ComparisonOperator: LessThanThreshold
       Dimensions:
@@ -307,7 +318,7 @@ Resources:
       MetricName: CPUCreditBalance
       Namespace: 'AWS/RDS'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 20
@@ -316,7 +327,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average database freeable memory over last 10 minutes too low, performance may suffer.'
       ComparisonOperator: LessThanThreshold
       Dimensions:
@@ -326,7 +337,7 @@ Resources:
       MetricName: FreeableMemory
       Namespace: 'AWS/RDS'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 64000000 # 64 Megabyte in Byte
@@ -335,7 +346,7 @@ Resources:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average database freeable memory over last 10 minutes too low, performance may suffer.'
       ComparisonOperator: LessThanThreshold
       Dimensions:
@@ -345,7 +356,7 @@ Resources:
       MetricName: FreeableMemory
       Namespace: 'AWS/RDS'
       OKActions:
-      - 'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
       Threshold: 64000000 # 64 Megabyte in Byte
@@ -357,8 +368,7 @@ Resources:
       - failover
       - failure
       - notification
-      SnsTopicArn:
-        'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'
+      SnsTopicArn: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       SourceIds: [!Ref DBCluster]
       SourceType: 'db-cluster'
 Outputs:
