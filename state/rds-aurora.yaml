@@ -35,6 +35,7 @@ Metadata:
       - DBMasterUsername
       - DBMasterUserPassword
       - SubDomainNameWithDot
+      - ReadSubDomainNameWithDot
       - Encryption
 Parameters:
   ParentVPCStack:

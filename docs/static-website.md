@@ -14,7 +14,7 @@ S3 and CloudFront behave differently when it comes to index document support in 
 ### S3 Website Hosting behavior with Index Document (not provided by the template!)
 
 | Resource             | Response                   | Comment                                                                                     |
-| -------------------- | -------------------------- | --------------------------------------------------------------------------------------------|
+| -------------------- | -------------------------- | ------------------------------------------------------------------------------------------- |
 | `/`                  | 200 Content of index.html  |                                                                                             |
 | `/index.html`        | 200 Content of index.html  | Not SEO friendly because of duplicate content on `/`, should redirect to `/`                |
 | `/folder`            | 302 Redirect to `/folder/` |                                                                                             |
@@ -24,7 +24,7 @@ S3 and CloudFront behave differently when it comes to index document support in 
 ### CloudFront with Default Root Object (provided by the template static-website.yaml template!)
 
 | Resource             | Response                   | Comment                                                                                     |
-| -------------------- | -------------------------- | --------------------------------------------------------------------------------------------|
+| -------------------- | -------------------------- | ------------------------------------------------------------------------------------------- |
 | `/`                  | 200 Content of index.html  |                                                                                             |
 | `/index.html`        | 200 Content of index.html  | Not SEO friendly because of duplicate content on `/`, should redirect to `/`                |
 | `/folder`            | 403 Error                  | Not user friendly                                                                           |
@@ -36,7 +36,7 @@ S3 and CloudFront behave differently when it comes to index document support in 
 To improve the default CloudFront behavior, we developed a Lambda@Edge solution that gives you the following search engine optimized result.
 
 | Resource             | Response                   |
-| -------------------- | -------------------------- |
+| -------------------- | -------------------------- |
 | `/`                  | 200 Content of index.html  |
 | `/index.html`        | 302 Redirect to `/`        |
 | `/folder`            | 302 Redirect to `/folder/` |

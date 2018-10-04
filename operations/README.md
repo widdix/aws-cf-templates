@@ -1,3 +1,3 @@
 # Operations Templates for AWS CloudFormation
 
-Find the documentation here: http://templates.cloudonaut.io/en/stable/operations/
+Find the documentation here: https://templates.cloudonaut.io/en/stable/operations/
