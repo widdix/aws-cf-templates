@@ -106,6 +106,7 @@ Parameters:
     AllowedValues:
     - 256
     - 384
+    - 480
     - 512
     - 768
   DesiredCount:
