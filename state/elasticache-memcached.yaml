@@ -213,7 +213,6 @@ Resources:
           'use strict';
           const response = require('cfn-response');
           exports.handler = (event, context, cb) => {
-            console.log(`Invoke: ${JSON.stringify(event)}`);
             const nodes = parseInt(event.ResourceProperties.NumCacheNodes, 10);
             const azs = event.ResourceProperties.AvailabilityZones.split(',');
             const preferredAZs = Array(nodes).fill('').map((v, i) => azs[i % azs.length]);
