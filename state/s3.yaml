@@ -43,7 +43,7 @@ Parameters:
     Description: 'Access policy of the bucket.'
     Type: String
     Default: Private
-    AllowedValues: [Private, PublicRead, CloudFrontRead, ElbAccessLogWrite]
+    AllowedValues: [Private, PublicRead, CloudFrontRead, ElbAccessLogWrite, ConfigWrite, CloudTrailWrite]
   Versioning:
     Description: 'Enable versioning to keep a backup if objects change.'
     Type: String
@@ -60,22 +60,25 @@ Parameters:
     Default: 0
     MinValue: 0
   Encryption:
-    Description: 'Enable server side encryption using KMS (customer managed) CMK.'
+    Description: 'Enable server side encryption using KMS (customer managed) CMK (does not work with access := [CloudFrontRead, ElbAccessLogWrite, ConfigWrite, CloudTrailWrite]).'
     Type: String
     Default: false
     AllowedValues: [true, false]
 Conditions:
   HasS3VirusScan: !Not [!Equals [!Ref ParentS3VirusScanStack, '']]
+  HasPrivateAccess: !Equals [!Ref Access, Private]
   HasPublicReadAccess: !Equals [!Ref Access, PublicRead]
   HasCloudFrontReadAccess: !Equals [!Ref Access, CloudFrontRead]
   HasElbAccessLogWriteAccess: !Equals [!Ref Access, ElbAccessLogWrite]
+  HasConfigWriteAccess: !Equals [!Ref Access, ConfigWrite]
+  HasCloudTrailWriteAccess: !Equals [!Ref Access, CloudTrailWrite]
   HasBucketName: !Not [!Equals [!Ref BucketName, '']]
   HasVersioning: !Equals [!Ref Versioning, true]
   HadVersioning: !Equals [!Ref Versioning, 'false-but-was-true']
   HasNoncurrentVersionExpirationInDays: !Not [!Equals [!Ref NoncurrentVersionExpirationInDays, 0]]
   HasExpirationInDays: !Not [!Equals [!Ref ExpirationInDays, 0]]
   HasEncryption: !Equals [!Ref Encryption, true]
-  NeedsBucketPolicy: !Or [!Condition HasPublicReadAccess, !Condition HasCloudFrontReadAccess, !Condition HasEncryption, !Condition HasElbAccessLogWriteAccess]
+  HasPrivateAccessAndEncryption: !And [!Condition HasPrivateAccess, !Condition HasEncryption]
 Resources:
   Key:
     Condition: HasEncryption
@@ -142,63 +145,112 @@ Resources:
       - !Ref 'AWS::NoValue'
       VersioningConfiguration: !If [HasVersioning, {Status: Enabled}, !If [HadVersioning, {Status: Suspended}, !Ref 'AWS::NoValue']]
       BucketEncryption: !If [HasEncryption, {ServerSideEncryptionConfiguration: [{ServerSideEncryptionByDefault: {KMSMasterKeyID: !Ref Key, SSEAlgorithm: 'aws:kms'}}]}, !Ref 'AWS::NoValue']
-  BucketPolicy:
-    Condition: NeedsBucketPolicy
+  BucketPolicyPrivate:
+    Condition: HasPrivateAccessAndEncryption
     Type: 'AWS::S3::BucketPolicy'
     Properties:
       Bucket: !Ref Bucket
       PolicyDocument:
         Statement:
-        - !If
-          - HasPublicReadAccess
-          - Principal: '*'
-            Action: 's3:GetObject'
-            Effect: Allow
-            Resource: !Sub '${Bucket.Arn}/*'
-          - !Ref 'AWS::NoValue'
-        - !If
-          - HasCloudFrontReadAccess
-          - Principal:
-              CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
-            Action: 's3:GetObject'
-            Effect: Allow
-            Resource: !Sub '${Bucket.Arn}/*'
-          - !Ref 'AWS::NoValue'
-        - !If
-          - HasElbAccessLogWriteAccess
-          - Principal:
-              AWS: # https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html#access-logging-bucket-permissions
-              - '127311923021' # us-east-1
-              - '033677994240' # us-east-2
-              - '027434742980' # us-west-1
-              - '797873946194' # us-west-2
-              - '985666609251' # ca-central-1
-              - '054676820928' # eu-central-1
-              - '156460612806' # eu-west-1
-              - '652711504416' # eu-west-2
-              - '009996457667' # eu-west-3
-              - '582318560864' # ap-northeast-1
-              - '600734575887' # ap-northeast-2
-              - '383597477331' # ap-northeast-3
-              - '114774131450' # ap-southeast-1
-              - '783225319266' # ap-southeast-2
-              - '718504428378' # ap-south-1
-              - '507241528517' # sa-east-1
-            Action: 's3:PutObject'
-            Effect: Allow
-            Resource: !Sub '${Bucket.Arn}/*AWSLogs/${AWS::AccountId}/*'
-          - !Ref 'AWS::NoValue'
-        - !If
-          - HasEncryption
-          - Principal: '*'
-            Action: 's3:PutObject*'
-            Effect: Deny
-            Resource: !Sub '${Bucket.Arn}/*'
-            Condition:
-              StringNotEquals:
-                's3:x-amz-server-side-encryption': ''
-                's3:x-amz-server-side-encryption-aws-kms-key-id': !GetAtt 'Key.Arn'
-          - !Ref 'AWS::NoValue'
+        - Principal: '*'
+          Action: 's3:PutObject*'
+          Effect: Deny
+          Resource: !Sub '${Bucket.Arn}/*'
+          Condition:
+            StringNotEquals:
+              's3:x-amz-server-side-encryption': ''
+              's3:x-amz-server-side-encryption-aws-kms-key-id': !GetAtt 'Key.Arn'
+  BucketPolicyPublic:
+    Condition: HasPublicReadAccess
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Statement:
+        - Principal: '*'
+          Action: 's3:GetObject'
+          Effect: Allow
+          Resource: !Sub '${Bucket.Arn}/*'
+  BucketPolicyCloudFrontRead:
+    Condition: HasCloudFrontReadAccess
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Statement:
+        - Principal:
+            CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
+          Action: 's3:GetObject'
+          Effect: Allow
+          Resource: !Sub '${Bucket.Arn}/*'
+  BucketPolicyElbAccessLogWrite:
+    Condition: HasElbAccessLogWriteAccess
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Statement:
+        - Principal:
+            AWS: # https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html#access-logging-bucket-permissions
+            - '127311923021' # us-east-1
+            - '033677994240' # us-east-2
+            - '027434742980' # us-west-1
+            - '797873946194' # us-west-2
+            - '985666609251' # ca-central-1
+            - '054676820928' # eu-central-1
+            - '156460612806' # eu-west-1
+            - '652711504416' # eu-west-2
+            - '009996457667' # eu-west-3
+            - '582318560864' # ap-northeast-1
+            - '600734575887' # ap-northeast-2
+            - '383597477331' # ap-northeast-3
+            - '114774131450' # ap-southeast-1
+            - '783225319266' # ap-southeast-2
+            - '718504428378' # ap-south-1
+            - '507241528517' # sa-east-1
+          Action: 's3:PutObject'
+          Effect: Allow
+          Resource: !Sub '${Bucket.Arn}/*AWSLogs/${AWS::AccountId}/*'
+  BucketPolicyConfigWrite:
+    Condition: HasConfigWriteAccess
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'config.amazonaws.com'
+          Action: 's3:GetBucketAcl'
+          Resource: !GetAtt 'Bucket.Arn'
+        - Effect: Allow
+          Principal:
+            Service: 'config.amazonaws.com'
+          Action: 's3:PutObject'
+          Resource: !Sub '${Bucket.Arn}/*AWSLogs/${AWS::AccountId}/Config/*'
+          Condition:
+            StringEquals:
+              's3:x-amz-acl': 'bucket-owner-full-control'
+  BucketPolicyCloudTrailWrite:
+    Condition: HasCloudTrailWriteAccess
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'cloudtrail.amazonaws.com'
+          Action: 's3:GetBucketAcl'
+          Resource: !GetAtt 'Bucket.Arn'
+        - Effect: Allow
+          Principal:
+            Service: 'cloudtrail.amazonaws.com'
+          Action: 's3:PutObject'
+          Resource: !Sub '${Bucket.Arn}/*AWSLogs/${AWS::AccountId}/*'
+          Condition:
+            StringEquals:
+              's3:x-amz-acl': 'bucket-owner-full-control'
   CloudFrontOriginAccessIdentity:
     Condition: HasCloudFrontReadAccess
     Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
