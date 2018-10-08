@@ -120,6 +120,15 @@ Resources:
     Condition: HasHttpEndpoint
     Type: 'AWS::SNS::Subscription'
     Properties:
+      DeliveryPolicy:
+        healthyRetryPolicy:
+          minDelayTarget: 1
+          maxDelayTarget: 60
+          numRetries: 100
+          numNoDelayRetries: 0
+          backoffFunction: exponential
+        throttlePolicy:
+          maxReceivesPerSecond: 1
       Endpoint: !Ref HttpEndpoint
       Protocol: http
       TopicArn: !Ref Topic
@@ -127,6 +136,15 @@ Resources:
     Condition: HasHttpsEndpoint
     Type: 'AWS::SNS::Subscription'
     Properties:
+      DeliveryPolicy:
+        healthyRetryPolicy:
+          minDelayTarget: 1
+          maxDelayTarget: 60
+          numRetries: 100
+          numNoDelayRetries: 0
+          backoffFunction: exponential
+        throttlePolicy:
+          maxReceivesPerSecond: 1
       Endpoint: !Ref HttpsEndpoint
       Protocol: https
       TopicArn: !Ref Topic
