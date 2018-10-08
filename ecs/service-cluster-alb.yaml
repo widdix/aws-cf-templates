@@ -190,6 +190,44 @@ Resources:
       TargetGroupAttributes:
       - Key: deregistration_delay.timeout_seconds
         Value: !Ref LoadBalancerDeregistrationDelay
+  UnhealthHostCountTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Unhealthy Host Count > 0'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: UnHealthyHostCount
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: LoadBalancer
+        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'}
+      - Name: TargetGroup
+        Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
+  HealthHostCountTooLowAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Healthy Host Count < 2'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: HealthyHostCount
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: LessThanThreshold
+      Threshold: 2
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: LoadBalancer
+        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'}
+      - Name: TargetGroup
+        Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
   HTTPCodeELB5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
