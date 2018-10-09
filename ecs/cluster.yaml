@@ -274,11 +274,10 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
-            - 'logs:CreateLogGroup'
             - 'logs:CreateLogStream'
             - 'logs:PutLogEvents'
             - 'logs:DescribeLogStreams'
-            Resource: 'arn:aws:logs:*:*:*'
+            Resource: !GetAtt 'LogGroup.Arn'
       - PolicyName: autoscaling
         PolicyDocument:
           Version: '2012-10-17'
@@ -1204,7 +1203,7 @@ Resources:
           Principal:
             Service: 'lambda.amazonaws.com'
           Action: 'sts:AssumeRole'
-      ManagedPolicyArns:
+      ManagedPolicyArns: # TODO get rid of managed policy
       - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
       Policies:
       - PolicyName: ecs

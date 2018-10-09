@@ -456,7 +456,7 @@ Resources:
           Action:
           - 'sts:AssumeRole'
       Path: '/'
-      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []]
+      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []] # TODO get rid of managed policy
       Policies:
       - PolicyName: cloudwatch
         PolicyDocument:
@@ -490,12 +490,10 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
-            - 'logs:CreateLogGroup'
             - 'logs:CreateLogStream'
             - 'logs:PutLogEvents'
             - 'logs:DescribeLogStreams'
-            Resource:
-            - 'arn:aws:logs:*:*:*'
+            Resource: !GetAtt 'MasterLogs.Arn'
       - PolicyName: sts
         PolicyDocument:
           Version: '2012-10-17'
@@ -1319,7 +1317,7 @@ Resources:
           Action:
           - 'sts:AssumeRole'
       Path: /
-      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []]
+      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []] # TODO get rid of managed policy
       Policies:
       - PolicyName: ec2
         PolicyDocument:
@@ -1337,12 +1335,10 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
-            - 'logs:CreateLogGroup'
             - 'logs:CreateLogStream'
             - 'logs:PutLogEvents'
             - 'logs:DescribeLogStreams'
-            Resource:
-            - arn:aws:logs:*:*:*
+            Resource: !GetAtt 'AgentLogs.Arn'
       - PolicyName: sts
         PolicyDocument:
           Version: '2012-10-17'
