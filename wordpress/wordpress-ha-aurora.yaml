@@ -780,6 +780,7 @@ Resources:
               php-opcache: []
               php-mysqlnd: []
               php-mbstring: []
+              php-xmlrpc: []
               mariadb: []
               httpd: []
           files:
