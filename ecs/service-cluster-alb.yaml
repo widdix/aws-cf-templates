@@ -303,7 +303,7 @@ Resources:
   ServiceRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      ManagedPolicyArns:
+      ManagedPolicyArns: # TODO get rid of managed policy
       - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole'
       AssumeRolePolicyDocument:
         Version: '2008-10-17'
