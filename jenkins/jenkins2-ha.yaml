@@ -578,7 +578,21 @@ Resources:
                 file = /var/log/yum.log
                 log_stream_name = {instance_id}/var/log/yum.log
                 log_group_name = ${MasterLogs}
-
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/config/efs.conf':
+              content: !Sub |
+                [/var/log/amazon/efs/mount.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/amazon/efs/mount.log
+                log_stream_name = {instance_id}/var/log/amazon/efs/mount.log
+                log_group_name = ${MasterLogs}
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/config/jenkins-master.conf':
+              content: !Sub |
                 [/var/log/jenkins/jenkins.log]
                 datetime_format = %d %b %Y %H:%M:%S
                 multi_line_start_pattern = {datetime_format}
@@ -599,6 +613,8 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
+                - '/etc/awslogs/config/efs.conf'
+                - '/etc/awslogs/config/jenkins-master.conf'
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':

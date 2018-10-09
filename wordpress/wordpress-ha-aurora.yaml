@@ -660,7 +660,21 @@ Resources:
                 file = /var/log/yum.log
                 log_stream_name = {instance_id}/var/log/yum.log
                 log_group_name = ${WebServerLogs}
-
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/config/efs.conf':
+              content: !Sub |
+                [/var/log/amazon/efs/mount.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/amazon/efs/mount.log
+                log_stream_name = {instance_id}/var/log/amazon/efs/mount.log
+                log_group_name = ${WebServerLogs}
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/config/httpd.conf':
+              content: !Sub |
                 [/var/log/httpd/access_log]
                 datetime_format = %b %d %H:%M:%S %Y
                 file = /var/log/httpd/access_log
@@ -685,6 +699,8 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
+                - '/etc/awslogs/config/efs.conf'
+                - '/etc/awslogs/config/httpd.conf'
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':

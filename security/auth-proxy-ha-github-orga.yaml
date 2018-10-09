@@ -518,7 +518,11 @@ Resources:
                 file = /var/log/yum.log
                 log_stream_name = {instance_id}/var/log/yum.log
                 log_group_name = ${Logs}
-
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/config/oauth2proxy.conf':
+              content: !Sub |
                 [/var/log/oauth2_proxy.log]
                 file = /var/log/oauth2_proxy.log
                 log_stream_name = {instance_id}/var/log/oauth2_proxy.log
@@ -542,6 +546,7 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
+                - '/etc/awslogs/config/oauth2proxy.conf'
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':

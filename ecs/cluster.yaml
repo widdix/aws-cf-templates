@@ -578,6 +578,11 @@ Resources:
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
                 log_group_name = ${LogGroup}
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/config/ecs.conf':
+              content: !Sub |
                 [/var/log/ecs/ecs-init.log]
                 file = /var/log/ecs/ecs-init.log.*
                 log_group_name = /var/log/ecs/ecs-init.log
@@ -602,6 +607,7 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
+                - '/etc/awslogs/config/ecs.conf'
         ssh-access:
           packages:
             yum:
