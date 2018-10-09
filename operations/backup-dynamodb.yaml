@@ -71,7 +71,7 @@ Resources:
           Principal:
             Service: 'ec2.amazonaws.com'
           Action: 'sts:AssumeRole'
-      ManagedPolicyArns:
+      ManagedPolicyArns: # TODO get rid of managed policy
       - 'arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforDataPipelineRole'
   DataPipelineDefaultResourceInstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
@@ -90,7 +90,7 @@ Resources:
             - 'datapipeline.amazonaws.com'
             - 'elasticmapreduce.amazonaws.com'
           Action: 'sts:AssumeRole'
-      ManagedPolicyArns:
+      ManagedPolicyArns: # TODO get rid of managed policy
       - 'arn:aws:iam::aws:policy/service-role/AWSDataPipelineRole'
   DataPipeline:
     Type: 'AWS::DataPipeline::Pipeline'

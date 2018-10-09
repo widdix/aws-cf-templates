@@ -57,7 +57,7 @@ Resources:
             - 'lambda.amazonaws.com'
             - 'edgelambda.amazonaws.com'
           Action: 'sts:AssumeRole'
-      ManagedPolicyArns:
+      ManagedPolicyArns: # TODO get rid of managed policy
       - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
   LambdaFunction:
     Type: 'AWS::Lambda::Function'
