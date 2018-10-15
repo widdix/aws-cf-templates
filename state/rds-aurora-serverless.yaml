@@ -36,7 +36,6 @@ Metadata:
       - DBMasterUsername
       - DBMasterUserPassword
       - SubDomainNameWithDot
-      - ReadSubDomainNameWithDot
       - PreferredBackupWindow
       - PreferredMaintenanceWindow
     - Label:
@@ -102,10 +101,6 @@ Parameters:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
     Default: 'aurora.'
-  ReadSubDomainNameWithDot:
-    Description: 'Name that is used to create the read DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
-    Type: String
-    Default: 'read-aurora.'
   PreferredBackupWindow:
     Description: 'The daily time range in UTC during which you want to create automated backups.'
     Type: String
