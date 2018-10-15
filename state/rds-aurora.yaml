@@ -140,7 +140,6 @@ Conditions:
   HasEncryption: !Equals [!Ref Encryption, true]
   HasEncryptionAndNotDBSnapshotIdentifier: !And [!Condition HasEncryption, !Not [!Condition HasDBSnapshotIdentifier]]
   HasEngineMySQL: !Or [!Equals [!Ref Engine, 'aurora'], !Equals [!Ref Engine, 'aurora-mysql']]
-  HasEnginePostgres: !Equals [!Ref Engine, 'aurora-postgresql']
 Resources:
   RecordSet:
     Condition: HasZone
