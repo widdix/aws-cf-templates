@@ -18,10 +18,18 @@ Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
     - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentAlertStack
+    - Label:
         default: 'KMS Parameters'
       Parameters:
       - Service
 Parameters:
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
   Service:
     Description: 'Which AWS service is allowed to use this CMK?'
     Type: String
@@ -48,9 +56,11 @@ Parameters:
     - workspaces
     Default: ALL_SERVICES
 Conditions:
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasServiceAllServices: !Equals [!Ref Service, 'ALL_SERVICES']
 Resources:
   Key:
+    DeletionPolicy: Retain
     Type: 'AWS::KMS::Key'
     Properties:
       KeyPolicy:
@@ -84,6 +94,27 @@ Resources:
     Properties:
       AliasName: !Sub 'alias/${AWS::StackName}'
       TargetKeyId: !Ref Key
+  DeletionNotification:
+    Condition: HasAlertTopic
+    Type: 'AWS::Events::Rule'
+    Properties:
+      EventPattern:
+        source:
+        - 'aws.kms'
+        'detail-type':
+        - 'AWS API Call via CloudTrail'
+        resources:
+        - !GetAtt Key.Arn
+        detail:
+          eventSource:
+          - 'kms.amazonaws.com'
+          'eventName':
+          - ScheduleKeyDeletion
+          - DisableKey
+      State: ENABLED
+      Targets:
+      - Arn: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+        Id: rule
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
