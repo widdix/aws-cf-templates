@@ -192,7 +192,7 @@ Conditions:
   HasEFSProvisionedThroughput: !Not [!Equals [!Ref EFSProvisionedThroughputInMibps, '0.0']]
   HasNotEFSProvisionedThroughput: !Equals [!Ref EFSProvisionedThroughputInMibps, '0.0']
   HasAlertTopicAndEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasEFSProvisionedThroughput]
-  HasAlertTopicAndNotEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasNotEFSProvisionedThroughput]  
+  HasAlertTopicAndNotEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasNotEFSProvisionedThroughput]
 Resources:
   WebServerLogs:
     Type: 'AWS::Logs::LogGroup'
