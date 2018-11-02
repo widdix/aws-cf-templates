@@ -28,6 +28,7 @@ Metadata:
     - Label:
         default: 'RDS Parameters'
       Parameters:
+      - Engine
       - DBSnapshotIdentifier
       - DBInstanceClass
       - DBName
@@ -37,6 +38,8 @@ Metadata:
       - SubDomainNameWithDot
       - ReadSubDomainNameWithDot
       - Encryption
+      - PreferredBackupWindow
+      - PreferredMaintenanceWindow
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -56,12 +59,20 @@ Parameters:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
+  Engine:
+    Description: 'The name of the database engine that you want to use for this DB cluster.'
+    Type: String
+    AllowedValues:
+    - aurora # MySQL 5.6-compatible Aurora
+    - 'aurora-mysql' # MySQL 5.7-compatible Aurora
+    - 'aurora-postgresql'
+    Default: aurora
   DBSnapshotIdentifier:
     Description: 'Optional identifier for the DB cluster snapshot from which you want to restore (leave blank to create an empty cluster).'
     Type: String
     Default: ''
   DBInstanceClass:
-    Description: 'The instance type of database server.'
+    Description: 'The instance type of database server (see https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Concepts.DBInstanceClass.html).'
     Type: String
     Default: 'db.t2.small'
   DBName:
@@ -69,8 +80,10 @@ Parameters:
     Type: String
     Default: ''
   DBBackupRetentionPeriod:
-    Description: 'The number of days to keep snapshots of the database.'
+    Description: 'The number of days to keep snapshots of the cluster.'
     Type: Number
+    MinValue: 1
+    MaxValue: 35
     Default: 30
   DBMasterUsername:
     Description: 'The master user name for the DB instance (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
@@ -94,6 +107,31 @@ Parameters:
     Type: String
     Default: false
     AllowedValues: [true, false]
+  PreferredBackupWindow:
+    Description: 'The daily time range in UTC during which you want to create automated backups.'
+    Type: String
+    Default: '09:54-10:24'
+  PreferredMaintenanceWindow:
+    Description: The weekly time range (in UTC) during which system maintenance can occur.
+    Type: String
+    Default: 'sat:07:00-sat:07:30'
+Mappings:
+  EngineMap:
+    aurora:
+      EngineVersion: '5.6.10a'
+      Port: 3306
+      ClusterParameterGroupFamily: 'aurora5.6'
+      ParameterGroupFamily: 'aurora5.6'
+    'aurora-mysql':
+      EngineVersion: '5.7.12'
+      Port: 3306
+      ClusterParameterGroupFamily: 'aurora-mysql5.7'
+      ParameterGroupFamily: 'aurora-mysql5.7'
+    'aurora-postgresql':
+      EngineVersion: '9.6.3'
+      Port: 5432
+      ClusterParameterGroupFamily: 'aurora-postgresql9.6'
+      ParameterGroupFamily: 'aurora-postgresql9.6'
 Conditions:
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
@@ -101,6 +139,7 @@ Conditions:
   HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, '']]
   HasEncryption: !Equals [!Ref Encryption, true]
   HasEncryptionAndNotDBSnapshotIdentifier: !And [!Condition HasEncryption, !Not [!Condition HasDBSnapshotIdentifier]]
+  HasEngineMySQL: !Or [!Equals [!Ref Engine, 'aurora'], !Equals [!Ref Engine, 'aurora-mysql']]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -134,8 +173,8 @@ Resources:
       GroupDescription: !Ref 'AWS::StackName'
       SecurityGroupIngress:
       - IpProtocol: tcp
-        FromPort: 3306
-        ToPort: 3306
+        FromPort: !FindInMap [EngineMap, !Ref Engine, Port]
+        ToPort: !FindInMap [EngineMap, !Ref Engine, Port]
         SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
   ClusterSecurityGroupInSSHBastion:
@@ -144,8 +183,8 @@ Resources:
     Properties:
       GroupId: !Ref ClusterSecurityGroup
       IpProtocol: tcp
-      FromPort: 3306
-      ToPort: 3306
+      FromPort: !FindInMap [EngineMap, !Ref Engine, Port]
+      ToPort: !FindInMap [EngineMap, !Ref Engine, Port]
       SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
   Key:
     Condition: HasEncryptionAndNotDBSnapshotIdentifier
@@ -190,13 +229,18 @@ Resources:
     Type: 'AWS::RDS::DBClusterParameterGroup'
     Properties:
       Description: !Ref 'AWS::StackName'
-      Family: 'aurora5.6'
-      Parameters:
-        character_set_client: utf8
+      Family: !FindInMap [EngineMap, !Ref Engine, ClusterParameterGroupFamily]
+      Parameters: !If
+      - HasEngineMySQL
+      - character_set_client: utf8
+        character_set_connection: utf8
         character_set_database: utf8
         character_set_filesystem: utf8
+        character_set_results: utf8
         character_set_server: utf8
+        collation_connection: utf8_general_ci
         collation_server: utf8_general_ci
+      - client_encoding: 'UTF8'
   DBCluster:
     Type: 'AWS::RDS::DBCluster'
     Properties:
@@ -204,13 +248,15 @@ Resources:
       DatabaseName: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBName]
       DBClusterParameterGroupName: !Ref DBClusterParameterGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
-      Engine: aurora
-      EngineVersion: '5.6.10a'
+      Engine: !Ref Engine
+      EngineMode: provisioned
+      EngineVersion: !FindInMap [EngineMap, !Ref Engine, EngineVersion]
       KmsKeyId: !If [HasEncryptionAndNotDBSnapshotIdentifier, !Ref Key, !Ref 'AWS::NoValue']
       MasterUsername: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUsername]
       MasterUserPassword: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUserPassword]
-      PreferredBackupWindow: '09:54-10:24'
-      PreferredMaintenanceWindow: 'sat:07:00-sat:07:30'
+      Port: !FindInMap [EngineMap, !Ref Engine, Port]
+      PreferredBackupWindow: !Ref PreferredBackupWindow
+      PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
       SnapshotIdentifier: !If [HasDBSnapshotIdentifier, !Ref DBSnapshotIdentifier, !Ref 'AWS::NoValue']
       StorageEncrypted: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref Encryption]
       VpcSecurityGroupIds:
@@ -219,11 +265,7 @@ Resources:
     Type: 'AWS::RDS::DBParameterGroup'
     Properties:
       Description: !Ref 'AWS::StackName'
-      Family: 'aurora5.6'
-      Parameters:
-        innodb_lock_wait_timeout: '10'
-        log_output: FILE
-        tx_isolation: 'READ-COMMITTED'
+      Family: !FindInMap [EngineMap, !Ref Engine, ParameterGroupFamily]
   DBInstanceA:
     Type: 'AWS::RDS::DBInstance'
     Properties:
@@ -234,7 +276,7 @@ Resources:
       DBInstanceClass: !Ref DBInstanceClass
       DBParameterGroupName: !Ref DBParameterGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
-      Engine: aurora
+      Engine: !Ref Engine
   DBInstanceB:
     Type: 'AWS::RDS::DBInstance'
     Properties:
@@ -245,7 +287,7 @@ Resources:
       DBInstanceClass: !Ref DBInstanceClass
       DBParameterGroupName: !Ref DBParameterGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
-      Engine: aurora
+      Engine: !Ref Engine
   DatabaseACPUUtilizationTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'

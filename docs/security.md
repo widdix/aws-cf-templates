@@ -170,3 +170,17 @@ If you want to use an external S3 bucket, the bucket needs to have the following
 ```
 
 Replace `$ExternalTrailBucket` with the name of your bucket, and add a row for every account you want to write from `$AccountId[*]`.
+
+# KMS customer managed CMK for AWS services
+This template provides a KMS customer managed CMK used by AWS services. Access control via IAM is also enabled. In case of a CMK deletion, a event is forwarded to the `ParentAlertStack` (if specified).
+
+> ATTENTION: If you delete a stack based on this template, the KMS CMK is NOT deleted to prevent data loss! Mark the CMK for deletion if you really want to delete the CMK! All resources encrypted with the CMK (including RDS snapshots) are unusable after the deletion!
+
+## Installation Guide
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=kms-key&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/security/kms-key.yaml)
+1. Click **Next** to proceed with the next step of the wizard.
+1. Specify a name and all parameters for the stack.
+1. Click **Next** to proceed with the next step of the wizard.
+1. Click **Next** to skip the **Options** step of the wizard.
+1. Click **Create** to start the creation of the stack.
+1. Wait until the stack reaches the state **CREATE_COMPLETE**
