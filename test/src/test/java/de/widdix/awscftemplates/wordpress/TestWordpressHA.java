@@ -111,7 +111,7 @@ public class TestWordpressHA extends ACloudFormationTest {
                                 new Parameter().withParameterKey("BlogAdminUsername").withParameterValue("admin"),
                                 new Parameter().withParameterKey("BlogAdminPassword").withParameterValue(blogPassword),
                                 new Parameter().withParameterKey("BlogAdminEMail").withParameterValue("no-reply@widdix.de"),
-                                new Parameter().withParameterKey("EFSProvisionedThroughputInMibps").withParameterValue("1.0")
+                                new Parameter().withParameterKey("EFSProvisionedThroughputInMibps").withParameterValue("1")
                         );
                         final String url = "https://" + subDomainName + "." + Config.get(Config.Key.DOMAIN_SUFFIX);
                         final Callable<String> callable = () -> {
@@ -238,7 +238,7 @@ public class TestWordpressHA extends ACloudFormationTest {
                                 new Parameter().withParameterKey("BlogAdminUsername").withParameterValue("admin"),
                                 new Parameter().withParameterKey("BlogAdminPassword").withParameterValue(blogPassword),
                                 new Parameter().withParameterKey("BlogAdminEMail").withParameterValue("no-reply@widdix.de"),
-                                new Parameter().withParameterKey("EFSProvisionedThroughputInMibps").withParameterValue("1.0")
+                                new Parameter().withParameterKey("EFSProvisionedThroughputInMibps").withParameterValue("1")
                         );
                         final String url = "https://" + subDomainName + "." + Config.get(Config.Key.DOMAIN_SUFFIX);
                         final Callable<String> callable = () -> {
