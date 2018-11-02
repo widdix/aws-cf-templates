@@ -80,7 +80,7 @@ Parameters:
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
   SubDomainNameWithDot:
-    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
     Default: 'nat.'
 Mappings:
