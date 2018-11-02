@@ -1048,23 +1048,59 @@ Resources:
               mode: '000400'
               owner: root
               group: root
-            '/etc/cron.d/cloudwatch-build-active':
+            '/opt/cloudwatch-build-active.sh':
               content: !Sub |
+                #!/bin/bash
+                VALUE="$(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/computer/api/xml?xpath=*/busyExecutors' | sed -r 's/<[/a-zA-Z]*>//g')"
+                aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildActive --value ${!VALUE} --unit Count
+              mode: '000700'
+              owner: root
+              group: root
+            '/opt/cloudwatch-build-queue.sh':
+              content: !Sub |
+                #!/bin/bash
+                VALUE="$(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/jqs-monitoring/api/xml?xpath=/JQSMonitoring/buildQueue/numberOfJobs' | sed -r 's/<[/a-zA-Z]*>//g')"
+                aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildQueue --value ${!VALUE} --unit Count
+              mode: '000700'
+              owner: root
+              group: root
+            '/opt/cloudwatch-build-active-queue.sh':
+              content: !Sub |
+                #!/bin/bash
+                VALUE1="$(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/computer/api/xml?xpath=*/busyExecutors' | sed -r 's/<[/a-zA-Z]*>//g')"
+                VALUE2="$(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/jqs-monitoring/api/xml?xpath=/JQSMonitoring/buildQueue/numberOfJobs' | sed -r 's/<[/a-zA-Z]*>//g')"
+                VALUE=$(( $VALUE1 + $VALUE2 ))
+                aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildActiveQueue --value ${!VALUE} --unit Count
+              mode: '000700'
+              owner: root
+              group: root
+            '/etc/cron.d/cloudwatch-build-active':
+              content: |
                 SHELL=/bin/bash
                 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin
                 MAILTO=root
                 HOME=/
-                * * * * * root aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildActive --value $(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/computer/api/xml?xpath=*/busyExecutors' | sed -r 's/<[/a-zA-Z]*>//g') --unit Count
+                * * * * * root /opt/cloudwatch-build-active.sh
               mode: '000600'
               owner: root
               group: root
             '/etc/cron.d/cloudwatch-build-queue':
-              content: !Sub |
+              content: |
                 SHELL=/bin/bash
                 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin
                 MAILTO=root
                 HOME=/
-                * * * * * root aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildQueue --value $(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/jqs-monitoring/api/xml?xpath=/JQSMonitoring/buildQueue/numberOfJobs' | sed -r 's/<[/a-zA-Z]*>//g') --unit Count
+                * * * * * root /opt/cloudwatch-build-queue.sh
+              mode: '000600'
+              owner: root
+              group: root
+            '/etc/cron.d/cloudwatch-build-active-queue':
+              content: |
+                SHELL=/bin/bash
+                PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin
+                MAILTO=root
+                HOME=/
+                * * * * * root /opt/cloudwatch-build-active-queue.sh
               mode: '000600'
               owner: root
               group: root
@@ -2043,19 +2079,19 @@ Resources:
       AutoScalingGroupName: !Ref AgentASG
       Cooldown: '300'
       ScalingAdjustment: -1
-  BuildActiveEmptyAlarm:
+  BuildActiveQueueEmptyAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      EvaluationPeriods: 5
+      EvaluationPeriods: 1
       Statistic: Maximum  # special rule because we scale on build queue length
       Threshold: 0
-      AlarmDescription: 'Alarm if Build Queue is empty.'
+      AlarmDescription: 'Alarm if Build Queue is empty and no jobs are active.'
       Period: 120
       AlarmActions:
       - !Ref AgentScalingDownPolicy
       Namespace: !Ref 'AWS::StackName'
       ComparisonOperator: LessThanOrEqualToThreshold
-      MetricName: BuildActive
+      MetricName: BuildActiveQueue
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
