@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Operations: DynamoDB backup with Data Pipeline (Deprecated in v7, will be removed in v8, use operations/backup-dynamodb-native.yaml instead), a cloudonaut.io template'
+Description: 'Operations: DynamoDB backup with Data Pipeline (Deprecated in v7, will be removed in v9, use operations/backup-dynamodb-native.yaml instead), a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
