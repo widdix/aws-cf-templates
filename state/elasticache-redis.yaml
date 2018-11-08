@@ -1,0 +1,201 @@
+---
+# Copyright 2018 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Create an AWS ElastiCache Replication Group with Redis Engine based on parameters,
+# along with an associated security group and subnet group.
+# See links:
+#   https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/supported-engine-versions.html
+#   https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/WhatIs.Components.html
+#
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'State: ElastiCache redis, a cloudonaut.io template, sponsored by https://github.com/oanhnn'
+
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+  ParentClientStack:
+    Description: 'Stack name of parent client stack based on state/client-sg.yaml template.'
+    Type: String
+  ParentZoneStack:
+    Description: 'Optional stack name of parent zone stack based on vpc/vpc-zone-*.yaml template.'
+    Type: String
+    Default: ''
+  ParentSSHBastionStack:
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-*-bastion.yaml template.'
+    Type: String
+    Default: ''
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  CacheNodeType:
+    Description: 'The compute and memory capacity of the nodes in the node group (shard).'
+    Type: 'String'
+    AllowedValues:
+    - cache.t2.micro
+    - cache.t2.small
+    - cache.t2.medium
+    - cache.m4.large
+    - cache.m4.xlarge
+    - cache.m4.2xlarge
+    - cache.m4.4xlarge
+    - cache.m4.10xlarge
+    - cache.r4.large
+    - cache.r4.xlarge
+    - cache.r4.2xlarge
+    - cache.r4.4xlarge
+    - cache.r4.8xlarge
+    - cache.r4.16xlarge
+    Default: cache.t2.micro
+    ConstraintDescription: Node instance class not supported.
+  NumCacheNodes:
+    Description: 'The initial number of cache nodes that the cluster has.'
+    Type: 'Number'
+    MinValue: 1
+    MaxValue: 5
+    Default: 2
+    ConstraintDescription: The number of nodes on group must be between 1 and 5.
+  EngineFamily:
+    Description: 'The cache parameter group family'
+    Type: String
+    Default: 'redis3.2'
+  EngineVersion:
+    Description: 'Version of Redis'
+    Type: String
+    Default: '3.2.10'
+  SubDomainNameWithDot:
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
+    Type: String
+    Default: 'redis.'
+  AutoMinorVersionUpgrade:
+    Description: Whether or not minor version upgrades to the cache engine should be applied automatically during the maintenance window.
+    Type: String
+    AllowedValues: [true, false]
+    Default: true
+  PreferredMaintenanceWindow:
+    Description: The weekly time range (in UTC) during which system maintenance can occur.
+    Type: String
+    Default: 'sat:07:00-sat:07:30'
+
+Conditions:
+
+  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+  HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasSingleCacheNode: !Equals [!Ref NumCacheNodes, '1']
+  IsAutomaticFailoverSupported:
+    Fn::And:
+    - !Not [!Equals [!Select [1, !Split ['.', !Ref CacheNodeType]], 't1']]
+    - !Not [!Equals [!Select [1, !Split ['.', !Ref CacheNodeType]], 't2']]
+  IsAutomaticFailoverEnabled:
+    Fn::And:
+    - !Condition IsAutomaticFailoverSupported
+    - !Not [!Condition HasSingleCacheNode]
+
+Resources:
+  RecordSet:
+    Condition: HasZone
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
+      Name: !Sub
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+      ResourceRecords:
+      - !GetAtt ReplicationGroup.PrimaryEndPoint.Address
+      TTL: '60'
+      Type: CNAME
+  CacheParameterGroupName:
+    Type: 'AWS::ElastiCache::ParameterGroup'
+    Properties:
+      CacheParameterGroupFamily: !Ref EngineFamily
+      Description: !Ref 'AWS::StackName'
+      Properties: {}
+  CacheSubnetGroupName:
+    Type: 'AWS::ElastiCache::SubnetGroup'
+    Properties:
+      Description: !Ref 'AWS::StackName'
+      SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
+  SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Ref 'AWS::StackName'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 6379
+        ToPort: 6379
+        SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+  SecurityGroupInSSHBastion:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasSSHBastionSecurityGroup
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: 6379
+      ToPort: 6379
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
+
+  ReplicationGroup:
+    Type: AWS::ElastiCache::ReplicationGroup
+    Properties:
+      ReplicationGroupDescription: A redis replication group
+      AtRestEncryptionEnabled: false
+      TransitEncryptionEnabled: false
+      AutomaticFailoverEnabled: !If [IsAutomaticFailoverEnabled, true, false]
+      AutoMinorVersionUpgrade: !Ref AutoMinorVersionUpgrade
+      CacheNodeType: !Ref CacheNodeType
+      CacheSubnetGroupName: !Ref CacheSubnetGroupName
+      CacheParameterGroupName: !Ref CacheParameterGroupName
+      SecurityGroupIds:
+      - !Ref SecurityGroup
+      NotificationTopicArn:
+        Fn::If:
+        - HasAlertTopic
+        - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+        - !Ref 'AWS::NoValue'
+      Engine: redis
+      EngineVersion: !Ref EngineVersion
+      Port: 6379
+      NumCacheClusters: !Ref NumCacheNodes
+      PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
+      # SnapshotRetentionLimit: 5
+      # SnapshotWindow: '18:24-18:54'
+      Tags:
+      - Key: Name
+        Value: !Sub ${AWS::StackName}-ReplicationGroup
+
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'state/elasticache-cache'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: Stack Name
+    Value: !Sub ${AWS::StackName}
+  ReplicationGroupID:
+    Description: The replication group ID
+    Value: !Ref ReplicationGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-ReplicationGroupId'
+  DNSName:
+    Description: The DNS address of the primary read-write cache node.
+    Value: !GetAtt ReplicationGroup.PrimaryEndPoint.Address
+    Export:
+      Name: !Sub '${AWS::StackName}-DNSName'
