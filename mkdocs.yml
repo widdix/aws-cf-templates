@@ -2,7 +2,7 @@
 # only needed for readthedocs.io
 site_name: 'Free Templates for AWS CloudFormation'
 docs_dir: docs
-theme: readthedocs
+theme: mkdocs
 nav:
 - Home: 'index.md'
 - Templates:
