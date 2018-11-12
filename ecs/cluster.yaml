@@ -29,7 +29,7 @@ Metadata:
       Parameters:
       - KeyName
       - IAMUserSSHAccess
-      # TODO - SystemsManagerAccess
+      - SystemsManagerAccess
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
@@ -76,6 +76,13 @@ Parameters:
     Description: 'Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).'
     Type: String
     Default: false
+    AllowedValues:
+    - true
+    - false
+  SystemsManagerAccess:
+    Description: 'Enable AWS Systems Manager agent and authorization.'
+    Type: String
+    Default: true
     AllowedValues:
     - true
     - false
@@ -152,40 +159,41 @@ Parameters:
     MinValue: 2
     ConstraintDescription: 'Must be >= 2'
 Mappings:
-  RegionMap: # TODO update to Amazon Linux 2 (don't forget to adjust awslogs config as well)
+  RegionMap:
     'ap-south-1':
-      ECSAMI: 'ami-0590d0dd683026eab'
+      ECSAMI: 'ami-00afc9e848e32b1ca'
     'eu-west-3':
-      ECSAMI: 'ami-06b685336aa497c15'
+      ECSAMI: 'ami-0b0b5fca56d03d022'
     'eu-west-2':
-      ECSAMI: 'ami-0209769f0c963e791'
+      ECSAMI: 'ami-0ba06c0257c11d483'
     'eu-west-1':
-      ECSAMI: 'ami-05b65c0f6a75c1c64'
+      ECSAMI: 'ami-0651de2fa6ccf6d26'
     'ap-northeast-2':
-      ECSAMI: 'ami-0d947b1901b27a37c'
+      ECSAMI: 'ami-0fcea96f3b2c67274'
     'ap-northeast-1':
-      ECSAMI: 'ami-08681de00a0aae54f'
+      ECSAMI: 'ami-05a1f057a1a8e1a50'
     'sa-east-1':
-      ECSAMI: 'ami-01bca91ecf4c1f494'
+      ECSAMI: 'ami-0f2187a18380957e4'
     'ca-central-1':
-      ECSAMI: 'ami-00d1bdbd447b5933a'
+      ECSAMI: 'ami-0605f253b9e04698c'
     'ap-southeast-1':
-      ECSAMI: 'ami-0a3f70f0255af1d29'
+      ECSAMI: 'ami-0d4d4a42a45fb8e4a'
     'ap-southeast-2':
-      ECSAMI: 'ami-05b48eda7f92aadbe'
+      ECSAMI: 'ami-0231cd5b17565f0b1'
     'eu-central-1':
-      ECSAMI: 'ami-0bb804e8cd910a664'
+      ECSAMI: 'ami-07c3a868617f8acdb'
     'us-east-1':
-      ECSAMI: 'ami-0b9a214f40c38d5eb'
+      ECSAMI: 'ami-0a6be20ed8ce1f055'
     'us-east-2':
-      ECSAMI: 'ami-09a64272e7fe706b6'
+      ECSAMI: 'ami-075d44ed0d20df780'
     'us-west-1':
-      ECSAMI: 'ami-0e7dd5fe55b87a5fe'
+      ECSAMI: 'ami-0828cd2f20543a2b3'
     'us-west-2':
-      ECSAMI: 'ami-00430184c7bb49914'
+      ECSAMI: 'ami-04a4fb062c609f55b'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
+  HasSystemsManagerAccess: !Equals [!Ref SystemsManagerAccess, 'true']
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
@@ -220,6 +228,7 @@ Resources:
             Service: 'ec2.amazonaws.com'
           Action: 'sts:AssumeRole'
       Path: '/'
+      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []] # TODO get rid of managed policy
       Policies:
       - PolicyName: ecs
         PolicyDocument:
@@ -535,30 +544,28 @@ Resources:
               content: !Sub |
                 [general]
                 state_file = /var/lib/awslogs/agent-state
-                [/var/log/messages]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/messages
-                log_stream_name = {instance_id}/var/log/messages
-                log_group_name = ${LogGroup}
-                [/var/log/secure]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/secure
-                log_stream_name = {instance_id}/var/log/secure
-                log_group_name = ${LogGroup}
-                [/var/log/cron]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cron
-                log_stream_name = {instance_id}/var/log/cron
-                log_group_name = ${LogGroup}
-                [/var/log/cloud-init.log]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cloud-init.log
-                log_stream_name = {instance_id}/var/log/cloud-init.log
-                log_group_name = ${LogGroup}
-                [/var/log/cfn-init.log]
+                [/var/log/amazon/ssm/amazon-ssm-agent.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init.log
-                log_stream_name = {instance_id}/var/log/cfn-init.log
+                file = /var/log/amazon/ssm/amazon-ssm-agent.log
+                log_stream_name = {instance_id}/var/log/amazon/ssm/amazon-ssm-agent.log
+                log_group_name = ${LogGroup}
+                [/var/log/amazon/ssm/errors.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/amazon/ssm/errors.log
+                log_stream_name = {instance_id}/var/log/amazon/ssm/errors.log
+                log_group_name = ${LogGroup}
+                [/var/log/audit/audit.log]
+                file = /var/log/audit/audit.log
+                log_stream_name = {instance_id}/var/log/audit/audit.log
+                log_group_name = ${LogGroup}
+                [/var/log/awslogs.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/awslogs.log
+                log_stream_name = {instance_id}/var/log/awslogs.log
+                log_group_name = ${LogGroup}
+                [/var/log/boot.log]
+                file = /var/log/boot.log
+                log_stream_name = {instance_id}/var/log/boot.log
                 log_group_name = ${LogGroup}
                 [/var/log/cfn-hup.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
@@ -570,13 +577,57 @@ Resources:
                 file = /var/log/cfn-init-cmd.log
                 log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
                 log_group_name = ${LogGroup}
+                [/var/log/cfn-init.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init.log
+                log_stream_name = {instance_id}/var/log/cfn-init.log
+                log_group_name = ${LogGroup}
+                [/var/log/cfn-wire.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-wire.log
+                log_stream_name = {instance_id}/var/log/cfn-wire.log
+                log_group_name = ${LogGroup}
                 [/var/log/cloud-init-output.log]
                 file = /var/log/cloud-init-output.log
                 log_stream_name = {instance_id}/var/log/cloud-init-output.log
                 log_group_name = ${LogGroup}
+                [/var/log/cloud-init.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cloud-init.log
+                log_stream_name = {instance_id}/var/log/cloud-init.log
+                log_group_name = ${LogGroup}
+                [/var/log/cron]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cron
+                log_stream_name = {instance_id}/var/log/cron
+                log_group_name = ${LogGroup}
                 [/var/log/dmesg]
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
+                log_group_name = ${LogGroup}
+                [/var/log/grubby_prune_debug]
+                file = /var/log/grubby_prune_debug
+                log_stream_name = {instance_id}/var/log/grubby_prune_debug
+                log_group_name = ${LogGroup}
+                [/var/log/maillog]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/maillog
+                log_stream_name = {instance_id}/var/log/maillog
+                log_group_name = ${LogGroup}
+                [/var/log/messages]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/messages
+                log_stream_name = {instance_id}/var/log/messages
+                log_group_name = ${LogGroup}
+                [/var/log/secure]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/secure
+                log_stream_name = {instance_id}/var/log/secure
+                log_group_name = ${LogGroup}
+                [/var/log/yum.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/yum.log
+                log_stream_name = {instance_id}/var/log/yum.log
                 log_group_name = ${LogGroup}
               mode: '000644'
               owner: root
@@ -584,7 +635,7 @@ Resources:
             '/etc/awslogs/config/ecs.conf':
               content: !Sub |
                 [/var/log/ecs/ecs-init.log]
-                file = /var/log/ecs/ecs-init.log.*
+                file = /var/log/ecs/ecs-init.log
                 log_group_name = /var/log/ecs/ecs-init.log
                 log_stream_name = {instance_id}/var/log/ecs/ecs-init.log
                 datetime_format = %Y-%m-%dT%H:%M:%SZ
@@ -598,7 +649,7 @@ Resources:
               group: root
           services:
             sysvinit:
-              awslogs:
+              awslogsd:
                 enabled: true
                 ensureRunning: true
                 packages:
@@ -609,9 +660,6 @@ Resources:
                 - '/etc/awslogs/awscli.conf'
                 - '/etc/awslogs/config/ecs.conf'
         ssh-access:
-          packages:
-            yum:
-              'aws-cli': []
           files:
             '/opt/authorized_keys_command.sh':
               content: |
@@ -679,6 +727,7 @@ Resources:
           packages:
             yum:
               ruby: []
+              amazon-ssm-agent: []
             rubygems:
               'aws-sdk': ['3.0.1']
               daemons: ['1.2.4']
@@ -873,6 +922,12 @@ Resources:
                 files:
                 - '/etc/cfn/cfn-hup.conf'
                 - '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
+              amazon-ssm-agent:
+                enabled: !If [HasSystemsManagerAccess, true, false]
+                ensureRunning: !If [HasSystemsManagerAccess, true, false]
+                packages:
+                  yum:
+                  - amazon-ssm-agent
               lifecycle-poller:
                 enabled: true
                 ensureRunning: true
