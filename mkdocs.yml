@@ -3,7 +3,7 @@
 site_name: 'Free Templates for AWS CloudFormation'
 docs_dir: docs
 theme: mkdocs
-nav:
+pages:
 - Home: 'index.md'
 - Templates:
   - 'EC2': 'ec2.md'
