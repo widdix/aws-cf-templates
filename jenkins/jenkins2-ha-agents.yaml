@@ -2107,6 +2107,11 @@ Outputs:
     Value: admin
     Export:
       Name: !Sub '${AWS::StackName}-AdminUsername'
+  ELBArn:
+    Description: 'The ARN for the Jenkins Master load balancer.'
+    Value: !Ref MasterELB
+    Export:
+      Name: !Sub '${AWS::StackName}-ELBArn'
   DNSName:
     Description: 'The DNS name for the Jenkins Master load balancer.'
     Value: !GetAtt 'MasterELB.DNSName'
