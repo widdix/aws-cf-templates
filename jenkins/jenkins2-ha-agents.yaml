@@ -1681,6 +1681,9 @@ Resources:
             'c_mkdir':
               command: 'mkdir /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins'
               test: '[ ! -d /var/lib/jenkins ]'
+            'd_sudoers':
+              command: 'echo "jenkins ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/jenkins'
+              test: '[ ! -f /etc/sudoers.d/jenkins ]'
           services:
             sysvinit:
               cfn-hup:
