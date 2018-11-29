@@ -2107,6 +2107,36 @@ Outputs:
     Value: admin
     Export:
       Name: !Sub '${AWS::StackName}-AdminUsername'
+  AgentASG:
+    Description: 'Jenkins agent(s) auto-scaling group.'
+    Value: !Ref AgentASG
+    Export:
+      Name: !Sub '${AWS::StackName}-AgentASG'
+  MasterASG:
+    Description: 'Jenkins master auto-scaling group.'
+    Value: !Ref MasterASG
+    Export:
+      Name: !Sub '${AWS::StackName}-MasterASG'
+  MasterSG:
+    Description: 'Jenkins master internal security group.'
+    Value: !Ref MasterSG
+    Export:
+      Name: !Sub '${AWS::StackName}-MasterSG'
+  MasterELBSG:
+    Description: 'ELB security group.'
+    Value: !Ref MasterELBSG
+    Export:
+      Name: !Sub '${AWS::StackName}-MasterELBSG'
+  MasterTargetGroupArn:
+    Description: 'The ARN for the Jenkins master target group.'
+    Value: !Ref MasterELBTargetGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-MasterTargetGroupArn'
+  ELBArn:
+    Description: 'The ARN for the Jenkins Master load balancer.'
+    Value: !Ref MasterELB
+    Export:
+      Name: !Sub '${AWS::StackName}-ELBArn'
   DNSName:
     Description: 'The DNS name for the Jenkins Master load balancer.'
     Value: !GetAtt 'MasterELB.DNSName'
