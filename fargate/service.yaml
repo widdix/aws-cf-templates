@@ -50,14 +50,14 @@ Metadata:
       - Cpu
       - Memory
       - ContainerPort
-Parameters:
+Parameters: # TODO add parameter(s) to pass ClientSecuritGroups
   ParentClusterStack:
     Description: 'Stack name of parent Cluster stack based on fargate/cluster.yaml template.'
     Type: String
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
-  ParentLoadBalancerStack:
+  ParentLoadBalancerStack: # TODO make this an optional parameter
     Description: 'Stack name of parent Cluster stack based on fargate/load-balancer-*.yaml template.'
     Type: String
   ParentAlertStack:
