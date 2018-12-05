@@ -161,35 +161,35 @@ Parameters:
 Mappings:
   RegionMap:
     'ap-south-1':
-      ECSAMI: 'ami-00afc9e848e32b1ca'
+      ECSAMI: 'ami-0b7c3be99909df6ef'
     'eu-west-3':
-      ECSAMI: 'ami-0b0b5fca56d03d022'
+      ECSAMI: 'ami-0caadc4f0db31a303'
     'eu-west-2':
-      ECSAMI: 'ami-0ba06c0257c11d483'
+      ECSAMI: 'ami-0b5225210a12d9951'
     'eu-west-1':
-      ECSAMI: 'ami-0651de2fa6ccf6d26'
+      ECSAMI: 'ami-0acc9f8be17a41897'
     'ap-northeast-2':
-      ECSAMI: 'ami-0fcea96f3b2c67274'
+      ECSAMI: 'ami-0bdc871079baf9649'
     'ap-northeast-1':
-      ECSAMI: 'ami-05a1f057a1a8e1a50'
+      ECSAMI: 'ami-0c38293d60d98af86'
     'sa-east-1':
-      ECSAMI: 'ami-0f2187a18380957e4'
+      ECSAMI: 'ami-078146697425f25a7'
     'ca-central-1':
-      ECSAMI: 'ami-0605f253b9e04698c'
+      ECSAMI: 'ami-02c80e9173258d289'
     'ap-southeast-1':
-      ECSAMI: 'ami-0d4d4a42a45fb8e4a'
+      ECSAMI: 'ami-0e28ff4e3f1776d86'
     'ap-southeast-2':
-      ECSAMI: 'ami-0231cd5b17565f0b1'
+      ECSAMI: 'ami-0eed1c915ea891aca'
     'eu-central-1':
-      ECSAMI: 'ami-07c3a868617f8acdb'
+      ECSAMI: 'ami-055aa9664ef169e25'
     'us-east-1':
-      ECSAMI: 'ami-0a6be20ed8ce1f055'
+      ECSAMI: 'ami-0a6b7e0cc0b1f464f'
     'us-east-2':
-      ECSAMI: 'ami-075d44ed0d20df780'
+      ECSAMI: 'ami-037a92bf1efdb11a2'
     'us-west-1':
-      ECSAMI: 'ami-0828cd2f20543a2b3'
+      ECSAMI: 'ami-0184f498956de7db5'
     'us-west-2':
-      ECSAMI: 'ami-04a4fb062c609f55b'
+      ECSAMI: 'ami-0c1f4871ebaae6d86'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
