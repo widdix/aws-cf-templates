@@ -780,8 +780,9 @@ Resources:
               'nfs-utils': []
               'ruby': []
             rubygems:
-              'aws-sdk': ['3.0.1']
-              daemons: ['1.2.4']
+              'aws-sdk-autoscaling': ['1.13.0']
+              'aws-sdk-sqs': ['1.10.0']
+              daemons: ['1.2.6']
           commands:
             'a_groupadd':
               command: 'groupadd -g 497 jenkins'
@@ -867,7 +868,8 @@ Resources:
               content: |
                 #!/usr/bin/env ruby
                 require 'net/http'
-                require 'aws-sdk'
+                require 'aws-sdk-autoscaling'
+                require 'aws-sdk-sqs'
                 require 'json'
                 require 'uri'
                 require 'yaml'
@@ -1698,8 +1700,9 @@ Resources:
               'nfs-utils': []
               'ruby': []
             rubygems:
-              'aws-sdk': ['3.0.1']
-              daemons: ['1.2.4']
+              'aws-sdk-autoscaling': ['1.13.0']
+              'aws-sdk-ec2': ['1.62.0']
+              daemons: ['1.2.6']
           files:
             '/root/agent.xml':
               content: |
@@ -1804,7 +1807,8 @@ Resources:
               content: |
                 #!/usr/bin/env ruby
                 require 'net/http'
-                require 'aws-sdk'
+                require 'aws-sdk-autoscaling'
+                require 'aws-sdk-ec2'
                 require 'yaml'
                 require 'webrick'
                 require 'syslog/logger'
