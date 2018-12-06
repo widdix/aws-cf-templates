@@ -636,8 +636,8 @@ Resources:
               content: !Sub |
                 [/var/log/ecs/ecs-init.log]
                 file = /var/log/ecs/ecs-init.log
-                log_group_name = /var/log/ecs/ecs-init.log
                 log_stream_name = {instance_id}/var/log/ecs/ecs-init.log
+                log_group_name = ${LogGroup}
                 datetime_format = %Y-%m-%dT%H:%M:%SZ
                 [/var/log/ecs/ecs-agent.log]
                 file = /var/log/ecs/ecs-agent.log.*
@@ -729,8 +729,10 @@ Resources:
               ruby: []
               amazon-ssm-agent: []
             rubygems:
-              'aws-sdk': ['3.0.1']
-              daemons: ['1.2.4']
+              'aws-sdk-ecs': ['1.26.0']
+              'aws-sdk-autoscaling': ['1.13.0']
+              'aws-sdk-sqs': ['1.10.0']
+              daemons: ['1.2.6']
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -797,7 +799,9 @@ Resources:
               content: |
                 #!/usr/bin/env ruby
                 require 'net/http'
-                require 'aws-sdk'
+                require 'aws-sdk-ecs'
+                require 'aws-sdk-autoscaling'
+                require 'aws-sdk-sqs'
                 require 'json'
                 require 'uri'
                 require 'yaml'
@@ -829,7 +833,6 @@ Resources:
                     container_instances: [containerInstanceId],
                     status: "DRAINING"
                   })
-
                 end
                 def isContainerInstanceIdle(containerInstanceId)
                   ecs = Aws::ECS::Client.new()
