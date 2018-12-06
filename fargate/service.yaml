@@ -342,25 +342,6 @@ Resources:
       TargetGroupAttributes:
       - Key: deregistration_delay.timeout_seconds
         Value: !Ref LoadBalancerDeregistrationDelay
-  HTTPCodeELB5XXTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer returns 5XX HTTP status codes'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: HTTPCode_ELB_5XX_Count
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Dimensions:
-      - Name: LoadBalancer
-        Value: {'Fn::ImportValue': !Sub '${ParentLoadBalancerStack}-LoadBalancerFullName'}
-      - Name: TargetGroup # TODO check if exists
-        Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
   HTTPCodeTarget5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -379,25 +360,6 @@ Resources:
       - Name: LoadBalancer
         Value: {'Fn::ImportValue': !Sub '${ParentLoadBalancerStack}-LoadBalancerFullName'}
       - Name: TargetGroup
-        Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
-  RejectedConnectionCountTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer rejected connections because the load balancer had reached its maximum number of connections'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: RejectedConnectionCount
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Dimensions:
-      - Name: LoadBalancer
-        Value: {'Fn::ImportValue': !Sub '${ParentLoadBalancerStack}-LoadBalancerFullName'}
-      - Name: TargetGroup # TODO check if exists
         Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
   TargetConnectionErrorCountTooHighAlarm:
     Condition: HasAlertTopic
@@ -478,7 +440,7 @@ Resources:
     Type: 'AWS::Logs::LogGroup'
     Properties:
       RetentionInDays: !Ref LogsRetentionInDays
-  SecurityGroup:
+  SecurityGroup: # TODO this is a challenge with the network load balancer
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: !Ref 'AWS::StackName'
