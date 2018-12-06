@@ -1,0 +1,141 @@
+---
+# Copyright 2018 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Fargate: network load balacer, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+      - ParentZoneStack
+    - Label:
+        default: 'Load Balancer Parameters'
+      Parameters:
+      - LoadBalancerScheme
+      - SubDomainNameWithDot
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+  ParentZoneStack:
+    Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
+    Type: String
+    Default: ''
+  LoadBalancerScheme:
+    Description: 'Indicates whether the load balancer reachable from the public Internet or only from within the VPC.'
+    Type: String
+    Default: 'internet-facing'
+    AllowedValues:
+    - 'internet-facing'
+    - internal
+  SubDomainNameWithDot:
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
+    Type: String
+    Default: ''
+Conditions:
+  HasLoadBalancerSchemeInternal: !Equals [!Ref LoadBalancerScheme, 'internal']
+  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+Resources:
+  RecordSet:
+    Condition: HasZone
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      AliasTarget:
+        HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
+        DNSName: !GetAtt 'LoadBalancer.DNSName'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
+      Name: !Sub
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+      Type: A
+  LoadBalancer: # TODO add alarms
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Scheme: !Ref LoadBalancerScheme
+      Subnets: !If
+      - HasLoadBalancerSchemeInternal
+      - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
+      - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPublic'}]
+      Type: network
+  DefaultTargetGroup: # TODO add alarms
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckIntervalSeconds: 30 # NLB only supports 30
+      HealthCheckProtocol: TCP
+      HealthCheckTimeoutSeconds: 10 # NLB only support 10 seconds for TCP protocol
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2 # NLB only supports the same number as HealthyThresholdCount
+      Port: 8080 # overriden when containers are attached
+      Protocol: TCP
+      TargetType: ip
+      TargetGroupAttributes:
+      - Key: 'deregistration_delay.timeout_seconds'
+        Value: '10' # TODO make configurable
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+  HttpListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+      - TargetGroupArn: !Ref DefaultTargetGroup
+        Type: forward
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: TCP
+  HttpsListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+      - TargetGroupArn: !Ref DefaultTargetGroup
+        Type: forward
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 443
+      Protocol: TCP
+  TargetSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Ref 'AWS::StackName'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+      SecurityGroupIngress:
+      - FromPort: 80
+        ToPort: 80
+        IpProtocol: tcp
+        CidrIp: '0.0.0.0/0'
+      - FromPort: 443
+        ToPort: 443
+        IpProtocol: tcp
+        CidrIp: '0.0.0.0/0'
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'fargate/load-balancer-nlb'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
+  DefaultTargetGroupArn:
+    Description: 'Default target group ARN of the load balancer.'
+    Value: !Ref DefaultTargetGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-DefaultTargetGroupArn'
+  TargetSecurityGroup:
+    Description: 'Security Group of ALB targets.'
+    Value: !Ref TargetSecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-TargetSecurityGroup'

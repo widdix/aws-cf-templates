@@ -24,17 +24,22 @@ Metadata:
       - ParentVPCStack
       - ParentLoadBalancerStack
       - ParentAlertStack
-      - ParentZoneStack
       - ParentClientStack1
       - ParentClientStack2
       - ParentClientStack3
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
+      - LoadBalancerMode
+    - Label:
+        default: 'LoadBalancerMode:=ALB Parameters'
+      Parameters:
+      - ParentZoneStack
+      - SubDomainNameWithDot
+      - LoadBalancerHttps
       - LoadBalancerPriority
       - LoadBalancerHostPattern
       - LoadBalancerPathPattern
-      - LoadBalancerHttps
       - LoadBalancerDeregistrationDelay
     - Label:
         default: 'Service Parameters'
@@ -43,7 +48,6 @@ Metadata:
       - MaxCapacity
       - MinCapacity
       - HealthCheckGracePeriodSeconds
-      - SubDomainNameWithDot
       - LogsRetentionInDays
       - SubnetsReach
     - Label:
@@ -68,7 +72,7 @@ Parameters:
     Type: String
     Default: ''
   ParentZoneStack:
-    Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
+    Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template (only applies when LoadBalancerMode:=ALB).'
     Type: String
     Default: ''
   ParentClientStack1:
@@ -83,34 +87,39 @@ Parameters:
     Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the service to whatever uses the client security group.'
     Type: String
     Default: ''
+  LoadBalancerMode:
+    Description: 'What kind of load balancer is used?'
+    Type: String
+    Default: ALB
+    AllowedValues: [ALB, NLB]
   LoadBalancerPriority:
-    Description: 'The priority for the rule. Elastic Load Balancing evaluates rules in priority order, from the lowest value to the highest value. If a request satisfies a rule, Elastic Load Balancing ignores all subsequent rules. A target group can have only one rule with a given priority.'
+    Description: 'The priority for the rule. Elastic Load Balancing evaluates rules in priority order, from the lowest value to the highest value. If a request satisfies a rule, Elastic Load Balancing ignores all subsequent rules. A target group can have only one rule with a given priority (only applies when LoadBalancerMode:=ALB).'
     Type: Number
     Default: 1
     ConstraintDescription: 'Must be in the range [1-99999]'
     MinValue: 1
     MaxValue: 99999
   LoadBalancerHostPattern:
-    Description: 'Optional host pattern. Specify LoadBalancerHostPattern and/or LoadBalancerPathPattern.'
+    Description: 'Optional host pattern (only applies when LoadBalancerMode:=ALB, you can specify LoadBalancerHostPattern and/or LoadBalancerPathPattern).'
     Type: String
     Default: ''
     ConstraintDescription: 'Must not be longer than 255'
     MaxLength: 255
   LoadBalancerPathPattern:
-    Description: 'Optional path pattern. Specify LoadBalancerPathPattern and/or LoadBalancerHostPattern.'
+    Description: 'Optional path pattern (only applies when LoadBalancerMode:=ALB, you can specify LoadBalancerPathPattern and/or LoadBalancerHostPattern).'
     Type: String
     Default: '/*'
     ConstraintDescription: 'Must not be longer than 255'
     MaxLength: 255
   LoadBalancerHttps:
-    Description: 'If the load balancer supports HTTPS (LoadBalancerCertificateArn is set) you can enable HTTPS for the service.'
+    Description: 'If the load balancer supports HTTPS (LoadBalancerCertificateArn is set) you can enable HTTPS for the service (only applies when LoadBalancerMode:=ALB).'
     Type: String
     Default: false
     AllowedValues:
     - true
     - false
   LoadBalancerDeregistrationDelay:
-    Description: 'The amount time (in seconds) to wait before changing the state of a deregistering target from draining to unused.'
+    Description: 'The amount time (in seconds) to wait before changing the state of a deregistering target from draining to unused (only applies when LoadBalancerMode:=ALB).'
     Type: Number
     Default: 300
     ConstraintDescription: 'Must be in the range [0-3600]'
@@ -155,7 +164,7 @@ Parameters:
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
   SubDomainNameWithDot:
-    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain (only applies when LoadBalancerMode:=ALB; requires ParentZoneStack parameter).'
     Type: String
     Default: ''
   LogsRetentionInDays:
@@ -252,12 +261,16 @@ Mappings:
     '30':
       Memory: 30720
 Conditions:
+  HasLoadBalancerModeALB: !Equals [!Ref LoadBalancerMode, ALB]
   HasLoadBalancerHttps: !Equals [!Ref LoadBalancerHttps, 'true']
-  HasNotLoadBalancerHttps: !Not [!Condition HasLoadBalancerHttps]
+  HasLoadBalancerModeALBAndLoadBalancerHttps: !And [!Condition HasLoadBalancerModeALB, !Condition HasLoadBalancerHttps]
+  HasLoadBalancerModeALBAndNotLoadBalancerHttps: !And [!Condition HasLoadBalancerModeALB, !Not [!Condition HasLoadBalancerHttps]]
   HasLoadBalancerPathPattern: !Not [!Equals [!Ref LoadBalancerPathPattern, '']]
   HasLoadBalancerHostPattern: !Not [!Equals [!Ref LoadBalancerHostPattern, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasAlertTopicAndLoadBalancerModeALB: !And [!Condition HasAlertTopic, !Condition HasLoadBalancerModeALB]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+  HasZoneAndLoadBalancerModeALB: !And [!Condition HasZone, !Condition HasLoadBalancerModeALB]
   HasSubnetsReachPublic: !Equals [!Ref SubnetsReach, Public]
   HasClientSecurityGroup1: !Not [!Equals [!Ref ParentClientStack1, '']]
   HasClientSecurityGroup2: !Not [!Equals [!Ref ParentClientStack2, '']]
@@ -312,7 +325,7 @@ Resources:
       RequiresCompatibilities: [FARGATE]
       # TaskRoleArn: TODO how can we suppot a task role?
   RecordSet:
-    Condition: HasZone
+    Condition: HasZoneAndLoadBalancerModeALB
     Type: 'AWS::Route53::RecordSet'
     Properties:
       AliasTarget:
@@ -325,6 +338,7 @@ Resources:
         HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       Type: A
   LoadBalancerTargetGroup:
+    Condition: HasLoadBalancerModeALB
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
       HealthCheckIntervalSeconds: 15
@@ -343,7 +357,7 @@ Resources:
       - Key: deregistration_delay.timeout_seconds
         Value: !Ref LoadBalancerDeregistrationDelay
   HTTPCodeTarget5XXTooHighAlarm:
-    Condition: HasAlertTopic
+    Condition: HasAlertTopicAndLoadBalancerModeALB
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
@@ -362,7 +376,7 @@ Resources:
       - Name: TargetGroup
         Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
   TargetConnectionErrorCountTooHighAlarm:
-    Condition: HasAlertTopic
+    Condition: HasAlertTopicAndLoadBalancerModeALB
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Application load balancer could not connect to targets'
@@ -381,7 +395,7 @@ Resources:
       - Name: TargetGroup
         Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
   LoadBalancerHttpListenerRule:
-    Condition: HasNotLoadBalancerHttps
+    Condition: HasLoadBalancerModeALBAndNotLoadBalancerHttps
     Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
     Properties:
       Actions:
@@ -409,7 +423,7 @@ Resources:
       ListenerArn: {'Fn::ImportValue': !Sub '${ParentLoadBalancerStack}-HttpListener'}
       Priority: !Ref LoadBalancerPriority
   LoadBalancerHttpsListenerRule:
-    Condition: HasLoadBalancerHttps
+    Condition: HasLoadBalancerModeALBAndLoadBalancerHttps
     Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
     Properties:
       Actions:
@@ -440,16 +454,6 @@ Resources:
     Type: 'AWS::Logs::LogGroup'
     Properties:
       RetentionInDays: !Ref LogsRetentionInDays
-  SecurityGroup: # TODO this is a challenge with the network load balancer
-    Type: 'AWS::EC2::SecurityGroup'
-    Properties:
-      GroupDescription: !Ref 'AWS::StackName'
-      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
-      SecurityGroupIngress:
-      - SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentLoadBalancerStack}-SecurityGroup'}
-        FromPort: 0
-        ToPort: 65535
-        IpProtocol: tcp
   Service:
     Type: 'AWS::ECS::Service'
     Properties:
@@ -463,12 +467,12 @@ Resources:
       LoadBalancers:
       - ContainerName: main
         ContainerPort: !Ref ContainerPort
-        TargetGroupArn: !Ref LoadBalancerTargetGroup
+        TargetGroupArn: !If [HasLoadBalancerModeALB, !Ref LoadBalancerTargetGroup, {'Fn::ImportValue': !Sub '${ParentLoadBalancerStack}-DefaultTargetGroupArn'}]
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: !If [HasSubnetsReachPublic, ENABLED, DISABLED]
           SecurityGroups:
-          - !Ref SecurityGroup
+          - {'Fn::ImportValue': !Sub '${ParentLoadBalancerStack}-TargetSecurityGroup'}
           - !If [HasClientSecurityGroup1, {'Fn::ImportValue': !Sub '${ParentClientStack1}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
           - !If [HasClientSecurityGroup2, {'Fn::ImportValue': !Sub '${ParentClientStack2}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
           - !If [HasClientSecurityGroup3, {'Fn::ImportValue': !Sub '${ParentClientStack3}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']

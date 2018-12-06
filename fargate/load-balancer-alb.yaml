@@ -101,7 +101,7 @@ Resources:
       FromPort: 443
       ToPort: 443
       SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
-  LoadBalancer: # not monitored, but the target groups of ECS services are!
+  LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
       # LoadBalancerAttributes:
@@ -189,6 +189,16 @@ Resources:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 443
       Protocol: HTTPS
+  TargetSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Ref 'AWS::StackName'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+      SecurityGroupIngress:
+      - SourceSecurityGroupId: !Ref SecurityGroup
+        FromPort: 0
+        ToPort: 65535
+        IpProtocol: tcp
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
@@ -225,8 +235,8 @@ Outputs:
     Value: !GetAtt 'LoadBalancer.DNSName'
     Export:
       Name: !Sub '${AWS::StackName}-DNSName'
-  SecurityGroup:
-    Description: 'Security Group of ALB.'
-    Value: !Ref SecurityGroup
+  TargetSecurityGroup:
+    Description: 'Security Group of ALB targets.'
+    Value: !Ref TargetSecurityGroup
     Export:
-      Name: !Sub '${AWS::StackName}-SecurityGroup'
+      Name: !Sub '${AWS::StackName}-TargetSecurityGroup'
