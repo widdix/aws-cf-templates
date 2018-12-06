@@ -25,6 +25,9 @@ Metadata:
       - ParentLoadBalancerStack
       - ParentAlertStack
       - ParentZoneStack
+      - ParentClientStack1
+      - ParentClientStack2
+      - ParentClientStack3
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
@@ -50,7 +53,7 @@ Metadata:
       - Cpu
       - Memory
       - ContainerPort
-Parameters: # TODO add parameter(s) to pass ClientSecuritGroups
+Parameters:
   ParentClusterStack:
     Description: 'Stack name of parent Cluster stack based on fargate/cluster.yaml template.'
     Type: String
@@ -66,6 +69,18 @@ Parameters: # TODO add parameter(s) to pass ClientSecuritGroups
     Default: ''
   ParentZoneStack:
     Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
+    Type: String
+    Default: ''
+  ParentClientStack1:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the service to whatever uses the client security group.'
+    Type: String
+    Default: ''
+  ParentClientStack2:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the service to whatever uses the client security group.'
+    Type: String
+    Default: ''
+  ParentClientStack3:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the service to whatever uses the client security group.'
     Type: String
     Default: ''
   LoadBalancerPriority:
@@ -243,6 +258,9 @@ Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSubnetsReachPublic: !Equals [!Ref SubnetsReach, Public]
+  HasClientSecurityGroup1: !Not [!Equals [!Ref ParentClientStack1, '']]
+  HasClientSecurityGroup2: !Not [!Equals [!Ref ParentClientStack2, '']]
+  HasClientSecurityGroup3: !Not [!Equals [!Ref ParentClientStack3, '']]
 Resources:
   TaskExecutionRole:
     Type: 'AWS::IAM::Role'
@@ -487,6 +505,9 @@ Resources:
           AssignPublicIp: !If [HasSubnetsReachPublic, ENABLED, DISABLED]
           SecurityGroups:
           - !Ref SecurityGroup
+          - !If [HasClientSecurityGroup1, {'Fn::ImportValue': !Sub '${ParentClientStack1}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
+          - !If [HasClientSecurityGroup2, {'Fn::ImportValue': !Sub '${ParentClientStack2}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
+          - !If [HasClientSecurityGroup3, {'Fn::ImportValue': !Sub '${ParentClientStack3}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
           Subnets: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-Subnets${SubnetsReach}'}]
       TaskDefinition: !Ref TaskDefinition
   ScalableTargetRole: # based on http://docs.aws.amazon.com/AmazonECS/latest/developerguide/autoscale_IAM_role.html
