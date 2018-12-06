@@ -60,7 +60,7 @@ Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
-  ParentLoadBalancerStack: # TODO make this an optional parameter
+  ParentLoadBalancerStack:
     Description: 'Stack name of parent Cluster stack based on fargate/load-balancer-*.yaml template.'
     Type: String
   ParentAlertStack:
@@ -103,7 +103,7 @@ Parameters:
     ConstraintDescription: 'Must not be longer than 255'
     MaxLength: 255
   LoadBalancerHttps:
-    Description: 'If the cluster supports HTTPS (LoadBalancerCertificateArn is set) you can enable HTTPS for the service'
+    Description: 'If the load balancer supports HTTPS (LoadBalancerCertificateArn is set) you can enable HTTPS for the service.'
     Type: String
     Default: false
     AllowedValues:
@@ -253,6 +253,7 @@ Mappings:
       Memory: 30720
 Conditions:
   HasLoadBalancerHttps: !Equals [!Ref LoadBalancerHttps, 'true']
+  HasNotLoadBalancerHttps: !Not [!Condition HasLoadBalancerHttps]
   HasLoadBalancerPathPattern: !Not [!Equals [!Ref LoadBalancerPathPattern, '']]
   HasLoadBalancerHostPattern: !Not [!Equals [!Ref LoadBalancerHostPattern, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
@@ -358,7 +359,7 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: {'Fn::ImportValue': !Sub '${ParentLoadBalancerStack}-LoadBalancerFullName'}
-      - Name: TargetGroup
+      - Name: TargetGroup # TODO check if exists
         Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
   HTTPCodeTarget5XXTooHighAlarm:
     Condition: HasAlertTopic
@@ -396,7 +397,7 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: {'Fn::ImportValue': !Sub '${ParentLoadBalancerStack}-LoadBalancerFullName'}
-      - Name: TargetGroup
+      - Name: TargetGroup # TODO check if exists
         Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
   TargetConnectionErrorCountTooHighAlarm:
     Condition: HasAlertTopic
@@ -418,6 +419,7 @@ Resources:
       - Name: TargetGroup
         Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
   LoadBalancerHttpListenerRule:
+    Condition: HasNotLoadBalancerHttps
     Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
     Properties:
       Actions:

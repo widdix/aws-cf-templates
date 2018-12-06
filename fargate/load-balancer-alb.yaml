@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Fargate: load balacer ALB, a cloudonaut.io template'
+Description: 'Fargate: application load balacer, a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -43,7 +43,7 @@ Parameters:
     - 'internet-facing'
     - internal
   LoadBalancerCertificateArn:
-    Description: 'Optional Amazon Resource Name (ARN) of the certificate to associate with the load balancer.'
+    Description: 'Optional Amazon Resource Name (ARN) of the certificate to associate with the load balancer (HTTP is redirected to HTTPS if set).'
     Type: String
     Default: ''
 Conditions:
@@ -98,6 +98,15 @@ Resources:
   LoadBalancer: # not monitored, but the target groups of ECS services are!
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
+      # LoadBalancerAttributes:
+      # - Key: 'idle_timeout.timeout_seconds' TODO make configurable
+      #   Value: 59
+      # - Key: 'access_logs.s3.enabled' TODO allow access logs (use state/s3 stack)
+      #   Value: 'true'
+      # - Key: 'access_logs.s3.prefix'
+      #   Value: !Ref ServiceName
+      # - Key: 'access_logs.s3.bucket'
+      #   Value: !Sub '${StackNamePrefix}${StageName}-elb-access-log'
       Scheme: !Ref LoadBalancerScheme
       SecurityGroups:
       - !Ref SecurityGroup
@@ -105,15 +114,23 @@ Resources:
       - HasLoadBalancerSchemeInternal
       - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
       - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPublic'}]
+      Type: application
   HttpListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
       DefaultActions:
-      - FixedResponseConfig:
-          ContentType: 'text/plain'
-          MessageBody: default
-          StatusCode: '404'
-        Type: 'fixed-response'
+      - !If
+        - HasLoadBalancerCertificateArn
+        - RedirectConfig:
+            Port: '443'
+            Protocol: HTTPS
+            StatusCode: 'HTTP_301'
+          Type: redirect
+        - FixedResponseConfig:
+            ContentType: 'text/plain'
+            MessageBody: default
+            StatusCode: '404'
+          Type: 'fixed-response'
       LoadBalancerArn: !Ref LoadBalancer
       Port: 80
       Protocol: HTTP
