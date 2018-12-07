@@ -242,6 +242,7 @@ Resources:
         collation_server: utf8_general_ci
       - client_encoding: 'UTF8'
   DBCluster:
+    DeletionPolicy: Snapshot # default
     Type: 'AWS::RDS::DBCluster'
     Properties:
       BackupRetentionPeriod: !Ref DBBackupRetentionPeriod

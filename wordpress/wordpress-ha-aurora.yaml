@@ -384,6 +384,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'}
       - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetCPrivate'}
   DatabaseCluster:
+    DeletionPolicy: Snapshot # default
     Type: 'AWS::RDS::DBCluster'
     Properties:
       BackupRetentionPeriod: !Ref DBBackupRetentionPeriod

@@ -383,6 +383,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'}
       - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'}
   Database:
+    DeletionPolicy: Snapshot # default
     Type: 'AWS::RDS::DBInstance'
     Properties:
       AllocatedStorage: '5'
