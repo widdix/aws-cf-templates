@@ -158,7 +158,7 @@ Resources:
         InstanceType: !Ref ClusterInstanceType
         ZoneAwarenessEnabled: !If [HasSingleClusterInstance, false, true]
       ElasticsearchVersion: '5.5'
-      EncryptionAtRestOptions: !If [HasKmsKey, {Enabled: true, KmsKeyId: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}}, !Ref 'AWS::NoValue']
+      EncryptionAtRestOptions: !If [HasKmsKey, {Enabled: true, KmsKeyId: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}}, !Ref 'AWS::NoValue']
       SnapshotOptions:
         AutomatedSnapshotStartHour: 10
       VPCOptions:
