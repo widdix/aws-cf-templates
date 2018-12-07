@@ -82,6 +82,7 @@ Conditions:
 Resources:
   Key:
     Condition: HasEncryption
+    DeletionPolicy: Retain
     Type: 'AWS::KMS::Key'
     Properties:
       KeyPolicy:

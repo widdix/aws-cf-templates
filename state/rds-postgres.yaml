@@ -156,6 +156,7 @@ Resources:
       SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
   Key:
     Condition: HasEncryptionAndNotDBSnapshotIdentifier
+    DeletionPolicy: Retain
     Type: 'AWS::KMS::Key'
     Properties:
       KeyPolicy:
@@ -194,6 +195,7 @@ Resources:
       DBSubnetGroupDescription: !Ref 'AWS::StackName'
       SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
   DBInstance:
+    DeletionPolicy: Snapshot # default
     Type: 'AWS::RDS::DBInstance'
     Properties:
       AllocatedStorage: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBAllocatedStorage]
