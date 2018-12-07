@@ -91,6 +91,7 @@ Cluster of Elasticsearch nodes.
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
 * `state/client-sg.yaml` (**required**)
+* `security/kms-key.yaml` (recommended)
 * `vpc/zone-*.yaml`
 * `vpc/vpc-*-bastion.yaml`
 * `operations/alert.yaml` (recommended)
@@ -117,6 +118,7 @@ Two node Aurora cluster for HA.
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
 * `state/client-sg.yaml` (**required**)
+* `security/kms-key.yaml` (recommended)
 * `vpc/zone-*.yaml`
 * `vpc/vpc-*-bastion.yaml`
 * `operations/alert.yaml` (recommended)
@@ -168,6 +170,7 @@ Multi-AZ MySQL for HA.
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
 * `state/client-sg.yaml` (**required**)
+* `security/kms-key.yaml` (recommended)
 * `vpc/zone-*.yaml`
 * `vpc/vpc-*-bastion.yaml`
 * `operations/alert.yaml` (recommended)
@@ -194,6 +197,7 @@ Multi-AZ Postgres for HA.
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
 * `state/client-sg.yaml` (**required**)
+* `security/kms-key.yaml` (recommended)
 * `vpc/zone-*.yaml`
 * `vpc/vpc-*-bastion.yaml`
 * `operations/alert.yaml` (recommended)
@@ -214,3 +218,6 @@ S3 bucket with optional public read access.
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
+## Dependencies
+* `security/kms-key.yaml` (recommended)
