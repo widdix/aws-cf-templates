@@ -24,6 +24,9 @@ Metadata:
       - ParentSSHBastionStack
       - ParentAuthProxyStack
       - ParentAlertStack
+      - ParentClientStack1
+      - ParentClientStack2
+      - ParentClientStack3
     - Label:
         default: 'EC2 Parameters'
       Parameters:
@@ -66,6 +69,18 @@ Parameters:
     Default: ''
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  ParentClientStack1:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the cluster to whatever uses the client security group.'
+    Type: String
+    Default: ''
+  ParentClientStack2:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the cluster to whatever uses the client security group.'
+    Type: String
+    Default: ''
+  ParentClientStack3:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the cluster to whatever uses the client security group.'
     Type: String
     Default: ''
   KeyName:
@@ -203,6 +218,9 @@ Conditions:
   HasAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
   HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasNotAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasClientSecurityGroup1: !Not [!Equals [!Ref ParentClientStack1, '']]
+  HasClientSecurityGroup2: !Not [!Equals [!Ref ParentClientStack2, '']]
+  HasClientSecurityGroup3: !Not [!Equals [!Ref ParentClientStack3, '']]
 Resources:
   Cluster:
     Type: 'AWS::ECS::Cluster'
@@ -945,6 +963,9 @@ Resources:
       InstanceType: !Ref InstanceType
       SecurityGroups:
       - !Ref SecurityGroup
+      - !If [HasClientSecurityGroup1, {'Fn::ImportValue': !Sub '${ParentClientStack1}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
+      - !If [HasClientSecurityGroup2, {'Fn::ImportValue': !Sub '${ParentClientStack2}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
+      - !If [HasClientSecurityGroup3, {'Fn::ImportValue': !Sub '${ParentClientStack3}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
       UserData:
         'Fn::Base64': !Sub |
