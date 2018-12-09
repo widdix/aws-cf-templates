@@ -121,7 +121,7 @@ Resources:
       ToPort: 11211
       SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
   CacheCluster:
-    DeletionPolicy: Snapshot
+    # DeletionPolicy: Snapshot # Snapshot not supported
     Type: 'AWS::ElastiCache::CacheCluster'
     Properties:
       AutoMinorVersionUpgrade: true
