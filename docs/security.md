@@ -184,3 +184,5 @@ This template provides a KMS customer managed CMK used by AWS services. Access c
 1. Click **Next** to skip the **Options** step of the wizard.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
+If you have an existing KMS customer managed CMK you can wrap it into our required form using a legacy KMS customer managed CMK wrapper: [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=kms-key-legacy&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/security/kms-key-legacy.yaml)

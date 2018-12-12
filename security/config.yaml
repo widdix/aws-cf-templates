@@ -43,7 +43,6 @@ Conditions:
 Resources:
   ConfigBucket:
     Condition: InternalBucket
-    DeletionPolicy: Retain
     Type: 'AWS::S3::Bucket'
     Properties: {}
   ConfigTopic:
