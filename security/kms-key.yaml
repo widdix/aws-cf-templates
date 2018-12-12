@@ -35,6 +35,7 @@ Parameters:
     Type: String
     AllowedValues:
     - 'ALL_SERVICES'
+    - 'S3_PUBLIC_ACCESS'
     - connect
     - dms
     - ssm
@@ -58,6 +59,7 @@ Parameters:
 Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasServiceAllServices: !Equals [!Ref Service, 'ALL_SERVICES']
+  HasServiceS3PublicAccess: !Equals [!Ref Service, 'S3_PUBLIC_ACCESS']
 Resources:
   Key:
     DeletionPolicy: Retain
@@ -89,7 +91,20 @@ Resources:
             - 'kms:CallerAccount': !Ref 'AWS::AccountId'
             - 'kms:CallerAccount': !Ref 'AWS::AccountId'
               'kms:ViaService': !Sub '${Service}.${AWS::Region}.amazonaws.com'
+        - !If
+          - HasServiceS3PublicAccess
+          - Effect: Allow
+            Principal:
+              AWS: '*'
+            Action:
+            - 'kms:Decrypt'
+            Resource: '*'
+            Condition:
+              StringEquals:
+                'kms:ViaService': !Sub 's3.${AWS::Region}.amazonaws.com'
+          - !Ref 'AWS::NoValue'
   KeyAlias:
+    DeletionPolicy: Retain
     Type: 'AWS::KMS::Alias'
     Properties:
       AliasName: !Sub 'alias/${AWS::StackName}'
