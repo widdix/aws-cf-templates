@@ -23,24 +23,11 @@ Metadata:
       - ParentClusterStack
       - ParentVPCStack
       - ParentLoadBalancerStack
+      - ParentListenerStack
       - ParentAlertStack
       - ParentClientStack1
       - ParentClientStack2
       - ParentClientStack3
-    - Label:
-        default: 'Load Balancer Parameters'
-      Parameters:
-      - LoadBalancerMode
-    - Label:
-        default: 'LoadBalancerMode:=ALB Parameters'
-      Parameters:
-      - ParentZoneStack
-      - SubDomainNameWithDot
-      - LoadBalancerHttps
-      - LoadBalancerPriority
-      - LoadBalancerHostPattern
-      - LoadBalancerPathPattern
-      - LoadBalancerDeregistrationDelay
     - Label:
         default: 'Service Parameters'
       Parameters:
@@ -59,20 +46,19 @@ Metadata:
       - ContainerPort
 Parameters:
   ParentClusterStack:
-    Description: 'Stack name of parent Cluster stack based on fargate/cluster.yaml template.'
+    Description: 'Stack name of parent cluster stack based on fargate/cluster.yaml template.'
     Type: String
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
   ParentLoadBalancerStack:
-    Description: 'Stack name of parent Cluster stack based on fargate/load-balancer-*.yaml template.'
+    Description: 'Stack name of parent load balancer stack based on fargate/load-balancer-*.yaml template.'
+    Type: String
+  ParentListenerStack:
+    Description: 'Stack name of parent listener stack based on fargate/listener-*.yaml template.'
     Type: String
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
-    Type: String
-    Default: ''
-  ParentZoneStack:
-    Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template (only applies when LoadBalancerMode:=ALB).'
     Type: String
     Default: ''
   ParentClientStack1:
@@ -87,44 +73,6 @@ Parameters:
     Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the service to whatever uses the client security group.'
     Type: String
     Default: ''
-  LoadBalancerMode:
-    Description: 'What kind of load balancer is used?'
-    Type: String
-    Default: ALB
-    AllowedValues: [ALB, NLB]
-  LoadBalancerPriority:
-    Description: 'The priority for the rule. Elastic Load Balancing evaluates rules in priority order, from the lowest value to the highest value. If a request satisfies a rule, Elastic Load Balancing ignores all subsequent rules. A target group can have only one rule with a given priority (only applies when LoadBalancerMode:=ALB).'
-    Type: Number
-    Default: 1
-    ConstraintDescription: 'Must be in the range [1-99999]'
-    MinValue: 1
-    MaxValue: 99999
-  LoadBalancerHostPattern:
-    Description: 'Optional host pattern (only applies when LoadBalancerMode:=ALB, you can specify LoadBalancerHostPattern and/or LoadBalancerPathPattern).'
-    Type: String
-    Default: ''
-    ConstraintDescription: 'Must not be longer than 255'
-    MaxLength: 255
-  LoadBalancerPathPattern:
-    Description: 'Optional path pattern (only applies when LoadBalancerMode:=ALB, you can specify LoadBalancerPathPattern and/or LoadBalancerHostPattern).'
-    Type: String
-    Default: '/*'
-    ConstraintDescription: 'Must not be longer than 255'
-    MaxLength: 255
-  LoadBalancerHttps:
-    Description: 'If the load balancer supports HTTPS (LoadBalancerCertificateArn is set) you can enable HTTPS for the service (only applies when LoadBalancerMode:=ALB).'
-    Type: String
-    Default: false
-    AllowedValues:
-    - true
-    - false
-  LoadBalancerDeregistrationDelay:
-    Description: 'The amount time (in seconds) to wait before changing the state of a deregistering target from draining to unused (only applies when LoadBalancerMode:=ALB).'
-    Type: Number
-    Default: 300
-    ConstraintDescription: 'Must be in the range [0-3600]'
-    MinValue: 0
-    MaxValue: 3600
   Image:
     Description: 'The image to use for a container, which is passed directly to the Docker daemon. You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag).'
     Type: String
@@ -163,10 +111,6 @@ Parameters:
     Default: 2
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
-  SubDomainNameWithDot:
-    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain (only applies when LoadBalancerMode:=ALB; requires ParentZoneStack parameter).'
-    Type: String
-    Default: ''
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain log events in the specified log group.'
     Type: Number
@@ -261,16 +205,7 @@ Mappings:
     '30':
       Memory: 30720
 Conditions:
-  HasLoadBalancerModeALB: !Equals [!Ref LoadBalancerMode, ALB]
-  HasLoadBalancerHttps: !Equals [!Ref LoadBalancerHttps, 'true']
-  HasLoadBalancerModeALBAndLoadBalancerHttps: !And [!Condition HasLoadBalancerModeALB, !Condition HasLoadBalancerHttps]
-  HasLoadBalancerModeALBAndNotLoadBalancerHttps: !And [!Condition HasLoadBalancerModeALB, !Not [!Condition HasLoadBalancerHttps]]
-  HasLoadBalancerPathPattern: !Not [!Equals [!Ref LoadBalancerPathPattern, '']]
-  HasLoadBalancerHostPattern: !Not [!Equals [!Ref LoadBalancerHostPattern, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
-  HasAlertTopicAndLoadBalancerModeALB: !And [!Condition HasAlertTopic, !Condition HasLoadBalancerModeALB]
-  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
-  HasZoneAndLoadBalancerModeALB: !And [!Condition HasZone, !Condition HasLoadBalancerModeALB]
   HasSubnetsReachPublic: !Equals [!Ref SubnetsReach, Public]
   HasClientSecurityGroup1: !Not [!Equals [!Ref ParentClientStack1, '']]
   HasClientSecurityGroup2: !Not [!Equals [!Ref ParentClientStack2, '']]
@@ -301,6 +236,15 @@ Resources:
             - 'logs:CreateLogStream'
             - 'logs:PutLogEvents'
             Resource: !GetAtt 'LogGroup.Arn'
+  TaskRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'ecs-tasks.amazonaws.com'
+          Action: 'sts:AssumeRole'
   TaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
     Properties:
@@ -323,133 +267,7 @@ Resources:
       Memory: !FindInMap [MemoryMap, !Ref Memory, Memory]
       NetworkMode: awsvpc
       RequiresCompatibilities: [FARGATE]
-      # TaskRoleArn: TODO how can we suppot a task role?
-  RecordSet:
-    Condition: HasZoneAndLoadBalancerModeALB
-    Type: 'AWS::Route53::RecordSet'
-    Properties:
-      AliasTarget:
-        HostedZoneId: {'Fn::ImportValue': !Sub '${ParentLoadBalancerStack}-CanonicalHostedZoneID'}
-        DNSName: {'Fn::ImportValue': !Sub '${ParentLoadBalancerStack}-DNSName'}
-      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
-      Name: !Sub
-      - '${SubDomainNameWithDot}${HostedZoneName}'
-      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
-      Type: A
-  LoadBalancerTargetGroup:
-    Condition: HasLoadBalancerModeALB
-    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
-    Properties:
-      HealthCheckIntervalSeconds: 15
-      HealthCheckPath: '/'
-      HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 10
-      HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 2
-      Matcher:
-        HttpCode: '200-299'
-      Port: 80
-      Protocol: HTTP
-      TargetType: ip
-      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
-      TargetGroupAttributes:
-      - Key: deregistration_delay.timeout_seconds
-        Value: !Ref LoadBalancerDeregistrationDelay
-  HTTPCodeTarget5XXTooHighAlarm:
-    Condition: HasAlertTopicAndLoadBalancerModeALB
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: HTTPCode_Target_5XX_Count
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Dimensions:
-      - Name: LoadBalancer
-        Value: {'Fn::ImportValue': !Sub '${ParentLoadBalancerStack}-LoadBalancerFullName'}
-      - Name: TargetGroup
-        Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
-  TargetConnectionErrorCountTooHighAlarm:
-    Condition: HasAlertTopicAndLoadBalancerModeALB
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer could not connect to targets'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: TargetConnectionErrorCount
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Dimensions:
-      - Name: LoadBalancer
-        Value: {'Fn::ImportValue': !Sub '${ParentLoadBalancerStack}-LoadBalancerFullName'}
-      - Name: TargetGroup
-        Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
-  LoadBalancerHttpListenerRule:
-    Condition: HasLoadBalancerModeALBAndNotLoadBalancerHttps
-    Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
-    Properties:
-      Actions:
-      - Type: forward
-        TargetGroupArn: !Ref LoadBalancerTargetGroup
-      Conditions: !If
-      - HasLoadBalancerPathPattern
-      - !If
-        - HasLoadBalancerHostPattern
-        - - Field: host-header
-            Values:
-            - !Ref LoadBalancerHostPattern
-          - Field: path-pattern
-            Values:
-            - !Ref LoadBalancerPathPattern
-        - - Field: path-pattern
-            Values:
-            - !Ref LoadBalancerPathPattern
-      - !If
-        - HasLoadBalancerHostPattern
-        - - Field: host-header
-            Values:
-            - !Ref LoadBalancerHostPattern
-        - [] # neither LoadBalancerHostPattern nor LoadBalancerPathPattern specified
-      ListenerArn: {'Fn::ImportValue': !Sub '${ParentLoadBalancerStack}-HttpListener'}
-      Priority: !Ref LoadBalancerPriority
-  LoadBalancerHttpsListenerRule:
-    Condition: HasLoadBalancerModeALBAndLoadBalancerHttps
-    Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
-    Properties:
-      Actions:
-      - Type: forward
-        TargetGroupArn: !Ref LoadBalancerTargetGroup
-      Conditions: !If
-      - HasLoadBalancerPathPattern
-      - !If
-        - HasLoadBalancerHostPattern
-        - - Field: host-header
-            Values:
-            - !Ref LoadBalancerHostPattern
-          - Field: path-pattern
-            Values:
-            - !Ref LoadBalancerPathPattern
-        - - Field: path-pattern
-            Values:
-            - !Ref LoadBalancerPathPattern
-      - !If
-        - HasLoadBalancerHostPattern
-        - - Field: host-header
-            Values:
-            - !Ref LoadBalancerHostPattern
-        - [] # neither LoadBalancerHostPattern nor LoadBalancerPathPattern specified
-      ListenerArn: {'Fn::ImportValue': !Sub '${ParentLoadBalancerStack}-HttpsListener'}
-      Priority: !Ref LoadBalancerPriority
+      TaskRoleArn: !GetAtt 'TaskRole.Arn'
   LogGroup:
     Type: 'AWS::Logs::LogGroup'
     Properties:
@@ -457,7 +275,7 @@ Resources:
   Service:
     Type: 'AWS::ECS::Service'
     Properties:
-      Cluster: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
+      Cluster: {'Fn::ImportValue': !Sub '${ParentClusterStack}-ClusterName'}
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 50
@@ -467,7 +285,7 @@ Resources:
       LoadBalancers:
       - ContainerName: main
         ContainerPort: !Ref ContainerPort
-        TargetGroupArn: !If [HasLoadBalancerModeALB, !Ref LoadBalancerTargetGroup, {'Fn::ImportValue': !Sub '${ParentLoadBalancerStack}-DefaultTargetGroupArn'}]
+        TargetGroupArn: {'Fn::ImportValue': !Sub '${ParentListenerStack}-TargetGroupArn'}
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: !If [HasSubnetsReachPublic, ENABLED, DISABLED]
@@ -513,7 +331,7 @@ Resources:
       MinCapacity: !Ref MinCapacity
       ResourceId: !Sub
       - 'service/${Cluster}/${Service}'
-      - Cluster: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
+      - Cluster: {'Fn::ImportValue': !Sub '${ParentClusterStack}-ClusterName'}
         Service: !GetAtt 'Service.Name'
       RoleARN: !GetAtt 'ScalableTargetRole.Arn'
       ScalableDimension: 'ecs:service:DesiredCount'
@@ -552,7 +370,7 @@ Resources:
       Namespace: 'AWS/ECS'
       Dimensions:
       - Name: ClusterName
-        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
+        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-ClusterName'}
       - Name: ServiceName
         Value: !GetAtt 'Service.Name'
       MetricName: CPUUtilization
@@ -570,7 +388,7 @@ Resources:
       Namespace: 'AWS/ECS'
       Dimensions:
       - Name: ClusterName
-        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
+        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-ClusterName'}
       - Name: ServiceName
         Value: !GetAtt 'Service.Name'
       MetricName: CPUUtilization
@@ -588,7 +406,7 @@ Resources:
       Namespace: 'AWS/ECS'
       Dimensions:
       - Name: ClusterName
-        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
+        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-ClusterName'}
       - Name: ServiceName
         Value: !GetAtt 'Service.Name'
       MetricName: CPUUtilization
@@ -609,3 +427,8 @@ Outputs:
   StackName:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
+  TaskRoleArn:
+    Description: 'IAM Role ARN attached to the task. Use this to attach policies.'
+    Value: !GetAtt 'TaskRole.Arn'
+    Export:
+      Name: !Sub '${AWS::StackName}-TaskRoleArn'

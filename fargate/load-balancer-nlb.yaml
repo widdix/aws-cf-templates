@@ -25,7 +25,8 @@ Metadata:
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
-      - LoadBalancerScheme
+      - Scheme
+      - CrossZone
       - SubDomainNameWithDot
 Parameters:
   ParentVPCStack:
@@ -35,19 +36,24 @@ Parameters:
     Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
     Type: String
     Default: ''
-  LoadBalancerScheme:
+  Scheme:
     Description: 'Indicates whether the load balancer reachable from the public Internet or only from within the VPC.'
     Type: String
     Default: 'internet-facing'
     AllowedValues:
     - 'internet-facing'
     - internal
+  CrossZone:
+    Description: 'Indicates whether cross-zone load balancing is enabled.'
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
   SubDomainNameWithDot:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
     Default: ''
 Conditions:
-  HasLoadBalancerSchemeInternal: !Equals [!Ref LoadBalancerScheme, 'internal']
+  HasSchemeInternal: !Equals [!Ref Scheme, 'internal']
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
 Resources:
   RecordSet:
@@ -63,48 +69,18 @@ Resources:
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
         HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       Type: A
-  LoadBalancer: # TODO add alarms
+  LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
-      Scheme: !Ref LoadBalancerScheme
+      LoadBalancerAttributes:
+      - Key: 'load_balancing.cross_zone.enabled'
+        Value: !Ref CrossZone
+      Scheme: !Ref Scheme
       Subnets: !If
-      - HasLoadBalancerSchemeInternal
+      - HasSchemeInternal
       - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
       - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPublic'}]
       Type: network
-  DefaultTargetGroup: # TODO add alarms
-    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
-    Properties:
-      HealthCheckIntervalSeconds: 30 # NLB only supports 30
-      HealthCheckProtocol: TCP
-      HealthCheckTimeoutSeconds: 10 # NLB only support 10 seconds for TCP protocol
-      HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 2 # NLB only supports the same number as HealthyThresholdCount
-      Port: 8080 # overriden when containers are attached
-      Protocol: TCP
-      TargetType: ip
-      TargetGroupAttributes:
-      - Key: 'deregistration_delay.timeout_seconds'
-        Value: '10' # TODO make configurable
-      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
-  HttpListener:
-    Type: 'AWS::ElasticLoadBalancingV2::Listener'
-    Properties:
-      DefaultActions:
-      - TargetGroupArn: !Ref DefaultTargetGroup
-        Type: forward
-      LoadBalancerArn: !Ref LoadBalancer
-      Port: 80
-      Protocol: TCP
-  HttpsListener:
-    Type: 'AWS::ElasticLoadBalancingV2::Listener'
-    Properties:
-      DefaultActions:
-      - TargetGroupArn: !Ref DefaultTargetGroup
-        Type: forward
-      LoadBalancerArn: !Ref LoadBalancer
-      Port: 443
-      Protocol: TCP
   TargetSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -129,13 +105,13 @@ Outputs:
   StackName:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
-  DefaultTargetGroupArn:
-    Description: 'Default target group ARN of the load balancer.'
-    Value: !Ref DefaultTargetGroup
+  LoadBalancerArn:
+    Description: 'ARN of the network load balancer.'
+    Value: !Ref LoadBalancer
     Export:
-      Name: !Sub '${AWS::StackName}-DefaultTargetGroupArn'
+      Name: !Sub '${AWS::StackName}-LoadBalancerArn'
   TargetSecurityGroup:
-    Description: 'Security Group of ALB targets.'
+    Description: 'Security Group of NLB targets.'
     Value: !Ref TargetSecurityGroup
     Export:
       Name: !Sub '${AWS::StackName}-TargetSecurityGroup'

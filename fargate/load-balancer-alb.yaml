@@ -23,11 +23,13 @@ Metadata:
       - ParentVPCStack
       - ParentAlertStack
       - ParentAuthProxyStack
+      - ParentS3Stack
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
-      - LoadBalancerScheme
-      - LoadBalancerCertificateArn
+      - Scheme
+      - CertificateArn
+      - IdleTimeoutInSeconds
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -40,25 +42,36 @@ Parameters:
     Description: 'Optional stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
     Type: String
     Default: ''
-  LoadBalancerScheme:
+  ParentS3Stack:
+    Description: 'Optional stack name of parent s3 stack based on state/s3.yaml template (with Access set to ElbAccessLogWrite) to store access logs.'
+    Type: String
+    Default: ''
+  Scheme:
     Description: 'Indicates whether the load balancer reachable from the public Internet or only from within the VPC.'
     Type: String
     Default: 'internet-facing'
     AllowedValues:
     - 'internet-facing'
     - internal
-  LoadBalancerCertificateArn:
+  CertificateArn:
     Description: 'Optional Amazon Resource Name (ARN) of the certificate to associate with the load balancer (HTTP is redirected to HTTPS if set).'
     Type: String
     Default: ''
+  IdleTimeoutInSeconds:
+    Description: 'The idle timeout value, in seconds.'
+    Type: Number
+    Default: 60
+    MinValue: 1
+    MaxValue: 4000
 Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
-  HasLoadBalancerSchemeInternal: !Equals [!Ref LoadBalancerScheme, 'internal']
-  HasLoadBalancerCertificateArn: !Not [!Equals [!Ref LoadBalancerCertificateArn, '']]
-  HasAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
-  HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasNotAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
+  HasSchemeInternal: !Equals [!Ref Scheme, 'internal']
+  HasCertificateArn: !Not [!Equals [!Ref CertificateArn, '']]
+  HasAuthProxySecurityGroupAndCertificateArn: !And [!Condition HasAuthProxySecurityGroup, !Condition HasCertificateArn]
+  HasNotAuthProxySecurityGroupAndCertificateArn: !And [!Condition HasNotAuthProxySecurityGroup, !Condition HasCertificateArn]
+  HasParentS3Stack: !Not [!Equals [!Ref ParentS3Stack, '']]
 Resources:
   SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -76,7 +89,7 @@ Resources:
       CidrIp: '0.0.0.0/0'
   SecurityGroupInHttpsWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn
+    Condition: HasNotAuthProxySecurityGroupAndCertificateArn
     Properties:
       GroupId: !Ref SecurityGroup
       IpProtocol: tcp
@@ -94,7 +107,7 @@ Resources:
       SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
   SecurityGroupInHttpsAuthProxy:
     Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasAuthProxySecurityGroupAndLoadBalancerCertificateArn
+    Condition: HasAuthProxySecurityGroupAndCertificateArn
     Properties:
       GroupId: !Ref SecurityGroup
       IpProtocol: tcp
@@ -104,20 +117,20 @@ Resources:
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
-      # LoadBalancerAttributes:
-      # - Key: 'idle_timeout.timeout_seconds' TODO make configurable
-      #   Value: 59
-      # - Key: 'access_logs.s3.enabled' TODO allow access logs (use state/s3 stack)
-      #   Value: 'true'
-      # - Key: 'access_logs.s3.prefix'
-      #   Value: !Ref ServiceName
-      # - Key: 'access_logs.s3.bucket'
-      #   Value: !Sub '${StackNamePrefix}${StageName}-elb-access-log'
-      Scheme: !Ref LoadBalancerScheme
+      LoadBalancerAttributes:
+      - Key: 'idle_timeout.timeout_seconds'
+        Value: !Ref IdleTimeoutInSeconds
+      - Key: 'routing.http2.enabled'
+        Value: 'true'
+      - Key: 'access_logs.s3.enabled'
+        Value: !If [HasParentS3Stack, 'true', 'false']
+      - !If [HasParentS3Stack, {Key: 'access_logs.s3.prefix', Value: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
+      - !If [HasParentS3Stack, {Key: 'access_logs.s3.bucket', Value: {'Fn::ImportValue': !Sub '${ParentS3Stack}-BucketName'}}, !Ref 'AWS::NoValue']
+      Scheme: !Ref Scheme
       SecurityGroups:
       - !Ref SecurityGroup
       Subnets: !If
-      - HasLoadBalancerSchemeInternal
+      - HasSchemeInternal
       - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
       - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPublic'}]
       Type: application
@@ -160,7 +173,7 @@ Resources:
     Properties:
       DefaultActions:
       - !If
-        - HasLoadBalancerCertificateArn
+        - HasCertificateArn
         - RedirectConfig:
             Port: '443'
             Protocol: HTTPS
@@ -176,10 +189,10 @@ Resources:
       Protocol: HTTP
   HttpsListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
-    Condition: HasLoadBalancerCertificateArn
+    Condition: HasCertificateArn
     Properties:
       Certificates:
-      - CertificateArn: !Ref LoadBalancerCertificateArn
+      - CertificateArn: !Ref CertificateArn
       DefaultActions:
       - FixedResponseConfig:
           ContentType: 'text/plain'
@@ -220,7 +233,7 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-HttpListener'
   HttpsListener:
-    Condition: HasLoadBalancerCertificateArn
+    Condition: HasCertificateArn
     Description: 'ALB HTTPS listener for services.'
     Value: !Ref HttpsListener
     Export:

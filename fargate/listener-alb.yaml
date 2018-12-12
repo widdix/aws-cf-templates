@@ -1,0 +1,192 @@
+---
+# Copyright 2018 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Fargate: application load balacer listener, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentLoadBalancerALBStack
+      - ParentVPCStack
+      - ParentAlertStack
+      - ParentZoneStack
+    - Label:
+        default: 'Listener Parameters'
+      Parameters:
+      - SubDomainNameWithDot
+      - LoadBalancerHttps
+      - Priority
+      - HostPattern
+      - PathPattern
+      - DeregistrationDelayInSeconds
+Parameters:
+  ParentLoadBalancerALBStack:
+    Description: 'Stack name of parent application load balancer stack based on fargate/load-balancer-alb.yaml template.'
+    Type: String
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  ParentZoneStack:
+    Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
+    Type: String
+    Default: ''
+  SubDomainNameWithDot:
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain (requires ParentZoneStack parameter).'
+    Type: String
+    Default: ''
+  LoadBalancerHttps:
+    Description: 'Set to true if the ParentLoadBalancerALBStack parameter LoadBalancerCertificateArn is set.'
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  Priority:
+    Description: 'The priority for the rule. Elastic Load Balancing evaluates rules in priority order, from the lowest value to the highest value. If a request satisfies a rule, Elastic Load Balancing ignores all subsequent rules. A target group can have only one rule with a given priority.'
+    Type: Number
+    Default: 1
+    ConstraintDescription: 'Must be in the range [1-99999]'
+    MinValue: 1
+    MaxValue: 99999
+  HostPattern:
+    Description: 'Optional host pattern (you can specify HostPattern and/or PathPattern).'
+    Type: String
+    Default: ''
+    ConstraintDescription: 'Must not be longer than 255'
+    MaxLength: 255
+  PathPattern:
+    Description: 'Optional path pattern (you can specify PathPattern and/or HostPattern).'
+    Type: String
+    Default: '/*'
+    ConstraintDescription: 'Must not be longer than 255'
+    MaxLength: 255
+  DeregistrationDelayInSeconds:
+    Description: 'The amount of time, in seconds, for Elastic Load Balancing to wait before changing the state of a deregistering target from draining to unused.'
+    Type: Number
+    Default: 60
+    ConstraintDescription: 'Must be in the range [0-3600]'
+    MinValue: 0
+    MaxValue: 3600
+Conditions:
+  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasLoadBalancerHttps: !Equals [!Ref LoadBalancerHttps, 'true']
+  HasNotLoadBalancerHttps: !Not [!Condition HasLoadBalancerHttps]
+  HasPathPattern: !Not [!Equals [!Ref PathPattern, '']]
+  HasHostPattern: !Not [!Equals [!Ref HostPattern, '']]
+Resources:
+  RecordSet:
+    Condition: HasZone
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      AliasTarget:
+        HostedZoneId: {'Fn::ImportValue': !Sub '${ParentLoadBalancerALBStack}-CanonicalHostedZoneID'}
+        DNSName: {'Fn::ImportValue': !Sub '${ParentLoadBalancerALBStack}-DNSName'}
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
+      Name: !Sub
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+      Type: A
+  TargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckIntervalSeconds: 15
+      HealthCheckPath: '/'
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      Matcher:
+        HttpCode: '200-299'
+      Port: 80
+      Protocol: HTTP
+      TargetType: ip
+      TargetGroupAttributes:
+      - Key: deregistration_delay.timeout_seconds
+        Value: !Ref DeregistrationDelayInSeconds
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+  HTTPCodeTarget5XXTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: HTTPCode_Target_5XX_Count
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: LoadBalancer
+        Value: {'Fn::ImportValue': !Sub '${ParentLoadBalancerALBStack}-LoadBalancerFullName'}
+      - Name: TargetGroup
+        Value: !GetAtt TargetGroup.TargetGroupFullName
+  TargetConnectionErrorCountTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer could not connect to targets'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: TargetConnectionErrorCount
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: LoadBalancer
+        Value: {'Fn::ImportValue': !Sub '${ParentLoadBalancerALBStack}-LoadBalancerFullName'}
+      - Name: TargetGroup
+        Value: !GetAtt TargetGroup.TargetGroupFullName
+  HttpListenerRule:
+    Condition: HasNotLoadBalancerHttps
+    Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn: !Ref TargetGroup
+      Conditions:
+      - !If [HasHostPattern, {Field: host-header, Values: [!Ref HostPattern]}, !Ref 'AWS::NoValue']
+      - !If [HasPathPattern, {Field: path-pattern, Values: [!Ref PathPattern]}, !Ref 'AWS::NoValue']
+      ListenerArn: {'Fn::ImportValue': !Sub '${ParentLoadBalancerALBStack}-HttpListener'}
+      Priority: !Ref Priority
+  HttpsListenerRule:
+    Condition: HasLoadBalancerHttps
+    Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn: !Ref TargetGroup
+      Conditions:
+      - !If [HasHostPattern, {Field: host-header, Values: [!Ref HostPattern]}, !Ref 'AWS::NoValue']
+      - !If [HasPathPattern, {Field: path-pattern, Values: [!Ref PathPattern]}, !Ref 'AWS::NoValue']
+      ListenerArn: {'Fn::ImportValue': !Sub '${ParentLoadBalancerALBStack}-HttpsListener'}
+      Priority: !Ref Priority
+Outputs:
+  TargetGroupArn:
+    Description: 'ARN of target group.'
+    Value: !Ref TargetGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-TargetGroupArn'
