@@ -185,6 +185,11 @@ Resources:
       ListenerArn: {'Fn::ImportValue': !Sub '${ParentLoadBalancerALBStack}-HttpsListener'}
       Priority: !Ref Priority
 Outputs:
+  TargetSecurityGroupId:
+    Description: 'Security Group of ALB targets.'
+    Value: {'Fn::ImportValue': !Sub '${ParentLoadBalancerALBStack}-TargetSecurityGroupId'}
+    Export:
+      Name: !Sub '${AWS::StackName}-TargetSecurityGroupId'
   TargetGroupArn:
     Description: 'ARN of target group.'
     Value: !Ref TargetGroup

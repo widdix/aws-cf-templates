@@ -248,8 +248,8 @@ Outputs:
     Value: !GetAtt 'LoadBalancer.DNSName'
     Export:
       Name: !Sub '${AWS::StackName}-DNSName'
-  TargetSecurityGroup:
+  TargetSecurityGroupId:
     Description: 'Security Group of ALB targets.'
     Value: !Ref TargetSecurityGroup
     Export:
-      Name: !Sub '${AWS::StackName}-TargetSecurityGroup'
+      Name: !Sub '${AWS::StackName}-TargetSecurityGroupId'
