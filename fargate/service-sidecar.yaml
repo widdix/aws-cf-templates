@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# FIXME doc https://docs.microsoft.com/en-us/azure/architecture/patterns/sidecar
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Fargate: service (sidecar), a cloudonaut.io template'
 Metadata:
@@ -86,7 +87,7 @@ Parameters:
   SidecarImage:
     Description: 'The Docker image to use for the sidecar container. You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag).'
     Type: String
-    Default: 'widdix/hello:v1' # FIXME set default
+    Default: 'widdix/hello:v1' # FIXME better default needed
   SidecarPort:
     Description: 'The port exposed by the sidecar container reachable from the app container on host localhost.'
     Type: Number
