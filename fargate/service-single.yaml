@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Fargate: service (single container), a cloudonaut.io template'
+Description: 'Fargate: service (single), a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -435,7 +435,7 @@ Resources:
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
-    Value: 'fargate/service-single-container'
+    Value: 'fargate/service-single'
   TemplateVersion:
     Description: 'cloudonaut.io template version.'
     Value: '__VERSION__'
