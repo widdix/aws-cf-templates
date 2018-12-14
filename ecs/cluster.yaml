@@ -149,7 +149,7 @@ Parameters:
     MinValue: 1
   StopContainerTimeoutInSeconds:
     Description: 'Time in seconds the ECS agent waits before killing a stopped container (see ECS_CONTAINER_STOP_TIMEOUT).'
-    Type: String
+    Type: Number
     Default: '30'
     ConstraintDescription: 'Must be in the range [30-3600]'
     MinValue: 30
