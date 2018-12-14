@@ -48,6 +48,7 @@ Metadata:
       - MinSize
       - DesiredCapacity
       - DrainingTimeoutInSeconds
+      - StopContainerTimeoutInSeconds
     - Label:
         default: 'Cluster Scaling Parameters'
       Parameters:
@@ -146,6 +147,13 @@ Parameters:
     Default: 2
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
+  StopContainerTimeoutInSeconds:
+    Description: 'Time in seconds the ECS agent waits before killing a stopped container (see ECS_CONTAINER_STOP_TIMEOUT).'
+    Type: String
+    Default: '30'
+    ConstraintDescription: 'Must be in the range [30-3600]'
+    MinValue: 30
+    MaxValue: 3600
   DrainingTimeoutInSeconds:
     Description: 'Maximum time in seconds an EC2 instance waits when terminating until all containers are moved to another EC2 instance (draining).'
     Type: Number
@@ -972,6 +980,7 @@ Resources:
           #!/bin/bash -ex
           trap '/opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}' ERR
           echo "ECS_CLUSTER=${Cluster}" >> /etc/ecs/ecs.config
+          echo "ECS_CONTAINER_STOP_TIMEOUT=${StopContainerTimeoutInSeconds}s" >> /etc/ecs/ecs.config
           yum install -y aws-cfn-bootstrap
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
           /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
@@ -1151,7 +1160,8 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Statistic: Maximum # special rule because we scale on reservations and not utilization
       Period: 60
-      EvaluationPeriods: 1
+      EvaluationPeriods: 15
+      DatapointsToAlarm: 15
       Threshold: !Ref ContainerExcessThreshold
       AlarmActions:
       - !Ref ScaleDownPolicy
