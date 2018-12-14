@@ -81,6 +81,8 @@ Mappings:
       AMI: 'ami-06bcd1131b2f55803'
     'eu-west-3':
       AMI: 'ami-051707cdba246187b'
+    'eu-north-1':
+      AMI: 'ami-07ec6279'
     'eu-west-2':
       AMI: 'ami-0274e11dced17bb5b'
     'eu-west-1':

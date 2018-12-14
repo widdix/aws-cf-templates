@@ -89,6 +89,8 @@ Mappings:
       NATAMI: 'ami-00b3aa8a93dd09c13'
     'eu-west-3':
       NATAMI: 'ami-0641e4dfc1427f114'
+    'eu-north-1':
+      NATAMI: 'ami-28d15f56'
     'eu-west-2':
       NATAMI: 'ami-0ca65a55561666293'
     'eu-west-1':
