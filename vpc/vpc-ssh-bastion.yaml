@@ -379,9 +379,10 @@ Resources:
               group: root
           commands:
             'a_configure_sshd_command':
-              command: 'sed -i "s:#AuthorizedKeysCommand none:AuthorizedKeysCommand /opt/authorized_keys_command.sh:g" /etc/ssh/sshd_config'
+              # workaround for https://github.com/widdix/aws-cf-templates/issues/246, AWS seems to prepare a new feature here, that this workaround will break
+              command: 'sed -i "s:AuthorizedKeysCommand /usr/bin/timeout 5s /opt/aws/bin/curl_authorized_keys %u %f:AuthorizedKeysCommand /opt/authorized_keys_command.sh:g" /etc/ssh/sshd_config'
             'b_configure_sshd_commanduser':
-              command: 'sed -i "s:#AuthorizedKeysCommandUser nobody:AuthorizedKeysCommandUser nobody:g" /etc/ssh/sshd_config'
+              command: 'sed -i "s:AuthorizedKeysCommandUser ec2-instance-connect:AuthorizedKeysCommandUser nobody:g" /etc/ssh/sshd_config'
             'c_import_users':
               command: './import_users.sh'
               cwd: '/opt'
