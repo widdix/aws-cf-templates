@@ -1,0 +1,96 @@
+---
+# Copyright 2018 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Fargate: application load balacer listener, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentALBStack
+      - ParentAuthProxyStack
+    - Label:
+        default: 'Listener Parameters'
+      Parameters:
+      - CertificateArn
+      - Port
+Parameters:
+  ParentALBStack:
+    Description: 'Stack name of parent application load balancer stack based on fargate/alb.yaml template.'
+    Type: String
+  ParentAuthProxyStack:
+    Description: 'Optional stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
+    Type: String
+    Default: ''
+  CertificateArn:
+    Description: 'Optional Amazon Resource Name (ARN) of the certificate to associate with the listner.'
+    Type: String
+    Default: ''
+  Port:
+    Description: 'The port on which the listener listens for requests.'
+    Type: Number
+    Default: 80
+Conditions:
+  HasCertificateArn: !Not [!Equals [!Ref CertificateArn, '']]
+  HasAuthProxy: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
+  HasNotAuthProxy: !Not [!Condition HasAuthProxy]
+Resources:
+  Listener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      Certificates: !If [HasCertificateArn, [{CertificateArn: !Ref CertificateArn}], !Ref 'AWS::NoValue']
+      DefaultActions:
+      - FixedResponseConfig:
+          ContentType: 'text/plain'
+          MessageBody: default
+          StatusCode: '404'
+        Type: 'fixed-response'
+      LoadBalancerArn: {'Fn::ImportValue': !Sub '${ParentALBStack}-LoadBalancerArn'}
+      Port: !Ref Port
+      Protocol: !If [HasCertificateArn, HTTPS, HTTP]
+  SecurityGroupInWorld:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotAuthProxy
+    Properties:
+      GroupId: {'Fn::ImportValue': !Sub '${ParentALBStack}-SecurityGroupId'}
+      IpProtocol: tcp
+      FromPort: !Ref Port
+      ToPort: !Ref Port
+      CidrIp: '0.0.0.0/0'
+  SecurityGroupInAuthProxy:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasAuthProxy
+    Properties:
+      GroupId: {'Fn::ImportValue': !Sub '${ParentALBStack}-SecurityGroupId'}
+      IpProtocol: tcp
+      FromPort: !Ref Port
+      ToPort: !Ref Port
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'fargate/alb-listener'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
+  ListenerArn:
+    Description: 'ARN of the listener.'
+    Value: !Ref Listener
+    Export:
+      Name: !Sub '${AWS::StackName}-ListenerArn'

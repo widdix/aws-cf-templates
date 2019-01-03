@@ -13,23 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Fargate: network load balacer listener, a cloudonaut.io template'
+Description: 'Fargate: network load balacer listener and target, a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
     - Label:
         default: 'Parent Stacks'
       Parameters:
-      - ParentLoadBalancerNLBStack
+      - ParentNLBStack
       - ParentVPCStack
     - Label:
         default: 'Listener Parameters'
       Parameters:
       - Port
+    - Label:
+        default: 'Target Group Parameters'
+      Parameters:
       - DeregistrationDelayInSeconds
 Parameters:
-  ParentLoadBalancerNLBStack:
-    Description: 'Stack name of parent network load balancer stack based on fargate/load-balancer-nlb.yaml template.'
+  ParentNLBStack:
+    Description: 'Stack name of parent network load balancer stack based on fargate/nlb.yaml template.'
     Type: String
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -41,7 +44,7 @@ Parameters:
   DeregistrationDelayInSeconds:
     Description: 'The amount of time, in seconds, for Elastic Load Balancing to wait before changing the state of a deregistering target from draining to unused.'
     Type: Number
-    Default: 300
+    Default: 60
     ConstraintDescription: 'Must be in the range [0-3600]'
     MinValue: 0
     MaxValue: 3600
@@ -67,10 +70,10 @@ Resources:
       DefaultActions:
       - TargetGroupArn: !Ref TargetGroup
         Type: forward
-      LoadBalancerArn: {'Fn::ImportValue': !Sub '${ParentLoadBalancerNLBStack}-LoadBalancerArn'}
+      LoadBalancerArn: {'Fn::ImportValue': !Sub '${ParentNLBStack}-LoadBalancerArn'}
       Port: !Ref Port
       Protocol: TCP
-  TargetSecurityGroup:
+  SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: !Ref 'AWS::StackName'
@@ -81,9 +84,18 @@ Resources:
         IpProtocol: tcp
         CidrIp: '0.0.0.0/0'
 Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'fargate/nlb-listener-and-target'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
   TargetSecurityGroupId:
-    Description: 'Security Group of NLB targets.'
-    Value: !Ref TargetSecurityGroup
+    Description: 'Security Group of targets.'
+    Value: !Ref SecurityGroup
     Export:
       Name: !Sub '${AWS::StackName}-TargetSecurityGroupId'
   TargetGroupArn:

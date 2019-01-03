@@ -21,21 +21,15 @@ Metadata:
         default: 'Parent Stacks'
       Parameters:
       - ParentVPCStack
-      - ParentZoneStack
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
       - Scheme
       - CrossZone
-      - SubDomainNameWithDot
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
-  ParentZoneStack:
-    Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
-    Type: String
-    Default: ''
   Scheme:
     Description: 'Indicates whether the load balancer reachable from the public Internet or only from within the VPC.'
     Type: String
@@ -48,27 +42,9 @@ Parameters:
     Type: String
     Default: 'false'
     AllowedValues: ['true', 'false']
-  SubDomainNameWithDot:
-    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
-    Type: String
-    Default: ''
 Conditions:
   HasSchemeInternal: !Equals [!Ref Scheme, 'internal']
-  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
 Resources:
-  RecordSet:
-    Condition: HasZone
-    Type: 'AWS::Route53::RecordSet'
-    Properties:
-      AliasTarget:
-        HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
-        DNSName: !GetAtt 'LoadBalancer.DNSName'
-      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
-      Name: !Sub
-      - '${SubDomainNameWithDot}${HostedZoneName}'
-      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
-      Type: A
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
@@ -84,7 +60,7 @@ Resources:
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
-    Value: 'fargate/load-balancer-nlb'
+    Value: 'fargate/nlb'
   TemplateVersion:
     Description: 'cloudonaut.io template version.'
     Value: '__VERSION__'
@@ -92,7 +68,17 @@ Outputs:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   LoadBalancerArn:
-    Description: 'ARN of the network load balancer.'
+    Description: 'ARN of the load balancer.'
     Value: !Ref LoadBalancer
     Export:
       Name: !Sub '${AWS::StackName}-LoadBalancerArn'
+  CanonicalHostedZoneID:
+    Description: 'The ID of the Amazon Route 53 hosted zone associated with the load balancer.'
+    Value: !GetAtt LoadBalancer.CanonicalHostedZoneID
+    Export:
+      Name: !Sub '${AWS::StackName}-CanonicalHostedZoneID'
+  DNSName:
+    Description: 'The DNS name of the load balancer.'
+    Value: !GetAtt 'LoadBalancer.DNSName'
+    Export:
+      Name: !Sub '${AWS::StackName}-DNSName'

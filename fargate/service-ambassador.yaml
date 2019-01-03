@@ -23,7 +23,7 @@ Metadata:
       Parameters:
       - ParentClusterStack
       - ParentVPCStack
-      - ParentListenerStack
+      - ParentTargetStack
       - ParentAlertStack
       - ParentClientStack1
       - ParentClientStack2
@@ -54,8 +54,8 @@ Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
-  ParentListenerStack:
-    Description: 'Optional stack name of parent listener stack based on fargate/listener-*.yaml template.'
+  ParentTargetStack:
+    Description: 'Optional stack name of parent target stack based on fargate/*-target.yaml template.'
     Type: String
     Default: ''
   ParentAlertStack:
@@ -79,7 +79,7 @@ Parameters:
     Type: String
     Default: 'eeacms/varnish:4.1-6.2'
   AmbassadorPort:
-    Description: 'The port exposed by the ambassador container that receives traffic from the load balancer (ignored if ParentListenerStack is not set).'
+    Description: 'The port exposed by the ambassador container that receives traffic from the load balancer (ignored if ParentTargetStack is not set).'
     Type: Number
     Default: 6081
     MinValue: 1
@@ -140,7 +140,7 @@ Parameters:
     Default: 'true'
     AllowedValues: ['true', 'false']
   HealthCheckGracePeriodSeconds:
-    Description: 'The period of time, in seconds, that the Amazon ECS service scheduler ignores unhealthy Elastic Load Balancing target health checks after a task has first started (ignored if ParentListenerStack is not set).'
+    Description: 'The period of time, in seconds, that the Amazon ECS service scheduler ignores unhealthy Elastic Load Balancing target health checks after a task has first started (ignored if ParentTargetStack is not set).'
     Type: Number
     Default: 60
     MinValue: 0
@@ -221,8 +221,8 @@ Mappings:
     '30':
       Memory: 30720
 Conditions:
-  HasListener: !Not [!Equals [!Ref ParentListenerStack, '']]
-  HasNotListener: !Not [!Condition HasListener]
+  HasTarget: !Not [!Equals [!Ref ParentTargetStack, '']]
+  HasNotTarget: !Not [!Condition HasTarget]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasSubnetsReachPublic: !Equals [!Ref SubnetsReach, Public]
   HasAutoScaling: !Equals [!Ref AutoScaling, 'true']
@@ -271,7 +271,7 @@ Resources:
       - Name: ambassador
         Image: !Ref AmbassadorImage
         PortMappings:
-        - !If [HasListener, {ContainerPort: !Ref AmbassadorPort, Protocol: tcp}, !Ref 'AWS::NoValue']
+        - !If [HasTarget, {ContainerPort: !Ref AmbassadorPort, Protocol: tcp}, !Ref 'AWS::NoValue']
         Essential: true
         Environment: # FIXME make configurable?!
         - Name: BACKENDS
@@ -308,7 +308,7 @@ Resources:
     Properties:
       RetentionInDays: !Ref LogsRetentionInDays
   SecurityGroup:
-    Condition: HasNotListener
+    Condition: HasNotTarget
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: !Ref 'AWS::StackName'
@@ -321,15 +321,15 @@ Resources:
         MaximumPercent: 200
         MinimumHealthyPercent: 50
       DesiredCount: !Ref DesiredCount
-      HealthCheckGracePeriodSeconds: !If [HasListener, !Ref HealthCheckGracePeriodSeconds, !Ref 'AWS::NoValue']
+      HealthCheckGracePeriodSeconds: !If [HasTarget, !Ref HealthCheckGracePeriodSeconds, !Ref 'AWS::NoValue']
       LaunchType: FARGATE
       LoadBalancers:
-      - !If [HasListener, {ContainerName: ambassador, ContainerPort: !Ref AmbassadorPort, TargetGroupArn: {'Fn::ImportValue': !Sub '${ParentListenerStack}-TargetGroupArn'}}, !Ref 'AWS::NoValue']
+      - !If [HasTarget, {ContainerName: ambassador, ContainerPort: !Ref AmbassadorPort, TargetGroupArn: {'Fn::ImportValue': !Sub '${ParentTargetStack}-TargetGroupArn'}}, !Ref 'AWS::NoValue']
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: !If [HasSubnetsReachPublic, ENABLED, DISABLED]
           SecurityGroups:
-          - !If [HasListener, {'Fn::ImportValue': !Sub '${ParentListenerStack}-TargetSecurityGroupId'}, !Ref SecurityGroup]
+          - !If [HasTarget, {'Fn::ImportValue': !Sub '${ParentTargetStack}-TargetSecurityGroupId'}, !Ref SecurityGroup]
           - !If [HasClientSecurityGroup1, {'Fn::ImportValue': !Sub '${ParentClientStack1}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
           - !If [HasClientSecurityGroup2, {'Fn::ImportValue': !Sub '${ParentClientStack2}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
           - !If [HasClientSecurityGroup3, {'Fn::ImportValue': !Sub '${ParentClientStack3}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']

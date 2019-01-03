@@ -22,13 +22,11 @@ Metadata:
       Parameters:
       - ParentVPCStack
       - ParentAlertStack
-      - ParentAuthProxyStack
       - ParentS3Stack
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
       - Scheme
-      - CertificateArn
       - IdleTimeoutInSeconds
 Parameters:
   ParentVPCStack:
@@ -36,10 +34,6 @@ Parameters:
     Type: String
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
-    Type: String
-    Default: ''
-  ParentAuthProxyStack:
-    Description: 'Optional stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
     Type: String
     Default: ''
   ParentS3Stack:
@@ -53,10 +47,6 @@ Parameters:
     AllowedValues:
     - 'internet-facing'
     - internal
-  CertificateArn:
-    Description: 'Optional Amazon Resource Name (ARN) of the certificate to associate with the load balancer (HTTP is redirected to HTTPS if set).'
-    Type: String
-    Default: ''
   IdleTimeoutInSeconds:
     Description: 'The idle timeout value, in seconds.'
     Type: Number
@@ -65,12 +55,7 @@ Parameters:
     MaxValue: 4000
 Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
-  HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
-  HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
   HasSchemeInternal: !Equals [!Ref Scheme, 'internal']
-  HasCertificateArn: !Not [!Equals [!Ref CertificateArn, '']]
-  HasAuthProxySecurityGroupAndCertificateArn: !And [!Condition HasAuthProxySecurityGroup, !Condition HasCertificateArn]
-  HasNotAuthProxySecurityGroupAndCertificateArn: !And [!Condition HasNotAuthProxySecurityGroup, !Condition HasCertificateArn]
   HasParentS3Stack: !Not [!Equals [!Ref ParentS3Stack, '']]
 Resources:
   SecurityGroup:
@@ -78,42 +63,6 @@ Resources:
     Properties:
       GroupDescription: !Ref 'AWS::StackName'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
-  SecurityGroupInHttpWorld:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasNotAuthProxySecurityGroup
-    Properties:
-      GroupId: !Ref SecurityGroup
-      IpProtocol: tcp
-      FromPort: 80
-      ToPort: 80
-      CidrIp: '0.0.0.0/0'
-  SecurityGroupInHttpsWorld:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasNotAuthProxySecurityGroupAndCertificateArn
-    Properties:
-      GroupId: !Ref SecurityGroup
-      IpProtocol: tcp
-      FromPort: 443
-      ToPort: 443
-      CidrIp: '0.0.0.0/0'
-  SecurityGroupInHttpAuthProxy:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasAuthProxySecurityGroup
-    Properties:
-      GroupId: !Ref SecurityGroup
-      IpProtocol: tcp
-      FromPort: 80
-      ToPort: 80
-      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
-  SecurityGroupInHttpsAuthProxy:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasAuthProxySecurityGroupAndCertificateArn
-    Properties:
-      GroupId: !Ref SecurityGroup
-      IpProtocol: tcp
-      FromPort: 443
-      ToPort: 443
-      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
@@ -168,88 +117,38 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
-  HttpListener:
-    Type: 'AWS::ElasticLoadBalancingV2::Listener'
-    Properties:
-      DefaultActions:
-      - !If
-        - HasCertificateArn
-        - RedirectConfig:
-            Port: '443'
-            Protocol: HTTPS
-            StatusCode: 'HTTP_301'
-          Type: redirect
-        - FixedResponseConfig:
-            ContentType: 'text/plain'
-            MessageBody: default
-            StatusCode: '404'
-          Type: 'fixed-response'
-      LoadBalancerArn: !Ref LoadBalancer
-      Port: 80
-      Protocol: HTTP
-  HttpsListener:
-    Type: 'AWS::ElasticLoadBalancingV2::Listener'
-    Condition: HasCertificateArn
-    Properties:
-      Certificates:
-      - CertificateArn: !Ref CertificateArn
-      DefaultActions:
-      - FixedResponseConfig:
-          ContentType: 'text/plain'
-          MessageBody: default
-          StatusCode: '404'
-        Type: 'fixed-response'
-      LoadBalancerArn: !Ref LoadBalancer
-      Port: 443
-      Protocol: HTTPS
-  TargetSecurityGroup:
-    Type: 'AWS::EC2::SecurityGroup'
-    Properties:
-      GroupDescription: !Ref 'AWS::StackName'
-      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
-      SecurityGroupIngress:
-      - SourceSecurityGroupId: !Ref SecurityGroup
-        FromPort: 0
-        ToPort: 65535
-        IpProtocol: tcp
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
-    Value: 'fargate/load-balancer-alb'
+    Value: 'fargate/alb'
   TemplateVersion:
     Description: 'cloudonaut.io template version.'
     Value: '__VERSION__'
   StackName:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
-  LoadBalancerFullName:
-    Description: 'ALB full name for services.'
-    Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
+  LoadBalancerArn:
+    Description: 'ARN of the load balancer.'
+    Value: !Ref LoadBalancer
     Export:
-      Name: !Sub '${AWS::StackName}-LoadBalancerFullName'
-  HttpListener:
-    Description: 'ALB HTTP listener for services.'
-    Value: !Ref HttpListener
-    Export:
-      Name: !Sub '${AWS::StackName}-HttpListener'
-  HttpsListener:
-    Condition: HasCertificateArn
-    Description: 'ALB HTTPS listener for services.'
-    Value: !Ref HttpsListener
-    Export:
-      Name: !Sub '${AWS::StackName}-HttpsListener'
+      Name: !Sub '${AWS::StackName}-LoadBalancerArn'
   CanonicalHostedZoneID:
     Description: 'The ID of the Amazon Route 53 hosted zone associated with the load balancer.'
     Value: !GetAtt LoadBalancer.CanonicalHostedZoneID
     Export:
       Name: !Sub '${AWS::StackName}-CanonicalHostedZoneID'
   DNSName:
-    Description: 'The DNS name for the load balancer.'
+    Description: 'The DNS name of the load balancer.'
     Value: !GetAtt 'LoadBalancer.DNSName'
     Export:
       Name: !Sub '${AWS::StackName}-DNSName'
-  TargetSecurityGroupId:
-    Description: 'Security Group of ALB targets.'
-    Value: !Ref TargetSecurityGroup
+  LoadBalancerFullName:
+    Description: 'The full name of the ALB.'
+    Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
     Export:
-      Name: !Sub '${AWS::StackName}-TargetSecurityGroupId'
+      Name: !Sub '${AWS::StackName}-LoadBalancerFullName'
+  SecurityGroupId:
+    Description: 'The Security Group id of the ALB.'
+    Value: !Ref SecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-SecurityGroupId'
