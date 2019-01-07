@@ -750,6 +750,16 @@ Outputs:
   StackName:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
+  DNSName:
+    Description: 'The DNS name for the Fargate service load balancer.'
+    Value: !GetAtt 'LoadBalancer.DNSName'
+    Export:
+      Name: !Sub '${AWS::StackName}-DNSName'
+  URL:
+    Description: 'URL to the Fargate service.'
+    Value: !Sub 'http://${LoadBalancer.DNSName}'
+    Export:
+      Name: !Sub '${AWS::StackName}-URL'
   TaskRoleArn:
     Description: 'IAM Role ARN attached to the task. Use this to attach policies.'
     Value: !GetAtt 'TaskRole.Arn'
