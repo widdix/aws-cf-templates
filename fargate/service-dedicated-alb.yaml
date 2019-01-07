@@ -325,7 +325,7 @@ Resources:
       CidrIp: '0.0.0.0/0'
   LoadBalancerSecurityGroupInHttpsFromWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasAuthProxySecurityGroupAndLoadBalancerCertificateArn
+    Condition: HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn
     Properties:
       GroupId: !Ref LoadBalancerSecurityGroup
       IpProtocol: tcp
@@ -343,7 +343,7 @@ Resources:
       SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
   LoadBalancerSecurityGroupInHttpsFromAuthProxy:
     Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn
+    Condition: HasAuthProxySecurityGroupAndLoadBalancerCertificateArn
     Properties:
       GroupId: !Ref LoadBalancerSecurityGroup
       IpProtocol: tcp
