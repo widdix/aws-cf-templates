@@ -28,8 +28,8 @@ Outputs:
   StackName:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
-  ClusterName:
-    Description: 'Fargate cluster name.'
+  Cluster:
+    Description: 'Fargate cluster.'
     Value: !Ref Cluster
     Export:
-      Name: !Sub '${AWS::StackName}-ClusterName'
+      Name: !Sub '${AWS::StackName}-Cluster'
