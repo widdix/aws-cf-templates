@@ -591,6 +591,7 @@ Resources:
         IpProtocol: tcp
   Service:
     Type: 'AWS::ECS::Service'
+    DependsOn: HttpListener
     Properties:
       Cluster: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
       DeploymentConfiguration:
