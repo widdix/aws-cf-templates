@@ -35,7 +35,7 @@ Metadata:
       Parameters:
       - LoadBalancerScheme
       - LoadBalancerCertificateArn
-      - LoadBalancerIdleTimeoutInSeconds
+      - LoadBalancerIdleTimeout
       - LoadBalancerDeregistrationDelay
     - Label:
         default: 'Task Parameters'
@@ -105,7 +105,7 @@ Parameters:
     Description: 'Optional Amazon Resource Name (ARN) of the certificate to associate with the load balancer. If set, HTTP requests are redirected to HTTPS.'
     Type: String
     Default: ''
-  LoadBalancerIdleTimeoutInSeconds:
+  LoadBalancerIdleTimeout:
     Description: 'The idle timeout value, in seconds.'
     Type: Number
     Default: 60
@@ -355,7 +355,7 @@ Resources:
     Properties:
       LoadBalancerAttributes:
       - Key: 'idle_timeout.timeout_seconds'
-        Value: !Ref LoadBalancerIdleTimeoutInSeconds
+        Value: !Ref LoadBalancerIdleTimeout
       - Key: 'routing.http2.enabled'
         Value: 'true'
       - Key: 'access_logs.s3.enabled'
