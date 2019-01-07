@@ -374,7 +374,7 @@ Resources:
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancing::LoadBalancer'
     Properties:
-      AccessLoggingPolicy: !If [HasS3Bucket, {EmitInterval: 5, Enabled: true, S3BucketName: {'Fn::ImportValue': !Sub '${ParentS3Stack}-BucketName'}, S3BucketPrefix: !Ref 'AWS::StackName'}}, !Ref 'AWS::NoValue']
+      AccessLoggingPolicy: !If [HasS3Bucket, {EmitInterval: 5, Enabled: true, S3BucketName: {'Fn::ImportValue': !Sub '${ParentS3Stack}-BucketName'}, S3BucketPrefix: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
       ConnectionDrainingPolicy:
         Enabled: true
         Timeout: 30
