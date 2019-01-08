@@ -14,7 +14,6 @@ We provide you templates for the Fargate cluster and the service. You need to pu
 This template describes a fault tolerant and scalable Fargate cluster on AWS.
 
 ## Installation Guide
-1. This templates depends on our [`vpc-*azs.yaml`](./vpc/) template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml)
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=fargate-cluster&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/fargate/cluster.yaml)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
@@ -26,8 +25,6 @@ This template describes a fault tolerant and scalable Fargate cluster on AWS.
 
 # Fargate service
 This template describes a fault tolerant and scalable Fargate service on AWS. The service scales based on CPU utilization.
-
-> The image needs to expose port 80 or the `AWS::ECS::TaskDefinition` needs to be adjusted!
 
 ### Installation Guide
 1. This templates depends on our [`cluster.yaml`](./fargate/) template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=fargate-cluster&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/fargate/cluster.yaml)
