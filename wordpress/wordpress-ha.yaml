@@ -24,7 +24,7 @@ Metadata:
       - ParentSSHBastionStack
       - ParentAuthProxyStack
       - ParentAlertStack
-      - ParentS3Stack
+      - ParentS3StackAccessLog
       - ParentZoneStack
     - Label:
         default: 'Domain Name and SSL certificates'
@@ -77,7 +77,7 @@ Parameters:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
-  ParentS3Stack:
+  ParentS3StackAccessLog:
     Description: 'Optional stack name of parent s3 stack based on state/s3.yaml template (with Access set to ElbAccessLogWrite) to store access logs.'
     Type: String
     Default: ''
@@ -206,7 +206,7 @@ Conditions:
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
-  HasS3Bucket: !Not [!Equals [!Ref ParentS3Stack, '']]
+  HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
   HasEFSProvisionedThroughput: !Not [!Equals [!Ref EFSProvisionedThroughputInMibps, '0.0']]
   HasNotEFSProvisionedThroughput: !Equals [!Ref EFSProvisionedThroughputInMibps, '0.0']
   HasAlertTopicAndEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasEFSProvisionedThroughput]
@@ -374,7 +374,7 @@ Resources:
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancing::LoadBalancer'
     Properties:
-      AccessLoggingPolicy: !If [HasS3Bucket, {EmitInterval: 5, Enabled: true, S3BucketName: {'Fn::ImportValue': !Sub '${ParentS3Stack}-BucketName'}, S3BucketPrefix: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
+      AccessLoggingPolicy: !If [HasS3Bucket, {EmitInterval: 5, Enabled: true, S3BucketName: {'Fn::ImportValue': !Sub '${ParentS3StackAccessLog}-BucketName'}, S3BucketPrefix: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
       ConnectionDrainingPolicy:
         Enabled: true
         Timeout: 30
