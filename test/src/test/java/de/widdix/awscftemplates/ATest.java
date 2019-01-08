@@ -34,6 +34,31 @@ public abstract class ATest {
         return (T) results.getResult();
     }
 
+    public static final class User {
+        public final String userName;
+        public final byte[] sshPrivateKeyBlob;
+        public final String sshPublicKeyId;
+        public User(final String userName, final byte[] sshPrivateKeyBlob, final String sshPublicKeyId) {
+            super();
+            this.userName = userName;
+            this.sshPrivateKeyBlob = sshPrivateKeyBlob;
+            this.sshPublicKeyId = sshPublicKeyId;
+        }
+    }
+
+    protected final void probeSSH(final String host, final User user) {
+        final Callable<Boolean> callable = () -> {
+            final JSch jsch = new JSch();
+            final Session session = jsch.getSession(user.userName, host);
+            jsch.addIdentity(user.userName, user.sshPrivateKeyBlob, null, null);
+            jsch.setConfig("StrictHostKeyChecking", "no"); // for testing this should be fine. adding the host key seems to be only possible via a file which is not very useful here
+            session.connect(10000);
+            session.disconnect();
+            return true;
+        };
+        Assert.assertTrue(this.retry(callable));
+    }
+
     protected final void probeSSH(final String host, final KeyPair key) {
         final Callable<Boolean> callable = () -> {
             final JSch jsch = new JSch();

@@ -43,7 +43,6 @@ Conditions:
 Resources:
   ConfigBucket:
     Condition: InternalBucket
-    DeletionPolicy: Retain
     Type: 'AWS::S3::Bucket'
     Properties: {}
   ConfigTopic:
@@ -60,7 +59,7 @@ Resources:
     Condition: InternalBucket
     Type: 'AWS::IAM::Role'
     Properties:
-      ManagedPolicyArns:
+      ManagedPolicyArns: # TODO get rid of managed policy
       - 'arn:aws:iam::aws:policy/service-role/AWSConfigRole'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -95,7 +94,7 @@ Resources:
     Condition: ExternalBucket
     Type: 'AWS::IAM::Role'
     Properties:
-      ManagedPolicyArns:
+      ManagedPolicyArns: # TODO get rid of managed policy
       - 'arn:aws:iam::aws:policy/service-role/AWSConfigRole'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'

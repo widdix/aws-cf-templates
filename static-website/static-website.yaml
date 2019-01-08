@@ -46,7 +46,7 @@ Parameters:
     Description: 'Stack name of parent zone stack based on vpc/zone-*.yaml template.'
     Type: String
   SubDomainNameWithDot:
-    Description: 'Primary mame that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain.'
+    Description: 'Primary mame that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain.'
     Type: String
     Default: 'www.'
   LambdaEdgeSubdirectoriesVersionArn:
@@ -67,7 +67,7 @@ Parameters:
     Default: 'false'
     AllowedValues: ['true', 'false']
   RedirectSubDomainNameWithDot:
-    Description: 'Optional name that is used to create the DNS entry with trailing dot, e.g. ${RedirectSubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain.'
+    Description: 'Optional name that is used to create the DNS entry with trailing dot, e.g. §{RedirectSubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain.'
     Type: String
     Default: ''
   CertificateType:

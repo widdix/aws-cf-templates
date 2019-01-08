@@ -8,6 +8,9 @@ import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.*;
 import com.amazonaws.services.ec2.model.Filter;
+import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
+import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder;
+import com.amazonaws.services.identitymanagement.model.*;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.*;
@@ -15,7 +18,10 @@ import com.amazonaws.services.s3.model.Region;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
 
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,6 +32,8 @@ public abstract class AAWSTest extends ATest {
     protected final AWSCredentialsProvider credentialsProvider;
 
     private AmazonEC2 ec2;
+
+    private AmazonIdentityManagement iam;
 
     private final AmazonS3 s3;
 
@@ -40,8 +48,31 @@ public abstract class AAWSTest extends ATest {
             this.credentialsProvider = new DefaultAWSCredentialsProviderChain();
         }
         this.ec2 = AmazonEC2ClientBuilder.standard().withCredentials(this.credentialsProvider).build();
+        this.iam = AmazonIdentityManagementClientBuilder.standard().withCredentials(this.credentialsProvider).build();
         this.s3 = AmazonS3ClientBuilder.standard().withCredentials(this.credentialsProvider).build();
         this.sts = AWSSecurityTokenServiceClientBuilder.standard().withCredentials(this.credentialsProvider).build();
+    }
+
+    protected final User createUser(final String userName) throws JSchException {
+        final JSch jsch = new JSch();
+        final com.jcraft.jsch.KeyPair keyPair = com.jcraft.jsch.KeyPair.genKeyPair(jsch, com.jcraft.jsch.KeyPair.RSA, 2048);
+        final ByteArrayOutputStream osPublicKey = new ByteArrayOutputStream();
+        final ByteArrayOutputStream osPrivateKey = new ByteArrayOutputStream();
+        keyPair.writePublicKey(osPublicKey, userName);
+        keyPair.writePrivateKey(osPrivateKey);
+        final byte[] sshPrivateKeyBlob = osPrivateKey.toByteArray();
+        final String sshPublicKeyBody = osPublicKey.toString();
+        this.iam.createUser(new CreateUserRequest().withUserName(userName));
+        final UploadSSHPublicKeyResult res = this.iam.uploadSSHPublicKey(new UploadSSHPublicKeyRequest().withUserName(userName).withSSHPublicKeyBody(sshPublicKeyBody));
+        return new User(userName, sshPrivateKeyBlob, res.getSSHPublicKey().getSSHPublicKeyId());
+    }
+
+    protected final void deleteUser(final String userName) {
+        if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
+            final ListSSHPublicKeysResult res = this.iam.listSSHPublicKeys(new ListSSHPublicKeysRequest().withUserName(userName));
+             this.iam.deleteSSHPublicKey(new DeleteSSHPublicKeyRequest().withUserName(userName).withSSHPublicKeyId(res.getSSHPublicKeys().get(0).getSSHPublicKeyId()));
+            this.iam.deleteUser(new DeleteUserRequest().withUserName(userName));
+        }
     }
 
     protected final KeyPair createKey(final String keyName) {

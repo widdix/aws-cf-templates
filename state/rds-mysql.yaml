@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'State: RDS Aurora, a cloudonaut.io template, sponsored by https://github.com/ngault'
+Description: 'State: RDS MySQL, a cloudonaut.io template, sponsored by https://github.com/ngault'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -28,15 +28,15 @@ Metadata:
     - Label:
         default: 'RDS Parameters'
       Parameters:
-      - Engine
       - DBSnapshotIdentifier
+      - DBAllocatedStorage
       - DBInstanceClass
       - DBName
       - DBBackupRetentionPeriod
       - DBMasterUsername
       - DBMasterUserPassword
+      - DBMultiAZ
       - SubDomainNameWithDot
-      - ReadSubDomainNameWithDot
       - Encryption
       - PreferredBackupWindow
       - PreferredMaintenanceWindow
@@ -59,49 +59,48 @@ Parameters:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
-  Engine:
-    Description: 'The name of the database engine that you want to use for this DB cluster.'
-    Type: String
-    AllowedValues:
-    - aurora # MySQL 5.6-compatible Aurora
-    - 'aurora-mysql' # MySQL 5.7-compatible Aurora
-    - 'aurora-postgresql'
-    Default: aurora
   DBSnapshotIdentifier:
-    Description: 'Optional identifier for the DB cluster snapshot from which you want to restore (leave blank to create an empty cluster).'
+    Description: 'Optional name or Amazon Resource Name (ARN) of the DB snapshot from which you want to restore (leave blank to create an empty database).'
     Type: String
     Default: ''
+  DBAllocatedStorage:
+    Description: 'The allocated storage size, specified in GB (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
+    Type: Number
+    Default: 5
+    MinValue: 5
+    MaxValue: 16384
   DBInstanceClass:
-    Description: 'The instance type of database server (see https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Concepts.DBInstanceClass.html).'
+    Description: 'The instance type of database server.'
     Type: String
-    Default: 'db.t2.small'
+    Default: 'db.t2.micro'
   DBName:
     Description: 'Name of the database (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
     Type: String
     Default: ''
   DBBackupRetentionPeriod:
-    Description: 'The number of days to keep snapshots of the cluster.'
+    Description: 'The number of days to keep snapshots of the database.'
     Type: Number
-    MinValue: 1
+    MinValue: 0
     MaxValue: 35
     Default: 30
   DBMasterUsername:
     Description: 'The master user name for the DB instance (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
-    Type: 'String'
+    Type: String
     Default: master
   DBMasterUserPassword:
     Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
     Type: String
     NoEcho: true
     Default: ''
+  DBMultiAZ:
+    Description: 'Specifies if the database instance is deployed to multiple Availability Zones for HA.'
+    Type: String
+    Default: true
+    AllowedValues: [true, false]
   SubDomainNameWithDot:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
-    Default: 'aurora.'
-  ReadSubDomainNameWithDot:
-    Description: 'Name that is used to create the read DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
-    Type: String
-    Default: 'read-aurora.'
+    Default: 'mysql.'
   Encryption:
     Description: 'Enable server side encryption using KMS (customer managed) CMK (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
     Type: String
@@ -115,23 +114,6 @@ Parameters:
     Description: The weekly time range (in UTC) during which system maintenance can occur.
     Type: String
     Default: 'sat:07:00-sat:07:30'
-Mappings:
-  EngineMap:
-    aurora:
-      EngineVersion: '5.6.10a'
-      Port: 3306
-      ClusterParameterGroupFamily: 'aurora5.6'
-      ParameterGroupFamily: 'aurora5.6'
-    'aurora-mysql':
-      EngineVersion: '5.7.12'
-      Port: 3306
-      ClusterParameterGroupFamily: 'aurora-mysql5.7'
-      ParameterGroupFamily: 'aurora-mysql5.7'
-    'aurora-postgresql':
-      EngineVersion: '9.6.3'
-      Port: 5432
-      ClusterParameterGroupFamily: 'aurora-postgresql9.6'
-      ParameterGroupFamily: 'aurora-postgresql9.6'
 Conditions:
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
@@ -139,7 +121,6 @@ Conditions:
   HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, '']]
   HasEncryption: !Equals [!Ref Encryption, true]
   HasEncryptionAndNotDBSnapshotIdentifier: !And [!Condition HasEncryption, !Not [!Condition HasDBSnapshotIdentifier]]
-  HasEngineMySQL: !Or [!Equals [!Ref Engine, 'aurora'], !Equals [!Ref Engine, 'aurora-mysql']]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -151,40 +132,27 @@ Resources:
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
         HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
-      - !GetAtt 'DBCluster.Endpoint.Address'
+      - !GetAtt 'DBInstance.Endpoint.Address'
       TTL: '60'
       Type: CNAME
-  ReadRecordSet:
-    Condition: HasZone
-    Type: 'AWS::Route53::RecordSet'
-    Properties:
-      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
-      Name: !Sub
-      - '${ReadSubDomainNameWithDot}${HostedZoneName}'
-      - ReadSubDomainNameWithDot: !Ref ReadSubDomainNameWithDot
-        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
-      ResourceRecords:
-      - !GetAtt 'DBCluster.ReadEndpoint.Address'
-      TTL: '60'
-      Type: CNAME
-  ClusterSecurityGroup:
+  DatabaseSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: !Ref 'AWS::StackName'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
       - IpProtocol: tcp
-        FromPort: !FindInMap [EngineMap, !Ref Engine, Port]
-        ToPort: !FindInMap [EngineMap, !Ref Engine, Port]
+        FromPort: 3306
+        ToPort: 3306
         SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
-      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
-  ClusterSecurityGroupInSSHBastion:
+  DatabaseSecurityGroupInSSHBastion:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasSSHBastionSecurityGroup
     Properties:
-      GroupId: !Ref ClusterSecurityGroup
+      GroupId: !Ref DatabaseSecurityGroup
       IpProtocol: tcp
-      FromPort: !FindInMap [EngineMap, !Ref Engine, Port]
-      ToPort: !FindInMap [EngineMap, !Ref Engine, Port]
+      FromPort: 3306
+      ToPort: 3306
       SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
   Key:
     Condition: HasEncryptionAndNotDBSnapshotIdentifier
@@ -226,71 +194,51 @@ Resources:
     Properties:
       DBSubnetGroupDescription: !Ref 'AWS::StackName'
       SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
-  DBClusterParameterGroup:
-    Type: 'AWS::RDS::DBClusterParameterGroup'
-    Properties:
-      Description: !Ref 'AWS::StackName'
-      Family: !FindInMap [EngineMap, !Ref Engine, ClusterParameterGroupFamily]
-      Parameters: !If
-      - HasEngineMySQL
-      - character_set_client: utf8
-        character_set_connection: utf8
-        character_set_database: utf8
-        character_set_filesystem: utf8
-        character_set_results: utf8
-        character_set_server: utf8
-        collation_connection: utf8_general_ci
-        collation_server: utf8_general_ci
-      - client_encoding: 'UTF8'
-  DBCluster:
+  DBInstance:
     DeletionPolicy: Snapshot # default
-    Type: 'AWS::RDS::DBCluster'
+    Type: 'AWS::RDS::DBInstance'
     Properties:
+      AllocatedStorage: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBAllocatedStorage]
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: true
       BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
-      DatabaseName: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBName]
-      DBClusterParameterGroupName: !Ref DBClusterParameterGroup
+      CopyTagsToSnapshot: true
+      DBInstanceClass: !Ref DBInstanceClass
+      DBName: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBName]
+      DBSnapshotIdentifier: !If [HasDBSnapshotIdentifier, !Ref DBSnapshotIdentifier, !Ref 'AWS::NoValue']
       DBSubnetGroupName: !Ref DBSubnetGroup
-      Engine: !Ref Engine
-      EngineMode: provisioned
-      EngineVersion: !FindInMap [EngineMap, !Ref Engine, EngineVersion]
+      Engine: mysql
+      EngineVersion: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', '5.7.21']
       KmsKeyId: !If [HasEncryptionAndNotDBSnapshotIdentifier, !Ref Key, !Ref 'AWS::NoValue']
       MasterUsername: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUsername]
       MasterUserPassword: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUserPassword]
-      Port: !FindInMap [EngineMap, !Ref Engine, Port]
+      MultiAZ: !Ref DBMultiAZ
       PreferredBackupWindow: !Ref PreferredBackupWindow
       PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
-      SnapshotIdentifier: !If [HasDBSnapshotIdentifier, !Ref DBSnapshotIdentifier, !Ref 'AWS::NoValue']
+      StorageType: gp2
       StorageEncrypted: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref Encryption]
-      VpcSecurityGroupIds:
-      - !Ref ClusterSecurityGroup
-  DBParameterGroup:
-    Type: 'AWS::RDS::DBParameterGroup'
+      VPCSecurityGroups:
+      - !Ref DatabaseSecurityGroup
+  DatabaseBurstBalanceTooLowAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      Description: !Ref 'AWS::StackName'
-      Family: !FindInMap [EngineMap, !Ref Engine, ParameterGroupFamily]
-  DBInstanceA:
-    Type: 'AWS::RDS::DBInstance'
-    Properties:
-      AllowMajorVersionUpgrade: false
-      AutoMinorVersionUpgrade: true
-      CopyTagsToSnapshot: true
-      DBClusterIdentifier: !Ref DBCluster
-      DBInstanceClass: !Ref DBInstanceClass
-      DBParameterGroupName: !Ref DBParameterGroup
-      DBSubnetGroupName: !Ref DBSubnetGroup
-      Engine: !Ref Engine
-  DBInstanceB:
-    Type: 'AWS::RDS::DBInstance'
-    Properties:
-      AllowMajorVersionUpgrade: false
-      AutoMinorVersionUpgrade: true
-      CopyTagsToSnapshot: true
-      DBClusterIdentifier: !Ref DBCluster
-      DBInstanceClass: !Ref DBInstanceClass
-      DBParameterGroupName: !Ref DBParameterGroup
-      DBSubnetGroupName: !Ref DBSubnetGroup
-      Engine: !Ref Engine
-  DatabaseACPUUtilizationTooHighAlarm:
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      AlarmDescription: 'Average database storage burst balance over last 10 minutes too low, expect a significant performance drop soon.'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value: !Ref DBInstance
+      EvaluationPeriods: 1
+      MetricName: BurstBalance
+      Namespace: 'AWS/RDS'
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Period: 600
+      Statistic: Average
+      Threshold: 20
+  DatabaseCPUUtilizationTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -300,7 +248,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
       - Name: DBInstanceIdentifier
-        Value: !Ref DBInstanceA
+        Value: !Ref DBInstance
       EvaluationPeriods: 1
       MetricName: CPUUtilization
       Namespace: 'AWS/RDS'
@@ -309,64 +257,45 @@ Resources:
       Period: 600
       Statistic: Average
       Threshold: 80
-  DatabaseBCPUUtilizationTooHighAlarm:
+  DatabaseCPUCreditBalanceTooLowAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      AlarmDescription: 'Average database CPU utilization over last 10 minutes too high.'
+      AlarmDescription: 'Average database CPU credit balance over last 10 minutes too low, expect a significant performance drop soon.'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value: !Ref DBInstance
+      EvaluationPeriods: 1
+      MetricName: CPUCreditBalance
+      Namespace: 'AWS/RDS'
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Period: 600
+      Statistic: Average
+      Threshold: 20
+  DatabaseDiskQueueDepthTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      AlarmDescription: 'Average database disk queue depth over last 10 minutes too high, performance may suffer.'
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
       - Name: DBInstanceIdentifier
-        Value: !Ref DBInstanceB
+        Value: !Ref DBInstance
       EvaluationPeriods: 1
-      MetricName: CPUUtilization
+      MetricName: DiskQueueDepth
       Namespace: 'AWS/RDS'
       OKActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
-      Threshold: 80
-  DatabaseACPUCreditBalanceTooLowAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      AlarmDescription: 'Average database CPU credit balance over last 10 minutes too low, expect a significant performance drop soon.'
-      ComparisonOperator: LessThanThreshold
-      Dimensions:
-      - Name: DBInstanceIdentifier
-        Value: !Ref DBInstanceA
-      EvaluationPeriods: 1
-      MetricName: CPUCreditBalance
-      Namespace: 'AWS/RDS'
-      OKActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Period: 600
-      Statistic: Average
-      Threshold: 20
-  DatabaseBCPUCreditBalanceTooLowAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      AlarmDescription: 'Average database CPU credit balance over last 10 minutes too low, expect a significant performance drop soon.'
-      ComparisonOperator: LessThanThreshold
-      Dimensions:
-      - Name: DBInstanceIdentifier
-        Value: !Ref DBInstanceB
-      EvaluationPeriods: 1
-      MetricName: CPUCreditBalance
-      Namespace: 'AWS/RDS'
-      OKActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Period: 600
-      Statistic: Average
-      Threshold: 20
-  DatabaseAFreeableMemoryTooLowAlarm:
+      Threshold: 64
+  DatabaseFreeableMemoryTooLowAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -376,7 +305,7 @@ Resources:
       ComparisonOperator: LessThanThreshold
       Dimensions:
       - Name: DBInstanceIdentifier
-        Value: !Ref DBInstanceA
+        Value: !Ref DBInstance
       EvaluationPeriods: 1
       MetricName: FreeableMemory
       Namespace: 'AWS/RDS'
@@ -385,58 +314,75 @@ Resources:
       Period: 600
       Statistic: Average
       Threshold: 64000000 # 64 Megabyte in Byte
-  DatabaseBFreeableMemoryTooLowAlarm:
+  DatabaseFreeStorageSpaceTooLowAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      AlarmDescription: 'Average database freeable memory over last 10 minutes too low, performance may suffer.'
+      AlarmDescription: 'Average database free storage space over last 10 minutes too low.'
       ComparisonOperator: LessThanThreshold
       Dimensions:
       - Name: DBInstanceIdentifier
-        Value: !Ref DBInstanceB
+        Value: !Ref DBInstance
       EvaluationPeriods: 1
-      MetricName: FreeableMemory
+      MetricName: FreeStorageSpace
       Namespace: 'AWS/RDS'
       OKActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Period: 600
       Statistic: Average
-      Threshold: 64000000 # 64 Megabyte in Byte
-  DatabaseClusterEventSubscription:
+      Threshold: 2000000000 # 2 Gigabyte in Byte
+  DatabaseSwapUsageTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      AlarmDescription: 'Average database swap usage over last 10 minutes too high, performance may suffer.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value: !Ref DBInstance
+      EvaluationPeriods: 1
+      MetricName: SwapUsage
+      Namespace: 'AWS/RDS'
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Period: 600
+      Statistic: Average
+      Threshold: 256000000 # 256 Megabyte in Byte
+  DatabaseEventSubscription:
     Condition: HasAlertTopic
     Type: 'AWS::RDS::EventSubscription'
     Properties:
       EventCategories:
       - failover
       - failure
+      - 'low storage'
+      - maintenance
       - notification
+      - recovery
       SnsTopicArn: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      SourceIds: [!Ref DBCluster]
-      SourceType: 'db-cluster'
+      SourceIds: [!Ref DBInstance]
+      SourceType: 'db-instance'
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
-    Value: 'state/rds-aurora'
+    Value: 'state/rds-mysql'
   TemplateVersion:
     Description: 'cloudonaut.io template version.'
     Value: '__VERSION__'
   StackName:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
-  ClusterName:
-    Description: 'The name of the cluster.'
-    Value: !Ref DBCluster
+  InstanceName:
+    Description: 'The name of the database instance.'
+    Value: !Ref DBInstance
     Export:
-      Name: !Sub '${AWS::StackName}-ClusterName'
+      Name: !Sub '${AWS::StackName}-InstanceName'
   DNSName:
-    Description: 'The connection endpoint for the DB cluster.'
-    Value: !GetAtt 'DBCluster.Endpoint.Address'
+    Description: 'The connection endpoint for the database.'
+    Value: !GetAtt 'DBInstance.Endpoint.Address'
     Export:
       Name: !Sub '${AWS::StackName}-DNSName'
-  ReadDNSName:
-    Description: 'The reader endpoint for the DB cluster.'
-    Value: !GetAtt 'DBCluster.ReadEndpoint.Address'
-    Export:
-      Name: !Sub '${AWS::StackName}-ReadDNSName'
