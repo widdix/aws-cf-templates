@@ -29,8 +29,10 @@ This template describes a fault tolerant and scalable ECS cluster on AWS. The cl
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
 * `vpc/vpc-*-bastion.yaml` (recommended)
-* `security/auth-proxy-*.yaml`
 * `operations/alert.yaml` (recommended)
+* `security/auth-proxy-*.yaml`
+* `state/s3.yaml`
+* `state/client-sg.yaml`
 
 # ECS service
 This template describes a fault tolerant and scalable ECS service on AWS. The service scales based on CPU utilization.
@@ -60,6 +62,7 @@ This template describes a fault tolerant and scalable ECS service that uses the 
 ### Dependencies
 * `ecs/cluster.yaml` (**required**)
 * `operations/alert.yaml` (recommended)
+* `vpc/zone-*.yaml`
 
 ## Using a dedicated load balancer for the service
 This template describes a fault tolerant and scalable ECS service that uses a dedicated load balancer for the service.
@@ -81,3 +84,6 @@ This template describes a fault tolerant and scalable ECS service that uses a de
 * `vpc/vpc-*azs.yaml` (**required**)
 * `ecs/cluster.yaml` (**required**)
 * `operations/alert.yaml` (recommended)
+* `security/auth-proxy-*.yaml`
+* `vpc/zone-*.yaml`
+* `state/s3.yaml*`

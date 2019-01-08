@@ -24,7 +24,6 @@ Metadata:
       - AZB
       - AZC
       - AZD
-      - ClassB
       - CidrBlock
       - VPC
       - SubnetAPublic
@@ -56,13 +55,6 @@ Parameters:
   AZD:
     Description: 'AZ of D'
     Type: 'AWS::EC2::AvailabilityZone::Name'
-  ClassB:
-    Description: 'Deprecated in v7, will be removed in v8! Class B of VPC (10.XXX.0.0/16)'
-    Type: Number
-    Default: 0
-    ConstraintDescription: 'Must be in the range [0-255]'
-    MinValue: 0
-    MaxValue: 255
   CidrBlock:
     Description: 'The set of IP addresses for the VPC (e.g., 10.0.0.0/16).'
     Type: String
@@ -156,11 +148,6 @@ Outputs:
     Value: !Ref AZD
     Export:
       Name: !Sub '${AWS::StackName}-AZD'
-  ClassB:
-    Description: 'Deprecated in v7, will be removed in v8, use CidrBlock instead! Class B.'
-    Value: !Ref ClassB
-    Export:
-      Name: !Sub '${AWS::StackName}-ClassB'
   CidrBlock:
     Description: 'The set of IP addresses for the VPC.'
     Value: !Ref CidrBlock

@@ -392,11 +392,6 @@ Outputs:
     Value: !Select [3, !GetAZs '']
     Export:
       Name: !Sub '${AWS::StackName}-AZD'
-  ClassB:
-    Description: 'Deprecated in v7, will be removed in v8, use CidrBlock instead! Class B.'
-    Value: !Ref ClassB
-    Export:
-      Name: !Sub '${AWS::StackName}-ClassB'
   CidrBlock:
     Description: 'The set of IP addresses for the VPC.'
     Value: !GetAtt 'VPC.CidrBlock'
