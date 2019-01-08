@@ -8,6 +8,7 @@ pages:
 - Templates:
   - 'EC2': 'ec2.md'
   - 'ECS': 'ecs.md'
+  - 'Fargate': 'fargate.md'
   - 'Jenkins': 'jenkins.md'
   - 'Operations': 'operations.md'
   - 'Security': 'security.md'
