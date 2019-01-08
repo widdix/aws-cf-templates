@@ -32,16 +32,18 @@ Metadata:
       - LoadBalancerHttps
       - LoadBalancerDeregistrationDelay
     - Label:
-        default: 'Service Parameters'
-      Parameters:
-      - SubDomainNameWithDot
-    - Label:
         default: 'Task Parameters'
       Parameters:
       - Image
+    - Label:
+        default: 'Service Parameters'
+      Parameters:
+      - SubDomainNameWithDot
+      - AutoScaling
       - DesiredCount
       - MaxCapacity
       - MinCapacity
+      - HealthCheckGracePeriod
 Parameters:
   ParentClusterStack:
     Description: 'Stack name of parent Cluster stack based on ecs/cluster.yaml template.'
@@ -83,13 +85,23 @@ Parameters:
   LoadBalancerDeregistrationDelay:
     Description: 'The amount time (in seconds) to wait before changing the state of a deregistering target from draining to unused.'
     Type: Number
-    Default: 300
+    Default: 60
     ConstraintDescription: 'Must be in the range [0-3600]'
     MinValue: 0
     MaxValue: 3600
   Image:
     Description: 'The image to use for a container, which is passed directly to the Docker daemon. You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag).'
     Type: String
+  Cpu:
+    Description: 'Optional minimum number of vCPUs to reserve for the container.'
+    Type: String
+    Default: ''
+    AllowedValues: ['', 0.25', '0,5', '1', '2', '4']
+  Memory:
+    Description: 'The amount (in GB) of memory used by the task.'
+    Type: String
+    Default: '0.5'
+    AllowedValues: ['0.5', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30']
   DesiredCount:
     Description: 'The number of simultaneous tasks, that you want to run on the cluster.'
     Type: Number
@@ -112,13 +124,100 @@ Parameters:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
     Default: ''
-Mappings: {}
+  AutoScaling:
+    Description: 'Scale number of tasks based on CPU load?'
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+  HealthCheckGracePeriod:
+    Description: 'The period of time, in seconds, that the Amazon ECS service scheduler ignores unhealthy Elastic Load Balancing target health checks after a task has first started.'
+    Type: Number
+    Default: 60
+    MinValue: 0
+    MaxValue: 1800
+Mappings:
+  CpuMap:
+    '0.25':
+      Cpu: 256
+    '0.5':
+      Cpu: 512
+    '1':
+      Cpu: 1024
+    '2':
+      Cpu: 2048
+    '4':
+      Cpu: 4096
+  MemoryMap:
+    '0.5':
+      Memory: 512
+    '1':
+      Memory: 1024
+    '2':
+      Memory: 2048
+    '3':
+      Memory: 3072
+    '4':
+      Memory: 4096
+    '5':
+      Memory: 5120
+    '6':
+      Memory: 6144
+    '7':
+      Memory: 7168
+    '8':
+      Memory: 8192
+    '9':
+      Memory: 9216
+    '10':
+      Memory: 10240
+    '11':
+      Memory: 11264
+    '12':
+      Memory: 12288
+    '13':
+      Memory: 13312
+    '14':
+      Memory: 14336
+    '15':
+      Memory: 15360
+    '16':
+      Memory: 16384
+    '17':
+      Memory: 17408
+    '18':
+      Memory: 18432
+    '19':
+      Memory: 19456
+    '20':
+      Memory: 20480
+    '21':
+      Memory: 21504
+    '22':
+      Memory: 22528
+    '23':
+      Memory: 23552
+    '24':
+      Memory: 24576
+    '25':
+      Memory: 25600
+    '26':
+      Memory: 26624
+    '27':
+      Memory: 27648
+    '28':
+      Memory: 28672
+    '29':
+      Memory: 29696
+    '30':
+      Memory: 30720
 Conditions:
   HasLoadBalancerHttps: !Equals [!Ref LoadBalancerHttps, 'true']
   HasLoadBalancerPath: !Not [!Equals [!Ref LoadBalancerPath, '']]
   HasLoadBalancerHostPattern: !Not [!Equals [!Ref LoadBalancerHostPattern, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+  HasAutoScaling: !Equals [!Ref AutoScaling, 'true']
+  HasCpu: !Not [!Equals [!Ref Cpu, '']]
 Resources:
   TaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
@@ -126,9 +225,10 @@ Resources:
       Family: !Ref 'AWS::StackName'
       NetworkMode: bridge
       ContainerDefinitions:
-      - Name: main # if you change this, you also must change the AWS::ECS::Service
+      - Cpu: !If [HasCpu, !FindInMap [CpuMap, !Ref Cpu, Cpu], !Ref 'AWS::NoValue']
+        Name: main # if you change this, you also must change the AWS::ECS::Service
         Image: !Ref Image
-        Memory: 128
+        Memory: !FindInMap [MemoryMap, !Ref Memory, Memory]
         PortMappings:
         - ContainerPort: 80 # if you change this, you also must change the AWS::ECS::Service
           Protocol: tcp
@@ -169,25 +269,6 @@ Resources:
       TargetGroupAttributes:
       - Key: deregistration_delay.timeout_seconds
         Value: !Ref LoadBalancerDeregistrationDelay
-  HTTPCodeELB5XXTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer returns 5XX HTTP status codes'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: HTTPCode_ELB_5XX_Count
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Dimensions:
-      - Name: LoadBalancer
-        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'}
-      - Name: TargetGroup
-        Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
   HTTPCodeTarget5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -195,25 +276,6 @@ Resources:
       AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
       Namespace: 'AWS/ApplicationELB'
       MetricName: HTTPCode_Target_5XX_Count
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Dimensions:
-      - Name: LoadBalancer
-        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'}
-      - Name: TargetGroup
-        Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
-  RejectedConnectionCountTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer rejected connections because the load balancer had reached its maximum number of connections'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: RejectedConnectionCount
       Statistic: Sum
       Period: 60
       EvaluationPeriods: 1
@@ -320,6 +382,7 @@ Resources:
         MaximumPercent: 200
         MinimumHealthyPercent: 50
       DesiredCount: !Ref DesiredCount
+      HealthCheckGracePeriodSeconds: !Ref HealthCheckGracePeriod
       LoadBalancers:
       - ContainerName: main
         ContainerPort: 80
@@ -331,7 +394,27 @@ Resources:
         Field: instanceId
       Role: !GetAtt 'ServiceRole.Arn'
       TaskDefinition: !Ref TaskDefinition
+  CPUUtilizationTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
+      Namespace: 'AWS/ECS'
+      Dimensions:
+      - Name: ClusterName
+        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
+      - Name: ServiceName
+        Value: !GetAtt 'Service.Name'
+      MetricName: CPUUtilization
+      ComparisonOperator: GreaterThanThreshold
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 80
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
   ScalableTargetRole: # based on http://docs.aws.amazon.com/AmazonECS/latest/developerguide/autoscale_IAM_role.html
+    Condition: HasAutoScaling
     Type: 'AWS::IAM::Role'
     Properties:
       AssumeRolePolicyDocument:
@@ -361,6 +444,7 @@ Resources:
             - 'cloudwatch:DescribeAlarms'
             Resource: '*'
   ScalableTarget:
+    Condition: HasAutoScaling
     Type: 'AWS::ApplicationAutoScaling::ScalableTarget'
     Properties:
       MaxCapacity: !Ref MaxCapacity
@@ -373,6 +457,7 @@ Resources:
       ScalableDimension: 'ecs:service:DesiredCount'
       ServiceNamespace: ecs
   ScaleUpPolicy:
+    Condition: HasAutoScaling
     Type: 'AWS::ApplicationAutoScaling::ScalingPolicy'
     Properties:
       PolicyName: !Sub '${AWS::StackName}-scale-up'
@@ -386,6 +471,7 @@ Resources:
         - MetricIntervalLowerBound: 0
           ScalingAdjustment: 25
   ScaleDownPolicy:
+    Condition: HasAutoScaling
     Type: 'AWS::ApplicationAutoScaling::ScalingPolicy'
     Properties:
       PolicyName: !Sub '${AWS::StackName}-scale-down'
@@ -398,26 +484,8 @@ Resources:
         StepAdjustments:
         - MetricIntervalUpperBound: 0
           ScalingAdjustment: -25
-  CPUUtilizationTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
-      Namespace: 'AWS/ECS'
-      Dimensions:
-      - Name: ClusterName
-        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
-      - Name: ServiceName
-        Value: !GetAtt 'Service.Name'
-      MetricName: CPUUtilization
-      ComparisonOperator: GreaterThanThreshold
-      Statistic: Average
-      Period: 300
-      EvaluationPeriods: 1
-      Threshold: 80
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
   CPUUtilizationHighAlarm:
+    Condition: HasAutoScaling
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Service is running out of CPU'
@@ -436,6 +504,7 @@ Resources:
       AlarmActions:
       - !Ref ScaleUpPolicy
   CPUUtilizationLowAlarm:
+    Condition: HasAutoScaling
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Service is wasting CPU'

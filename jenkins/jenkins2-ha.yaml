@@ -24,6 +24,7 @@ Metadata:
       - ParentSSHBastionStack
       - ParentAuthProxyStack
       - ParentAlertStack
+      - ParentS3StackAccessLog
       - ParentZoneStack
     - Label:
         default: 'EC2 Parameters'
@@ -40,6 +41,7 @@ Metadata:
       - MasterInstanceType
       - MasterAdminPassword
       - MasterLogsRetentionInDays
+      - MasterLoadBalancerIdleTimeout
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -54,6 +56,10 @@ Parameters:
     Default: ''
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  ParentS3StackAccessLog:
+    Description: 'Optional stack name of parent s3 stack based on state/s3.yaml template (with Access set to ElbAccessLogWrite) to store access logs.'
     Type: String
     Default: ''
   ParentZoneStack:
@@ -114,6 +120,12 @@ Parameters:
     ConstraintDescription: 'Must be in the range [8-1024]'
     MinValue: 8
     MaxValue: 1024
+  MasterLoadBalancerIdleTimeout:
+    Description: 'The idle timeout value, in seconds.'
+    Type: Number
+    Default: 60
+    MinValue: 1
+    MaxValue: 4000
   SubDomainNameWithDot:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
@@ -162,6 +174,7 @@ Conditions:
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
   HasMasterELBSchemeInternal: !Equals [!Ref MasterELBScheme, 'internal']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
 Resources:
   MasterStorageSG:
@@ -336,6 +349,15 @@ Resources:
   MasterELB:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
+      LoadBalancerAttributes:
+      - Key: 'idle_timeout.timeout_seconds'
+        Value: !Ref MasterLoadBalancerIdleTimeout
+      - Key: 'routing.http2.enabled'
+        Value: 'true'
+      - Key: 'access_logs.s3.enabled'
+        Value: !If [HasS3Bucket, 'true', 'false']
+      - !If [HasS3Bucket, {Key: 'access_logs.s3.prefix', Value: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
+      - !If [HasS3Bucket, {Key: 'access_logs.s3.bucket', Value: {'Fn::ImportValue': !Sub '${ParentS3StackAccessLog}-BucketName'}}, !Ref 'AWS::NoValue']
       Scheme: !Ref MasterELBScheme
       SecurityGroups:
       - !Ref MasterELBSG
