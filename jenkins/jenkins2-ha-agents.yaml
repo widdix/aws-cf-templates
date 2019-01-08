@@ -1274,25 +1274,6 @@ Resources:
       TargetGroupAttributes:
       - Key: 'deregistration_delay.timeout_seconds'
         Value: '15'
-  AgentHTTPCodeELB5XXTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer returns 5XX HTTP status codes'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: HTTPCode_ELB_5XX_Count
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Dimensions:
-      - Name: LoadBalancer
-        Value: !GetAtt 'MasterELB.LoadBalancerFullName'
-      - Name: TargetGroup
-        Value: !GetAtt AgentELBTargetGroup.TargetGroupFullName
   AgentHTTPCodeTarget5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -1300,25 +1281,6 @@ Resources:
       AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
       Namespace: 'AWS/ApplicationELB'
       MetricName: HTTPCode_Target_5XX_Count
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Dimensions:
-      - Name: LoadBalancer
-        Value: !GetAtt 'MasterELB.LoadBalancerFullName'
-      - Name: TargetGroup
-        Value: !GetAtt AgentELBTargetGroup.TargetGroupFullName
-  AgentRejectedConnectionCountTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer rejected connections because the load balancer had reached its maximum number of connections'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: RejectedConnectionCount
       Statistic: Sum
       Period: 60
       EvaluationPeriods: 1
