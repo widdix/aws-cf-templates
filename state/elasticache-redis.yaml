@@ -130,7 +130,7 @@ Resources:
           'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       ResourceRecords:
       - !GetAtt 'ReplicationGroup.PrimaryEndPoint.Address'
-      TTL: 60
+      TTL: '60'
       Type: CNAME
   CacheParameterGroup:
     Type: 'AWS::ElastiCache::ParameterGroup'
@@ -167,9 +167,9 @@ Resources:
       ToPort: 6379
       SourceSecurityGroupId:
         'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'
-  ReplicationGroup: 
+  ReplicationGroup:
     Type: AWS::ElastiCache::ReplicationGroup
-    Properties: 
+    Properties:
       ReplicationGroupDescription: !Ref 'AWS::StackName'
       AtRestEncryptionEnabled: true
       AuthToken: !If [HasAuthToken, !Ref AuthToken, !Ref 'AWS::NoValue']
