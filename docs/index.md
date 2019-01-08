@@ -27,6 +27,7 @@ Choose from our template catalog:
 
 * [Elastic Compute Cloud (EC2)](./ec2/)
 * [EC2 Container Service (ECS)](./ecs/)
+* [Fargate](./fargate/)
 * [Jenkins ](./jenkins/)
 * [Operations](./operations/)
 * [Security](./security/)
