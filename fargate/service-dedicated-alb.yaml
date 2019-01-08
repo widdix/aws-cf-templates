@@ -12,8 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# FIXME add to cfn-modules
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'ECS: service that runs on an ECS cluster based on ecs/cluster.yaml and uses a dedicated ALB, a cloudonaut.io template'
+Description: 'Fargate: service that runs on a Fargate cluster based on fargate/cluster.yaml and uses a dedicated ALB, a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -26,6 +27,9 @@ Metadata:
       - ParentAlertStack
       - ParentZoneStack
       - ParentS3Stack
+      - ParentClientStack1
+      - ParentClientStack2
+      - ParentClientStack3
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
@@ -36,22 +40,31 @@ Metadata:
     - Label:
         default: 'Task Parameters'
       Parameters:
-      - Image
+      - AmbassadorImage
+      - AmbassadorPort
+      - AppImage
+      - AppPort
+      - SidecarImage
+      - SidecarPort
     - Label:
         default: 'Service Parameters'
       Parameters:
       - SubDomainNameWithDot
-      - DesiredCount
+      - Cpu
+      - Memory
+      - SubnetsReach
       - AutoScaling
+      - DesiredCount
       - MaxCapacity
       - MinCapacity
       - HealthCheckGracePeriod
+      - LogsRetentionInDays
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
   ParentClusterStack:
-    Description: 'Stack name of parent Cluster stack based on ecs/cluster.yaml template.'
+    Description: 'Stack name of parent Cluster stack based on fargate/cluster.yaml template.'
     Type: String
   ParentAuthProxyStack:
     Description: 'Optional stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
@@ -69,6 +82,18 @@ Parameters:
     Description: 'Optional stack name of parent s3 stack based on state/s3.yaml template (with Access set to ElbAccessLogWrite) to store access logs.'
     Type: String
     Default: ''
+  ParentClientStack1:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the service to whatever uses the client security group.'
+    Type: String
+    Default: ''
+  ParentClientStack2:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the service to whatever uses the client security group.'
+    Type: String
+    Default: ''
+  ParentClientStack3:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the service to whatever uses the client security group.'
+    Type: String
+    Default: ''
   LoadBalancerScheme:
     Description: 'Indicates whether the load balancer in front of the ECS service is internet-facing or internal.'
     Type: String
@@ -77,7 +102,7 @@ Parameters:
     - 'internet-facing'
     - internal
   LoadBalancerCertificateArn:
-    Description: 'Optional Amazon Resource Name (ARN) of the certificate to associate with the load balancer.'
+    Description: 'Optional Amazon Resource Name (ARN) of the certificate to associate with the load balancer. If set, HTTP requests are redirected to HTTPS.'
     Type: String
     Default: ''
   LoadBalancerIdleTimeout:
@@ -93,21 +118,52 @@ Parameters:
     ConstraintDescription: 'Must be in the range [0-3600]'
     MinValue: 0
     MaxValue: 3600
-  Image:
-    Description: 'The image to use for a container, which is passed directly to the Docker daemon. You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag).'
-    Type: String
-  Cpu:
-    Description: 'Optional minimum number of vCPUs to reserve for the container.'
+  AmbassadorImage:
+    Description: 'Optional Docker image to use for the ambassador container (https://docs.microsoft.com/en-us/azure/architecture/patterns/ambassador). You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag).'
     Type: String
     Default: ''
-    AllowedValues: ['', 0.25', '0,5', '1', '2', '4']
+  AmbassadorPort:
+    Description: 'The port exposed by the ambassador container that receives traffic from the load balancer (AmbassadorPort <> AppPort <> SidecarPort; ignored if AmbassadorImage is not set).'
+    Type: Number
+    Default: 8000
+    MinValue: 1
+    MaxValue: 49150
+  AppImage:
+    Description: 'The Docker image to use for the app container. You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag).'
+    Type: String
+    Default: 'widdix/hello:v1'
+  AppPort:
+    Description: 'The port exposed by the app container that receives traffic from the load balancer or the ambassador container (AppPort <> AmbassadorPort <> SidecarPort).'
+    Type: Number
+    Default: 80
+    MinValue: 1
+    MaxValue: 49150
+  SidecarImage:
+    Description: 'Optional Docker image to use for the sidecar container (https://docs.microsoft.com/en-us/azure/architecture/patterns/sidecar). You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag).'
+    Type: String
+    Default: ''
+  SidecarPort:
+    Description: 'The port exposed by the sidecar container reachable from the app container on host localhost (SidecarPort <> AmbassadorPort <> AppPort).'
+    Type: Number
+    Default: 9000
+    MinValue: 1
+    MaxValue: 49150
+  SubDomainNameWithDot:
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
+    Type: String
+    Default: ''
+  Cpu:
+    Description: 'The minimum number of vCPUs to reserve for the container.'
+    Type: String
+    Default: '0.25'
+    AllowedValues: ['0.25', '0,5', '1', '2', '4']
   Memory:
     Description: 'The amount (in GB) of memory used by the task.'
     Type: String
     Default: '0.5'
     AllowedValues: ['0.5', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30']
   DesiredCount:
-    Description: 'The number of simultaneous tasks, which you specify by using the TaskDefinition property, that you want to run on the cluster.'
+    Description: 'The number of simultaneous tasks, that you want to run on the cluster.'
     Type: Number
     Default: 2
     ConstraintDescription: 'Must be >= 1'
@@ -124,10 +180,18 @@ Parameters:
     Default: 2
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
-  SubDomainNameWithDot:
-    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
+  LogsRetentionInDays:
+    Description: 'Specifies the number of days you want to retain log events in the specified log group.'
+    Type: Number
+    Default: 14
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  SubnetsReach:
+    Description: 'Should the service have direct access to the Internet or do you prefer private subnets with NAT?'
     Type: String
-    Default: ''
+    Default: Public
+    AllowedValues:
+    - Public
+    - Private
   AutoScaling:
     Description: 'Scale number of tasks based on CPU load?'
     Type: String
@@ -224,95 +288,88 @@ Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasS3Bucket: !Not [!Equals [!Ref ParentS3Stack, '']]
+  HasSubnetsReachPublic: !Equals [!Ref SubnetsReach, Public]
   HasAutoScaling: !Equals [!Ref AutoScaling, 'true']
-  HasCpu: !Not [!Equals [!Ref Cpu, '']]
+  HasClientSecurityGroup1: !Not [!Equals [!Ref ParentClientStack1, '']]
+  HasClientSecurityGroup2: !Not [!Equals [!Ref ParentClientStack2, '']]
+  HasClientSecurityGroup3: !Not [!Equals [!Ref ParentClientStack3, '']]
+  HasAmbassadorImage: !Not [!Equals [!Ref AmbassadorImage, '']]
+  HasSidecarImage: !Not [!Equals [!Ref SidecarImage, '']]
 Resources:
-  TaskDefinition:
-    Type: 'AWS::ECS::TaskDefinition'
+  RecordSet:
+    Condition: HasZone
+    Type: 'AWS::Route53::RecordSet'
     Properties:
-      Family: !Ref 'AWS::StackName'
-      NetworkMode: bridge
-      ContainerDefinitions:
-      - Cpu: !If [HasCpu, !FindInMap [CpuMap, !Ref Cpu, Cpu], !Ref 'AWS::NoValue']
-        Name: main # if you change this, you also must change the AWS::ECS::Service
-        Image: !Ref Image
-        Memory: !FindInMap [MemoryMap, !Ref Memory, Memory]
-        PortMappings:
-        - ContainerPort: 80 # if you change this, you also must change the AWS::ECS::Service
-          Protocol: tcp
-        Essential: true
-        LogConfiguration:
-          LogDriver: awslogs
-          Options:
-            'awslogs-region': !Ref 'AWS::Region'
-            'awslogs-group': {'Fn::ImportValue': !Sub '${ParentClusterStack}-LogGroup'}
-            'awslogs-stream-prefix': !Ref 'AWS::StackName'
-  ALBSecurityGroup:
+      AliasTarget:
+        HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
+        DNSName: !GetAtt 'LoadBalancer.DNSName'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
+      Name: !Sub
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+      Type: A
+  LoadBalancerSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupDescription: 'ecs-cluster-alb'
+      GroupDescription: !Sub '${AWS::StackName}-load-balancer'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
-  ALBSecurityGroupInHttpWorld:
+  LoadBalancerSecurityGroupInHttpFromWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasNotAuthProxySecurityGroup
     Properties:
-      GroupId: !Ref ALBSecurityGroup
+      GroupId: !Ref LoadBalancerSecurityGroup
       IpProtocol: tcp
       FromPort: 80
       ToPort: 80
       CidrIp: '0.0.0.0/0'
-  ALBSecurityGroupInHttpsWorld:
+  LoadBalancerSecurityGroupInHttpsFromWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn
     Properties:
-      GroupId: !Ref ALBSecurityGroup
+      GroupId: !Ref LoadBalancerSecurityGroup
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
       CidrIp: '0.0.0.0/0'
-  ALBSecurityGroupInHttpAuthProxy:
+  LoadBalancerSecurityGroupInHttpFromAuthProxy:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasAuthProxySecurityGroup
     Properties:
-      GroupId: !Ref ALBSecurityGroup
+      GroupId: !Ref LoadBalancerSecurityGroup
       IpProtocol: tcp
       FromPort: 80
       ToPort: 80
       SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
-  ALBSecurityGroupInHttpsAuthProxy:
+  LoadBalancerSecurityGroupInHttpsFromAuthProxy:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasAuthProxySecurityGroupAndLoadBalancerCertificateArn
     Properties:
-      GroupId: !Ref ALBSecurityGroup
+      GroupId: !Ref LoadBalancerSecurityGroup
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
       SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
-  SecurityGroupInALB:
-    Type: 'AWS::EC2::SecurityGroupIngress'
+  LoadBalancer:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
-      GroupId: {'Fn::ImportValue': !Sub '${ParentClusterStack}-SecurityGroup'}
-      IpProtocol: tcp
-      FromPort: 0
-      ToPort: 65535
-      SourceSecurityGroupId: !Ref ALBSecurityGroup
-  DefaultTargetGroup: # not monitored, but LoadBalancer is monitored!
-    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
-    Properties:
-      HealthCheckIntervalSeconds: 15
-      HealthCheckPath: '/'
-      HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 10
-      HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 2
-      Matcher:
-        HttpCode: '200-299'
-      Port: 80
-      Protocol: HTTP
-      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
-      TargetGroupAttributes:
-      - Key: deregistration_delay.timeout_seconds
-        Value: !Ref LoadBalancerDeregistrationDelay
+      LoadBalancerAttributes:
+      - Key: 'idle_timeout.timeout_seconds'
+        Value: !Ref LoadBalancerIdleTimeout
+      - Key: 'routing.http2.enabled'
+        Value: 'true'
+      - Key: 'access_logs.s3.enabled'
+        Value: !If [HasS3Bucket, 'true', 'false']
+      - !If [HasS3Bucket, {Key: 'access_logs.s3.prefix', Value: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
+      - !If [HasS3Bucket, {Key: 'access_logs.s3.bucket', Value: {'Fn::ImportValue': !Sub '${ParentS3Stack}-BucketName'}}, !Ref 'AWS::NoValue']
+      Scheme: !Ref LoadBalancerScheme
+      SecurityGroups:
+      - !Ref LoadBalancerSecurityGroup
+      Subnets: !If
+      - HasLoadBalancerSchemeInternal
+      - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
+      - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPublic'}]
+      Type: application
   HTTPCodeELB5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -329,24 +386,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
-        Value: !GetAtt LoadBalancer.LoadBalancerFullName
-  HTTPCodeTarget5XXTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: HTTPCode_Target_5XX_Count
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Dimensions:
-      - Name: LoadBalancer
-        Value: !GetAtt LoadBalancer.LoadBalancerFullName
+        Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
   RejectedConnectionCountTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -363,7 +403,72 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
-        Value: !GetAtt LoadBalancer.LoadBalancerFullName
+        Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
+  HttpListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+      - !If
+        - HasLoadBalancerCertificateArn
+        - RedirectConfig:
+            Port: '443'
+            Protocol: HTTPS
+            StatusCode: 'HTTP_301'
+          Type: redirect
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+  HttpsListener:
+    Condition: HasLoadBalancerCertificateArn
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      Certificates:
+      - CertificateArn: !Ref LoadBalancerCertificateArn
+      DefaultActions:
+      - TargetGroupArn: !Ref TargetGroup
+        Type: forward
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 443
+      Protocol: HTTPS
+  TargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckIntervalSeconds: 15
+      HealthCheckPath: '/'
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      Matcher:
+        HttpCode: '200-299'
+      Port: 8080 # overriden when containers are attached
+      Protocol: HTTP
+      TargetType: ip
+      TargetGroupAttributes:
+      - Key: deregistration_delay.timeout_seconds
+        Value: !Ref LoadBalancerDeregistrationDelay
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+  HTTPCodeTarget5XXTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
+      Namespace: 'AWS/ApplicationELB'
+      MetricName: HTTPCode_Target_5XX_Count
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: LoadBalancer
+        Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
+      - Name: TargetGroup
+        Value: !GetAtt TargetGroup.TargetGroupFullName
   TargetConnectionErrorCountTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -380,72 +485,110 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
-        Value: !GetAtt LoadBalancer.LoadBalancerFullName
-  RecordSet:
-    Condition: HasZone
-    Type: 'AWS::Route53::RecordSet'
-    Properties:
-      AliasTarget:
-        HostedZoneId: !GetAtt 'LoadBalancer.CanonicalHostedZoneID'
-        DNSName: !GetAtt 'LoadBalancer.DNSName'
-      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
-      Name: !Sub
-      - '${SubDomainNameWithDot}${HostedZoneName}'
-      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
-      Type: A
-  LoadBalancer:
-    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
-    Properties:
-      LoadBalancerAttributes:
-      - Key: 'idle_timeout.timeout_seconds'
-        Value: !Ref LoadBalancerIdleTimeout
-      - Key: 'routing.http2.enabled'
-        Value: 'true'
-      - Key: 'access_logs.s3.enabled'
-        Value: !If [HasS3Bucket, 'true', 'false']
-      - !If [HasS3Bucket, {Key: 'access_logs.s3.prefix', Value: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
-      - !If [HasS3Bucket, {Key: 'access_logs.s3.bucket', Value: {'Fn::ImportValue': !Sub '${ParentS3Stack}-BucketName'}}, !Ref 'AWS::NoValue']
-      Scheme: !Ref LoadBalancerScheme
-      SecurityGroups:
-      - !Ref ALBSecurityGroup
-      Subnets: !If
-      - HasLoadBalancerSchemeInternal
-      - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
-      - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPublic'}]
-  HttpListener:
-    Type: 'AWS::ElasticLoadBalancingV2::Listener'
-    Properties:
-      DefaultActions:
-      - TargetGroupArn: !Ref DefaultTargetGroup
-        Type: forward
-      LoadBalancerArn: !Ref LoadBalancer
-      Port: 80
-      Protocol: HTTP
-  HttpsListener:
-    Type: 'AWS::ElasticLoadBalancingV2::Listener'
-    Condition: HasLoadBalancerCertificateArn
-    Properties:
-      Certificates:
-      - CertificateArn: !Ref LoadBalancerCertificateArn
-      DefaultActions:
-      - TargetGroupArn: !Ref DefaultTargetGroup
-        Type: forward
-      LoadBalancerArn: !Ref LoadBalancer
-      Port: 443
-      Protocol: HTTPS
-  ServiceRole:
+        Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
+      - Name: TargetGroup
+        Value: !GetAtt TargetGroup.TargetGroupFullName
+  TaskExecutionRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      ManagedPolicyArns: # TODO get rid of managed policy
-      - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole'
       AssumeRolePolicyDocument:
-        Version: '2008-10-17'
         Statement:
         - Effect: Allow
           Principal:
-            Service: 'ecs.amazonaws.com'
+            Service: 'ecs-tasks.amazonaws.com'
           Action: 'sts:AssumeRole'
+      Policies:
+      - PolicyName: AmazonECSTaskExecutionRolePolicy # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'ecr:GetAuthorizationToken'
+            - 'ecr:BatchCheckLayerAvailability'
+            - 'ecr:GetDownloadUrlForLayer'
+            - 'ecr:BatchGetImage'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+            Resource: !GetAtt 'LogGroup.Arn'
+  TaskRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'ecs-tasks.amazonaws.com'
+          Action: 'sts:AssumeRole'
+  TaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      ContainerDefinitions:
+      - !If
+        - HasAmbassadorImage
+        - Name: ambassador
+          Image: !Ref AmbassadorImage
+          PortMappings:
+          - ContainerPort: !Ref AmbassadorPort
+            Protocol: tcp
+          Essential: true
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              'awslogs-region': !Ref 'AWS::Region'
+              'awslogs-group': !Ref LogGroup
+              'awslogs-stream-prefix': ambassador
+        - !Ref 'AWS::NoValue'
+      - Name: app
+        Image: !Ref AppImage
+        PortMappings:
+        - ContainerPort: !Ref AppPort
+          Protocol: tcp
+        Essential: true
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            'awslogs-region': !Ref 'AWS::Region'
+            'awslogs-group': !Ref LogGroup
+            'awslogs-stream-prefix': app
+      - !If
+        - HasSidecarImage
+        - Name: sidecar
+          Image: !Ref SidecarImage
+          PortMappings:
+          - ContainerPort: !Ref SidecarPort
+            Protocol: tcp
+          Essential: true
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              'awslogs-region': !Ref 'AWS::Region'
+              'awslogs-group': !Ref LogGroup
+              'awslogs-stream-prefix': sidecar
+        - !Ref 'AWS::NoValue'
+      Cpu: !FindInMap [CpuMap, !Ref Cpu, Cpu]
+      ExecutionRoleArn: !GetAtt 'TaskExecutionRole.Arn'
+      Family: !Ref 'AWS::StackName'
+      Memory: !FindInMap [MemoryMap, !Ref Memory, Memory]
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [FARGATE]
+      TaskRoleArn: !GetAtt 'TaskRole.Arn'
+  LogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      RetentionInDays: !Ref LogsRetentionInDays
+  ServiceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Sub '${AWS::StackName}-service'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+      SecurityGroupIngress:
+      - SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+        FromPort: 0
+        ToPort: 65535
+        IpProtocol: tcp
   Service:
     Type: 'AWS::ECS::Service'
     DependsOn: HttpListener
@@ -453,19 +596,23 @@ Resources:
       Cluster: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
       DeploymentConfiguration:
         MaximumPercent: 200
-        MinimumHealthyPercent: 50
+        MinimumHealthyPercent: 100
       DesiredCount: !Ref DesiredCount
       HealthCheckGracePeriodSeconds: !Ref HealthCheckGracePeriod
+      LaunchType: FARGATE
       LoadBalancers:
-      - ContainerName: main
-        ContainerPort: 80
-        TargetGroupArn: !Ref DefaultTargetGroup
-      PlacementStrategies:
-      - Type: spread
-        Field: 'attribute:ecs.availability-zone'
-      - Type: spread
-        Field: instanceId
-      Role: !GetAtt 'ServiceRole.Arn'
+      - ContainerName: !If [HasAmbassadorImage, ambassador, app]
+        ContainerPort: !If [HasAmbassadorImage, !Ref AmbassadorPort, !Ref AppPort]
+        TargetGroupArn: !Ref TargetGroup
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: !If [HasSubnetsReachPublic, ENABLED, DISABLED]
+          SecurityGroups:
+          - !Ref ServiceSecurityGroup
+          - !If [HasClientSecurityGroup1, {'Fn::ImportValue': !Sub '${ParentClientStack1}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
+          - !If [HasClientSecurityGroup2, {'Fn::ImportValue': !Sub '${ParentClientStack2}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
+          - !If [HasClientSecurityGroup3, {'Fn::ImportValue': !Sub '${ParentClientStack3}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
+          Subnets: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-Subnets${SubnetsReach}'}]
       TaskDefinition: !Ref TaskDefinition
   CPUUtilizationTooHighAlarm:
     Condition: HasAlertTopic
@@ -497,9 +644,8 @@ Resources:
           Principal:
             Service: 'application-autoscaling.amazonaws.com'
           Action: 'sts:AssumeRole'
-      Path: '/'
       Policies:
-      - PolicyName: ecs
+      - PolicyName: AmazonEC2ContainerServiceAutoscaleRole
         PolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -598,7 +744,7 @@ Resources:
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
-    Value: 'ecs/service-dedicated-alb'
+    Value: 'fargate/service-dedicated-alb'
   TemplateVersion:
     Description: 'cloudonaut.io template version.'
     Value: '__VERSION__'
@@ -606,12 +752,17 @@ Outputs:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
   DNSName:
-    Description: 'The DNS name for the ECS cluster/service load balancer.'
+    Description: 'The DNS name for the Fargate service load balancer.'
     Value: !GetAtt 'LoadBalancer.DNSName'
     Export:
       Name: !Sub '${AWS::StackName}-DNSName'
   URL:
-    Description: 'URL to the ECS service.'
+    Description: 'URL to the Fargate service.'
     Value: !Sub 'http://${LoadBalancer.DNSName}'
     Export:
       Name: !Sub '${AWS::StackName}-URL'
+  TaskRoleArn:
+    Description: 'IAM Role ARN attached to the task. Use this to attach policies.'
+    Value: !GetAtt 'TaskRole.Arn'
+    Export:
+      Name: !Sub '${AWS::StackName}-TaskRoleArn'
