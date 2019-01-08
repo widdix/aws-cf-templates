@@ -114,7 +114,7 @@ Parameters:
   LoadBalancerDeregistrationDelay:
     Description: 'The amount time (in seconds) to wait before changing the state of a deregistering target from draining to unused.'
     Type: Number
-    Default: 300
+    Default: 60
     ConstraintDescription: 'Must be in the range [0-3600]'
     MinValue: 0
     MaxValue: 3600
@@ -596,7 +596,7 @@ Resources:
       Cluster: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
       DeploymentConfiguration:
         MaximumPercent: 200
-        MinimumHealthyPercent: 50
+        MinimumHealthyPercent: 100
       DesiredCount: !Ref DesiredCount
       HealthCheckGracePeriodSeconds: !Ref HealthCheckGracePeriod
       LaunchType: FARGATE
