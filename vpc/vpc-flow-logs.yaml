@@ -62,12 +62,11 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
-            - 'logs:CreateLogGroup'
             - 'logs:CreateLogStream'
             - 'logs:PutLogEvents'
             - 'logs:DescribeLogGroups'
             - 'logs:DescribeLogStreams'
-            Resource: '*'
+            Resource: !GetAtt 'LogGroup.Arn'
   LogGroup:
     Type: 'AWS::Logs::LogGroup'
     Properties:

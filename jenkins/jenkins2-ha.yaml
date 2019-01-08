@@ -24,6 +24,7 @@ Metadata:
       - ParentSSHBastionStack
       - ParentAuthProxyStack
       - ParentAlertStack
+      - ParentS3StackAccessLog
       - ParentZoneStack
     - Label:
         default: 'EC2 Parameters'
@@ -40,6 +41,7 @@ Metadata:
       - MasterInstanceType
       - MasterAdminPassword
       - MasterLogsRetentionInDays
+      - MasterLoadBalancerIdleTimeout
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -54,6 +56,10 @@ Parameters:
     Default: ''
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  ParentS3StackAccessLog:
+    Description: 'Optional stack name of parent s3 stack based on state/s3.yaml template (with Access set to ElbAccessLogWrite) to store access logs.'
     Type: String
     Default: ''
   ParentZoneStack:
@@ -114,42 +120,50 @@ Parameters:
     ConstraintDescription: 'Must be in the range [8-1024]'
     MinValue: 8
     MaxValue: 1024
+  MasterLoadBalancerIdleTimeout:
+    Description: 'The idle timeout value, in seconds.'
+    Type: Number
+    Default: 60
+    MinValue: 1
+    MaxValue: 4000
   SubDomainNameWithDot:
-    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. ${SubDomainNameWithDot}${HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
     Default: 'jenkins.'
 Mappings:
   RegionMap:
     'ap-south-1':
-      AMI: 'ami-d783a9b8'
+      AMI: 'ami-06bcd1131b2f55803'
     'eu-west-3':
-      AMI: 'ami-2cf54551'
+      AMI: 'ami-051707cdba246187b'
+    'eu-north-1':
+      AMI: 'ami-07ec6279'
     'eu-west-2':
-      AMI: 'ami-b8b45ddf'
+      AMI: 'ami-0274e11dced17bb5b'
     'eu-west-1':
-      AMI: 'ami-466768ac'
+      AMI: 'ami-09693313102a30b2c'
     'ap-northeast-2':
-      AMI: 'ami-afd86dc1'
+      AMI: 'ami-0b4fdb56a00adb616'
     'ap-northeast-1':
-      AMI: 'ami-e99f4896'
+      AMI: 'ami-0a2de1c3b415889d2'
     'sa-east-1':
-      AMI: 'ami-6dca9001'
+      AMI: 'ami-0112d42866980b373'
     'ca-central-1':
-      AMI: 'ami-0ee86a6a'
+      AMI: 'ami-076b4adb3f90cd384'
     'ap-southeast-1':
-      AMI: 'ami-05868579'
+      AMI: 'ami-0b84d2c53ad5250c2'
     'ap-southeast-2':
-      AMI: 'ami-39f8215b'
+      AMI: 'ami-08589eca6dcc9b39c'
     'eu-central-1':
-      AMI: 'ami-7c4f7097'
+      AMI: 'ami-034fffcc6a0063961'
     'us-east-1':
-      AMI: 'ami-b70554c8'
+      AMI: 'ami-009d6802948d06e52'
     'us-east-2':
-      AMI: 'ami-8c122be9'
+      AMI: 'ami-02e680c4540db351e'
     'us-west-1':
-      AMI: 'ami-e0ba5c83'
+      AMI: 'ami-011b6930a81cd6aaf'
     'us-west-2':
-      AMI: 'ami-a9d09ed1'
+      AMI: 'ami-01bbe152bf19d0289'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -160,6 +174,7 @@ Conditions:
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
   HasMasterELBSchemeInternal: !Equals [!Ref MasterELBScheme, 'internal']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
 Resources:
   MasterStorageSG:
@@ -334,6 +349,15 @@ Resources:
   MasterELB:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
+      LoadBalancerAttributes:
+      - Key: 'idle_timeout.timeout_seconds'
+        Value: !Ref MasterLoadBalancerIdleTimeout
+      - Key: 'routing.http2.enabled'
+        Value: 'true'
+      - Key: 'access_logs.s3.enabled'
+        Value: !If [HasS3Bucket, 'true', 'false']
+      - !If [HasS3Bucket, {Key: 'access_logs.s3.prefix', Value: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
+      - !If [HasS3Bucket, {Key: 'access_logs.s3.bucket', Value: {'Fn::ImportValue': !Sub '${ParentS3StackAccessLog}-BucketName'}}, !Ref 'AWS::NoValue']
       Scheme: !Ref MasterELBScheme
       SecurityGroups:
       - !Ref MasterELBSG
@@ -395,7 +419,7 @@ Resources:
           Action:
           - 'sts:AssumeRole'
       Path: '/'
-      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []]
+      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []] # TODO get rid of managed policy
       Policies:
       - PolicyName: logs
         PolicyDocument:
@@ -403,12 +427,10 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
-            - 'logs:CreateLogGroup'
             - 'logs:CreateLogStream'
             - 'logs:PutLogEvents'
             - 'logs:DescribeLogStreams'
-            Resource:
-            - 'arn:aws:logs:*:*:*'
+            Resource: !GetAtt 'MasterLogs.Arn'
       - PolicyName: sts
         PolicyDocument:
           Version: '2012-10-17'
@@ -476,7 +498,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, install, setup, custom, run], [awslogs, mount, install, setup, custom, run]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, install, setup, extras, custom, run], [awslogs, mount, install, setup, extras, custom, run]]
         awslogs:
           packages:
             yum:
@@ -580,7 +602,21 @@ Resources:
                 file = /var/log/yum.log
                 log_stream_name = {instance_id}/var/log/yum.log
                 log_group_name = ${MasterLogs}
-
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/config/efs.conf':
+              content: !Sub |
+                [/var/log/amazon/efs/mount.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/amazon/efs/mount.log
+                log_stream_name = {instance_id}/var/log/amazon/efs/mount.log
+                log_group_name = ${MasterLogs}
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/config/jenkins-master.conf':
+              content: !Sub |
                 [/var/log/jenkins/jenkins.log]
                 datetime_format = %d %b %Y %H:%M:%S
                 multi_line_start_pattern = {datetime_format}
@@ -601,6 +637,8 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
+                - '/etc/awslogs/config/efs.conf'
+                - '/etc/awslogs/config/jenkins-master.conf'
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':
@@ -651,9 +689,11 @@ Resources:
               group: root
           commands:
             'a_configure_sshd_command':
-              command: 'sed -i "s:#AuthorizedKeysCommand none:AuthorizedKeysCommand /opt/authorized_keys_command.sh:g" /etc/ssh/sshd_config'
+              command: 'sed -e ''/AuthorizedKeysCommand / s/^#*/#/'' -i /etc/ssh/sshd_config; echo -e ''\nAuthorizedKeysCommand /opt/authorized_keys_command.sh'' >> /etc/ssh/sshd_config'
+              test: '! grep -q ''^AuthorizedKeysCommand /opt/authorized_keys_command.sh'' /etc/ssh/sshd_config'
             'b_configure_sshd_commanduser':
-              command: 'sed -i "s:#AuthorizedKeysCommandUser nobody:AuthorizedKeysCommandUser nobody:g" /etc/ssh/sshd_config'
+              command: 'sed -e ''/AuthorizedKeysCommandUser / s/^#*/#/'' -i /etc/ssh/sshd_config; echo -e ''\nAuthorizedKeysCommandUser nobody'' >> /etc/ssh/sshd_config'
+              test: '! grep -q ''^AuthorizedKeysCommandUser nobody'' /etc/ssh/sshd_config'
             'c_import_users':
               command: './import_users.sh'
               cwd: '/opt'
@@ -685,7 +725,7 @@ Resources:
         install:
           packages:
             rpm:
-              jenkins: 'https://pkg.jenkins.io/redhat-stable/jenkins-2.138.1-1.1.noarch.rpm'
+              jenkins: 'https://pkg.jenkins.io/redhat-stable/jenkins-2.150.1-1.1.noarch.rpm'
             yum:
               'java-1.8.0-openjdk': []
           files:
@@ -777,6 +817,11 @@ Resources:
             'z_create_setup_done_file':
               command: 'echo "Setup done. Don not delete this file." > /var/lib/jenkins/setup_done.txt'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+        extras:
+          commands:
+            a_enable_docker:
+              command: 'amazon-linux-extras enable docker=18.06.1'
+              test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
         custom:
           packages:
             yum:
