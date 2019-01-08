@@ -25,7 +25,7 @@ Metadata:
       - ParentAuthProxyStack
       - ParentAlertStack
       - ParentZoneStack
-      - ParentS3Stack
+      - ParentS3StackAccessLog
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
@@ -65,7 +65,7 @@ Parameters:
     Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
     Type: String
     Default: ''
-  ParentS3Stack:
+  ParentS3StackAccessLog:
     Description: 'Optional stack name of parent s3 stack based on state/s3.yaml template (with Access set to ElbAccessLogWrite) to store access logs.'
     Type: String
     Default: ''
@@ -223,7 +223,7 @@ Conditions:
   HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasNotAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
-  HasS3Bucket: !Not [!Equals [!Ref ParentS3Stack, '']]
+  HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
   HasAutoScaling: !Equals [!Ref AutoScaling, 'true']
   HasCpu: !Not [!Equals [!Ref Cpu, '']]
 Resources:
@@ -405,7 +405,7 @@ Resources:
       - Key: 'access_logs.s3.enabled'
         Value: !If [HasS3Bucket, 'true', 'false']
       - !If [HasS3Bucket, {Key: 'access_logs.s3.prefix', Value: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
-      - !If [HasS3Bucket, {Key: 'access_logs.s3.bucket', Value: {'Fn::ImportValue': !Sub '${ParentS3Stack}-BucketName'}}, !Ref 'AWS::NoValue']
+      - !If [HasS3Bucket, {Key: 'access_logs.s3.bucket', Value: {'Fn::ImportValue': !Sub '${ParentS3StackAccessLog}-BucketName'}}, !Ref 'AWS::NoValue']
       Scheme: !Ref LoadBalancerScheme
       SecurityGroups:
       - !Ref ALBSecurityGroup

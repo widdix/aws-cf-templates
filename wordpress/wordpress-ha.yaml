@@ -24,6 +24,7 @@ Metadata:
       - ParentSSHBastionStack
       - ParentAuthProxyStack
       - ParentAlertStack
+      - ParentS3StackAccessLog
       - ParentZoneStack
     - Label:
         default: 'Domain Name and SSL certificates'
@@ -56,6 +57,10 @@ Metadata:
       - DBServerInstanceType
       - DBBackupRetentionPeriod
       - DBMasterUserPassword
+    - Label:
+        default: 'Load Balancer Parameters'
+      Parameters:
+      - LoadBalancerIdleTimeout
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -70,6 +75,10 @@ Parameters:
     Default: ''
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  ParentS3StackAccessLog:
+    Description: 'Optional stack name of parent s3 stack based on state/s3.yaml template (with Access set to ElbAccessLogWrite) to store access logs.'
     Type: String
     Default: ''
   ParentZoneStack:
@@ -148,6 +157,12 @@ Parameters:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain.'
     Type: String
     Default: 'www.'
+  LoadBalancerIdleTimeout:
+    Description: 'The idle timeout value, in seconds.'
+    Type: Number
+    Default: 60
+    MinValue: 1
+    MaxValue: 4000
 Mappings:
   RegionMap:
     'ap-south-1':
@@ -191,6 +206,7 @@ Conditions:
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
   HasEFSProvisionedThroughput: !Not [!Equals [!Ref EFSProvisionedThroughputInMibps, '0.0']]
   HasNotEFSProvisionedThroughput: !Equals [!Ref EFSProvisionedThroughputInMibps, '0.0']
   HasAlertTopicAndEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasEFSProvisionedThroughput]
@@ -358,25 +374,31 @@ Resources:
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancing::LoadBalancer'
     Properties:
-      Subnets:
-      - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'}
-      - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'}
-      Listeners:
-      - InstancePort: '80'
-        InstanceProtocol: HTTP
-        LoadBalancerPort: '443'
-        Protocol: HTTPS
-        SSLCertificateId: !Ref ElbAcmCertificate
+      AccessLoggingPolicy: !If [HasS3Bucket, {EmitInterval: 5, Enabled: true, S3BucketName: {'Fn::ImportValue': !Sub '${ParentS3StackAccessLog}-BucketName'}, S3BucketPrefix: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
+      ConnectionDrainingPolicy:
+        Enabled: true
+        Timeout: 30
+      ConnectionSettings:
+        IdleTimeout: !Ref LoadBalancerIdleTimeout
+      CrossZone: true
       HealthCheck:
         HealthyThreshold: '2'
         Interval: '5'
         Target: 'TCP:80'
         Timeout: '3'
         UnhealthyThreshold: '2'
+      Listeners:
+      - InstancePort: '80'
+        InstanceProtocol: HTTP
+        LoadBalancerPort: '443'
+        Protocol: HTTPS
+        SSLCertificateId: !Ref ElbAcmCertificate
+      Scheme: 'internet-facing'
       SecurityGroups:
       - !Ref LoadBalancerSecurityGroup
-      Scheme: 'internet-facing'
-      CrossZone: true
+      Subnets:
+      - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPublic'}
+      - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPublic'}
   DBSubnetGroup:
     Type: 'AWS::RDS::DBSubnetGroup'
     Properties:
