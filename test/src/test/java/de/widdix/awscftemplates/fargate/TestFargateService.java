@@ -146,8 +146,10 @@ public class TestFargateService extends ACloudFormationTest {
             );
             try {
                 this.createStack(clusterStackName,
-                        "fargate/cluster.yaml"
+                        "fargate/cluster.yaml",
+                        new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName)
                 );
+                final String url = this.getStackOutputValue(clusterStackName, "URL");
                 try {
                     this.createStack(stackName,
                             "fargate/service-dedicated-alb.yaml",
@@ -155,7 +157,6 @@ public class TestFargateService extends ACloudFormationTest {
                             new Parameter().withParameterKey("ParentClusterStack").withParameterValue(clusterStackName),
                             new Parameter().withParameterKey("AppImage").withParameterValue("nginx:1.11.5")
                     );
-                    final String url = this.getStackOutputValue(stackName, "URL");
                     final Callable<String> callable = () -> {
                         final HttpResponse response = WS.url(url).timeout(10000).get();
                         // check HTTP response code

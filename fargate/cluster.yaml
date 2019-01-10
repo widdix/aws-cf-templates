@@ -249,6 +249,11 @@ Outputs:
     Value: !GetAtt 'LoadBalancer.DNSName'
     Export:
       Name: !Sub '${AWS::StackName}-DNSName'
+  URL:
+    Description: 'URL to the ECS cluster.'
+    Value: !Sub 'http://${LoadBalancer.DNSName}'
+    Export:
+      Name: !Sub '${AWS::StackName}-URL'
   CanonicalHostedZoneID:
     Description: 'The ID of the Amazon Route 53 hosted zone associated with the load balancer.'
     Value: !GetAtt LoadBalancer.CanonicalHostedZoneID
