@@ -138,15 +138,15 @@ Parameters:
     MinValue: 1
     MaxValue: 49150
   AmbassadorEnvironment1:
-    Description: 'Environment variable for ambassador container. Key and value delimited by =>. For example: TIMOUT=>60'
+    Description: 'Optional environment variable for ambassador container. Key and value delimited by =>. For example: TIMOUT=>60'
     Type: String
     Default: ''
   AmbassadorEnvironment2:
-    Description: 'Environment variable for ambassador container. Key and value delimited by =>. For example: TIMOUT=>60'
+    Description: 'Optional environment variable for ambassador container. Key and value delimited by =>. For example: TIMOUT=>60'
     Type: String
     Default: ''
   AmbassadorEnvironment3:
-    Description: 'Environment variable for ambassador container. Key and value delimited by =>. For example: TIMOUT=>60'
+    Description: 'Optional environment variable for ambassador container. Key and value delimited by =>. For example: TIMOUT=>60'
     Type: String
     Default: ''
   AppImage:
@@ -160,15 +160,15 @@ Parameters:
     MinValue: 1
     MaxValue: 49150
   AppEnvironment1:
-    Description: 'Environment variable for app container. Key and value delimited by =>. For example: TIMOUT=>60'
+    Description: 'Optional environment variable for app container. Key and value delimited by =>. For example: TIMOUT=>60'
     Type: String
     Default: ''
   AppEnvironment2:
-    Description: 'Environment variable for app container. Key and value delimited by =>. For example: TIMOUT=>60'
+    Description: 'Optional environment variable for app container. Key and value delimited by =>. For example: TIMOUT=>60'
     Type: String
     Default: ''
   AppEnvironment3:
-    Description: 'Environment variable for app container. Key and value delimited by =>. For example: TIMOUT=>60'
+    Description: 'Optional environment variable for app container. Key and value delimited by =>. For example: TIMOUT=>60'
     Type: String
     Default: ''
   SidecarImage:
@@ -182,15 +182,15 @@ Parameters:
     MinValue: 1
     MaxValue: 49150
   SidecarEnvironment1:
-    Description: 'Environment variable for sidecar container. Key and value delimited by =>. For example: TIMOUT=>60'
+    Description: 'Optional environment variable for sidecar container. Key and value delimited by =>. For example: TIMOUT=>60'
     Type: String
     Default: ''
   SidecarEnvironment2:
-    Description: 'Environment variable for sidecar container. Key and value delimited by =>. For example: TIMOUT=>60'
+    Description: 'Optional environment variable for sidecar container. Key and value delimited by =>. For example: TIMOUT=>60'
     Type: String
     Default: ''
   SidecarEnvironment3:
-    Description: 'Environment variable for sidecar container. Key and value delimited by =>. For example: TIMOUT=>60'
+    Description: 'Optional eEnvironment variable for sidecar container. Key and value delimited by =>. For example: TIMOUT=>60'
     Type: String
     Default: ''
   SubDomainNameWithDot:
