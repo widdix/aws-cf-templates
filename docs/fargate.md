@@ -23,6 +23,13 @@ This template describes a fault tolerant and scalable Fargate cluster on AWS.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
+### Dependencies
+* `vpc/vpc-*azs.yaml` (**required**)
+* `operations/alert.yaml` (recommended)
+* `security/auth-proxy-*.yaml`
+* `vpc/zone-*.yaml`
+* `state/s3.yaml*`
+
 # Fargate service
 This template describes a fault tolerant and scalable Fargate service on AWS. The service scales based on CPU utilization.
 
