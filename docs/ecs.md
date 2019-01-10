@@ -44,7 +44,7 @@ We provide two service templates:
 * `service-dedicated-alb.yaml` includes a dedicated load balancer (ALB).
 
 ## Using the cluster's load balancer and path and/or host based routing
-This template describes a fault tolerant and scalable ECS service that uses the cluster's load balancer and path and/or host based routing.
+This template describes a fault tolerant and scalable ECS service that uses the cluster's load balancer and path and/or host based routing for incoming traffic.
 
 ![Architecture](./img/ecs-service-cluster-alb.png)
 
@@ -65,7 +65,7 @@ This template describes a fault tolerant and scalable ECS service that uses the 
 * `vpc/zone-*.yaml`
 
 ## Using a dedicated load balancer for the service
-This template describes a fault tolerant and scalable ECS service that uses a dedicated load balancer for the service.
+This template describes a fault tolerant and scalable ECS service that uses a dedicated load balancer for incoming traffic.
 
 ![Architecture](./img/ecs-service-dedicated-alb.png)
 
