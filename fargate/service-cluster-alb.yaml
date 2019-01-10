@@ -14,7 +14,7 @@
 # limitations under the License.
 # FIXME add to cfn-modules
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Fargate: service that runs on a Fargate cluster based on fargate/cluster.yaml and uses a dedicated ALB, a cloudonaut.io template'
+Description: 'Fargate: service that runs on a Fargate cluster based on fargate/cluster.yaml and uses the cluster ALB, a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -23,19 +23,18 @@ Metadata:
       Parameters:
       - ParentVPCStack
       - ParentClusterStack
-      - ParentAuthProxyStack
       - ParentAlertStack
       - ParentZoneStack
-      - ParentS3StackAccessLog
       - ParentClientStack1
       - ParentClientStack2
       - ParentClientStack3
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
-      - LoadBalancerScheme
-      - LoadBalancerCertificateArn
-      - LoadBalancerIdleTimeout
+      - LoadBalancerPriority
+      - LoadBalancerHostPattern
+      - LoadBalancerPathPattern
+      - LoadBalancerHttps
       - LoadBalancerDeregistrationDelay
     - Label:
         default: 'Task Parameters'
@@ -76,20 +75,12 @@ Parameters:
   ParentClusterStack:
     Description: 'Stack name of parent Cluster stack based on fargate/cluster.yaml template.'
     Type: String
-  ParentAuthProxyStack:
-    Description: 'Optional stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
-    Type: String
-    Default: ''
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
   ParentZoneStack:
     Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
-    Type: String
-    Default: ''
-  ParentS3StackAccessLog:
-    Description: 'Optional stack name of parent s3 stack based on state/s3.yaml template (with Access set to ElbAccessLogWrite) to store access logs.'
     Type: String
     Default: ''
   ParentClientStack1:
@@ -104,23 +95,32 @@ Parameters:
     Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the service to whatever uses the client security group.'
     Type: String
     Default: ''
-  LoadBalancerScheme:
-    Description: 'Indicates whether the load balancer in front of the ECS service is internet-facing or internal.'
-    Type: String
-    Default: 'internet-facing'
-    AllowedValues:
-    - 'internet-facing'
-    - internal
-  LoadBalancerCertificateArn:
-    Description: 'Optional Amazon Resource Name (ARN) of the certificate to associate with the load balancer. If set, HTTP requests are redirected to HTTPS.'
+  LoadBalancerPriority:
+    Description: 'The priority for the rule. Elastic Load Balancing evaluates rules in priority order, from the lowest value to the highest value. If a request satisfies a rule, Elastic Load Balancing ignores all subsequent rules. A target group can have only one rule with a given priority.'
+    Type: Number
+    Default: 1
+    ConstraintDescription: 'Must be in the range [1-99999]'
+    MinValue: 1
+    MaxValue: 99999
+  LoadBalancerHostPattern:
+    Description: 'Optional host pattern. Specify LoadBalancerPathPattern and/or LoadBalancerHostPattern.'
     Type: String
     Default: ''
-  LoadBalancerIdleTimeout:
-    Description: 'The idle timeout value, in seconds.'
-    Type: Number
-    Default: 60
-    MinValue: 1
-    MaxValue: 4000
+    ConstraintDescription: 'Must not be longer than 255'
+    MaxLength: 255
+  LoadBalancerPathPattern:
+    Description: 'Optional path pattern. Specify LoadBalancerPathPattern and/or LoadBalancerHostPattern.'
+    Type: String
+    Default: '/*'
+    ConstraintDescription: 'Must not be longer than 255'
+    MaxLength: 255
+  LoadBalancerHttps:
+    Description: 'If the cluster supports HTTPS (LoadBalancerCertificateArn is set) you can enable HTTPS for the service'
+    Type: String
+    Default: false
+    AllowedValues:
+    - true
+    - false
   LoadBalancerDeregistrationDelay:
     Description: 'The amount time (in seconds) to wait before changing the state of a deregistering target from draining to unused.'
     Type: Number
@@ -329,15 +329,11 @@ Mappings:
     '30':
       Memory: 30720
 Conditions:
-  HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
-  HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
-  HasLoadBalancerSchemeInternal: !Equals [!Ref LoadBalancerScheme, 'internal']
-  HasLoadBalancerCertificateArn: !Not [!Equals [!Ref LoadBalancerCertificateArn, '']]
-  HasAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
-  HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasNotAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
+  HasLoadBalancerHttps: !Equals [!Ref LoadBalancerHttps, 'true']
+  HasLoadBalancerPathPattern: !Not [!Equals [!Ref LoadBalancerPathPattern, '']]
+  HasLoadBalancerHostPattern: !Not [!Equals [!Ref LoadBalancerHostPattern, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
-  HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
   HasSubnetsReachPublic: !Equals [!Ref SubnetsReach, Public]
   HasAutoScaling: !Equals [!Ref AutoScaling, 'true']
   HasClientSecurityGroup1: !Not [!Equals [!Ref ParentClientStack1, '']]
@@ -361,137 +357,14 @@ Resources:
     Type: 'AWS::Route53::RecordSet'
     Properties:
       AliasTarget:
-        HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
-        DNSName: !GetAtt 'LoadBalancer.DNSName'
+        HostedZoneId: {'Fn::ImportValue': !Sub '${ParentClusterStack}-CanonicalHostedZoneID'}
+        DNSName: {'Fn::ImportValue': !Sub '${ParentClusterStack}-DNSName'}
       HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       Name: !Sub
       - '${SubDomainNameWithDot}${HostedZoneName}'
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
         HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       Type: A
-  LoadBalancerSecurityGroup:
-    Type: 'AWS::EC2::SecurityGroup'
-    Properties:
-      GroupDescription: !Sub '${AWS::StackName}-load-balancer'
-      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
-  LoadBalancerSecurityGroupInHttpFromWorld:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasNotAuthProxySecurityGroup
-    Properties:
-      GroupId: !Ref LoadBalancerSecurityGroup
-      IpProtocol: tcp
-      FromPort: 80
-      ToPort: 80
-      CidrIp: '0.0.0.0/0'
-  LoadBalancerSecurityGroupInHttpsFromWorld:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn
-    Properties:
-      GroupId: !Ref LoadBalancerSecurityGroup
-      IpProtocol: tcp
-      FromPort: 443
-      ToPort: 443
-      CidrIp: '0.0.0.0/0'
-  LoadBalancerSecurityGroupInHttpFromAuthProxy:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasAuthProxySecurityGroup
-    Properties:
-      GroupId: !Ref LoadBalancerSecurityGroup
-      IpProtocol: tcp
-      FromPort: 80
-      ToPort: 80
-      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
-  LoadBalancerSecurityGroupInHttpsFromAuthProxy:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasAuthProxySecurityGroupAndLoadBalancerCertificateArn
-    Properties:
-      GroupId: !Ref LoadBalancerSecurityGroup
-      IpProtocol: tcp
-      FromPort: 443
-      ToPort: 443
-      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
-  LoadBalancer:
-    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
-    Properties:
-      LoadBalancerAttributes:
-      - Key: 'idle_timeout.timeout_seconds'
-        Value: !Ref LoadBalancerIdleTimeout
-      - Key: 'routing.http2.enabled'
-        Value: 'true'
-      - Key: 'access_logs.s3.enabled'
-        Value: !If [HasS3Bucket, 'true', 'false']
-      - !If [HasS3Bucket, {Key: 'access_logs.s3.prefix', Value: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
-      - !If [HasS3Bucket, {Key: 'access_logs.s3.bucket', Value: {'Fn::ImportValue': !Sub '${ParentS3StackAccessLog}-BucketName'}}, !Ref 'AWS::NoValue']
-      Scheme: !Ref LoadBalancerScheme
-      SecurityGroups:
-      - !Ref LoadBalancerSecurityGroup
-      Subnets: !If
-      - HasLoadBalancerSchemeInternal
-      - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
-      - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPublic'}]
-      Type: application
-  HTTPCodeELB5XXTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer returns 5XX HTTP status codes'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: HTTPCode_ELB_5XX_Count
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Dimensions:
-      - Name: LoadBalancer
-        Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
-  RejectedConnectionCountTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer rejected connections because the load balancer had reached its maximum number of connections'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: RejectedConnectionCount
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Dimensions:
-      - Name: LoadBalancer
-        Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
-  HttpListener:
-    Type: 'AWS::ElasticLoadBalancingV2::Listener'
-    Properties:
-      DefaultActions:
-      - !If
-        - HasLoadBalancerCertificateArn
-        - RedirectConfig:
-            Port: '443'
-            Protocol: HTTPS
-            StatusCode: 'HTTP_301'
-          Type: redirect
-        - TargetGroupArn: !Ref TargetGroup
-          Type: forward
-      LoadBalancerArn: !Ref LoadBalancer
-      Port: 80
-      Protocol: HTTP
-  HttpsListener:
-    Condition: HasLoadBalancerCertificateArn
-    Type: 'AWS::ElasticLoadBalancingV2::Listener'
-    Properties:
-      Certificates:
-      - CertificateArn: !Ref LoadBalancerCertificateArn
-      DefaultActions:
-      - TargetGroupArn: !Ref TargetGroup
-        Type: forward
-      LoadBalancerArn: !Ref LoadBalancer
-      Port: 443
-      Protocol: HTTPS
   TargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
@@ -526,7 +399,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
-        Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
+        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'}
       - Name: TargetGroup
         Value: !GetAtt TargetGroup.TargetGroupFullName
   TargetConnectionErrorCountTooHighAlarm:
@@ -545,9 +418,36 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: LoadBalancer
-        Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
+        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'}
       - Name: TargetGroup
         Value: !GetAtt TargetGroup.TargetGroupFullName
+  LoadBalancerListenerRule:
+    Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn: !Ref TargetGroup
+      Conditions: !If
+      - HasLoadBalancerPathPattern
+      - !If
+        - HasLoadBalancerHostPattern
+        - - Field: host-header
+            Values:
+            - !Ref LoadBalancerHostPattern
+          - Field: path-pattern
+            Values:
+            - !Sub '${LoadBalancerPathPattern}'
+        - - Field: path-pattern
+            Values:
+            - !Sub '${LoadBalancerPathPattern}'
+      - !If
+        - HasLoadBalancerHostPattern
+        - - Field: host-header
+            Values:
+            - !Ref LoadBalancerHostPattern
+        - [] # neither LoadBalancerHostPattern nor LoadBalancerPathPattern specified
+      ListenerArn: !If [HasLoadBalancerHttps, {'Fn::ImportValue': !Sub '${ParentClusterStack}-HttpsListener'}, {'Fn::ImportValue': !Sub '${ParentClusterStack}-HttpListener'}]
+      Priority: !Ref LoadBalancerPriority
   TaskExecutionRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -694,13 +594,13 @@ Resources:
       GroupDescription: !Sub '${AWS::StackName}-service'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
-      - SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
-        FromPort: 0
-        ToPort: 65535
+      - SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerSecurityGroup'}
+        FromPort: !If [HasAmbassadorImage, !Ref AmbassadorPort, !Ref AppPort]
+        ToPort: !If [HasAmbassadorImage, !Ref AmbassadorPort, !Ref AppPort]
         IpProtocol: tcp
   Service:
+    DependsOn: LoadBalancerListenerRule
     Type: 'AWS::ECS::Service'
-    DependsOn: HttpListener
     Properties:
       Cluster: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
       DeploymentConfiguration:
@@ -853,20 +753,10 @@ Resources:
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
-    Value: 'fargate/service-dedicated-alb'
+    Value: 'fargate/service-cluster-alb'
   TemplateVersion:
     Description: 'cloudonaut.io template version.'
     Value: '__VERSION__'
   StackName:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
-  DNSName:
-    Description: 'The DNS name for the Fargate service load balancer.'
-    Value: !GetAtt 'LoadBalancer.DNSName'
-    Export:
-      Name: !Sub '${AWS::StackName}-DNSName'
-  URL:
-    Description: 'URL to the Fargate service.'
-    Value: !Sub 'http://${LoadBalancer.DNSName}'
-    Export:
-      Name: !Sub '${AWS::StackName}-URL'
