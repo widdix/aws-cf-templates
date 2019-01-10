@@ -423,7 +423,6 @@ Resources:
       - Name: TargetGroup
         Value: !GetAtt TargetGroup.TargetGroupFullName
   LoadBalancerListenerRule:
-    Condition: HasNotLoadBalancerHttps
     Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
     Properties:
       Actions:
@@ -601,6 +600,7 @@ Resources:
         ToPort: !If [HasAmbassadorImage, !Ref AmbassadorPort, !Ref AppPort]
         IpProtocol: tcp
   Service:
+    DependsOn: LoadBalancerListenerRule
     Type: 'AWS::ECS::Service'
     Properties:
       Cluster: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
