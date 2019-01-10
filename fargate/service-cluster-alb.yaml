@@ -129,7 +129,7 @@ Parameters:
     MinValue: 0
     MaxValue: 3600
   TaskPolicies:
-    Description: 'Comma-delimited list of IAM managed policies to attach to the task IAM role'
+    Description: 'Comma-delimited list of IAM managed policy ARNs to attach to the task IAM role'
     Type: String
     Default: ''
   AmbassadorImage:
@@ -422,7 +422,7 @@ Resources:
         Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'}
       - Name: TargetGroup
         Value: !GetAtt TargetGroup.TargetGroupFullName
-  LoadBalancerHttpListenerRule:
+  LoadBalancerListenerRule:
     Condition: HasNotLoadBalancerHttps
     Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
     Properties:
@@ -448,35 +448,7 @@ Resources:
             Values:
             - !Ref LoadBalancerHostPattern
         - [] # neither LoadBalancerHostPattern nor LoadBalancerPathPattern specified
-      ListenerArn: {'Fn::ImportValue': !Sub '${ParentClusterStack}-HttpListener'}
-      Priority: !Ref LoadBalancerPriority
-  LoadBalancerHttpsListenerRule:
-    Condition: HasLoadBalancerHttps
-    Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
-    Properties:
-      Actions:
-      - Type: forward
-        TargetGroupArn: !Ref TargetGroup
-      Conditions: !If
-      - HasLoadBalancerPathPattern
-      - !If
-        - HasLoadBalancerHostPattern
-        - - Field: host-header
-            Values:
-            - !Ref LoadBalancerHostPattern
-          - Field: path-pattern
-            Values:
-            - !Sub '/${LoadBalancerPathPattern}/*'
-        - - Field: path-pattern
-            Values:
-            - !Sub '/${LoadBalancerPathPattern}/*'
-      - !If
-        - HasLoadBalancerHostPattern
-        - - Field: host-header
-            Values:
-            - !Ref LoadBalancerHostPattern
-        - [] # neither LoadBalancerHostPattern nor LoadBalancerPathPattern specified
-      ListenerArn: {'Fn::ImportValue': !Sub '${ParentClusterStack}-HttpsListener'}
+      ListenerArn: !If [HasLoadBalancerHttps, {'Fn::ImportValue': !Sub '${ParentClusterStack}-HttpsListener'}, {'Fn::ImportValue': !Sub '${ParentClusterStack}-HttpListener'}]
       Priority: !Ref LoadBalancerPriority
   TaskExecutionRole:
     Type: 'AWS::IAM::Role'
@@ -789,8 +761,3 @@ Outputs:
   StackName:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
-  TaskRoleArn:
-    Description: 'IAM Role ARN attached to the task. Use this to attach policies.'
-    Value: !GetAtt 'TaskRole.Arn'
-    Export:
-      Name: !Sub '${AWS::StackName}-TaskRoleArn'

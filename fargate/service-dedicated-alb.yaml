@@ -129,7 +129,7 @@ Parameters:
     MinValue: 0
     MaxValue: 3600
   TaskPolicies:
-    Description: 'Comma-delimited list of IAM managed policies to attach to the task IAM role'
+    Description: 'Comma-delimited list of IAM managed policy ARNs to attach to the task IAM role'
     Type: String
     Default: ''
   AmbassadorImage:
@@ -870,8 +870,3 @@ Outputs:
     Value: !Sub 'http://${LoadBalancer.DNSName}'
     Export:
       Name: !Sub '${AWS::StackName}-URL'
-  TaskRoleArn:
-    Description: 'IAM Role ARN attached to the task. Use this to attach policies.'
-    Value: !GetAtt 'TaskRole.Arn'
-    Export:
-      Name: !Sub '${AWS::StackName}-TaskRoleArn'
