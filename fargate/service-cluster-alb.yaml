@@ -42,19 +42,28 @@ Metadata:
       - TaskPolicies
       - AmbassadorImage
       - AmbassadorPort
-      - AmbassadorEnvironment1
-      - AmbassadorEnvironment2
-      - AmbassadorEnvironment3
+      - AmbassadorEnvironment1Key
+      - AmbassadorEnvironment1Value
+      - AmbassadorEnvironment2Key
+      - AmbassadorEnvironment2Value
+      - AmbassadorEnvironment3Key
+      - AmbassadorEnvironment3Value
       - AppImage
       - AppPort
-      - AppEnvironment1
-      - AppEnvironment2
-      - AppEnvironment3
+      - AppEnvironment1Key
+      - AppEnvironment1Value
+      - AppEnvironment2Key
+      - AppEnvironment2Value
+      - AppEnvironment3Key
+      - AppEnvironment3Value
       - SidecarImage
       - SidecarPort
-      - SidecarEnvironment1
-      - SidecarEnvironment2
-      - SidecarEnvironment3
+      - SidecarEnvironment1Key
+      - SidecarEnvironment1Value
+      - SidecarEnvironment2Key
+      - SidecarEnvironment2Value
+      - SidecarEnvironment3Key
+      - SidecarEnvironment3Value
     - Label:
         default: 'Service Parameters'
       Parameters:
@@ -142,16 +151,28 @@ Parameters:
     Default: 8000
     MinValue: 1
     MaxValue: 49150
-  AmbassadorEnvironment1:
-    Description: 'Optional environment variable for ambassador container. Key and value delimited by =>. For example: TIMOUT=>60'
+  AmbassadorEnvironment1Key:
+    Description: 'Optional environment variable 1 key for ambassador container.'
     Type: String
     Default: ''
-  AmbassadorEnvironment2:
-    Description: 'Optional environment variable for ambassador container. Key and value delimited by =>. For example: TIMOUT=>60'
+  AmbassadorEnvironment1Value:
+    Description: 'Optional environment variable 1 value for ambassador container.'
     Type: String
     Default: ''
-  AmbassadorEnvironment3:
-    Description: 'Optional environment variable for ambassador container. Key and value delimited by =>. For example: TIMOUT=>60'
+  AmbassadorEnvironment2Key:
+    Description: 'Optional environment variable 2 key for ambassador container.'
+    Type: String
+    Default: ''
+  AmbassadorEnvironment2Value:
+    Description: 'Optional environment variable 2 value for ambassador container.'
+    Type: String
+    Default: ''
+  AmbassadorEnvironment3Key:
+    Description: 'Optional environment variable 3 key for ambassador container.'
+    Type: String
+    Default: ''
+  AmbassadorEnvironment3Value:
+    Description: 'Optional environment variable 3 value for ambassador container.'
     Type: String
     Default: ''
   AppImage:
@@ -164,16 +185,28 @@ Parameters:
     Default: 80
     MinValue: 1
     MaxValue: 49150
-  AppEnvironment1:
-    Description: 'Optional environment variable for app container. Key and value delimited by =>. For example: TIMOUT=>60'
+  AppEnvironment1Key:
+    Description: 'Optional environment variable 1 key for app container.'
     Type: String
     Default: ''
-  AppEnvironment2:
-    Description: 'Optional environment variable for app container. Key and value delimited by =>. For example: TIMOUT=>60'
+  AppEnvironment1Value:
+    Description: 'Optional environment variable 1 value for app container.'
     Type: String
     Default: ''
-  AppEnvironment3:
-    Description: 'Optional environment variable for app container. Key and value delimited by =>. For example: TIMOUT=>60'
+  AppEnvironment2Key:
+    Description: 'Optional environment variable 2 key for app container.'
+    Type: String
+    Default: ''
+  AppEnvironment2Value:
+    Description: 'Optional environment variable 2 value for app container.'
+    Type: String
+    Default: ''
+  AppEnvironment3Key:
+    Description: 'Optional environment variable 3 key for app container.'
+    Type: String
+    Default: ''
+  AppEnvironment3Value:
+    Description: 'Optional environment variable 3 value for app container.'
     Type: String
     Default: ''
   SidecarImage:
@@ -186,16 +219,28 @@ Parameters:
     Default: 9000
     MinValue: 1
     MaxValue: 49150
-  SidecarEnvironment1:
-    Description: 'Optional environment variable for sidecar container. Key and value delimited by =>. For example: TIMOUT=>60'
+  SidecarEnvironment1Key:
+    Description: 'Optional environment variable 1 key for sidecar container.'
     Type: String
     Default: ''
-  SidecarEnvironment2:
-    Description: 'Optional environment variable for sidecar container. Key and value delimited by =>. For example: TIMOUT=>60'
+  SidecarEnvironment1Value:
+    Description: 'Optional environment variable 1 value for sidecar container.'
     Type: String
     Default: ''
-  SidecarEnvironment3:
-    Description: 'Optional eEnvironment variable for sidecar container. Key and value delimited by =>. For example: TIMOUT=>60'
+  SidecarEnvironment2Key:
+    Description: 'Optional environment variable 2 key for sidecar container.'
+    Type: String
+    Default: ''
+  SidecarEnvironment2Value:
+    Description: 'Optional environment variable 2 value for sidecar container.'
+    Type: String
+    Default: ''
+  SidecarEnvironment3Key:
+    Description: 'Optional environment variable 3 key for sidecar container.'
+    Type: String
+    Default: ''
+  SidecarEnvironment3Value:
+    Description: 'Optional environment variable 3 value for sidecar container.'
     Type: String
     Default: ''
   SubDomainNameWithDot:
@@ -340,17 +385,17 @@ Conditions:
   HasClientSecurityGroup2: !Not [!Equals [!Ref ParentClientStack2, '']]
   HasClientSecurityGroup3: !Not [!Equals [!Ref ParentClientStack3, '']]
   HasTaskPolicies: !Not [!Equals [!Ref TaskPolicies, '']]
-  HasAppEnvironment1: !Not [!Equals [!Ref AppEnvironment1, '']]
-  HasAppEnvironment2: !Not [!Equals [!Ref AppEnvironment2, '']]
-  HasAppEnvironment3: !Not [!Equals [!Ref AppEnvironment3, '']]
+  HasAppEnvironment1Key: !Not [!Equals [!Ref AppEnvironment1Key, '']]
+  HasAppEnvironment2Key: !Not [!Equals [!Ref AppEnvironment2Key, '']]
+  HasAppEnvironment3Key: !Not [!Equals [!Ref AppEnvironment3Key, '']]
   HasAmbassadorImage: !Not [!Equals [!Ref AmbassadorImage, '']]
-  HasAmbassadorEnvironment1: !Not [!Equals [!Ref AmbassadorEnvironment1, '']]
-  HasAmbassadorEnvironment2: !Not [!Equals [!Ref AmbassadorEnvironment2, '']]
-  HasAmbassadorEnvironment3: !Not [!Equals [!Ref AmbassadorEnvironment3, '']]
+  HasAmbassadorEnvironment1Key: !Not [!Equals [!Ref AmbassadorEnvironment1Key, '']]
+  HasAmbassadorEnvironment2Key: !Not [!Equals [!Ref AmbassadorEnvironment2Key, '']]
+  HasAmbassadorEnvironment3Key: !Not [!Equals [!Ref AmbassadorEnvironment3Key, '']]
   HasSidecarImage: !Not [!Equals [!Ref SidecarImage, '']]
-  HasSidecarEnvironment1: !Not [!Equals [!Ref SidecarEnvironment1, '']]
-  HasSidecarEnvironment2: !Not [!Equals [!Ref SidecarEnvironment2, '']]
-  HasSidecarEnvironment3: !Not [!Equals [!Ref SidecarEnvironment3, '']]
+  HasSidecarEnvironment1Key: !Not [!Equals [!Ref SidecarEnvironment1Key, '']]
+  HasSidecarEnvironment2Key: !Not [!Equals [!Ref SidecarEnvironment2Key, '']]
+  HasSidecarEnvironment3Key: !Not [!Equals [!Ref SidecarEnvironment3Key, '']]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -502,21 +547,9 @@ Resources:
               'awslogs-group': !Ref LogGroup
               'awslogs-stream-prefix': ambassador
           Environment:
-          - !If
-            - HasAmbassadorEnvironment1
-            - Name: !Select [0, !Split ['=>', !Ref AmbassadorEnvironment1]]
-              Value: !Select [1, !Split ['=>', !Ref AmbassadorEnvironment1]]
-            - !Ref 'AWS::NoValue'
-          - !If
-            - HasAmbassadorEnvironment2
-            - Name: !Select [0, !Split ['=>', !Ref AmbassadorEnvironment2]]
-              Value: !Select [1, !Split ['=>', !Ref AmbassadorEnvironment2]]
-            - !Ref 'AWS::NoValue'
-          - !If
-            - HasAmbassadorEnvironment3
-            - Name: !Select [0, !Split ['=>', !Ref AmbassadorEnvironment3]]
-              Value: !Select [1, !Split ['=>', !Ref AmbassadorEnvironment3]]
-            - !Ref 'AWS::NoValue'
+          - !If [HasAmbassadorEnvironment1Key, {Name: !Ref AmbassadorEnvironment1Key, Value: !Ref AmbassadorEnvironment1Value}, !Ref 'AWS::NoValue']
+          - !If [HasAmbassadorEnvironment2Key, {Name: !Ref AmbassadorEnvironment2Key, Value: !Ref AmbassadorEnvironment2Value}, !Ref 'AWS::NoValue']
+          - !If [HasAmbassadorEnvironment3Key, {Name: !Ref AmbassadorEnvironment3Key, Value: !Ref AmbassadorEnvironment3Value}, !Ref 'AWS::NoValue']
         - !Ref 'AWS::NoValue'
       - Name: app
         Image: !Ref AppImage
@@ -531,21 +564,9 @@ Resources:
             'awslogs-group': !Ref LogGroup
             'awslogs-stream-prefix': app
         Environment:
-        - !If
-          - HasAppEnvironment1
-          - Name: !Select [0, !Split ['=>', !Ref AppEnvironment1]]
-            Value: !Select [1, !Split ['=>', !Ref AppEnvironment1]]
-          - !Ref 'AWS::NoValue'
-        - !If
-          - HasAppEnvironment2
-          - Name: !Select [0, !Split ['=>', !Ref AppEnvironment2]]
-            Value: !Select [1, !Split ['=>', !Ref AppEnvironment2]]
-          - !Ref 'AWS::NoValue'
-        - !If
-          - HasAppEnvironment3
-          - Name: !Select [0, !Split ['=>', !Ref AppEnvironment3]]
-            Value: !Select [1, !Split ['=>', !Ref AppEnvironment3]]
-          - !Ref 'AWS::NoValue'
+        - !If [HasAppEnvironment1Key, {Name: !Ref AppEnvironment1Key, Value: !Ref AppEnvironment1Value}, !Ref 'AWS::NoValue']
+        - !If [HasAppEnvironment2Key, {Name: !Ref AppEnvironment2Key, Value: !Ref AppEnvironment2Value}, !Ref 'AWS::NoValue']
+        - !If [HasAppEnvironment3Key, {Name: !Ref AppEnvironment3Key, Value: !Ref AppEnvironment3Value}, !Ref 'AWS::NoValue']
       - !If
         - HasSidecarImage
         - Name: sidecar
@@ -561,21 +582,9 @@ Resources:
               'awslogs-group': !Ref LogGroup
               'awslogs-stream-prefix': sidecar
           Environment:
-          - !If
-            - HasSidecarEnvironment1
-            - Name: !Select [0, !Split ['=>', !Ref SidecarEnvironment1]]
-              Value: !Select [1, !Split ['=>', !Ref SidecarEnvironment1]]
-            - !Ref 'AWS::NoValue'
-          - !If
-            - HasSidecarEnvironment2
-            - Name: !Select [0, !Split ['=>', !Ref SidecarEnvironment2]]
-              Value: !Select [1, !Split ['=>', !Ref SidecarEnvironment2]]
-            - !Ref 'AWS::NoValue'
-          - !If
-            - HasSidecarEnvironment3
-            - Name: !Select [0, !Split ['=>', !Ref SidecarEnvironment3]]
-              Value: !Select [1, !Split ['=>', !Ref SidecarEnvironment3]]
-            - !Ref 'AWS::NoValue'
+          - !If [HasSidecarEnvironment1Key, {Name: !Ref SidecarEnvironment1Key, Value: !Ref SidecarEnvironment1Value}, !Ref 'AWS::NoValue']
+          - !If [HasSidecarEnvironment2Key, {Name: !Ref SidecarEnvironment2Key, Value: !Ref SidecarEnvironment2Value}, !Ref 'AWS::NoValue']
+          - !If [HasSidecarEnvironment3Key, {Name: !Ref SidecarEnvironment3Key, Value: !Ref SidecarEnvironment3Value}, !Ref 'AWS::NoValue']
         - !Ref 'AWS::NoValue'
       Cpu: !FindInMap [CpuMap, !Ref Cpu, Cpu]
       ExecutionRoleArn: !GetAtt 'TaskExecutionRole.Arn'
