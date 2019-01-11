@@ -156,7 +156,7 @@ Parameters:
     Type: String
     Default: ''
   AmbassadorEnvironment1Value:
-    Description: 'Optional environment variable 1 key for ambassador container.'
+    Description: 'Optional environment variable 1 value for ambassador container.'
     Type: String
     Default: ''
   AmbassadorEnvironment2Key:
@@ -164,7 +164,7 @@ Parameters:
     Type: String
     Default: ''
   AmbassadorEnvironment2Value:
-    Description: 'Optional environment variable 2 key for ambassador container.'
+    Description: 'Optional environment variable 2 value for ambassador container.'
     Type: String
     Default: ''
   AmbassadorEnvironment3Key:
@@ -172,7 +172,7 @@ Parameters:
     Type: String
     Default: ''
   AmbassadorEnvironment3Value:
-    Description: 'Optional environment variable 3 key for ambassador container.'
+    Description: 'Optional environment variable 3 value for ambassador container.'
     Type: String
     Default: ''
   AppImage:
@@ -190,7 +190,7 @@ Parameters:
     Type: String
     Default: ''
   AppEnvironment1Value:
-    Description: 'Optional environment variable 1 key for app container.'
+    Description: 'Optional environment variable 1 value for app container.'
     Type: String
     Default: ''
   AppEnvironment2Key:
@@ -198,7 +198,7 @@ Parameters:
     Type: String
     Default: ''
   AppEnvironment2Value:
-    Description: 'Optional environment variable 2 key for app container.'
+    Description: 'Optional environment variable 2 value for app container.'
     Type: String
     Default: ''
   AppEnvironment3Key:
@@ -206,7 +206,7 @@ Parameters:
     Type: String
     Default: ''
   AppEnvironment3Value:
-    Description: 'Optional environment variable 3 key for app container.'
+    Description: 'Optional environment variable 3 value for app container.'
     Type: String
     Default: ''
   SidecarImage:
@@ -224,7 +224,7 @@ Parameters:
     Type: String
     Default: ''
   SidecarEnvironment1Value:
-    Description: 'Optional environment variable 1 key for sidecar container.'
+    Description: 'Optional environment variable 1 value for sidecar container.'
     Type: String
     Default: ''
   SidecarEnvironment2Key:
@@ -232,7 +232,7 @@ Parameters:
     Type: String
     Default: ''
   SidecarEnvironment2Value:
-    Description: 'Optional environment variable 2 key for sidecar container.'
+    Description: 'Optional environment variable 2 value for sidecar container.'
     Type: String
     Default: ''
   SidecarEnvironment3Key:
@@ -240,7 +240,7 @@ Parameters:
     Type: String
     Default: ''
   SidecarEnvironment3Value:
-    Description: 'Optional environment variable 3 key for sidecar container.'
+    Description: 'Optional environment variable 3 value for sidecar container.'
     Type: String
     Default: ''
   SubDomainNameWithDot:
