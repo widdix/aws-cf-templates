@@ -29,7 +29,7 @@ I add links to AWS Management Console that are relevant to an incident. Contextu
 [Try marbot for free now!](https://marbot.io/?utm_source=templates&utm_medium=doc&utm_campaign=operations)
 
 ## Installation Guide
-1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=operations-alert&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/alert.yaml)
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/alert.yaml&stackName=alert)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -44,9 +44,9 @@ This template describes a Data Pipeline to backup a single DynamoDB table. The D
 > Deprecated in v7, will be removed in v9, use `operations/backup-dynamodb-native.yaml` instead!
 
 ## Installation Guide
-1. This templates depends on our [`vpc-*azs.yaml`](./vpc/) template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=vpc-2azs&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml)
-1. This templates depends on our `alert.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=operations-alert&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/alert.yaml)
-1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=operations-backup-dynamodb&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/backup-dynamodb.yaml)
+1. This templates depends on one of our [`vpc-*azs.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
+1. This templates depends on our `alert.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/alert.yaml&stackName=alert)
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/backup-dynamodb.yaml&stackName=backup-dynamodb&param_ParentVPCStack=vpc&param_ParentAlertStack=alert)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -66,7 +66,8 @@ This template describes a Data Pipeline to backup a single DynamoDB table. The D
 This template describes a Lambda function to backup a single DynamoDB table daily.
 
 ## Installation Guide
-1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=operations-backup-dynamodb-native&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/backup-dynamodb-native.yaml)
+1. This templates depends on our `alert.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/alert.yaml&stackName=alert)
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/backup-dynamodb-native.yaml&stackName=backup-dynamodb&param_ParentAlertStack=alert)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -76,4 +77,4 @@ This template describes a Lambda function to backup a single DynamoDB table dail
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
 ## Dependencies
-* `operations/alert.yaml` (recommended)
+* `operations/alert.yaml` (**required**)
