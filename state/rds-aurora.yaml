@@ -22,6 +22,7 @@ Metadata:
       Parameters:
       - ParentVPCStack
       - ParentClientStack
+      - ParentKmsKeyStack
       - ParentZoneStack
       - ParentSSHBastionStack
       - ParentAlertStack
@@ -37,7 +38,6 @@ Metadata:
       - DBMasterUserPassword
       - SubDomainNameWithDot
       - ReadSubDomainNameWithDot
-      - Encryption
       - PreferredBackupWindow
       - PreferredMaintenanceWindow
 Parameters:
@@ -47,6 +47,10 @@ Parameters:
   ParentClientStack:
     Description: 'Stack name of parent client stack based on state/client-sg.yaml template.'
     Type: String
+  ParentKmsKeyStack:
+    Description: 'Optional Stack name of parent KMS key stack based on security/kms-key.yaml template (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
+    Type: String
+    Default: ''
   ParentZoneStack:
     Description: 'Optional stack name of parent zone stack based on vpc/vpc-zone-*.yaml template.'
     Type: String
@@ -102,11 +106,6 @@ Parameters:
     Description: 'Name that is used to create the read DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
     Default: 'read-aurora.'
-  Encryption:
-    Description: 'Enable server side encryption using KMS (customer managed) CMK (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
-    Type: String
-    Default: false
-    AllowedValues: [true, false]
   PreferredBackupWindow:
     Description: 'The daily time range in UTC during which you want to create automated backups.'
     Type: String
@@ -133,12 +132,12 @@ Mappings:
       ClusterParameterGroupFamily: 'aurora-postgresql9.6'
       ParameterGroupFamily: 'aurora-postgresql9.6'
 Conditions:
+  HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, '']]
-  HasEncryption: !Equals [!Ref Encryption, true]
-  HasEncryptionAndNotDBSnapshotIdentifier: !And [!Condition HasEncryption, !Not [!Condition HasDBSnapshotIdentifier]]
+  HasKmsKeyAndNotDBSnapshotIdentifier: !And [!Condition HasKmsKey, !Not [!Condition HasDBSnapshotIdentifier]]
   HasEngineMySQL: !Or [!Equals [!Ref Engine, 'aurora'], !Equals [!Ref Engine, 'aurora-mysql']]
 Resources:
   RecordSet:
@@ -186,41 +185,6 @@ Resources:
       FromPort: !FindInMap [EngineMap, !Ref Engine, Port]
       ToPort: !FindInMap [EngineMap, !Ref Engine, Port]
       SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
-  Key:
-    Condition: HasEncryptionAndNotDBSnapshotIdentifier
-    DeletionPolicy: Retain
-    Type: 'AWS::KMS::Key'
-    Properties:
-      KeyPolicy:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
-          Action: 'kms:*'
-          Resource: '*'
-        - Effect: Allow
-          Principal:
-            AWS: '*'
-          Action:
-          - 'kms:Encrypt'
-          - 'kms:Decrypt'
-          - 'kms:ReEncrypt*'
-          - 'kms:GenerateDataKey*'
-          - 'kms:CreateGrant'
-          - 'kms:ListGrants'
-          - 'kms:DescribeKey'
-          Resource: '*'
-          Condition:
-            StringEquals:
-              'kms:CallerAccount': !Ref 'AWS::AccountId'
-              'kms:ViaService': !Sub 'rds.${AWS::Region}.amazonaws.com'
-  KeyAlias:
-    Condition: HasEncryptionAndNotDBSnapshotIdentifier
-    Type: 'AWS::KMS::Alias'
-    Properties:
-      AliasName: !Sub 'alias/${AWS::StackName}'
-      TargetKeyId: !Ref Key
   DBSubnetGroup:
     Type: 'AWS::RDS::DBSubnetGroup'
     Properties:
@@ -253,14 +217,14 @@ Resources:
       Engine: !Ref Engine
       EngineMode: provisioned
       EngineVersion: !FindInMap [EngineMap, !Ref Engine, EngineVersion]
-      KmsKeyId: !If [HasEncryptionAndNotDBSnapshotIdentifier, !Ref Key, !Ref 'AWS::NoValue']
+      KmsKeyId: !If [HasKmsKeyAndNotDBSnapshotIdentifier, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}, !Ref 'AWS::NoValue']
       MasterUsername: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUsername]
       MasterUserPassword: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUserPassword]
       Port: !FindInMap [EngineMap, !Ref Engine, Port]
       PreferredBackupWindow: !Ref PreferredBackupWindow
       PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
       SnapshotIdentifier: !If [HasDBSnapshotIdentifier, !Ref DBSnapshotIdentifier, !Ref 'AWS::NoValue']
-      StorageEncrypted: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref Encryption]
+      StorageEncrypted: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !If [HasKmsKey, true, false]]
       VpcSecurityGroupIds:
       - !Ref ClusterSecurityGroup
   DBParameterGroup:

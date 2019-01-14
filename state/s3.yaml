@@ -20,6 +20,7 @@ Metadata:
     - Label:
         default: 'Parent Stacks'
       Parameters:
+      - ParentKmsKeyStack
       - ParentS3VirusScanStack
     - Label:
         default: 'S3 Parameters'
@@ -29,8 +30,11 @@ Metadata:
       - Versioning
       - NoncurrentVersionExpirationInDays
       - ExpirationInDays
-      - Encryption
 Parameters:
+  ParentKmsKeyStack:
+    Description: 'Optional Stack name of parent KMS key stack based on security/kms-key.yaml template.'
+    Type: String
+    Default: ''
   ParentS3VirusScanStack:
     Description: 'Optional stack name of parent S3 VirusScan stack based on https://github.com/widdix/aws-s3-virusscan template.'
     Type: String
@@ -59,12 +63,8 @@ Parameters:
     Type: Number
     Default: 0
     MinValue: 0
-  Encryption:
-    Description: 'Enable server side encryption using KMS (customer managed) CMK (does not work with access := [CloudFrontRead, ElbAccessLogWrite, ConfigWrite, CloudTrailWrite]).'
-    Type: String
-    Default: false
-    AllowedValues: [true, false]
 Conditions:
+  HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasS3VirusScan: !Not [!Equals [!Ref ParentS3VirusScanStack, '']]
   HasPrivateAccess: !Equals [!Ref Access, Private]
   HasPublicReadAccess: !Equals [!Ref Access, PublicRead]
@@ -77,54 +77,8 @@ Conditions:
   HadVersioning: !Equals [!Ref Versioning, 'false-but-was-true']
   HasNoncurrentVersionExpirationInDays: !Not [!Equals [!Ref NoncurrentVersionExpirationInDays, 0]]
   HasExpirationInDays: !Not [!Equals [!Ref ExpirationInDays, 0]]
-  HasEncryption: !Equals [!Ref Encryption, true]
-  HasPrivateAccessAndEncryption: !And [!Condition HasPrivateAccess, !Condition HasEncryption]
+  HasPrivateAccessAndKmsKey: !And [!Condition HasPrivateAccess, !Condition HasKmsKey]
 Resources:
-  Key:
-    Condition: HasEncryption
-    DeletionPolicy: Retain
-    Type: 'AWS::KMS::Key'
-    Properties:
-      KeyPolicy:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
-          Action: 'kms:*'
-          Resource: '*'
-        - Effect: Allow
-          Principal:
-            AWS: '*'
-          Action:
-          - 'kms:Encrypt'
-          - 'kms:Decrypt'
-          - 'kms:ReEncrypt*'
-          - 'kms:GenerateDataKey*'
-          - 'kms:DescribeKey'
-          Resource: '*'
-          Condition:
-            StringEquals:
-              'kms:CallerAccount': !Ref 'AWS::AccountId'
-              'kms:ViaService': !Sub 's3.${AWS::Region}.amazonaws.com'
-        - !If
-          - HasPublicReadAccess
-          - Effect: Allow
-            Principal:
-              AWS: '*'
-            Action:
-            - 'kms:Decrypt'
-            Resource: '*'
-            Condition:
-              StringEquals:
-                'kms:ViaService': !Sub 's3.${AWS::Region}.amazonaws.com'
-          - !Ref 'AWS::NoValue'
-  KeyAlias:
-    Condition: HasEncryption
-    Type: 'AWS::KMS::Alias'
-    Properties:
-      AliasName: !Sub 'alias/${AWS::StackName}'
-      TargetKeyId: !Ref Key
   Bucket:
     Type: 'AWS::S3::Bucket'
     Properties:
@@ -145,9 +99,9 @@ Resources:
           Queue: {'Fn::ImportValue': !Sub '${ParentS3VirusScanStack}-ScanQueueArn'}
       - !Ref 'AWS::NoValue'
       VersioningConfiguration: !If [HasVersioning, {Status: Enabled}, !If [HadVersioning, {Status: Suspended}, !Ref 'AWS::NoValue']]
-      BucketEncryption: !If [HasEncryption, {ServerSideEncryptionConfiguration: [{ServerSideEncryptionByDefault: {KMSMasterKeyID: !Ref Key, SSEAlgorithm: 'aws:kms'}}]}, !Ref 'AWS::NoValue']
+      BucketEncryption: !If [HasKmsKey, {ServerSideEncryptionConfiguration: [{ServerSideEncryptionByDefault: {KMSMasterKeyID: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}, SSEAlgorithm: 'aws:kms'}}]}, !Ref 'AWS::NoValue']
   BucketPolicyPrivate:
-    Condition: HasPrivateAccessAndEncryption
+    Condition: HasPrivateAccessAndKmsKey
     Type: 'AWS::S3::BucketPolicy'
     Properties:
       Bucket: !Ref Bucket
@@ -160,7 +114,7 @@ Resources:
           Condition:
             StringNotEquals:
               's3:x-amz-server-side-encryption': ''
-              's3:x-amz-server-side-encryption-aws-kms-key-id': !GetAtt 'Key.Arn'
+              's3:x-amz-server-side-encryption-aws-kms-key-id': {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}
   BucketPolicyPublic:
     Condition: HasPublicReadAccess
     Type: 'AWS::S3::BucketPolicy'
