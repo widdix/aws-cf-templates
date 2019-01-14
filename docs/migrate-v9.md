@@ -4,25 +4,25 @@
 
 # Migrate from v8 to v9
 
-> WARNING: Follow the guidlines to avoid data loss!
+> WARNING: Follow this guideline to avoid data loss!
 
 ## state/s3
 
-> WARNING: Ensure that your current v8 version is >= 8.1.1. If you run on version 8.0.0-8.1.0 update to the latest v8 before! Otherwise you will lose data!
+> WARNING: Ensure that your current v8 version is >= 8.1.1. If you run on version 8.0.0-8.1.0 update to the latest v8 before! Otherwise, you will lose data!
 
-> WARNING: Test the migration in a non production setup (don't forget to validate your data) before you update production!
+> WARNING: Test the migration in a non-production setup (don't forget to validate your data) before you update production!
 
 1. Update all existing `security/kms-key-legacy` stacks to v9.
 2. For each `state/s3` stack with `Encryption` parameter set to `true`:
     1. Fetch the KMS key id from the existing stack (open the *Resources* tab of the stack. In the *Logical ID* column search for `Key`. In the same row, the column *Physical ID* shows the KMS key id)
     2. Create an additional stack in the same region based on the `security/kms-key-legacy.yaml` template (ensure you use v9!). Use the existing KMS key id as the `KeyId` parameter.
-    3. Update the existing `state/s3` stack to v9 and set the new `ParentKmsKeyStack` parameter to the stack name of the stack you created in the step 2.2.
+    3. Update the existing `state/s3` stack to v9 and set the new `ParentKmsKeyStack` parameter to the stack name of the stack you created in step 2.2.
 
 ## state/rds-mysql, state/rds-postgres
 
-> WARNING: Ensure that your current v8 version is >= 8.1.1. If you run on version 8.0.0-8.1.0 update to the latest v8 before! Otherwise you will lose data!
+> WARNING: Ensure that your current v8 version is >= 8.1.1. If you run on version 8.0.0-8.1.0 update to the latest v8 before! Otherwise, you will lose data!
 
-> WARNING: Test the migration in a non production setup (don't forget to validate your data) before you update production!
+> WARNING: Test the migration in a non-production setup (don't forget to validate your data) before you update production!
 
 1. Update all existing `security/kms-key-legacy` stacks to v9.
 2.For each `state/rds-mysql` or `state/rds-postgres` stack with `Encryption` parameter set to `true`:
@@ -36,9 +36,9 @@
 
 ## state/rds-aurora
 
-> WARNING: Ensure that your current v8 version is >= 8.1.1. If you run on version 8.0.0-8.1.0 update to the latest v8 before! Otherwise you will lose data!
+> WARNING: Ensure that your current v8 version is >= 8.1.1. If you run on version 8.0.0-8.1.0 update to the latest v8 before! Otherwise, you will lose data!
 
-> WARNING: Test the migration in a non production setup (don't forget to validate your data) before you update production!
+> WARNING: Test the migration in a non-production setup (don't forget to validate your data) before you update production!
 
 1. Update all existing `security/kms-key-legacy` stacks to v9.
 2.For each `state/rds-aurora` stack with `Encryption` parameter set to `true`:
@@ -52,9 +52,9 @@
 
 # state/elasticsearch
 
-> WARNING: Ensure that your current v8 version is >= 8.1.1. If you run on version 8.0.0-8.1.0 update to the latest v8 before! Otherwise you will lose data!
+> WARNING: Ensure that your current v8 version is >= 8.1.1. If you run on version 8.0.0-8.1.0 update to the latest v8 before! Otherwise, you will lose data!
 
-> WARNING: Test the migration in a non production setup (don't forget to validate your data) before you update production!
+> WARNING: Test the migration in a non-production setup (don't forget to validate your data) before you update production!
 
 1. Update all existing `security/kms-key-legacy` stacks to v9.
 2. For each `state/elasticsearch` stack with `Encryption` parameter set to `true`:
