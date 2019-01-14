@@ -38,30 +38,6 @@ I add links to AWS Management Console that are relevant to an incident. Contextu
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
-# Backup DynamoDB (Data Pipeline & EMR)
-This template describes a Data Pipeline to backup a single DynamoDB table. The Data Pipeline will spin up a EMR cluster to do the backup.
-
-> Deprecated in v7, will be removed in v9, use `operations/backup-dynamodb-native.yaml` instead!
-
-## Installation Guide
-1. This templates depends on one of our [`vpc-*azs.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
-1. This templates depends on our `alert.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/alert.yaml&stackName=alert)
-1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/backup-dynamodb.yaml&stackName=backup-dynamodb&param_ParentVPCStack=vpc&param_ParentAlertStack=alert)
-1. Click **Next** to proceed with the next step of the wizard.
-1. Specify a name and all parameters for the stack.
-1. Click **Next** to proceed with the next step of the wizard.
-1. Click **Next** to skip the **Options** step of the wizard.
-1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
-1. Click **Create** to start the creation of the stack.
-1. Wait until the stack reaches the state **CREATE_COMPLETE**
-
-## Dependencies
-* `vpc/vpc-*azs.yaml` (**required**)
-* `operations/alert.yaml` (**required**)
-
-## Limitations
-* The EMR cluster will only run in a single subnet (`SubnetAPublic`)
-
 # Backup DynamoDB (native)
 This template describes a Lambda function to backup a single DynamoDB table daily.
 
