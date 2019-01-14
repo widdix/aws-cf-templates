@@ -46,7 +46,7 @@ To improve the default CloudFront behavior, we developed a Lambda@Edge solution 
 ## Installation Guide
 
 1. Switch to the us-east-1 (N. Virginia) region.
-1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=lambdaedge-index-document&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/static-website/lambdaedge-index-document.yaml)
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/static-website/lambdaedge-index-document.yaml&stackName=lambdaedge-index-document)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -56,7 +56,8 @@ To improve the default CloudFront behavior, we developed a Lambda@Edge solution 
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 1. Copy the `LambdaVersionArn` output of the stack to your clipboard.
 1. Switch to the region where you want to S3 bucket with static files to be created in.
-1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=static-website&templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/static-website/static-website.yaml)
+1. This templates depends on one of our [`zone-*.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/zone-public.yaml&stackName=zone)
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/static-website/static-website.yaml&stackName=static-website&param_ParentZoneStack=zone)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
     a. Set the `LambdaEdgeSubdirectoriesVersionArn` to the value of the `LambdaVersionArn` output. 
@@ -68,4 +69,4 @@ To improve the default CloudFront behavior, we developed a Lambda@Edge solution 
 
 ## Dependencies
 * `static-website/lambdaedge-index-document.yaml` (**required**)
-* `vpc/zone-*.yaml`
+* `vpc/zone-*.yaml` (**required**)
