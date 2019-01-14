@@ -8,6 +8,8 @@
 
 ## state/elasticsearch, state/rds-aurora, state/rds-mysql, state/rds-postgres, state/s3
 
+> WARNING: Ensure that your current v8 version is >= 8.1.1. If you run on version 8.0.0-8.1.0 update to the latest v8 before! Otherwise you will lose data!
+
 1. If `Encryption` parameter is `true`, you have to follow this steps to avoid data loss:
     1. For each `state/elasticsearch`, `state/rds-aurora`, `state/rds-mysql`, `state/rds-postgres`, `state/s3` stack:
         1. Fetch the KMS key id from the existing stack
