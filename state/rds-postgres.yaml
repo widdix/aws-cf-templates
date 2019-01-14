@@ -22,6 +22,7 @@ Metadata:
       Parameters:
       - ParentVPCStack
       - ParentClientStack
+      - ParentKmsKeyStack
       - ParentZoneStack
       - ParentSSHBastionStack
       - ParentAlertStack
@@ -37,7 +38,6 @@ Metadata:
       - DBMasterUserPassword
       - DBMultiAZ
       - SubDomainNameWithDot
-      - Encryption
       - PreferredBackupWindow
       - PreferredMaintenanceWindow
 Parameters:
@@ -47,6 +47,10 @@ Parameters:
   ParentClientStack:
     Description: 'Stack name of parent client stack based on state/client-sg.yaml template.'
     Type: String
+  ParentKmsKeyStack:
+    Description: 'Optional Stack name of parent KMS key stack based on security/kms-key.yaml template (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
+    Type: String
+    Default: ''
   ParentZoneStack:
     Description: 'Optional stack name of parent zone stack based on vpc/vpc-zone-*.yaml template.'
     Type: String
@@ -101,11 +105,6 @@ Parameters:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
     Default: 'postgres.'
-  Encryption:
-    Description: 'Enable server side encryption using KMS (customer managed) CMK (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
-    Type: String
-    Default: false
-    AllowedValues: [true, false]
   PreferredBackupWindow:
     Description: 'The daily time range in UTC during which you want to create automated backups.'
     Type: String
@@ -115,12 +114,12 @@ Parameters:
     Type: String
     Default: 'sat:07:00-sat:07:30'
 Conditions:
+  HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, '']]
-  HasEncryption: !Equals [!Ref Encryption, true]
-  HasEncryptionAndNotDBSnapshotIdentifier: !And [!Condition HasEncryption, !Not [!Condition HasDBSnapshotIdentifier]]
+  HasKmsKeyAndNotDBSnapshotIdentifier: !And [!Condition HasKmsKey, !Not [!Condition HasDBSnapshotIdentifier]]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -154,41 +153,6 @@ Resources:
       FromPort: 5432
       ToPort: 5432
       SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
-  Key:
-    Condition: HasEncryptionAndNotDBSnapshotIdentifier
-    DeletionPolicy: Retain
-    Type: 'AWS::KMS::Key'
-    Properties:
-      KeyPolicy:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
-          Action: 'kms:*'
-          Resource: '*'
-        - Effect: Allow
-          Principal:
-            AWS: '*'
-          Action:
-          - 'kms:Encrypt'
-          - 'kms:Decrypt'
-          - 'kms:ReEncrypt*'
-          - 'kms:GenerateDataKey*'
-          - 'kms:CreateGrant'
-          - 'kms:ListGrants'
-          - 'kms:DescribeKey'
-          Resource: '*'
-          Condition:
-            StringEquals:
-              'kms:CallerAccount': !Ref 'AWS::AccountId'
-              'kms:ViaService': !Sub 'rds.${AWS::Region}.amazonaws.com'
-  KeyAlias:
-    Condition: HasEncryptionAndNotDBSnapshotIdentifier
-    Type: 'AWS::KMS::Alias'
-    Properties:
-      AliasName: !Sub 'alias/${AWS::StackName}'
-      TargetKeyId: !Ref Key
   DBSubnetGroup:
     Type: 'AWS::RDS::DBSubnetGroup'
     Properties:
@@ -209,14 +173,14 @@ Resources:
       DBSubnetGroupName: !Ref DBSubnetGroup
       Engine: postgres
       EngineVersion: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', '9.6.5']
-      KmsKeyId: !If [HasEncryptionAndNotDBSnapshotIdentifier, !Ref Key, !Ref 'AWS::NoValue']
+      KmsKeyId: !If [HasKmsKeyAndNotDBSnapshotIdentifier, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}, !Ref 'AWS::NoValue']
       MasterUsername: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUsername]
       MasterUserPassword: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUserPassword]
       MultiAZ: !Ref DBMultiAZ
       PreferredBackupWindow: !Ref PreferredBackupWindow
       PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
       StorageType: gp2
-      StorageEncrypted: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref Encryption]
+      StorageEncrypted: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !If [HasKmsKey, true, false]]
       VPCSecurityGroups:
       - !Ref DatabaseSecurityGroup
   DatabaseBurstBalanceTooLowAlarm:
