@@ -37,7 +37,7 @@ Parameters:
     Type: String
     Default: ''
   HttpsEndpoint:
-    Description: 'Optional HTTPS endpoint that will receive alerts via POST requests (can be a marbot.io endpoint).'
+    Description: 'Optional HTTPS endpoint that will receive alerts via POST requests (e.g., a marbot.io endpoint for easy-going incident management).'
     Type: String
     Default: ''
   FallbackEmail:
