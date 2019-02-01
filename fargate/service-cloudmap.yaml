@@ -454,7 +454,6 @@ Resources:
             'awslogs-group': !Ref LogGroup
             'awslogs-stream-prefix': app
         Environment:
-        Environment:
         - !If [HasAppEnvironment1Key, {Name: !Ref AppEnvironment1Key, Value: !Ref AppEnvironment1Value}, !Ref 'AWS::NoValue']
         - !If [HasAppEnvironment2Key, {Name: !Ref AppEnvironment2Key, Value: !Ref AppEnvironment2Value}, !Ref 'AWS::NoValue']
         - !If [HasAppEnvironment3Key, {Name: !Ref AppEnvironment3Key, Value: !Ref AppEnvironment3Value}, !Ref 'AWS::NoValue']
