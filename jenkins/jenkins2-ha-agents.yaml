@@ -507,6 +507,7 @@ Resources:
             Action:
             - 'sqs:DeleteMessage'
             - 'sqs:ReceiveMessage'
+            - 'sqs:ChangeMessageVisibility'
             Resource: !GetAtt 'AgentTerminatingLifecycleHookQueue.Arn'
       - PolicyName: logs
         PolicyDocument:
@@ -959,14 +960,15 @@ Resources:
                     return false
                   end
                 end
-                def awaitAgentIdle(agent)
+                def awaitAgentIdle(poller, message, agent)
                   endTime = Time.now.to_i + $conf['maxWaitInSeconds']
                   while Time.now.to_i < endTime do
                     if isAgentIdle agent
                       $log.info "agent #{agent} is idle"
                       return true
                     end
-                    sleep 5 # seconds
+                    poller.change_message_visibility_timeout(message, 30)
+                    sleep 15 # seconds
                   end
                   $log.error "agent #{agent} is not idle, but wait time elapsed"
                   return false
@@ -1003,7 +1005,7 @@ Resources:
                         if body['LifecycleTransition'] == 'autoscaling:EC2_INSTANCE_TERMINATING'
                           $log.info "lifecycle transition for agent #{body['EC2InstanceId']}"
                           takeAgentTemporarilyOffline body['EC2InstanceId']
-                          awaitAgentIdle body['EC2InstanceId']
+                          awaitAgentIdle poller, msg, body['EC2InstanceId']
                           deleteAgent body['EC2InstanceId']
                           completeLifecycleAction body['LifecycleActionToken'], body['LifecycleHookName'], body['AutoScalingGroupName']
                         else
@@ -1981,7 +1983,7 @@ Resources:
     Type: 'AWS::SQS::Queue'
     Properties:
       QueueName: !Sub '${AWS::StackName}-terminating-lifecycle-hook'
-      VisibilityTimeout: !Ref AgentMaxBuildWaitTimeInSeconds
+      VisibilityTimeout: 30
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt 'AgentTerminatingLifecycleHookDeadLetterQueue.Arn'
         maxReceiveCount: 5
