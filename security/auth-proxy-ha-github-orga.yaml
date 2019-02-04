@@ -642,7 +642,7 @@ Resources:
                 - 'b_configure_sshd_commanduser'
         extras:
           commands:
-            a_enable_nginx:
+            'a_enable_nginx':
               command: 'amazon-linux-extras enable nginx1.12'
               test: "! grep -Fxq '[amzn2extra-nginx1.12]' /etc/yum.repos.d/amzn2-extras.repo"
         config:
