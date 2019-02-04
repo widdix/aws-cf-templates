@@ -337,6 +337,7 @@ Resources:
             Action:
             - 'sqs:DeleteMessage'
             - 'sqs:ReceiveMessage'
+            - 'sqs:ChangeMessageVisibility'
             Resource: !GetAtt 'AutoScalingGroupLifecycleHookQueue.Arn'
   IAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
@@ -882,14 +883,15 @@ Resources:
                   })
                   return resp.task_arns.empty?
                 end
-                def awaitContainerInstanceIdle(containerInstanceId)
+                def awaitContainerInstanceIdle(poller, message, containerInstanceId)
                   endTime = Time.now.to_i + $conf['maxWaitInSeconds']
                   while Time.now.to_i < endTime do
                     if isContainerInstanceIdle containerInstanceId
                       $log.info "container instance #{containerInstanceId} is idle"
                       return true
                     end
-                    sleep 5 # seconds
+                    poller.change_message_visibility_timeout(message, 30)
+                    sleep 15 # seconds
                   end
                   $log.error "container instance #{containerInstanceId} is not idle, but wait time elapsed"
                   return false
@@ -939,7 +941,7 @@ Resources:
                           else
                             $log.info "lifecycle transition for container instance #{containerInstanceId}"
                             drainContainerInstanceId containerInstanceId
-                            awaitContainerInstanceIdle containerInstanceId
+                            awaitContainerInstanceIdle poller, msg, containerInstanceId
                             deregisterContainerInstance containerInstanceId
                           end
                           completeLifecycleAction body['LifecycleActionToken'], body['LifecycleHookName'], body['AutoScalingGroupName']
@@ -1054,7 +1056,7 @@ Resources:
     Type: 'AWS::SQS::Queue'
     Properties:
       QueueName: !Sub '${AWS::StackName}-lifecycle-hook'
-      VisibilityTimeout: !Ref DrainingTimeoutInSeconds
+      VisibilityTimeout: 30
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt 'AutoScalingGroupLifecycleHookDeadLetterQueue.Arn'
         maxReceiveCount: 5
