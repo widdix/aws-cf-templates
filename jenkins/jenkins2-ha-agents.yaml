@@ -169,7 +169,7 @@ Parameters:
     ConstraintDescription: 'Must be >= 0'
     MinValue: 0
   AgentDesiredCapacity:
-    Description: 'The desired start size of the agents Auto Scaling group.'
+    Description: 'Deprecated in v9, will be removed in v11, use `AgentMinSize` instead!'
     Type: Number
     Default: 0
     ConstraintDescription: 'Must be >= 0'
@@ -225,7 +225,7 @@ Mappings:
     'us-west-2':
       AMI: 'ami-032509850cf9ee54e'
 Conditions:
-  HasZeroAgents: !Equals [!Ref AgentDesiredCapacity, '0']
+  HasZeroAgents: !Equals [!Ref AgentMinSize, '0']
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
   HasSystemsManagerAccess: !Equals [!Ref SystemsManagerAccess, 'true']
@@ -507,6 +507,7 @@ Resources:
             Action:
             - 'sqs:DeleteMessage'
             - 'sqs:ReceiveMessage'
+            - 'sqs:ChangeMessageVisibility'
             Resource: !GetAtt 'AgentTerminatingLifecycleHookQueue.Arn'
       - PolicyName: logs
         PolicyDocument:
@@ -593,7 +594,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, install, setup, extras, custom, run], [awslogs, mount, install, setup, extras, custom, run]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, extras, install, setup, custom, run], [awslogs, mount, extras, install, setup, custom, run]]
         awslogs:
           packages:
             yum:
@@ -800,6 +801,14 @@ Resources:
                 commands:
                 - 'a_configure_sshd_command'
                 - 'b_configure_sshd_commanduser'
+        extras:
+          commands:
+            'a_enable_docker':
+              command: 'amazon-linux-extras enable docker=18.06.1'
+              test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
+            'b_enable_corretto8':
+              command: 'amazon-linux-extras enable corretto8'
+              test: "! grep -Fxq '[amzn2extra-corretto8]' /etc/yum.repos.d/amzn2-extras.repo"
         mount:
           packages:
             yum:
@@ -827,7 +836,7 @@ Resources:
             rpm:
               jenkins: 'https://pkg.jenkins.io/redhat-stable/jenkins-2.150.2-1.1.noarch.rpm'
             yum:
-              'java-1.8.0-openjdk': []
+              'java-1.8.0-amazon-corretto': []
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -959,14 +968,15 @@ Resources:
                     return false
                   end
                 end
-                def awaitAgentIdle(agent)
+                def awaitAgentIdle(poller, message, agent)
                   endTime = Time.now.to_i + $conf['maxWaitInSeconds']
                   while Time.now.to_i < endTime do
                     if isAgentIdle agent
                       $log.info "agent #{agent} is idle"
                       return true
                     end
-                    sleep 5 # seconds
+                    poller.change_message_visibility_timeout(message, 30)
+                    sleep 15 # seconds
                   end
                   $log.error "agent #{agent} is not idle, but wait time elapsed"
                   return false
@@ -1003,7 +1013,7 @@ Resources:
                         if body['LifecycleTransition'] == 'autoscaling:EC2_INSTANCE_TERMINATING'
                           $log.info "lifecycle transition for agent #{body['EC2InstanceId']}"
                           takeAgentTemporarilyOffline body['EC2InstanceId']
-                          awaitAgentIdle body['EC2InstanceId']
+                          awaitAgentIdle poller, msg, body['EC2InstanceId']
                           deleteAgent body['EC2InstanceId']
                           completeLifecycleAction body['LifecycleActionToken'], body['LifecycleHookName'], body['AutoScalingGroupName']
                         else
@@ -1172,11 +1182,6 @@ Resources:
             'z_create_setup_done_file':
               command: 'echo "Setup done. Don not delete this file." > /var/lib/jenkins/setup_done.txt'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-        extras:
-          commands:
-            a_enable_docker:
-              command: 'amazon-linux-extras enable docker=18.06.1'
-              test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
         custom:
           packages:
             yum:
@@ -1228,7 +1233,6 @@ Resources:
       LaunchConfigurationName: !Ref MasterLC
       MinSize: '1'
       MaxSize: '1'
-      DesiredCapacity: '1'
       HealthCheckGracePeriod: 900
       HealthCheckType: ELB
       NotificationConfigurations: !If
@@ -1453,7 +1457,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, install, setup, extras, custom, run], [awslogs, install, setup, extras, custom, run]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, extras, install, setup, custom, run], [awslogs, extras, install, setup, custom, run]]
         awslogs:
           packages:
             yum:
@@ -1647,10 +1651,18 @@ Resources:
                 commands:
                 - 'a_configure_sshd_command'
                 - 'b_configure_sshd_commanduser'
+        extras:
+          commands:
+            'a_enable_docker':
+              command: 'amazon-linux-extras enable docker=18.06.1'
+              test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
+            'b_enable_corretto8':
+              command: 'amazon-linux-extras enable corretto8'
+              test: "! grep -Fxq '[amzn2extra-corretto8]' /etc/yum.repos.d/amzn2-extras.repo"
         install:
           packages:
             yum:
-              'java-1.8.0-openjdk': []
+              'java-1.8.0-amazon-corretto': []
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -1866,11 +1878,6 @@ Resources:
               command: '/root/create-agent.sh'
               cwd: '/var/lib/jenkins'
               test: 'if /root/check-agent.sh; then exit 1; else exit 0; fi'
-        extras:
-          commands:
-            a_enable_docker:
-              command: 'amazon-linux-extras enable docker=18.06.1'
-              test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
         custom:
           packages:
             yum:
@@ -1927,7 +1934,6 @@ Resources:
       LaunchConfigurationName: !Ref AgentLC
       MinSize: !Ref AgentMinSize
       MaxSize: !Ref AgentMaxSize
-      DesiredCapacity: !Ref AgentDesiredCapacity
       HealthCheckGracePeriod: 600
       HealthCheckType: ELB
       TargetGroupARNs:
@@ -1981,7 +1987,7 @@ Resources:
     Type: 'AWS::SQS::Queue'
     Properties:
       QueueName: !Sub '${AWS::StackName}-terminating-lifecycle-hook'
-      VisibilityTimeout: !Ref AgentMaxBuildWaitTimeInSeconds
+      VisibilityTimeout: 30
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt 'AgentTerminatingLifecycleHookDeadLetterQueue.Arn'
         maxReceiveCount: 5

@@ -447,7 +447,6 @@ Resources:
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
-      DesiredCapacity: '1'
       LaunchConfigurationName: !Ref LaunchConfiguration
       MaxSize: '1'
       MinSize: '1'
