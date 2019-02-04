@@ -13,6 +13,6 @@ install:
 - 'pip install cfn-lint==0.11.1'
 script:
 - 'yamllint .'
-- 'cfn-lint -i E1019 E2520 E3002 W6001 -t ''**/*.yaml''' # TODO get rid of check ignores
+- 'cfn-lint -i E1019 E2520 E3002 W6001 W2001 -t ''**/*.yaml''' # TODO get rid of check ignores
 - 'find . -type f -name ''*.yaml'' | while read file; do set -ex && grep -q "LICENSE-2.0" "$file"; done;'
 - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then find . -type f -name ''*.yaml'' | while read file; do set -ex && aws s3 cp "$file" "s3://travis-aws-cf-templates/$TRAVIS_COMMIT/$file" && aws cloudformation validate-template --template-url "https://s3.amazonaws.com/travis-aws-cf-templates/$TRAVIS_COMMIT/$file" > /dev/null; done; fi'

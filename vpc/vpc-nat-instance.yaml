@@ -459,7 +459,6 @@ Resources:
   NATAutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
-      DesiredCapacity: '1'
       LaunchConfigurationName: !Ref NATLaunchConfiguration
       MaxSize: '1'
       MinSize: '1'

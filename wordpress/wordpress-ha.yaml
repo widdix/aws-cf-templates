@@ -915,7 +915,6 @@ Resources:
       LaunchConfigurationName: !Ref LaunchConfiguration
       MinSize: '2'
       MaxSize: '4'
-      DesiredCapacity: '2'
       Cooldown: '60'
       HealthCheckGracePeriod: 300
       HealthCheckType: ELB

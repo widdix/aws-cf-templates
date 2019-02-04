@@ -169,7 +169,7 @@ Parameters:
     ConstraintDescription: 'Must be >= 0'
     MinValue: 0
   AgentDesiredCapacity:
-    Description: 'The desired start size of the agents Auto Scaling group.'
+    Description: 'Deprecated in v9, will be removed in v11, use `AgentMinSize` instead!'
     Type: Number
     Default: 0
     ConstraintDescription: 'Must be >= 0'
@@ -225,7 +225,7 @@ Mappings:
     'us-west-2':
       AMI: 'ami-032509850cf9ee54e'
 Conditions:
-  HasZeroAgents: !Equals [!Ref AgentDesiredCapacity, '0']
+  HasZeroAgents: !Equals [!Ref AgentMinSize, '0']
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
   HasSystemsManagerAccess: !Equals [!Ref SystemsManagerAccess, 'true']
@@ -1230,7 +1230,6 @@ Resources:
       LaunchConfigurationName: !Ref MasterLC
       MinSize: '1'
       MaxSize: '1'
-      DesiredCapacity: '1'
       HealthCheckGracePeriod: 900
       HealthCheckType: ELB
       NotificationConfigurations: !If
@@ -1929,7 +1928,6 @@ Resources:
       LaunchConfigurationName: !Ref AgentLC
       MinSize: !Ref AgentMinSize
       MaxSize: !Ref AgentMaxSize
-      DesiredCapacity: !Ref AgentDesiredCapacity
       HealthCheckGracePeriod: 600
       HealthCheckType: ELB
       TargetGroupARNs:
