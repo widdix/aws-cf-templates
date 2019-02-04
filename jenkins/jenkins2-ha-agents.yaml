@@ -594,7 +594,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, install, setup, extras, custom, run], [awslogs, mount, install, setup, extras, custom, run]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, extras, install, setup, custom, run], [awslogs, mount, extras, install, setup, custom, run]]
         awslogs:
           packages:
             yum:
@@ -801,6 +801,14 @@ Resources:
                 commands:
                 - 'a_configure_sshd_command'
                 - 'b_configure_sshd_commanduser'
+        extras:
+          commands:
+            'a_enable_docker':
+              command: 'amazon-linux-extras enable docker=18.06.1'
+              test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
+            'b_enable_corretto8':
+              command: 'amazon-linux-extras enable corretto8'
+              test: "! grep -Fxq '[amzn2extra-corretto8]' /etc/yum.repos.d/amzn2-extras.repo"
         mount:
           packages:
             yum:
@@ -828,7 +836,7 @@ Resources:
             rpm:
               jenkins: 'https://pkg.jenkins.io/redhat-stable/jenkins-2.150.2-1.1.noarch.rpm'
             yum:
-              'java-1.8.0-openjdk': []
+              'java-1.8.0-amazon-corretto': []
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -1174,11 +1182,6 @@ Resources:
             'z_create_setup_done_file':
               command: 'echo "Setup done. Don not delete this file." > /var/lib/jenkins/setup_done.txt'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-        extras:
-          commands:
-            a_enable_docker:
-              command: 'amazon-linux-extras enable docker=18.06.1'
-              test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
         custom:
           packages:
             yum:
@@ -1454,7 +1457,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, install, setup, extras, custom, run], [awslogs, install, setup, extras, custom, run]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, extras, install, setup, custom, run], [awslogs, extras, install, setup, custom, run]]
         awslogs:
           packages:
             yum:
@@ -1648,10 +1651,18 @@ Resources:
                 commands:
                 - 'a_configure_sshd_command'
                 - 'b_configure_sshd_commanduser'
+        extras:
+          commands:
+            'a_enable_docker':
+              command: 'amazon-linux-extras enable docker=18.06.1'
+              test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
+            'b_enable_corretto8':
+              command: 'amazon-linux-extras enable corretto8'
+              test: "! grep -Fxq '[amzn2extra-corretto8]' /etc/yum.repos.d/amzn2-extras.repo"
         install:
           packages:
             yum:
-              'java-1.8.0-openjdk': []
+              'java-1.8.0-amazon-corretto': []
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -1867,11 +1878,6 @@ Resources:
               command: '/root/create-agent.sh'
               cwd: '/var/lib/jenkins'
               test: 'if /root/check-agent.sh; then exit 1; else exit 0; fi'
-        extras:
-          commands:
-            a_enable_docker:
-              command: 'amazon-linux-extras enable docker=18.06.1'
-              test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
         custom:
           packages:
             yum:
