@@ -873,7 +873,6 @@ Resources:
       LaunchConfigurationName: !Ref MasterLC
       MinSize: '1'
       MaxSize: '1'
-      DesiredCapacity: '1'
       HealthCheckGracePeriod: 900
       HealthCheckType: ELB
       NotificationConfigurations: !If
