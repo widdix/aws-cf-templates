@@ -154,7 +154,7 @@ Parameters:
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
   DesiredCapacity:
-    Description: 'The desired start size of the Auto Scaling group.'
+    Description: 'Deprecated in v9, will be removed in v11, use `MinSize` instead!'
     Type: Number
     Default: 2
     ConstraintDescription: 'Must be >= 1'
@@ -1014,7 +1014,6 @@ Resources:
       LaunchConfigurationName: !Ref LaunchConfiguration
       MinSize: !Ref MinSize
       MaxSize: !Ref MaxSize
-      DesiredCapacity: !Ref DesiredCapacity
       HealthCheckGracePeriod: 300
       HealthCheckType: ELB
       TargetGroupARNs:
