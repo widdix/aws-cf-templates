@@ -96,8 +96,9 @@ Parameters:
     - 'true'
     - 'false'
   AuthToken:
-    Description: 'Password (16 to 128 characters) used to authenticate against Redis. Requried when TransitEncryption = true. Keep empty to disable password-protection.'
+    Description: 'Password (16 to 128 characters) used to authenticate against Redis. Requried when TransitEncryption = true. Leave blank to disable password-protection.'
     Type: 'String'
+    Default: ''
     MaxLength: 128
   SubDomainName:
     Description: 'Name that is used to create the DNS entry §{SubDomainName}.§{HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
