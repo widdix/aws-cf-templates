@@ -1,5 +1,5 @@
 ---
-# Copyright 2018 widdix GmbH
+# Copyright 2019 widdix GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 # limitations under the License.
 # FIXME add to cfn-modules
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Fargate: service that runs on a Fargate cluster based on fargate/cluster.yaml and uses the cluster ALB, a cloudonaut.io template'
+Description: 'Fargate: service that runs on a Fargate cluster based on fargate/cluster.yaml with service discovery via Cloud Map, a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -24,18 +24,12 @@ Metadata:
       - ParentVPCStack
       - ParentClusterStack
       - ParentAlertStack
-      - ParentZoneStack
+      - ParentCloudMapStack
+      - ParentClientStack
       - ParentClientStack1
       - ParentClientStack2
       - ParentClientStack3
-    - Label:
-        default: 'Load Balancer Parameters'
-      Parameters:
-      - LoadBalancerPriority
-      - LoadBalancerHostPattern
-      - LoadBalancerPathPattern
-      - LoadBalancerHttps
-      - LoadBalancerDeregistrationDelay
+      - ParentSSHBastionStack
     - Label:
         default: 'Task Parameters'
       Parameters:
@@ -70,7 +64,7 @@ Metadata:
     - Label:
         default: 'Service Parameters'
       Parameters:
-      - SubDomainNameWithDot
+      - Name
       - Cpu
       - Memory
       - SubnetsReach
@@ -78,7 +72,6 @@ Metadata:
       - DesiredCount
       - MaxCapacity
       - MinCapacity
-      - HealthCheckGracePeriod
       - LogsRetentionInDays
 Parameters:
   ParentVPCStack:
@@ -91,10 +84,12 @@ Parameters:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
-  ParentZoneStack:
-    Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
+  ParentCloudMapStack:
+    Description: 'Stack name of parent Cloud Map stack based on vpc/cloudmap-private.yaml template.'
     Type: String
-    Default: ''
+  ParentClientStack:
+    Description: 'Stack name of parent client stack based on state/client-sg.yaml template.'
+    Type: String
   ParentClientStack1:
     Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the service to whatever uses the client security group.'
     Type: String
@@ -107,39 +102,10 @@ Parameters:
     Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the service to whatever uses the client security group.'
     Type: String
     Default: ''
-  LoadBalancerPriority:
-    Description: 'The priority for the rule. Elastic Load Balancing evaluates rules in priority order, from the lowest value to the highest value. If a request satisfies a rule, Elastic Load Balancing ignores all subsequent rules. A target group can have only one rule with a given priority.'
-    Type: Number
-    Default: 1
-    ConstraintDescription: 'Must be in the range [1-99999]'
-    MinValue: 1
-    MaxValue: 99999
-  LoadBalancerHostPattern:
-    Description: 'Optional host pattern. Specify LoadBalancerPathPattern and/or LoadBalancerHostPattern.'
+  ParentSSHBastionStack:
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-*-bastion.yaml template.'
     Type: String
     Default: ''
-    ConstraintDescription: 'Must not be longer than 255'
-    MaxLength: 255
-  LoadBalancerPathPattern:
-    Description: 'Optional path pattern. Specify LoadBalancerPathPattern and/or LoadBalancerHostPattern.'
-    Type: String
-    Default: '/*'
-    ConstraintDescription: 'Must not be longer than 255'
-    MaxLength: 255
-  LoadBalancerHttps:
-    Description: 'If the cluster supports HTTPS (LoadBalancerCertificateArn is set) you can enable HTTPS for the service'
-    Type: String
-    Default: false
-    AllowedValues:
-    - true
-    - false
-  LoadBalancerDeregistrationDelay:
-    Description: 'The amount time (in seconds) to wait before changing the state of a deregistering target from draining to unused.'
-    Type: Number
-    Default: 60
-    ConstraintDescription: 'Must be in the range [0-3600]'
-    MinValue: 0
-    MaxValue: 3600
   TaskPolicies:
     Description: 'Comma-delimited list of IAM managed policy ARNs to attach to the task IAM role'
     Type: String
@@ -258,10 +224,9 @@ Parameters:
     Description: 'Optional environment variable 3 value for sidecar container.'
     Type: String
     Default: ''
-  SubDomainNameWithDot:
-    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
+  Name:
+    Description: 'The name of the service used for service discovery (Cloud Map).'
     Type: String
-    Default: ''
   Cpu:
     Description: 'The minimum number of vCPUs to reserve for the container.'
     Type: String
@@ -307,12 +272,6 @@ Parameters:
     Type: String
     Default: 'true'
     AllowedValues: ['true', 'false']
-  HealthCheckGracePeriod:
-    Description: 'The period of time, in seconds, that the Amazon ECS service scheduler ignores unhealthy Elastic Load Balancing target health checks after a task has first started.'
-    Type: Number
-    Default: 60
-    MinValue: 0
-    MaxValue: 1800
 Mappings:
   CpuMap:
     '0.25':
@@ -389,16 +348,13 @@ Mappings:
     '30':
       Memory: 30720
 Conditions:
-  HasLoadBalancerHttps: !Equals [!Ref LoadBalancerHttps, 'true']
-  HasLoadBalancerPathPattern: !Not [!Equals [!Ref LoadBalancerPathPattern, '']]
-  HasLoadBalancerHostPattern: !Not [!Equals [!Ref LoadBalancerHostPattern, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
-  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSubnetsReachPublic: !Equals [!Ref SubnetsReach, Public]
   HasAutoScaling: !Equals [!Ref AutoScaling, 'true']
   HasClientSecurityGroup1: !Not [!Equals [!Ref ParentClientStack1, '']]
   HasClientSecurityGroup2: !Not [!Equals [!Ref ParentClientStack2, '']]
   HasClientSecurityGroup3: !Not [!Equals [!Ref ParentClientStack3, '']]
+  HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasTaskPolicies: !Not [!Equals [!Ref TaskPolicies, '']]
   HasAppCommand: !Not [!Equals [!Ref AppCommand, '']]
   HasAppEnvironment1Key: !Not [!Equals [!Ref AppEnvironment1Key, '']]
@@ -415,102 +371,22 @@ Conditions:
   HasSidecarEnvironment2Key: !Not [!Equals [!Ref SidecarEnvironment2Key, '']]
   HasSidecarEnvironment3Key: !Not [!Equals [!Ref SidecarEnvironment3Key, '']]
 Resources:
-  RecordSet:
-    Condition: HasZone
-    Type: 'AWS::Route53::RecordSet'
+  ServiceDiscovery:
+    Type: 'AWS::ServiceDiscovery::Service'
     Properties:
-      AliasTarget:
-        HostedZoneId: {'Fn::ImportValue': !Sub '${ParentClusterStack}-CanonicalHostedZoneID'}
-        DNSName: {'Fn::ImportValue': !Sub '${ParentClusterStack}-DNSName'}
-      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
-      Name: !Sub
-      - '${SubDomainNameWithDot}${HostedZoneName}'
-      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
-      Type: A
-  TargetGroup:
-    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
-    Properties:
-      HealthCheckIntervalSeconds: 15
-      HealthCheckPath: '/'
-      HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 10
-      HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 2
-      Matcher:
-        HttpCode: '200-299'
-      Port: 8080 # overriden when containers are attached
-      Protocol: HTTP
-      TargetType: ip
-      TargetGroupAttributes:
-      - Key: deregistration_delay.timeout_seconds
-        Value: !Ref LoadBalancerDeregistrationDelay
-      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
-  HTTPCodeTarget5XXTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: HTTPCode_Target_5XX_Count
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Dimensions:
-      - Name: LoadBalancer
-        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'}
-      - Name: TargetGroup
-        Value: !GetAtt TargetGroup.TargetGroupFullName
-  TargetConnectionErrorCountTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Application load balancer could not connect to targets'
-      Namespace: 'AWS/ApplicationELB'
-      MetricName: TargetConnectionErrorCount
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Dimensions:
-      - Name: LoadBalancer
-        Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'}
-      - Name: TargetGroup
-        Value: !GetAtt TargetGroup.TargetGroupFullName
-  LoadBalancerListenerRule:
-    Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
-    Properties:
-      Actions:
-      - Type: forward
-        TargetGroupArn: !Ref TargetGroup
-      Conditions: !If
-      - HasLoadBalancerPathPattern
-      - !If
-        - HasLoadBalancerHostPattern
-        - - Field: host-header
-            Values:
-            - !Ref LoadBalancerHostPattern
-          - Field: path-pattern
-            Values:
-            - !Sub '${LoadBalancerPathPattern}'
-        - - Field: path-pattern
-            Values:
-            - !Sub '${LoadBalancerPathPattern}'
-      - !If
-        - HasLoadBalancerHostPattern
-        - - Field: host-header
-            Values:
-            - !Ref LoadBalancerHostPattern
-        - [] # neither LoadBalancerHostPattern nor LoadBalancerPathPattern specified
-      ListenerArn: !If [HasLoadBalancerHttps, {'Fn::ImportValue': !Sub '${ParentClusterStack}-HttpsListener'}, {'Fn::ImportValue': !Sub '${ParentClusterStack}-HttpListener'}]
-      Priority: !Ref LoadBalancerPriority
+      Description: !Ref 'AWS::StackName'
+      DnsConfig:
+        DnsRecords:
+        - Type: A
+          TTL: '30'
+        - Type: SRV
+          TTL: '30'
+        NamespaceId: {'Fn::ImportValue': !Sub '${ParentCloudMapStack}-NamespaceID'}
+        RoutingPolicy: MULTIVALUE
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+      Name: !Ref Name
+      NamespaceId: {'Fn::ImportValue': !Sub '${ParentCloudMapStack}-NamespaceID'}
   TaskExecutionRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -624,12 +500,20 @@ Resources:
       GroupDescription: !Sub '${AWS::StackName}-service'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
-      - SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerSecurityGroup'}
+      - IpProtocol: tcp
         FromPort: !If [HasAmbassadorImage, !Ref AmbassadorPort, !Ref AppPort]
         ToPort: !If [HasAmbassadorImage, !Ref AmbassadorPort, !Ref AppPort]
-        IpProtocol: tcp
+        SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+  ServiceSecurityGroupInSSHBastion:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasSSHBastionSecurityGroup
+    Properties:
+      GroupId: !Ref ServiceSecurityGroup
+      IpProtocol: tcp
+      FromPort: !If [HasAmbassadorImage, !Ref AmbassadorPort, !Ref AppPort]
+      ToPort: !If [HasAmbassadorImage, !Ref AmbassadorPort, !Ref AppPort]
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
   Service:
-    DependsOn: LoadBalancerListenerRule
     Type: 'AWS::ECS::Service'
     Properties:
       Cluster: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
@@ -637,12 +521,11 @@ Resources:
         MaximumPercent: 200
         MinimumHealthyPercent: 100
       DesiredCount: !Ref DesiredCount
-      HealthCheckGracePeriodSeconds: !Ref HealthCheckGracePeriod
       LaunchType: FARGATE
-      LoadBalancers:
+      ServiceRegistries:
       - ContainerName: !If [HasAmbassadorImage, ambassador, app]
         ContainerPort: !If [HasAmbassadorImage, !Ref AmbassadorPort, !Ref AppPort]
-        TargetGroupArn: !Ref TargetGroup
+        RegistryArn: !GetAtt 'ServiceDiscovery.Arn'
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: !If [HasSubnetsReachPublic, ENABLED, DISABLED]
@@ -783,7 +666,7 @@ Resources:
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
-    Value: 'fargate/service-cluster-alb'
+    Value: 'fargate/service-cloudmap'
   TemplateVersion:
     Description: 'cloudonaut.io template version.'
     Value: '__VERSION__'
