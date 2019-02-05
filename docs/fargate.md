@@ -37,7 +37,7 @@ This template describes a fault tolerant and scalable Fargate service on AWS. Th
 We provide three service templates:
 * `service-cluster-alb.yaml` uses the cluster's load balancer and path and/or host based routing.
 * `service-dedicated-alb.yaml` includes a dedicated load balancer (ALB).
-* `service-cloudmap.yaml` uses service discovery via Cloud Map instead a load balancer.
+* `service-cloudmap.yaml` uses service discovery via Cloud Map instead of a load balancer.
 
 ## Using the cluster's load balancer and path and/or host based routing
 This template describes a fault tolerant and scalable Fargate service that uses the cluster's load balancer and path and/or host based routing for incoming traffic.
