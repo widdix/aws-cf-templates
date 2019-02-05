@@ -42,6 +42,7 @@ Metadata:
       Parameters:
       - TaskPolicies
       - AmbassadorImage
+      - AmbassadorCommand
       - AmbassadorPort
       - AmbassadorEnvironment1Key
       - AmbassadorEnvironment1Value
@@ -50,6 +51,7 @@ Metadata:
       - AmbassadorEnvironment3Key
       - AmbassadorEnvironment3Value
       - AppImage
+      - AppCommand
       - AppPort
       - AppEnvironment1Key
       - AppEnvironment1Value
@@ -58,6 +60,7 @@ Metadata:
       - AppEnvironment3Key
       - AppEnvironment3Value
       - SidecarImage
+      - SidecarCommand
       - SidecarPort
       - SidecarEnvironment1Key
       - SidecarEnvironment1Value
@@ -145,6 +148,10 @@ Parameters:
     Description: 'Optional Docker image to use for the ambassador container (https://docs.microsoft.com/en-us/azure/architecture/patterns/ambassador). You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag).'
     Type: String
     Default: ''
+  AmbassadorCommand:
+    Description: 'Optional command used when starting the ambassador container.'
+    Type: String
+    Default: ''
   AmbassadorPort:
     Description: 'The port exposed by the ambassador container that receives traffic from the load balancer (AmbassadorPort <> AppPort <> SidecarPort; ignored if AmbassadorImage is not set).'
     Type: Number
@@ -179,6 +186,10 @@ Parameters:
     Description: 'The Docker image to use for the app container. You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag).'
     Type: String
     Default: 'widdix/hello:v1'
+  AppCommand:
+    Description: 'Optional commands (comma-delimited) used when starting the app container.'
+    Type: String
+    Default: ''
   AppPort:
     Description: 'The port exposed by the app container that receives traffic from the load balancer or the ambassador container (AppPort <> AmbassadorPort <> SidecarPort).'
     Type: Number
@@ -211,6 +222,10 @@ Parameters:
     Default: ''
   SidecarImage:
     Description: 'Optional Docker image to use for the sidecar container (https://docs.microsoft.com/en-us/azure/architecture/patterns/sidecar). You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag).'
+    Type: String
+    Default: ''
+  SidecarCommand:
+    Description: 'Optional command used when starting the sidecar container.'
     Type: String
     Default: ''
   SidecarPort:
@@ -389,14 +404,17 @@ Conditions:
   HasClientSecurityGroup2: !Not [!Equals [!Ref ParentClientStack2, '']]
   HasClientSecurityGroup3: !Not [!Equals [!Ref ParentClientStack3, '']]
   HasTaskPolicies: !Not [!Equals [!Ref TaskPolicies, '']]
+  HasAppCommand: !Not [!Equals [!Ref AppCommand, '']]
   HasAppEnvironment1Key: !Not [!Equals [!Ref AppEnvironment1Key, '']]
   HasAppEnvironment2Key: !Not [!Equals [!Ref AppEnvironment2Key, '']]
   HasAppEnvironment3Key: !Not [!Equals [!Ref AppEnvironment3Key, '']]
   HasAmbassadorImage: !Not [!Equals [!Ref AmbassadorImage, '']]
+  HasAmbassadorCommand: !Not [!Equals [!Ref AmbassadorCommand, '']]
   HasAmbassadorEnvironment1Key: !Not [!Equals [!Ref AmbassadorEnvironment1Key, '']]
   HasAmbassadorEnvironment2Key: !Not [!Equals [!Ref AmbassadorEnvironment2Key, '']]
   HasAmbassadorEnvironment3Key: !Not [!Equals [!Ref AmbassadorEnvironment3Key, '']]
   HasSidecarImage: !Not [!Equals [!Ref SidecarImage, '']]
+  HasSidecarCommand: !Not [!Equals [!Ref SidecarCommand, '']]
   HasSidecarEnvironment1Key: !Not [!Equals [!Ref SidecarEnvironment1Key, '']]
   HasSidecarEnvironment2Key: !Not [!Equals [!Ref SidecarEnvironment2Key, '']]
   HasSidecarEnvironment3Key: !Not [!Equals [!Ref SidecarEnvironment3Key, '']]
@@ -636,6 +654,7 @@ Resources:
         - HasAmbassadorImage
         - Name: ambassador
           Image: !Ref AmbassadorImage
+          Command: !If [HasAmbassadorCommand, !Ref AmbassadorCommand, !Ref 'AWS::NoValue']
           PortMappings:
           - ContainerPort: !Ref AmbassadorPort
             Protocol: tcp
@@ -653,6 +672,7 @@ Resources:
         - !Ref 'AWS::NoValue'
       - Name: app
         Image: !Ref AppImage
+        Command: !If [HasAppCommand, !Split [',', !Ref AppCommand], !Ref 'AWS::NoValue']
         PortMappings:
         - ContainerPort: !Ref AppPort
           Protocol: tcp
@@ -671,6 +691,7 @@ Resources:
         - HasSidecarImage
         - Name: sidecar
           Image: !Ref SidecarImage
+          Command: !If [HasSidecarCommand, !Ref SidecarCommand, !Ref 'AWS::NoValue']
           PortMappings:
           - ContainerPort: !Ref SidecarPort
             Protocol: tcp
