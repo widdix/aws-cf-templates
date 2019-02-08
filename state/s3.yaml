@@ -47,7 +47,7 @@ Parameters:
     Description: 'Access policy of the bucket.'
     Type: String
     Default: Private
-    AllowedValues: [Private, PublicRead, CloudFrontRead, ElbAccessLogWrite, ConfigWrite, CloudTrailWrite]
+    AllowedValues: [Private, PublicRead, CloudFrontRead, CloudFrontAccessLogWrite, ElbAccessLogWrite, ConfigWrite, CloudTrailWrite]
   Versioning:
     Description: 'Enable versioning to keep a backup if objects change.'
     Type: String
