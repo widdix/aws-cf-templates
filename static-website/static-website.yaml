@@ -21,6 +21,7 @@ Metadata:
         default: 'Parent Stacks'
       Parameters:
       - ParentZoneStack
+      - ParentS3StackAccessLog
     - Label:
         default: 'Lambda@Edge Parameters'
       Parameters:
@@ -45,6 +46,10 @@ Parameters:
   ParentZoneStack:
     Description: 'Stack name of parent zone stack based on vpc/zone-*.yaml template.'
     Type: String
+  ParentS3StackAccessLog:
+    Description: 'Optional stack name of parent s3 stack based on state/s3.yaml template (with Access set to ElbAccessLogWrite) to store access logs.'
+    Type: String
+    Default: ''
   SubDomainNameWithDot:
     Description: 'Primary mame that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain.'
     Type: String
@@ -83,6 +88,7 @@ Parameters:
     Type: String
     Default: ''
 Conditions:
+  HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
   HasRedirectDomainName: !Equals [!Ref EnableRedirectSubDomainName, 'true']
   HasAcmCertificateArn: !Equals [!Ref CertificateType, 'AcmCertificateArn']
   HasIamCertificateId: !Equals [!Ref CertificateType, 'IamCertificateId']
@@ -214,6 +220,7 @@ Resources:
         DefaultRootObject: !If [HasLambdaEdgeSubdirectoriesVersionArn, !Ref 'AWS::NoValue', !Ref DefaultRootObject]
         Enabled: true
         HttpVersion: http2
+        Logging: !If [HasS3Bucket, {Bucket: {'Fn::ImportValue': !Sub '${ParentS3StackAccessLog}-BucketDomainName'}, Prefix: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
         Origins:
         - DomainName: !GetAtt 'S3Bucket.DomainName'
           Id: s3origin
