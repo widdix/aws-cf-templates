@@ -412,6 +412,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetCPrivate'}
   DatabaseCluster:
     DeletionPolicy: Snapshot # default
+    UpdateReplacePolicy: Snapshot
     Type: 'AWS::RDS::DBCluster'
     Properties:
       BackupRetentionPeriod: !Ref DBBackupRetentionPeriod

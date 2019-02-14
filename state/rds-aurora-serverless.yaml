@@ -196,6 +196,7 @@ Resources:
         collation_server: utf8_general_ci
   DBCluster:
     DeletionPolicy: Snapshot # default
+    UpdateReplacePolicy: Snapshot
     Type: 'AWS::RDS::DBCluster'
     Properties:
       BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
