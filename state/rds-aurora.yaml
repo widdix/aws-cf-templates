@@ -208,6 +208,7 @@ Resources:
       - client_encoding: 'UTF8'
   DBCluster:
     DeletionPolicy: Snapshot # default
+    UpdateReplacePolicy: Snapshot
     Type: 'AWS::RDS::DBCluster'
     Properties:
       BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
