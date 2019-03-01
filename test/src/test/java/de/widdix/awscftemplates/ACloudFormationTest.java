@@ -98,7 +98,7 @@ public abstract class ACloudFormationTest extends AAWSTest {
         final List<StackEvent> eventsDisplayed = new ArrayList<>();
         while (true) {
             try {
-                Thread.sleep(5000);
+                Thread.sleep(20000);
             } catch (final InterruptedException e) {
                 // continue
             }
