@@ -277,7 +277,6 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
-            - 'ecs:DeregisterContainerInstance'
             - 'ecs:RegisterContainerInstance'
             - 'ecs:SubmitContainerStateChange'
             - 'ecs:SubmitTaskStateChange'
@@ -896,14 +895,6 @@ Resources:
                   $log.error "container instance #{containerInstanceId} is not idle, but wait time elapsed"
                   return false
                 end
-                def deregisterContainerInstance(containerInstanceId)
-                  ecs = Aws::ECS::Client.new()
-                  resp = ecs.deregister_container_instance({
-                    cluster: $conf['cluster'],
-                    container_instance: containerInstanceId,
-                    force: false
-                  })
-                end
                 def completeLifecycleAction(token, hook, asg)
                   begin
                     autoscaling = Aws::AutoScaling::Client.new()
@@ -942,7 +933,6 @@ Resources:
                             $log.info "lifecycle transition for container instance #{containerInstanceId}"
                             drainContainerInstanceId containerInstanceId
                             awaitContainerInstanceIdle poller, msg, containerInstanceId
-                            deregisterContainerInstance containerInstanceId
                           end
                           completeLifecycleAction body['LifecycleActionToken'], body['LifecycleHookName'], body['AutoScalingGroupName']
                         else
