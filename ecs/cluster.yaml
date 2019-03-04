@@ -24,17 +24,22 @@ Metadata:
       - ParentSSHBastionStack
       - ParentAuthProxyStack
       - ParentAlertStack
+      - ParentS3StackAccessLog
+      - ParentClientStack1
+      - ParentClientStack2
+      - ParentClientStack3
     - Label:
         default: 'EC2 Parameters'
       Parameters:
       - KeyName
       - IAMUserSSHAccess
-      # TODO - SystemsManagerAccess
+      - SystemsManagerAccess
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
       - LoadBalancerScheme
       - LoadBalancerCertificateArn
+      - LoadBalancerIdleTimeout
     - Label:
         default: 'Cluster Parameters'
       Parameters:
@@ -68,6 +73,22 @@ Parameters:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
+  ParentS3StackAccessLog:
+    Description: 'Optional stack name of parent s3 stack based on state/s3.yaml template (with Access set to ElbAccessLogWrite) to store access logs.'
+    Type: String
+    Default: ''
+  ParentClientStack1:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the cluster to whatever uses the client security group.'
+    Type: String
+    Default: ''
+  ParentClientStack2:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the cluster to whatever uses the client security group.'
+    Type: String
+    Default: ''
+  ParentClientStack3:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the cluster to whatever uses the client security group.'
+    Type: String
+    Default: ''
   KeyName:
     Description: 'Optional key pair of the ec2-user to establish a SSH connection to the EC2 instances of the ECS cluster.'
     Type: String
@@ -76,6 +97,13 @@ Parameters:
     Description: 'Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).'
     Type: String
     Default: false
+    AllowedValues:
+    - true
+    - false
+  SystemsManagerAccess:
+    Description: 'Enable AWS Systems Manager agent and authorization.'
+    Type: String
+    Default: true
     AllowedValues:
     - true
     - false
@@ -97,6 +125,12 @@ Parameters:
     Description: 'Optional Amazon Resource Name (ARN) of the certificate to associate with the load balancer.'
     Type: String
     Default: ''
+  LoadBalancerIdleTimeout:
+    Description: 'The idle timeout value, in seconds.'
+    Type: Number
+    Default: 60
+    MinValue: 1
+    MaxValue: 4000
   InstanceType:
     Description: 'The instance type of the EC2 instances of the ECS cluster.'
     Type: String
@@ -119,7 +153,7 @@ Parameters:
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
   DesiredCapacity:
-    Description: 'The desired start size of the Auto Scaling group.'
+    Description: 'Deprecated in v9, will be removed in v11, use `MinSize` instead!'
     Type: Number
     Default: 2
     ConstraintDescription: 'Must be >= 1'
@@ -152,40 +186,43 @@ Parameters:
     MinValue: 2
     ConstraintDescription: 'Must be >= 2'
 Mappings:
-  RegionMap: # TODO update to Amazon Linux 2 (don't forget to adjust awslogs config as well)
+  RegionMap:
+    'eu-north-1':
+      ECSAMI: 'ami-092c0f6a6cc3638c4'
     'ap-south-1':
-      ECSAMI: 'ami-0c814df738f3c9fd5'
+      ECSAMI: 'ami-06016d6b78ec83843'
     'eu-west-3':
-      ECSAMI: 'ami-0e4185127a627bbac'
+      ECSAMI: 'ami-0ab92fbd5dc35efa5'
     'eu-west-2':
-      ECSAMI: 'ami-c3ea1fa4'
+      ECSAMI: 'ami-0bcc92a4e661446c1'
     'eu-west-1':
-      ECSAMI: 'ami-0612d1ef7f8e72c06'
+      ECSAMI: 'ami-0885003261a52af1c'
     'ap-northeast-2':
-      ECSAMI: 'ami-02b0706448bd6fb5e'
+      ECSAMI: 'ami-0ae0c329bb532b6d0'
     'ap-northeast-1':
-      ECSAMI: 'ami-256c15c8'
+      ECSAMI: 'ami-0ea322c77fc5ff655'
     'sa-east-1':
-      ECSAMI: 'ami-085384d0e5fd5ae0a'
+      ECSAMI: 'ami-002111a63f9ad4724'
     'ca-central-1':
-      ECSAMI: 'ami-cf60edab'
+      ECSAMI: 'ami-0df37f84fc18ba923'
     'ap-southeast-1':
-      ECSAMI: 'ami-0e1566e9c8eb85002'
+      ECSAMI: 'ami-060c7b75c31ac0a2a'
     'ap-southeast-2':
-      ECSAMI: 'ami-df49e9bd'
+      ECSAMI: 'ami-046f9a4716a10bfa3'
     'eu-central-1':
-      ECSAMI: 'ami-c7e9e72c'
+      ECSAMI: 'ami-08ab7d08250c248ce'
     'us-east-1':
-      ECSAMI: 'ami-112e366e'
+      ECSAMI: 'ami-032564940f9afd5c0'
     'us-east-2':
-      ECSAMI: 'ami-0e65e665ff5f3fc5f'
+      ECSAMI: 'ami-03757cbb3bae03fe7'
     'us-west-1':
-      ECSAMI: 'ami-dd0de2be'
+      ECSAMI: 'ami-030dcc999f03d168b'
     'us-west-2':
       ECSAMI: 'ami-0291b991e70d83d33'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
+  HasSystemsManagerAccess: !Equals [!Ref SystemsManagerAccess, 'true']
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
@@ -195,6 +232,10 @@ Conditions:
   HasAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
   HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasNotAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
+  HasClientSecurityGroup1: !Not [!Equals [!Ref ParentClientStack1, '']]
+  HasClientSecurityGroup2: !Not [!Equals [!Ref ParentClientStack2, '']]
+  HasClientSecurityGroup3: !Not [!Equals [!Ref ParentClientStack3, '']]
 Resources:
   Cluster:
     Type: 'AWS::ECS::Cluster'
@@ -220,6 +261,7 @@ Resources:
             Service: 'ec2.amazonaws.com'
           Action: 'sts:AssumeRole'
       Path: '/'
+      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []] # TODO get rid of managed policy
       Policies:
       - PolicyName: ecs
         PolicyDocument:
@@ -235,7 +277,6 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
-            - 'ecs:DeregisterContainerInstance'
             - 'ecs:RegisterContainerInstance'
             - 'ecs:SubmitContainerStateChange'
             - 'ecs:SubmitTaskStateChange'
@@ -274,11 +315,10 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
-            - 'logs:CreateLogGroup'
             - 'logs:CreateLogStream'
             - 'logs:PutLogEvents'
             - 'logs:DescribeLogStreams'
-            Resource: 'arn:aws:logs:*:*:*'
+            Resource: !GetAtt 'LogGroup.Arn'
       - PolicyName: autoscaling
         PolicyDocument:
           Version: '2012-10-17'
@@ -296,6 +336,7 @@ Resources:
             Action:
             - 'sqs:DeleteMessage'
             - 'sqs:ReceiveMessage'
+            - 'sqs:ChangeMessageVisibility'
             Resource: !GetAtt 'AutoScalingGroupLifecycleHookQueue.Arn'
   IAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
@@ -404,8 +445,6 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
-      - Name: TargetGroup
-        Value: !GetAtt 'DefaultTargetGroup.TargetGroupFullName'
   HTTPCodeTarget5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -442,8 +481,6 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
-      - Name: TargetGroup
-        Value: !GetAtt 'DefaultTargetGroup.TargetGroupFullName'
   TargetConnectionErrorCountTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -466,6 +503,15 @@ Resources:
   LoadBalancer: # not monitored, but DefaultTargetGroup is monitored!
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
+      LoadBalancerAttributes:
+      - Key: 'idle_timeout.timeout_seconds'
+        Value: !Ref LoadBalancerIdleTimeout
+      - Key: 'routing.http2.enabled'
+        Value: 'true'
+      - Key: 'access_logs.s3.enabled'
+        Value: !If [HasS3Bucket, 'true', 'false']
+      - !If [HasS3Bucket, {Key: 'access_logs.s3.prefix', Value: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
+      - !If [HasS3Bucket, {Key: 'access_logs.s3.bucket', Value: {'Fn::ImportValue': !Sub '${ParentS3StackAccessLog}-BucketName'}}, !Ref 'AWS::NoValue']
       Scheme: !Ref LoadBalancerScheme
       SecurityGroups:
       - !Ref ALBSecurityGroup
@@ -536,30 +582,28 @@ Resources:
               content: !Sub |
                 [general]
                 state_file = /var/lib/awslogs/agent-state
-                [/var/log/messages]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/messages
-                log_stream_name = {instance_id}/var/log/messages
-                log_group_name = ${LogGroup}
-                [/var/log/secure]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/secure
-                log_stream_name = {instance_id}/var/log/secure
-                log_group_name = ${LogGroup}
-                [/var/log/cron]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cron
-                log_stream_name = {instance_id}/var/log/cron
-                log_group_name = ${LogGroup}
-                [/var/log/cloud-init.log]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cloud-init.log
-                log_stream_name = {instance_id}/var/log/cloud-init.log
-                log_group_name = ${LogGroup}
-                [/var/log/cfn-init.log]
+                [/var/log/amazon/ssm/amazon-ssm-agent.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init.log
-                log_stream_name = {instance_id}/var/log/cfn-init.log
+                file = /var/log/amazon/ssm/amazon-ssm-agent.log
+                log_stream_name = {instance_id}/var/log/amazon/ssm/amazon-ssm-agent.log
+                log_group_name = ${LogGroup}
+                [/var/log/amazon/ssm/errors.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/amazon/ssm/errors.log
+                log_stream_name = {instance_id}/var/log/amazon/ssm/errors.log
+                log_group_name = ${LogGroup}
+                [/var/log/audit/audit.log]
+                file = /var/log/audit/audit.log
+                log_stream_name = {instance_id}/var/log/audit/audit.log
+                log_group_name = ${LogGroup}
+                [/var/log/awslogs.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/awslogs.log
+                log_stream_name = {instance_id}/var/log/awslogs.log
+                log_group_name = ${LogGroup}
+                [/var/log/boot.log]
+                file = /var/log/boot.log
+                log_stream_name = {instance_id}/var/log/boot.log
                 log_group_name = ${LogGroup}
                 [/var/log/cfn-hup.log]
                 datetime_format = %Y-%m-%d %H:%M:%S
@@ -571,18 +615,67 @@ Resources:
                 file = /var/log/cfn-init-cmd.log
                 log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
                 log_group_name = ${LogGroup}
+                [/var/log/cfn-init.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-init.log
+                log_stream_name = {instance_id}/var/log/cfn-init.log
+                log_group_name = ${LogGroup}
+                [/var/log/cfn-wire.log]
+                datetime_format = %Y-%m-%d %H:%M:%S
+                file = /var/log/cfn-wire.log
+                log_stream_name = {instance_id}/var/log/cfn-wire.log
+                log_group_name = ${LogGroup}
                 [/var/log/cloud-init-output.log]
                 file = /var/log/cloud-init-output.log
                 log_stream_name = {instance_id}/var/log/cloud-init-output.log
+                log_group_name = ${LogGroup}
+                [/var/log/cloud-init.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cloud-init.log
+                log_stream_name = {instance_id}/var/log/cloud-init.log
+                log_group_name = ${LogGroup}
+                [/var/log/cron]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/cron
+                log_stream_name = {instance_id}/var/log/cron
                 log_group_name = ${LogGroup}
                 [/var/log/dmesg]
                 file = /var/log/dmesg
                 log_stream_name = {instance_id}/var/log/dmesg
                 log_group_name = ${LogGroup}
+                [/var/log/grubby_prune_debug]
+                file = /var/log/grubby_prune_debug
+                log_stream_name = {instance_id}/var/log/grubby_prune_debug
+                log_group_name = ${LogGroup}
+                [/var/log/maillog]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/maillog
+                log_stream_name = {instance_id}/var/log/maillog
+                log_group_name = ${LogGroup}
+                [/var/log/messages]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/messages
+                log_stream_name = {instance_id}/var/log/messages
+                log_group_name = ${LogGroup}
+                [/var/log/secure]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/secure
+                log_stream_name = {instance_id}/var/log/secure
+                log_group_name = ${LogGroup}
+                [/var/log/yum.log]
+                datetime_format = %b %d %H:%M:%S
+                file = /var/log/yum.log
+                log_stream_name = {instance_id}/var/log/yum.log
+                log_group_name = ${LogGroup}
+              mode: '000644'
+              owner: root
+              group: root
+            '/etc/awslogs/config/ecs.conf':
+              content: !Sub |
                 [/var/log/ecs/ecs-init.log]
-                file = /var/log/ecs/ecs-init.log.*
-                log_group_name = /var/log/ecs/ecs-init.log
+                file = /var/log/ecs/ecs-init.log
                 log_stream_name = {instance_id}/var/log/ecs/ecs-init.log
+                log_group_name = ${LogGroup}
                 datetime_format = %Y-%m-%dT%H:%M:%SZ
                 [/var/log/ecs/ecs-agent.log]
                 file = /var/log/ecs/ecs-agent.log.*
@@ -594,7 +687,7 @@ Resources:
               group: root
           services:
             sysvinit:
-              awslogs:
+              awslogsd:
                 enabled: true
                 ensureRunning: true
                 packages:
@@ -603,10 +696,8 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
+                - '/etc/awslogs/config/ecs.conf'
         ssh-access:
-          packages:
-            yum:
-              'aws-cli': []
           files:
             '/opt/authorized_keys_command.sh':
               content: |
@@ -656,9 +747,11 @@ Resources:
               group: root
           commands:
             'a_configure_sshd_command':
-              command: 'sed -i "s:#AuthorizedKeysCommand none:AuthorizedKeysCommand /opt/authorized_keys_command.sh:g" /etc/ssh/sshd_config'
+              command: 'sed -e ''/AuthorizedKeysCommand / s/^#*/#/'' -i /etc/ssh/sshd_config; echo -e ''\nAuthorizedKeysCommand /opt/authorized_keys_command.sh'' >> /etc/ssh/sshd_config'
+              test: '! grep -q ''^AuthorizedKeysCommand /opt/authorized_keys_command.sh'' /etc/ssh/sshd_config'
             'b_configure_sshd_commanduser':
-              command: 'sed -i "s:#AuthorizedKeysCommandUser nobody:AuthorizedKeysCommandUser nobody:g" /etc/ssh/sshd_config'
+              command: 'sed -e ''/AuthorizedKeysCommandUser / s/^#*/#/'' -i /etc/ssh/sshd_config; echo -e ''\nAuthorizedKeysCommandUser nobody'' >> /etc/ssh/sshd_config'
+              test: '! grep -q ''^AuthorizedKeysCommandUser nobody'' /etc/ssh/sshd_config'
             'c_import_users':
               command: './import_users.sh'
               cwd: '/opt'
@@ -674,11 +767,12 @@ Resources:
           packages:
             yum:
               ruby: []
+              amazon-ssm-agent: []
             rubygems:
               'aws-sdk-ecs': ['1.26.0']
               'aws-sdk-autoscaling': ['1.13.0']
               'aws-sdk-sqs': ['1.10.0']
-              daemons: ['1.2.4']
+              daemons: ['1.2.6']
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -779,7 +873,6 @@ Resources:
                     container_instances: [containerInstanceId],
                     status: "DRAINING"
                   })
-
                 end
                 def isContainerInstanceIdle(containerInstanceId)
                   ecs = Aws::ECS::Client.new()
@@ -789,25 +882,18 @@ Resources:
                   })
                   return resp.task_arns.empty?
                 end
-                def awaitContainerInstanceIdle(containerInstanceId)
+                def awaitContainerInstanceIdle(poller, message, containerInstanceId)
                   endTime = Time.now.to_i + $conf['maxWaitInSeconds']
                   while Time.now.to_i < endTime do
                     if isContainerInstanceIdle containerInstanceId
                       $log.info "container instance #{containerInstanceId} is idle"
                       return true
                     end
-                    sleep 5 # seconds
+                    poller.change_message_visibility_timeout(message, 30)
+                    sleep 15 # seconds
                   end
                   $log.error "container instance #{containerInstanceId} is not idle, but wait time elapsed"
                   return false
-                end
-                def deregisterContainerInstance(containerInstanceId)
-                  ecs = Aws::ECS::Client.new()
-                  resp = ecs.deregister_container_instance({
-                    cluster: $conf['cluster'],
-                    container_instance: containerInstanceId,
-                    force: false
-                  })
                 end
                 def completeLifecycleAction(token, hook, asg)
                   begin
@@ -846,8 +932,7 @@ Resources:
                           else
                             $log.info "lifecycle transition for container instance #{containerInstanceId}"
                             drainContainerInstanceId containerInstanceId
-                            awaitContainerInstanceIdle containerInstanceId
-                            deregisterContainerInstance containerInstanceId
+                            awaitContainerInstanceIdle poller, msg, containerInstanceId
                           end
                           completeLifecycleAction body['LifecycleActionToken'], body['LifecycleHookName'], body['AutoScalingGroupName']
                         else
@@ -872,6 +957,12 @@ Resources:
                 files:
                 - '/etc/cfn/cfn-hup.conf'
                 - '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
+              amazon-ssm-agent:
+                enabled: !If [HasSystemsManagerAccess, true, false]
+                ensureRunning: !If [HasSystemsManagerAccess, true, false]
+                packages:
+                  yum:
+                  - amazon-ssm-agent
               lifecycle-poller:
                 enabled: true
                 ensureRunning: true
@@ -886,6 +977,9 @@ Resources:
       InstanceType: !Ref InstanceType
       SecurityGroups:
       - !Ref SecurityGroup
+      - !If [HasClientSecurityGroup1, {'Fn::ImportValue': !Sub '${ParentClientStack1}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
+      - !If [HasClientSecurityGroup2, {'Fn::ImportValue': !Sub '${ParentClientStack2}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
+      - !If [HasClientSecurityGroup3, {'Fn::ImportValue': !Sub '${ParentClientStack3}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
       UserData:
         'Fn::Base64': !Sub |
@@ -901,8 +995,7 @@ Resources:
       LaunchConfigurationName: !Ref LaunchConfiguration
       MinSize: !Ref MinSize
       MaxSize: !Ref MaxSize
-      DesiredCapacity: !Ref DesiredCapacity
-      HealthCheckGracePeriod: 600
+      HealthCheckGracePeriod: 300
       HealthCheckType: ELB
       TargetGroupARNs:
       - !Ref DefaultTargetGroup
@@ -952,7 +1045,7 @@ Resources:
     Type: 'AWS::SQS::Queue'
     Properties:
       QueueName: !Sub '${AWS::StackName}-lifecycle-hook'
-      VisibilityTimeout: !Ref DrainingTimeoutInSeconds
+      VisibilityTimeout: 30
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt 'AutoScalingGroupLifecycleHookDeadLetterQueue.Arn'
         maxReceiveCount: 5
@@ -1034,7 +1127,7 @@ Resources:
       MinAdjustmentMagnitude: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
       Cooldown: '600'
-      ScalingAdjustment: 10
+      ScalingAdjustment: 25
   ScaleDownPolicy:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
@@ -1042,7 +1135,7 @@ Resources:
       MinAdjustmentMagnitude: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
       Cooldown: '600'
-      ScalingAdjustment: -10
+      ScalingAdjustment: -25
   ContainerInstancesShortageAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -1208,7 +1301,7 @@ Resources:
           Principal:
             Service: 'lambda.amazonaws.com'
           Action: 'sts:AssumeRole'
-      ManagedPolicyArns:
+      ManagedPolicyArns: # TODO get rid of managed policy
       - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
       Policies:
       - PolicyName: ecs
