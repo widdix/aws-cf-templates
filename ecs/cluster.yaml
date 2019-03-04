@@ -745,7 +745,9 @@ Resources:
               content: |
                 #!/usr/bin/env ruby
                 require 'net/http'
-                require 'aws-sdk'
+                require 'aws-sdk-ecs'
+                require 'aws-sdk-autoscaling'
+                require 'aws-sdk-sqs'
                 require 'json'
                 require 'uri'
                 require 'yaml'
