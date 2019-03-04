@@ -675,7 +675,9 @@ Resources:
             yum:
               ruby: []
             rubygems:
-              'aws-sdk': ['3.0.1']
+              'aws-sdk-ecs': ['1.26.0']
+              'aws-sdk-autoscaling': ['1.13.0']
+              'aws-sdk-sqs': ['1.10.0']
               daemons: ['1.2.4']
           files:
             '/etc/cfn/cfn-hup.conf':
