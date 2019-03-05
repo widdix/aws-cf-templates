@@ -40,6 +40,7 @@ Parameters:
 Conditions:
   InternalBucket: !Equals [!Ref ExternalTrailBucket, '']
   ExternalBucket: !Not [!Equals [!Ref ExternalTrailBucket, '']]
+  HasLogFilePrefix: !Not [!Equals [!Ref LogFilePrefix, '']]
 Resources:
   TrailBucket:
     Condition: InternalBucket
@@ -64,7 +65,7 @@ Resources:
           Principal:
             Service: 'cloudtrail.amazonaws.com'
           Action: 's3:PutObject'
-          Resource: !Sub 'arn:aws:s3:::${TrailBucket}/AWSLogs/${AWS::AccountId}/*'
+          Resource: !If [HasLogFilePrefix, !Sub 'arn:aws:s3:::${TrailBucket}/${LogFilePrefix}/AWSLogs/${AWS::AccountId}/*', !Sub 'arn:aws:s3:::${TrailBucket}/AWSLogs/${AWS::AccountId}/*']
           Condition:
             StringEquals:
               's3:x-amz-acl': 'bucket-owner-full-control'
