@@ -58,7 +58,7 @@ Parameters:
     Default: 'internet-facing'
     AllowedValues:
     - 'internet-facing'
-    - internal
+    - 'internal'
   LoadBalancerCertificateArn:
     Description: 'Optional Amazon Resource Name (ARN) of the certificate to associate with the load balancer. If set, HTTP requests are redirected to HTTPS.'
     Type: String
