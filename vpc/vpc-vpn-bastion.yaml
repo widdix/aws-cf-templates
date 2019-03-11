@@ -551,7 +551,7 @@ Resources:
               test: '[ ! -d /mnt/storage/backup.vpn_server.config ]'
         install:
           sources:
-            '/usr/local/src/softether': 'http://www.softether-download.com/files/softether/v4.25-9656-rtm-2018.01.15-tree/Linux/SoftEther_VPN_Server/64bit_-_Intel_x64_or_AMD64/softether-vpnserver-v4.25-9656-rtm-2018.01.15-linux-x64-64bit.tar.gz'
+            '/usr/local/src/softether': 'http://www.softether-download.com/files/softether/v4.29-9680-rtm-2019.02.28-tree/Linux/SoftEther_VPN_Server/64bit_-_Intel_x64_or_AMD64/softether-vpnserver-v4.29-9680-rtm-2019.02.28-linux-x64-64bit.tar.gz'
           files:
             '/etc/init.d/vpnserver':
               content: |
