@@ -266,7 +266,7 @@ Parameters:
     Description: 'The minimum number of vCPUs to reserve for the container.'
     Type: String
     Default: '0.25'
-    AllowedValues: ['0.25', '0,5', '1', '2', '4']
+    AllowedValues: ['0.25', '0.5', '1', '2', '4']
   Memory:
     Description: 'The amount (in GB) of memory used by the task.'
     Type: String
