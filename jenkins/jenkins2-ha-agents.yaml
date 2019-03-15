@@ -809,15 +809,18 @@ Resources:
             'b_enable_corretto8':
               command: 'amazon-linux-extras enable corretto8'
               test: "! grep -Fxq '[amzn2extra-corretto8]' /etc/yum.repos.d/amzn2-extras.repo"
+            'c_enable_ruby24':
+              command: 'amazon-linux-extras enable ruby2.4'
+              test: "! grep -Fxq '[amzn2extra-ruby2.4]' /etc/yum.repos.d/amzn2-extras.repo"
         mount:
           packages:
             yum:
               'nfs-utils': []
               'ruby': []
             rubygems:
-              'aws-sdk-autoscaling': ['1.13.0']
-              'aws-sdk-sqs': ['1.10.0']
-              daemons: ['1.2.6']
+              'aws-sdk-autoscaling': ['1.16.0']
+              'aws-sdk-sqs': ['1.11.0']
+              daemons: ['1.3.1']
           commands:
             'a_groupadd':
               command: 'groupadd -g 497 jenkins'
@@ -1659,6 +1662,9 @@ Resources:
             'b_enable_corretto8':
               command: 'amazon-linux-extras enable corretto8'
               test: "! grep -Fxq '[amzn2extra-corretto8]' /etc/yum.repos.d/amzn2-extras.repo"
+            'c_enable_ruby24':
+              command: 'amazon-linux-extras enable ruby2.4'
+              test: "! grep -Fxq '[amzn2extra-ruby2.4]' /etc/yum.repos.d/amzn2-extras.repo"
         install:
           packages:
             yum:
@@ -1707,9 +1713,9 @@ Resources:
               'nfs-utils': []
               'ruby': []
             rubygems:
-              'aws-sdk-autoscaling': ['1.13.0']
-              'aws-sdk-ec2': ['1.62.0']
-              daemons: ['1.2.6']
+              'aws-sdk-autoscaling': ['1.16.0']
+              'aws-sdk-ec2': ['1.73.0']
+              daemons: ['1.3.1']
           files:
             '/root/agent.xml':
               content: |
