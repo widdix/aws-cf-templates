@@ -838,9 +838,10 @@ Resources:
               ruby: []
               rubygems: []
             rubygems:
+              json_pure: ['2.2.0']
+              daemons: ['1.3.1']
               'aws-sdk-autoscaling': ['1.16.0']
               'aws-sdk-sqs': ['1.11.0']
-              daemons: ['1.3.1']
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -1715,9 +1716,9 @@ Resources:
               ruby: []
               rubygems: []
             rubygems:
+              daemons: ['1.3.1']
               'aws-sdk-autoscaling': ['1.16.0']
               'aws-sdk-ec2': ['1.73.0']
-              daemons: ['1.3.1']
           files:
             '/root/agent.xml':
               content: |
