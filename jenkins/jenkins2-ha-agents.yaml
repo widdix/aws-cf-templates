@@ -801,26 +801,10 @@ Resources:
                 commands:
                 - 'a_configure_sshd_command'
                 - 'b_configure_sshd_commanduser'
-        extras:
-          commands:
-            'a_enable_docker':
-              command: 'amazon-linux-extras enable docker=18.06.1'
-              test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
-            'b_enable_corretto8':
-              command: 'amazon-linux-extras enable corretto8'
-              test: "! grep -Fxq '[amzn2extra-corretto8]' /etc/yum.repos.d/amzn2-extras.repo"
-            'c_enable_ruby24':
-              command: 'amazon-linux-extras enable ruby2.4'
-              test: "! grep -Fxq '[amzn2extra-ruby2.4]' /etc/yum.repos.d/amzn2-extras.repo"
         mount:
           packages:
             yum:
               'nfs-utils': []
-              'ruby': []
-            rubygems:
-              'aws-sdk-autoscaling': ['1.16.0']
-              'aws-sdk-sqs': ['1.11.0']
-              daemons: ['1.3.1']
           commands:
             'a_groupadd':
               command: 'groupadd -g 497 jenkins'
@@ -834,12 +818,29 @@ Resources:
             'd_mountpoint_mount':
               command: !Sub 'while ! (echo > /dev/tcp/${MasterStorage}.efs.${AWS::Region}.amazonaws.com/2049) >/dev/null 2>&1; do sleep 10; done && sleep 10 && mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 "${MasterStorage}.efs.${AWS::Region}.amazonaws.com:/" /var/lib/jenkins'
               test: 'if mount | grep -q /var/lib/jenkins; then exit 1; else exit 0; fi'
+        extras:
+          commands:
+            'a_enable_docker':
+              command: 'amazon-linux-extras enable docker=18.06.1'
+              test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
+            'b_enable_corretto8':
+              command: 'amazon-linux-extras enable corretto8'
+              test: "! grep -Fxq '[amzn2extra-corretto8]' /etc/yum.repos.d/amzn2-extras.repo"
+            'c_enable_ruby24':
+              command: 'amazon-linux-extras enable ruby2.4'
+              test: "! grep -Fxq '[amzn2extra-ruby2.4]' /etc/yum.repos.d/amzn2-extras.repo"
         install:
           packages:
             rpm:
               jenkins: 'https://pkg.jenkins.io/redhat-stable/jenkins-2.164.1-1.1.noarch.rpm'
             yum:
               'java-1.8.0-amazon-corretto': []
+              ruby: []
+              rubygems: []
+            rubygems:
+              'aws-sdk-autoscaling': ['1.16.0']
+              'aws-sdk-sqs': ['1.11.0']
+              daemons: ['1.3.1']
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -1711,7 +1712,8 @@ Resources:
           packages:
             yum:
               'nfs-utils': []
-              'ruby': []
+              ruby: []
+              rubygems: []
             rubygems:
               'aws-sdk-autoscaling': ['1.16.0']
               'aws-sdk-ec2': ['1.73.0']
