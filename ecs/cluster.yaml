@@ -1127,7 +1127,7 @@ Resources:
       MinAdjustmentMagnitude: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
       Cooldown: '600'
-      ScalingAdjustment: 25
+      ScalingAdjustment: 10
   ScaleDownPolicy:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
@@ -1135,7 +1135,7 @@ Resources:
       MinAdjustmentMagnitude: 1
       AutoScalingGroupName: !Ref AutoScalingGroup
       Cooldown: '600'
-      ScalingAdjustment: -25
+      ScalingAdjustment: -10
   ContainerInstancesShortageAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
