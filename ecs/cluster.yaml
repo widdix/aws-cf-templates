@@ -1,19 +1,5 @@
----
-# Copyright 2018 widdix GmbH
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'ECS: cluster, a cloudonaut.io template'
+Description: 'ECS: cluster'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -94,7 +80,7 @@ Parameters:
     Type: String
     Default: ''
   IAMUserSSHAccess:
-    Description: 'Synchronize public keys of IAM users to enable personalized SSH access (Doc: https://cloudonaut.io/manage-aws-ec2-ssh-access-with-iam/).'
+    Description: 'Synchronize public keys of IAM users to enable personalized SSH access.'
     Type: String
     Default: false
     AllowedValues:
@@ -188,37 +174,37 @@ Parameters:
 Mappings:
   RegionMap:
     'eu-north-1':
-      ECSAMI: 'ami-092c0f6a6cc3638c4'
+      ECSAMI: 'ami-03f8f3eb89dcfe553'
     'ap-south-1':
-      ECSAMI: 'ami-06016d6b78ec83843'
+      ECSAMI: 'ami-05de310b944d67cde'
     'eu-west-3':
-      ECSAMI: 'ami-0ab92fbd5dc35efa5'
+      ECSAMI: 'ami-0b419de35e061d9df'
     'eu-west-2':
-      ECSAMI: 'ami-0bcc92a4e661446c1'
+      ECSAMI: 'ami-0380c676fcff67fd5'
     'eu-west-1':
-      ECSAMI: 'ami-0885003261a52af1c'
+      ECSAMI: 'ami-0b8e62ddc09226d0a'
     'ap-northeast-2':
-      ECSAMI: 'ami-0ae0c329bb532b6d0'
+      ECSAMI: 'ami-0c57dafd95a102862'
     'ap-northeast-1':
-      ECSAMI: 'ami-0ea322c77fc5ff655'
+      ECSAMI: 'ami-086ca990ae37efc1b'
     'sa-east-1':
-      ECSAMI: 'ami-002111a63f9ad4724'
+      ECSAMI: 'ami-09987452123fadc5b'
     'ca-central-1':
-      ECSAMI: 'ami-0df37f84fc18ba923'
+      ECSAMI: 'ami-0835b198c8a7aced4'
     'ap-southeast-1':
-      ECSAMI: 'ami-060c7b75c31ac0a2a'
+      ECSAMI: 'ami-0627e2913cf6756ed'
     'ap-southeast-2':
-      ECSAMI: 'ami-046f9a4716a10bfa3'
+      ECSAMI: 'ami-0d28e5e0f13248294'
     'eu-central-1':
-      ECSAMI: 'ami-08ab7d08250c248ce'
+      ECSAMI: 'ami-01b63d839941375df'
     'us-east-1':
-      ECSAMI: 'ami-032564940f9afd5c0'
+      ECSAMI: 'ami-007571470797b8ffa'
     'us-east-2':
-      ECSAMI: 'ami-03757cbb3bae03fe7'
+      ECSAMI: 'ami-0aa9ee1fc70e57450'
     'us-west-1':
-      ECSAMI: 'ami-030dcc999f03d168b'
+      ECSAMI: 'ami-0935a5e8655c6d896'
     'us-west-2':
-      ECSAMI: 'ami-0291b991e70d83d33'
+      ECSAMI: 'ami-0302f3ec240b9d23c'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -563,7 +549,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, install], [awslogs, install]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, extras, install], [awslogs, extras, install]]
         awslogs:
           packages:
             yum:
@@ -763,16 +749,23 @@ Resources:
                 commands:
                 - 'a_configure_sshd_command'
                 - 'b_configure_sshd_commanduser'
+        extras:
+          commands:
+            'a_enable_ruby24':
+              command: 'amazon-linux-extras enable ruby2.4'
+              test: "! grep -Fxq '[amzn2extra-ruby2.4]' /etc/yum.repos.d/amzn2-extras.repo"
         install:
           packages:
             yum:
               ruby: []
+              rubygems: []
               amazon-ssm-agent: []
             rubygems:
-              'aws-sdk-ecs': ['1.26.0']
-              'aws-sdk-autoscaling': ['1.13.0']
-              'aws-sdk-sqs': ['1.10.0']
-              daemons: ['1.2.6']
+              json_pure: ['2.2.0']
+              daemons: ['1.3.1']
+              'aws-sdk-ecs': ['1.32.0']
+              'aws-sdk-autoscaling': ['1.16.0']
+              'aws-sdk-sqs': ['1.11.0']
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -1451,10 +1444,10 @@ Resources:
         Value: !Ref SchedulableContainersLambdaV2
 Outputs:
   TemplateID:
-    Description: 'cloudonaut.io template id.'
+    Description: 'template id.'
     Value: 'ecs/cluster'
   TemplateVersion:
-    Description: 'cloudonaut.io template version.'
+    Description: 'template version.'
     Value: '__VERSION__'
   StackName:
     Description: 'Stack name.'
