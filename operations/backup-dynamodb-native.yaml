@@ -113,7 +113,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'LambdaRole.Arn'
-      Runtime: 'nodejs6.10'
+      Runtime: 'nodejs8.10'
       Timeout: 60
   LambdaLogGroup:
     Type: 'AWS::Logs::LogGroup'
