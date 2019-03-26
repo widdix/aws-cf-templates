@@ -12,18 +12,18 @@ const queueUrl = process.env.QUEUE_URL;
 const drainingTimeout = process.env.DRAINING_TIMEOUT;
 
 async function getContainerInstanceArn(ec2InstanceId) {
-  console.log(`getContainerInstanceArn(${ec2InstanceId})`);
+  console.log("getContainerInstanceArn(", ...arguments, ")");
   const listResult = await ecs.listContainerInstances({cluster: cluster, filter: `ec2InstanceId == '${ec2InstanceId}'`}).promise();
   return listResult.containerInstanceArns[0];
 }
 
 async function drainInstance(containerInstanceArn) {
-  console.log(`drainInstance(${containerInstanceArn})`);
+  console.log("drainInstance(", ...arguments, ")");
   await ecs.updateContainerInstancesState({cluster: cluster, containerInstances: [containerInstanceArn], status: 'DRAINING'}).promise();
 }
 
 async function wait(containerInstanceArn, autoScalingGroupName, lifecycleHookName, lifecycleActionToken, terminateTime) {
-  console.log(`wait(${containerInstanceArn}, ${autoScalingGroupName}, ${lifecycleHookName}, ${lifecycleActionToken}, ${terminateTime})`);
+  console.log("wait(", ...arguments, ")");
   let payload = {
     Service: 'DrainInstance',
     Event: 'custom:DRAIN_WAIT',
@@ -41,7 +41,7 @@ async function wait(containerInstanceArn, autoScalingGroupName, lifecycleHookNam
 }
 
 async function deleteMessage(receiptHandle) {
-  console.log(`deleteMessage(${receiptHandle})`);
+  console.log("deleteMessage(", ...arguments, ")");
   await sqs.deleteMessage({
       QueueUrl: queueUrl,
       ReceiptHandle: receiptHandle
@@ -49,13 +49,13 @@ async function deleteMessage(receiptHandle) {
 }
 
 async function countTasks(containerInstanceArn) {
-  console.log(`countTasks(${containerInstanceArn})`);
+  console.log("countTasks(", ...arguments, ")");
   const listResult = await ecs.listTasks({cluster: cluster, containerInstance: containerInstanceArn}).promise();
   return listResult.taskArns.length;
 }
 
 async function terminateInstance(autoScalingGroupName, lifecycleHookName, lifecycleActionToken) {
-  console.log(`terminateInstance(${autoScalingGroupName}, ${lifecycleHookName}, ${lifecycleActionToken})`);
+  console.log("terminateInstance(", ...arguments, ")");
   await asg.completeLifecycleAction({
       AutoScalingGroupName: autoScalingGroupName, 
       LifecycleHookName: lifecycleHookName,
@@ -65,7 +65,7 @@ async function terminateInstance(autoScalingGroupName, lifecycleHookName, lifecy
 }
 
 async function heartbeat(autoScalingGroupName, lifecycleHookName, lifecycleActionToken) {
-  console.log(`heartbeat(${autoScalingGroupName}, ${lifecycleHookName}, ${lifecycleActionToken})`);
+  console.log("heartbeat(", ...arguments, ")");
   await asg.recordLifecycleActionHeartbeat({
       AutoScalingGroupName: autoScalingGroupName, 
       LifecycleHookName: lifecycleHookName,
