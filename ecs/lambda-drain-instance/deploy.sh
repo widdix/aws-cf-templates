@@ -1,9 +1,25 @@
 #!/bin/bash -ex
 
-npm ci
-mkdir nodejs
-mv node_modules/ nodejs/
-zip -r layer.zip nodejs/ lib.js
+TEMP_PATH=.temp
+RELEASE_ZIP=layer.zip
+
+# Copy sources to temporary folder
+rm -r "$TEMP_PATH" 2>/dev/null || true
+mkdir -p "$TEMP_PATH"
+cp -R *.js *.json "$TEMP_PATH/"
+cd "$TEMP_PATH"
+
+# Remove aws-sdk, already installed on Lambda
+npm uninstall aws-sdk
+# Install dependencies
+npm ci --production
+# Package artifact
+rm "../$RELEASE_ZIP" 2>/dev/null || true
+zip -r "../$RELEASE_ZIP" .
+
+# Cleanup
+cd ..
+rm -r "$TEMP_PATH"
 
 # publish (region)
 publish () {
@@ -30,4 +46,3 @@ publish us-west-1
 publish us-west-2
 
 rm layer.zip
-rm -fR nodejs
