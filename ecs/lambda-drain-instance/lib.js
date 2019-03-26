@@ -64,8 +64,8 @@ async function terminateInstance(autoScalingGroupName, lifecycleHookName, lifecy
     }).promise();
 }
 
-async function hearbeat(autoScalingGroupName, lifecycleHookName, lifecycleActionToken) {
-  console.log(`hearbeat(${autoScalingGroupName}, ${lifecycleHookName}, ${lifecycleActionToken})`);
+async function heartbeat(autoScalingGroupName, lifecycleHookName, lifecycleActionToken) {
+  console.log(`heartbeat(${autoScalingGroupName}, ${lifecycleHookName}, ${lifecycleActionToken})`);
   await asg.recordLifecycleActionHeartbeat({
       AutoScalingGroupName: autoScalingGroupName, 
       LifecycleHookName: lifecycleHookName,
@@ -93,7 +93,7 @@ exports.handler = async function(event, context) {
     } else {
       let actionDuration = Math.abs(new Date(body.TerminateTime).getTime() - new Date().getTime()) / 1000;
       if (actionDuration < drainingTimeout) {
-        await hearbeat(body.AutoScalingGroupName, body.LifecycleHookName, body.LifecycleActionToken);
+        await heartbeat(body.AutoScalingGroupName, body.LifecycleHookName, body.LifecycleActionToken);
         await wait(body.ContainerInstanceArn, body.AutoScalingGroupName, body.LifecycleHookName, body.LifecycleActionToken, body.TerminateTime);
       } else {
         console.log('Timeout for instance termination reached.');
