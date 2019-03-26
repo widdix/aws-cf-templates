@@ -8,96 +8,97 @@ const sqs = new AWS.SQS({apiVersion: '2012-11-05'});
 const asg = new AWS.AutoScaling({apiVersion: '2011-01-01'});
 
 const cluster = process.env.CLUSTER;
-const queueUrl = process.env.QUEUE_URL;
+const QueueUrl = process.env.QUEUE_URL;
 const drainingTimeout = process.env.DRAINING_TIMEOUT;
 
 async function getContainerInstanceArn(ec2InstanceId) {
-  console.log("getContainerInstanceArn(", ...arguments, ")");
-  const listResult = await ecs.listContainerInstances({cluster: cluster, filter: `ec2InstanceId == '${ec2InstanceId}'`}).promise();
+  const req = { cluster, filter: `ec2InstanceId == '${ec2InstanceId}'` };
+  console.log("getContainerInstanceArn(", req, ")");
+  const listResult = await ecs.listContainerInstances(req).promise();
   return listResult.containerInstanceArns[0];
 }
 
-async function drainInstance(containerInstanceArn) {
-  console.log("drainInstance(", ...arguments, ")");
-  await ecs.updateContainerInstancesState({cluster: cluster, containerInstances: [containerInstanceArn], status: 'DRAINING'}).promise();
-}
-
-async function wait(containerInstanceArn, autoScalingGroupName, lifecycleHookName, lifecycleActionToken, terminateTime) {
-  console.log("wait(", ...arguments, ")");
-  let payload = {
-    Service: 'DrainInstance',
-    Event: 'custom:DRAIN_WAIT',
-    ContainerInstanceArn: containerInstanceArn,
-    AutoScalingGroupName: autoScalingGroupName,
-    LifecycleHookName: lifecycleHookName,
-    LifecycleActionToken: lifecycleActionToken,
-    TerminateTime: terminateTime
-  }
-  await sqs.sendMessage({
-      QueueUrl: queueUrl,
-      DelaySeconds: 60,
-      MessageBody: JSON.stringify(payload)
-    }).promise();
-}
-
-async function deleteMessage(receiptHandle) {
-  console.log("deleteMessage(", ...arguments, ")");
-  await sqs.deleteMessage({
-      QueueUrl: queueUrl,
-      ReceiptHandle: receiptHandle
-    }).promise();
-}
-
-async function countTasks(containerInstanceArn) {
-  console.log("countTasks(", ...arguments, ")");
-  const listResult = await ecs.listTasks({cluster: cluster, containerInstance: containerInstanceArn}).promise();
+async function countTasks(containerInstance) {
+  const req = { cluster, containerInstance };
+  console.log("countTasks(", req, ")");
+  const listResult = await ecs.listTasks(req).promise();
   return listResult.taskArns.length;
 }
 
-async function terminateInstance(autoScalingGroupName, lifecycleHookName, lifecycleActionToken) {
-  console.log("terminateInstance(", ...arguments, ")");
-  await asg.completeLifecycleAction({
-      AutoScalingGroupName: autoScalingGroupName, 
-      LifecycleHookName: lifecycleHookName,
-      LifecycleActionToken: lifecycleActionToken,
-      LifecycleActionResult: 'CONTINUE'
-    }).promise();
+function drainInstance(containerInstanceArn) {
+  const req = { cluster, containerInstances: [containerInstanceArn], status: 'DRAINING' };
+  console.log("drainInstance(", req, ")");
+  return ecs.updateContainerInstancesState(req).promise();
 }
 
-async function heartbeat(autoScalingGroupName, lifecycleHookName, lifecycleActionToken) {
-  console.log("heartbeat(", ...arguments, ")");
-  await asg.recordLifecycleActionHeartbeat({
-      AutoScalingGroupName: autoScalingGroupName, 
-      LifecycleHookName: lifecycleHookName,
-      LifecycleActionToken: lifecycleActionToken
-    }).promise();
+function wait(res) {
+  const payload = {
+    Service: 'DrainInstance',
+    Event: 'custom:DRAIN_WAIT',
+    ContainerInstanceArn: res.ContainerInstanceArn,
+    AutoScalingGroupName: res.AutoScalingGroupName,
+    LifecycleHookName: res.LifecycleHookName,
+    LifecycleActionToken: res.LifecycleActionToken,
+    TerminateTime: res.TerminateTime,
+  };
+  console.log("wait(", payload, ")");
+  return sqs.sendMessage({
+    QueueUrl,
+    DelaySeconds: 60,
+    MessageBody: JSON.stringify(payload)
+  }).promise();
 }
 
-exports.handler = async function(event, context) {
+function deleteMessage(ReceiptHandle) {
+  const req = { QueueUrl, ReceiptHandle };
+  console.log("deleteMessage(", req, ")");
+  return sqs.deleteMessage(req).promise();
+}
+
+function terminateInstance(res) {
+  const req = {
+    AutoScalingGroupName: res.AutoScalingGroupName,
+    LifecycleHookName: res.LifecycleHookName,
+    LifecycleActionToken: res.LifecycleActionToken,
+    LifecycleActionResult: 'CONTINUE'
+  };
+  console.log("terminateInstance(", req, ")");
+  return asg.completeLifecycleAction(req).promise();
+}
+
+function heartbeat(res) {
+  const req = {
+    AutoScalingGroupName: res.AutoScalingGroupName,
+    LifecycleHookName: res.LifecycleHookName,
+    LifecycleActionToken: res.LifecycleActionToken,
+  };
+  console.log("heartbeat(", req, ")");
+  return asg.recordLifecycleActionHeartbeat(req).promise();
+}
+
+exports.handler = async function (event, context) {
   console.log(`Invoke: ${JSON.stringify(event)}`);
 
   const body = JSON.parse(event.Records[0].body); // batch size is 1
   const receiptHandle = event.Records[0].receiptHandle;
 
   if (body.Service === 'AWS Auto Scaling' && body.Event === 'autoscaling:TEST_NOTIFICATION') {
-    console.log('Ingoring autoscaling:TEST_NOTIFICATION')
+    console.log('Ignoring autoscaling:TEST_NOTIFICATION')
   } else if (body.Service === 'AWS Auto Scaling' && body.LifecycleTransition === 'autoscaling:EC2_INSTANCE_TERMINATING') {
-    let lifecycleActionToken = body.LifecycleActionToken;
-    let containerInstanceArn = await getContainerInstanceArn(body.EC2InstanceId);
-    await drainInstance(containerInstanceArn);
-    await wait(containerInstanceArn, body.AutoScalingGroupName, body.LifecycleHookName, body.LifecycleActionToken, body.Time);
+    body.ContainerInstanceArn = await getContainerInstanceArn(body.EC2InstanceId);
+    body.TerminateTime = body.Time;
+    await Promise.all([ drainInstance(body.ContainerInstanceArn), wait(body) ]);
   } else if (body.Service === 'DrainInstance' && body.Event === 'custom:DRAIN_WAIT') {
-    let taskCount = await countTasks(body.ContainerInstanceArn);
+    const taskCount = await countTasks(body.ContainerInstanceArn);
     if (taskCount === 0) {
-      await terminateInstance(body.AutoScalingGroupName, body.LifecycleHookName, body.LifecycleActionToken);
+      await terminateInstance(body);
     } else {
-      let actionDuration = Math.abs(new Date(body.TerminateTime).getTime() - new Date().getTime()) / 1000;
+      const actionDuration = Math.abs(new Date(body.TerminateTime).getTime() - new Date().getTime()) / 1000;
       if (actionDuration < drainingTimeout) {
-        await heartbeat(body.AutoScalingGroupName, body.LifecycleHookName, body.LifecycleActionToken);
-        await wait(body.ContainerInstanceArn, body.AutoScalingGroupName, body.LifecycleHookName, body.LifecycleActionToken, body.TerminateTime);
+        await Promise.all([ heartbeat(body), wait(body) ]);
       } else {
         console.log('Timeout for instance termination reached.');
-        await terminateInstance(body.AutoScalingGroupName, body.LifecycleHookName, body.LifecycleActionToken);
+        await terminateInstance(body);
       }
     }
   } else {
