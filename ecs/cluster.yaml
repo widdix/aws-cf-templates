@@ -161,10 +161,10 @@ Parameters:
   DrainingTimeoutInSeconds:
     Description: 'Maximum time in seconds an EC2 instance waits when terminating until all containers are moved to another EC2 instance (draining).'
     Type: Number
-    Default: 60
-    ConstraintDescription: 'Must be in the range [60-7200]'
+    Default: 600 # 10 minutes
+    ConstraintDescription: 'Must be in the range [60-86400]'
     MinValue: 60
-    MaxValue: 7200
+    MaxValue: 86400 # 24 hours
   ContainerMaxCPU:
     Description: 'The maximum number of cpu reservation per container that you plan to run on this cluster. A container instance has 1,024 CPU units for every CPU core.'
     Type: Number
@@ -790,165 +790,6 @@ Resources:
                 path=Resources.LaunchConfiguration.Metadata.AWS::CloudFormation::Init
                 action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=LaunchConfiguration
                 runas=root
-            '/etc/init.d/lifecycle-poller':
-              content: |
-                #!/usr/bin/env ruby
-                # chkconfig:    - 80 20
-                APP_NAME = 'lifecycle-poller'
-                APP_PATH = '/opt/lifecycle-poller/daemon.rb'
-                case ARGV.first
-                  when 'start'
-                    puts "Starting #{APP_NAME}..."
-                    system(APP_PATH, 'start')
-                    exit($?.exitstatus)
-                  when 'stop'
-                    system(APP_PATH, 'stop')
-                    exit($?.exitstatus)
-                  when 'restart'
-                    system(APP_PATH, 'restart')
-                    exit($?.exitstatus)
-                  when 'status'
-                    system(APP_PATH, 'status')
-                    exit($?.exitstatus)
-                end
-                unless %w{start stop restart status}.include? ARGV.first
-                  puts "Usage: #{APP_NAME} {start|stop|restart|status}"
-                  exit(1)
-                end
-              mode: '000755'
-              owner: root
-              group: root
-            '/opt/lifecycle-poller/poller.conf':
-              content: !Sub |
-                region: ${AWS::Region}
-                cluster: ${Cluster}
-                queueUrl: ${AutoScalingGroupLifecycleHookQueue}
-                maxWaitInSeconds: ${DrainingTimeoutInSeconds}
-              mode: '000400'
-              owner: root
-              group: root
-            '/opt/lifecycle-poller/daemon.rb':
-              content: |
-                #!/usr/bin/env ruby
-                require 'daemons'
-                Daemons.run(__dir__ + '/worker.rb', {:monitor => true, :log_output_syslog => true})
-              mode: '000500'
-              owner: root
-              group: root
-            '/opt/lifecycle-poller/worker.rb':
-              content: |
-                #!/usr/bin/env ruby
-                require 'net/http'
-                require 'aws-sdk-ecs'
-                require 'aws-sdk-autoscaling'
-                require 'aws-sdk-sqs'
-                require 'json'
-                require 'uri'
-                require 'yaml'
-                require 'syslog/logger'
-                $log = Syslog::Logger.new 'poller'
-                $conf = YAML::load_file(__dir__ + '/poller.conf')
-                Aws.config.update(region: $conf['region'])
-                $log.info 'poller started'
-                def fetchContainerInstanceId(ec2InstanceId)
-                  ecs = Aws::ECS::Client.new()
-                  resp1 = ecs.list_container_instances({
-                    cluster: $conf['cluster']
-                  })
-                  resp2 = ecs.describe_container_instances({
-                    cluster: $conf['cluster'],
-                    container_instances: resp1.container_instance_arns,
-                  })
-                  cis = resp2.container_instances.select {|ci| ci.ec2_instance_id == ec2InstanceId}
-                  if cis.first().nil?
-                    return nil
-                  else
-                    return cis.first().container_instance_arn.split("/").last()
-                  end
-                end
-                def drainContainerInstanceId(containerInstanceId)
-                  ecs = Aws::ECS::Client.new()
-                  ecs.update_container_instances_state({
-                    cluster: $conf['cluster'],
-                    container_instances: [containerInstanceId],
-                    status: "DRAINING"
-                  })
-                end
-                def isContainerInstanceIdle(containerInstanceId)
-                  ecs = Aws::ECS::Client.new()
-                  resp = ecs.list_tasks({
-                    cluster: $conf['cluster'],
-                    container_instance: containerInstanceId
-                  })
-                  return resp.task_arns.empty?
-                end
-                def awaitContainerInstanceIdle(poller, message, containerInstanceId)
-                  endTime = Time.now.to_i + $conf['maxWaitInSeconds']
-                  while Time.now.to_i < endTime do
-                    if isContainerInstanceIdle containerInstanceId
-                      $log.info "container instance #{containerInstanceId} is idle"
-                      return true
-                    end
-                    poller.change_message_visibility_timeout(message, 30)
-                    sleep 15 # seconds
-                  end
-                  $log.error "container instance #{containerInstanceId} is not idle, but wait time elapsed"
-                  return false
-                end
-                def completeLifecycleAction(token, hook, asg)
-                  begin
-                    autoscaling = Aws::AutoScaling::Client.new()
-                    autoscaling.complete_lifecycle_action(
-                      lifecycle_hook_name: hook,
-                      auto_scaling_group_name: asg,
-                      lifecycle_action_token: token,
-                      lifecycle_action_result: 'CONTINUE'
-                    )
-                    $log.info "Lifecycle action completed"
-                    return true
-                  rescue Exception => e
-                    if e.code == 'ValidationError'
-                      $log.info "Lifecycle action failed validation: #{e.inspect}"
-                      return true
-                    else
-                      raise e
-                    end
-                  end
-                end
-                def pollSQS()
-                  poller = Aws::SQS::QueuePoller.new($conf['queueUrl'])
-                  poller.poll do |msg|
-                    begin
-                      body = JSON.parse(msg.body)
-                      $log.debug "message #{body}"
-                      if body['Event'] == 'autoscaling:TEST_NOTIFICATION'
-                        $log.info 'received test notification'
-                      else
-                        if body['LifecycleTransition'] == 'autoscaling:EC2_INSTANCE_TERMINATING'
-                          $log.info "lifecycle transition for EC2 instance #{body['EC2InstanceId']}"
-                          containerInstanceId = fetchContainerInstanceId body['EC2InstanceId']
-                          if containerInstanceId.nil?
-                            $log.info "no container instance found for EC2 instance #{body['EC2InstanceId']}"
-                          else
-                            $log.info "lifecycle transition for container instance #{containerInstanceId}"
-                            drainContainerInstanceId containerInstanceId
-                            awaitContainerInstanceIdle poller, msg, containerInstanceId
-                          end
-                          completeLifecycleAction body['LifecycleActionToken'], body['LifecycleHookName'], body['AutoScalingGroupName']
-                        else
-                          $log.error "received unsupported lifecycle transition: #{body['LifecycleTransition']}"
-                        end
-                      end
-                    rescue Exception => e
-                      $log.error "message failed: #{e.inspect} #{msg.inspect}"
-                      raise e
-                    end
-                  end
-                end
-                pollSQS
-              mode: '000500'
-              owner: root
-              group: root
           services:
             sysvinit:
               cfn-hup:
@@ -963,14 +804,6 @@ Resources:
                 packages:
                   yum:
                   - amazon-ssm-agent
-              lifecycle-poller:
-                enabled: true
-                ensureRunning: true
-                files:
-                - '/etc/init.d/lifecycle-poller'
-                - '/opt/lifecycle-poller/poller.conf'
-                - '/opt/lifecycle-poller/daemon.rb'
-                - '/opt/lifecycle-poller/worker.rb'
     Properties:
       ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', ECSAMI]
       IamInstanceProfile: !Ref InstanceProfile
@@ -1045,7 +878,7 @@ Resources:
     Type: 'AWS::SQS::Queue'
     Properties:
       QueueName: !Sub '${AWS::StackName}-lifecycle-hook'
-      VisibilityTimeout: 30
+      VisibilityTimeout: 60
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt 'AutoScalingGroupLifecycleHookDeadLetterQueue.Arn'
         maxReceiveCount: 5
@@ -1114,7 +947,7 @@ Resources:
   AutoScalingGroupTerminatingLifecycleHook:
     Type: 'AWS::AutoScaling::LifecycleHook'
     Properties:
-      HeartbeatTimeout: !Ref DrainingTimeoutInSeconds
+      HeartbeatTimeout: 600
       DefaultResult: CONTINUE
       AutoScalingGroupName: !Ref AutoScalingGroup
       LifecycleTransition: 'autoscaling:EC2_INSTANCE_TERMINATING'
@@ -1449,6 +1282,97 @@ Resources:
       Dimensions:
       - Name: FunctionName
         Value: !Ref SchedulableContainersLambdaV2
+  DrainInstanceLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'lambda.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      ManagedPolicyArns: # TODO get rid of managed policy
+      - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+      - PolicyName: draininstance
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'sqs:DeleteMessage'
+            - 'sqs:ReceiveMessage'
+            - 'sqs:SendMessage'
+            - 'sqs:GetQueueAttributes'
+            Resource: !GetAtt 'AutoScalingGroupLifecycleHookQueue.Arn'
+          - Effect: Allow
+            Action:
+            - 'ecs:ListContainerInstances'
+            Resource: !GetAtt 'Cluster.Arn'
+          - Effect: Allow
+            Action:
+            - 'ecs:updateContainerInstancesState'
+            - 'ecs:listTasks'
+            Resource: '*'
+            Condition:
+              StringEquals:
+                'ecs:cluster': !GetAtt 'Cluster.Arn'
+          - Effect: Allow
+            Action:
+            - 'autoscaling:CompleteLifecycleAction'
+            - 'autoscaling:RecordLifecycleActionHeartbeat'
+            Resource: !Sub 'arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${AutoScalingGroup}'
+  DrainInstanceEventSourceMapping:
+    Type: 'AWS::Lambda::EventSourceMapping'
+    Properties:
+      BatchSize: 1
+      Enabled: true
+      EventSourceArn: !GetAtt 'AutoScalingGroupLifecycleHookQueue.Arn'
+      FunctionName: !GetAtt DrainInstanceLambda.Arn
+  DrainInstanceLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        ZipFile: |
+          const lib = require('/opt/lib.js');
+          exports.handler = async function(event, context) {
+            return await lib.handler(event, context);
+          };
+      Layers:
+      - !Sub 'arn:aws:lambda:${AWS::Region}:820394158530:layer:aws-cf-templates-lambda-drain-instance:2'
+      Handler: 'index.handler'
+      MemorySize: 128
+      Role: !GetAtt 'DrainInstanceLambdaRole.Arn'
+      Runtime: 'nodejs8.10'
+      Timeout: 30
+      Environment:
+        Variables:
+          CLUSTER: !Ref Cluster
+          QUEUE_URL: !Ref AutoScalingGroupLifecycleHookQueue
+          DRAINING_TIMEOUT: !Ref DrainingTimeoutInSeconds
+      ReservedConcurrentExecutions: 1
+  DrainInstanceLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${DrainInstanceLambda}'
+      RetentionInDays: !Ref LogsRetentionInDays
+  DrainInstanceLambdaErrorsTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Invocations failed due to errors in the function'
+      Namespace: 'AWS/Lambda'
+      MetricName: Errors
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref DrainInstanceLambda
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
