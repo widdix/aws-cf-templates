@@ -56,7 +56,7 @@ async function countTasks(containerInstanceArn) {
 
 async function terminateInstance(autoScalingGroupName, lifecycleHookName, lifecycleActionToken) {
   console.log(`terminateInstance(${autoScalingGroupName}, ${lifecycleHookName}, ${lifecycleActionToken})`);
-  asg.completeLifecycleAction({
+  await asg.completeLifecycleAction({
       AutoScalingGroupName: autoScalingGroupName, 
       LifecycleHookName: lifecycleHookName,
       LifecycleActionToken: lifecycleActionToken,
@@ -66,7 +66,7 @@ async function terminateInstance(autoScalingGroupName, lifecycleHookName, lifecy
 
 async function hearbeat(autoScalingGroupName, lifecycleHookName, lifecycleActionToken) {
   console.log(`hearbeat(${autoScalingGroupName}, ${lifecycleHookName}, ${lifecycleActionToken})`);
-  asg.recordLifecycleActionHeartbeat({
+  await asg.recordLifecycleActionHeartbeat({
       AutoScalingGroupName: autoScalingGroupName, 
       LifecycleHookName: lifecycleHookName,
       LifecycleActionToken: lifecycleActionToken
