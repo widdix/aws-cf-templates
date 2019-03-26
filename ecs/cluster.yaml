@@ -1335,9 +1335,7 @@ Resources:
       Code:
         ZipFile: |
           const lib = require('/opt/lib.js');
-          exports.handler = async function(event, context) {
-            return await lib.handler(event, context);
-          };
+          exports.handler = (event, context) => lib.handler(event, context);
       Layers:
       - !Sub 'arn:aws:lambda:${AWS::Region}:820394158530:layer:aws-cf-templates-lambda-drain-instance:2'
       Handler: 'index.handler'
