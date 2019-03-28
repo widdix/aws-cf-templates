@@ -1376,7 +1376,7 @@ Resources:
           async function terminateInstance(asgName, lchName, lcaToken) {
             console.log(`terminateInstance(${[...arguments].join(', ')})`);
             await asg.completeLifecycleAction({
-              AutoScalingGroupName: asgName, 
+              AutoScalingGroupName: asgName,
               LifecycleHookName: lchName,
               LifecycleActionToken: lcaToken,
               LifecycleActionResult: 'CONTINUE'
@@ -1385,7 +1385,7 @@ Resources:
           async function heartbeat(asgName, lchName, lcaToken) {
             console.log(`heartbeat(${[...arguments].join(', ')})`);
             await asg.recordLifecycleActionHeartbeat({
-              AutoScalingGroupName: asgName, 
+              AutoScalingGroupName: asgName,
               LifecycleHookName: lchName,
               LifecycleActionToken: lcaToken
             }).promise();
