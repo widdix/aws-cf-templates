@@ -319,25 +319,6 @@ Resources:
             - 'logs:PutLogEvents'
             - 'logs:DescribeLogStreams'
             Resource: !GetAtt 'LogGroup.Arn'
-      - PolicyName: autoscaling
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Sid: write
-            Effect: Allow
-            Action: 'autoscaling:CompleteLifecycleAction'
-            Resource: '*'
-      - PolicyName: sqs
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Sid: write
-            Effect: Allow
-            Action:
-            - 'sqs:DeleteMessage'
-            - 'sqs:ReceiveMessage'
-            - 'sqs:ChangeMessageVisibility'
-            Resource: !GetAtt 'AutoScalingGroupLifecycleHookQueue.Arn'
   IAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
     Condition: HasIAMUserSSHAccess
