@@ -29,7 +29,7 @@ Resources:
   Endpoint:
     Type: 'AWS::EC2::VPCEndpoint'
     Properties:
-      RouteTableIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablesPrivate'}]
+      RouteTableIds: !Split [',', !Join [',', [{'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablesPublic'}, {'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablesPrivate'}]]]
       ServiceName: !Sub 'com.amazonaws.${AWS::Region}.dynamodb'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
 Outputs:
