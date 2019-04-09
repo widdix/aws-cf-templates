@@ -233,7 +233,18 @@ Multi-AZ Postgres for HA.
 
 # S3
 
-S3 bucket with optional public read access.
+S3 bucket with different access requirements:
+
+| Access                   | Description                                                                                            |
+| ------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Private                  | No bucket policy, access via IAM.                                                                      |
+| PublicRead               | Allow reads from anyone.                                                                               |
+| CloudFrontRead           | Allow reads from CloudFront via Origin Access Identity (see `CloudFrontOriginAccessIdentity` output)   |
+| CloudFrontAccessLogWrite | Allow CloudFront to store access logs in this bucket.                                                  |
+| ElbAccessLogWrite        | Allow ELB to store access logs in this bucket.                                                         |
+| ConfigWrite              | Allow Config to store data in this bucket.                                                             |
+| CloudTrailWrite          | Allow CloudTrail to store data in this bucket.                                                         |
+| VpcEndpointRead          | Allow reads from requests coming over a specific VPC endpoint (see `ParentVpcEndpointStack` parameter) |
 
 ## Installation Guide
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/state/s3.yaml&stackName=s3)

@@ -22,6 +22,7 @@ Metadata:
       Parameters:
       - ParentKmsKeyStack
       - ParentS3VirusScanStack
+      - ParentVpcEndpointStack
     - Label:
         default: 'S3 Parameters'
       Parameters:
@@ -39,6 +40,10 @@ Parameters:
     Description: 'Optional stack name of parent S3 VirusScan stack based on https://github.com/widdix/aws-s3-virusscan template.'
     Type: String
     Default: ''
+  ParentVpcEndpointStack:
+    Description: 'Optional Stack name of parent VPC endpoint stack based on vpc/vpc-endpoint-s3.yaml template (Required if Access := VpcEndpointRead).'
+    Type: String
+    Default: ''
   BucketName:
     Description: 'Optional name of the bucket.'
     Type: String
@@ -47,7 +52,7 @@ Parameters:
     Description: 'Access policy of the bucket.'
     Type: String
     Default: Private
-    AllowedValues: [Private, PublicRead, CloudFrontRead, CloudFrontAccessLogWrite, ElbAccessLogWrite, ConfigWrite, CloudTrailWrite]
+    AllowedValues: [Private, PublicRead, CloudFrontRead, CloudFrontAccessLogWrite, ElbAccessLogWrite, ConfigWrite, CloudTrailWrite, VpcEndpointRead]
   Versioning:
     Description: 'Enable versioning to keep a backup if objects change.'
     Type: String
@@ -72,6 +77,7 @@ Conditions:
   HasElbAccessLogWriteAccess: !Equals [!Ref Access, ElbAccessLogWrite]
   HasConfigWriteAccess: !Equals [!Ref Access, ConfigWrite]
   HasCloudTrailWriteAccess: !Equals [!Ref Access, CloudTrailWrite]
+  HasVpcEndpointReadAccess: !Equals [!Ref Access, VpcEndpointRead]
   HasBucketName: !Not [!Equals [!Ref BucketName, '']]
   HasVersioning: !Equals [!Ref Versioning, true]
   HadVersioning: !Equals [!Ref Versioning, 'false-but-was-true']
@@ -207,6 +213,20 @@ Resources:
           Condition:
             StringEquals:
               's3:x-amz-acl': 'bucket-owner-full-control'
+  BucketPolicyVpcEndpointRead:
+    Condition: HasVpcEndpointReadAccess
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Statement:
+        - Principal: '*'
+          Action: 's3:GetObject'
+          Effect: Allow
+          Resource: !Sub '${Bucket.Arn}/*'
+          Condition:
+            StringEquals:
+              'aws:sourceVpce': {'Fn::ImportValue': !Sub '${ParentVpcEndpointStack}-EndpointS3'}
   CloudFrontOriginAccessIdentity:
     Condition: HasCloudFrontReadAccess
     Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
