@@ -269,6 +269,11 @@ Outputs:
   StackName:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
+  BucketName:
+    Description: 'Name of the S3 bucket storing the static files.'
+    Value: !Ref S3Bucket
+    Export:
+      Name: !Sub '${AWS::StackName}-BucketName'
   URL:
     Description: 'URL to static website.'
     Value: !Sub
