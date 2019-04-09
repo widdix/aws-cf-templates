@@ -36,30 +36,46 @@ Parameters:
   ServiceName:
     Description: 'The name of the service.'
     Type: String
-    AllowedValues: # generate list with aws --region us-east-1 ec2 describe-vpc-endpoint-services --query 'ServiceNames'
+    AllowedValues: # generate list with aws --region us-east-1 ec2 describe-vpc-endpoint-services --query 'ServiceDetails[].ServiceName'
+    - notebook
     - cloudformation
     - cloudtrail
     - codebuild
     - codebuild-fips
+    - codecommit
+    - codecommit-fips
+    - codepipeline
     - config
     - dynamodb
     - ec2
     - ec2messages
+    - 'ecr.api'
+    - 'ecr.dkr'
+    - ecs
+    - ecs-agent
+    - ecs-telemetry
+    - 'elastic-inference.runtime'
     - elasticloadbalancing
     - events
     - execute-api
+    - git-codecommit
+    - git-codecommit-fips
     - kinesis-streams
     - kms
     - logs
     - monitoring
     - s3
-    - sagemaker.api
-    - sagemaker.runtime
+    - 'sagemaker.api'
+    - 'sagemaker.runtime'
+    - 'sagemaker.runtime-fips'
     - secretsmanager
     - servicecatalog
     - sns
+    - sqs
     - ssm
     - ssmmessages
+    - transfer
+    - 'transfer.server'
 Resources:
   SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -75,7 +91,7 @@ Resources:
     Type: 'AWS::EC2::VPCEndpoint'
     Properties:
       PrivateDnsEnabled: true
-      RouteTableIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablesPrivate'}]
+      RouteTableIds: !Split [',', !Join [',', [{'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablesPublic'}, {'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablesPrivate'}]]]
       SecurityGroupIds: [!Ref SecurityGroup]
       ServiceName: !Sub 'com.amazonaws.${AWS::Region}.${ServiceName}'
       SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
