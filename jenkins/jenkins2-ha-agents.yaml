@@ -192,38 +192,38 @@ Parameters:
     Default: 'jenkins.'
 Mappings:
   RegionMap:
-    'ap-south-1':
-      AMI: 'ami-0937dcc711d38ef3f'
-    'eu-west-3':
-      AMI: 'ami-0854d53ce963f69d8'
     'eu-north-1':
-      AMI: 'ami-6d27a913'
+      AMI: 'ami-d16fe6af'
+    'ap-south-1':
+      AMI: 'ami-0889b8a448de4fc44'
+    'eu-west-3':
+      AMI: 'ami-0451ae4fd8dd178f7'
     'eu-west-2':
-      AMI: 'ami-0664a710233d7c148'
+      AMI: 'ami-09ead922c1dad67e4'
     'eu-west-1':
-      AMI: 'ami-0fad7378adf284ce0'
+      AMI: 'ami-07683a44e80cd32c5'
     'ap-northeast-2':
-      AMI: 'ami-018a9a930060d38aa'
+      AMI: 'ami-047f7b46bd6dd5d84'
     'ap-northeast-1':
-      AMI: 'ami-0d7ed3ddb85b521a6'
+      AMI: 'ami-0f9ae750e8274075b'
     'sa-east-1':
-      AMI: 'ami-0b04450959586da29'
+      AMI: 'ami-0669a96e355eac82f'
     'ca-central-1':
-      AMI: 'ami-0de8b8e4bc1f125fe'
+      AMI: 'ami-03338e1f67dae0168'
     'ap-southeast-1':
-      AMI: 'ami-04677bdaa3c2b6e24'
+      AMI: 'ami-0b419c3a4b01d1859'
     'ap-southeast-2':
-      AMI: 'ami-0c9d48b5db609ad6e'
+      AMI: 'ami-04481c741a0311bbb'
     'eu-central-1':
-      AMI: 'ami-0eaec5838478eb0ba'
+      AMI: 'ami-09def150731bdbcc2'
     'us-east-1':
-      AMI: 'ami-035be7bafff33b6b6'
+      AMI: 'ami-0de53d8956e8dcf80'
     'us-east-2':
-      AMI: 'ami-04328208f4f0cf1fe'
+      AMI: 'ami-02bcbb802e03574ba'
     'us-west-1':
-      AMI: 'ami-0799ad445b5727125'
+      AMI: 'ami-0019ef04ac50be30f'
     'us-west-2':
-      AMI: 'ami-032509850cf9ee54e'
+      AMI: 'ami-061392db613a6357b'
 Conditions:
   HasZeroAgents: !Equals [!Ref AgentMinSize, '0']
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
