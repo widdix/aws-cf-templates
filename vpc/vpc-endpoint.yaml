@@ -41,9 +41,9 @@ Parameters:
     - cloudformation
     - cloudtrail
     - codebuild
-    - codebuild-fips
+    - 'codebuild-fips'
     - codecommit
-    - codecommit-fips
+    - 'codecommit-fips'
     - codepipeline
     - config
     - dynamodb
@@ -52,15 +52,16 @@ Parameters:
     - 'ecr.api'
     - 'ecr.dkr'
     - ecs
-    - ecs-agent
-    - ecs-telemetry
+    - 'ecs-agent'
+    - 'ecs-telemetry'
     - 'elastic-inference.runtime'
     - elasticloadbalancing
     - events
-    - execute-api
-    - git-codecommit
-    - git-codecommit-fips
-    - kinesis-streams
+    - 'execute-api'
+    - 'git-codecommit'
+    - 'git-codecommit-fips'
+    - 'kinesis-firehose'
+    - 'kinesis-streams'
     - kms
     - logs
     - monitoring
