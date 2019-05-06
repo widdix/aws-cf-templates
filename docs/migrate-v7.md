@@ -60,16 +60,3 @@ The new static website makes use of Lambda@Edge.
 
 * vpc/vpc-*azs-legacy: Paramater `ClassB` and output `ClassB` will be removed in the next version (v8).
 
-
-# Migrate from v5 to v6
-
-[Learn more](./migrate-v6/)
-
-# Migrate from v4 to v5
-
-[Learn more](./migrate-v5/)
-
-# Migrate from v3 to v4
-
-[Learn more](./migrate-v4/)
-

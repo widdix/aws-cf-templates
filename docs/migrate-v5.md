@@ -17,7 +17,3 @@ If you want to migrate stacks based on `opertions/backup-dynamodb.yaml`, you hav
 The auto scaling rules have changed and new parameters where added (all with default values). The cluster now scales based on a new metric: `SchedulableContainers`. Scaling based on SchedulableContainers is described in detail here: http://garbe.io/blog/2017/04/12/a-better-solution-to-ecs-autoscaling/
 
 If you want to migrate stacks based on `ecs/cluster.yaml`, you have to check your ECS task definitions and look for the highest memory and cpu reservation and set the new parameters `ContainerMaxMemory` and `ContainerMaxCPU` to those values.
-
-# Migrate from v3 to v4
-
-[Learn more](./migrate-v4/)

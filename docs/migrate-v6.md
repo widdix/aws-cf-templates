@@ -9,11 +9,3 @@ There is one smaller breaking change that affects mostly all templates: The opti
 [New Relic Servers](https://docs.newrelic.com/docs/servers) and Legacy Alerts are going away on or before May 15, 2018. That's why we removed them from the templates.
 
 If you want to migrate stacks, you can no longer provide the `NewRelicLicenseKey` parameter.
-
-# Migrate from v4 to v5
-
-[Learn more](./migrate-v5/)
-
-# Migrate from v3 to v4
-
-[Learn more](./migrate-v4/)

@@ -99,38 +99,38 @@ Parameters:
     NoEcho: true
 Mappings:
   RegionMap:
-    'ap-south-1':
-      AMI: 'ami-06bcd1131b2f55803'
-    'eu-west-3':
-      AMI: 'ami-051707cdba246187b'
     'eu-north-1':
-      AMI: 'ami-07ec6279'
+      AMI: 'ami-d16fe6af'
+    'ap-south-1':
+      AMI: 'ami-0889b8a448de4fc44'
+    'eu-west-3':
+      AMI: 'ami-0451ae4fd8dd178f7'
     'eu-west-2':
-      AMI: 'ami-0274e11dced17bb5b'
+      AMI: 'ami-09ead922c1dad67e4'
     'eu-west-1':
-      AMI: 'ami-09693313102a30b2c'
+      AMI: 'ami-07683a44e80cd32c5'
     'ap-northeast-2':
-      AMI: 'ami-0b4fdb56a00adb616'
+      AMI: 'ami-047f7b46bd6dd5d84'
     'ap-northeast-1':
-      AMI: 'ami-0a2de1c3b415889d2'
+      AMI: 'ami-0f9ae750e8274075b'
     'sa-east-1':
-      AMI: 'ami-0112d42866980b373'
+      AMI: 'ami-0669a96e355eac82f'
     'ca-central-1':
-      AMI: 'ami-076b4adb3f90cd384'
+      AMI: 'ami-03338e1f67dae0168'
     'ap-southeast-1':
-      AMI: 'ami-0b84d2c53ad5250c2'
+      AMI: 'ami-0b419c3a4b01d1859'
     'ap-southeast-2':
-      AMI: 'ami-08589eca6dcc9b39c'
+      AMI: 'ami-04481c741a0311bbb'
     'eu-central-1':
-      AMI: 'ami-034fffcc6a0063961'
+      AMI: 'ami-09def150731bdbcc2'
     'us-east-1':
-      AMI: 'ami-009d6802948d06e52'
+      AMI: 'ami-0de53d8956e8dcf80'
     'us-east-2':
-      AMI: 'ami-02e680c4540db351e'
+      AMI: 'ami-02bcbb802e03574ba'
     'us-west-1':
-      AMI: 'ami-011b6930a81cd6aaf'
+      AMI: 'ami-0019ef04ac50be30f'
     'us-west-2':
-      AMI: 'ami-01bbe152bf19d0289'
+      AMI: 'ami-061392db613a6357b'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -551,7 +551,7 @@ Resources:
               test: '[ ! -d /mnt/storage/backup.vpn_server.config ]'
         install:
           sources:
-            '/usr/local/src/softether': 'http://www.softether-download.com/files/softether/v4.25-9656-rtm-2018.01.15-tree/Linux/SoftEther_VPN_Server/64bit_-_Intel_x64_or_AMD64/softether-vpnserver-v4.25-9656-rtm-2018.01.15-linux-x64-64bit.tar.gz'
+            '/usr/local/src/softether': 'http://www.softether-download.com/files/softether/v4.29-9680-rtm-2019.02.28-tree/Linux/SoftEther_VPN_Server/64bit_-_Intel_x64_or_AMD64/softether-vpnserver-v4.29-9680-rtm-2019.02.28-linux-x64-64bit.tar.gz'
           files:
             '/etc/init.d/vpnserver':
               content: |
@@ -700,7 +700,6 @@ Resources:
     - StorageMountTargetA
     - StorageMountTargetB
     Properties:
-      DesiredCapacity: '1'
       LaunchConfigurationName: !Ref LaunchConfiguration
       MaxSize: '1'
       MinSize: '1'

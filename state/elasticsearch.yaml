@@ -22,6 +22,7 @@ Metadata:
       Parameters:
       - ParentVPCStack
       - ParentClientStack
+      - ParentKmsKeyStack
       - ParentZoneStack
       - ParentSSHBastionStack
       - ParentAlertStack
@@ -43,6 +44,10 @@ Parameters:
   ParentClientStack:
     Description: 'Stack name of parent client stack based on state/client-sg.yaml template.'
     Type: String
+  ParentKmsKeyStack:
+    Description: 'Optional Stack name of parent KMS key stack based on security/kms-key.yaml template (works with certain instance types https://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/aes-supported-instance-types.html only).'
+    Type: String
+    Default: ''
   ParentZoneStack:
     Description: 'Optional stack name of parent zone stack based on vpc/vpc-zone-*.yaml template.'
     Type: String
@@ -87,19 +92,14 @@ Parameters:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
     Default: 'elasticsearch.'
-  Encryption:
-    Description: 'Enable server side encryption using KMS (customer managed) CMK. Only works with certain instance types (https://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/aes-supported-instance-types.html)'
-    Type: String
-    Default: false
-    AllowedValues: [true, false]
 Conditions:
+  HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasSingleClusterInstance: !Equals [!Ref ClusterInstanceCount, '1']
   HasDedicatedMasterNodes: !Not [!Equals [!Ref DedicatedMasterCount, 0]]
   HasAlertTopicAndNotSingleClusterInstance: !And [!Condition HasAlertTopic, !Not [!Condition HasSingleClusterInstance]]
-  HasEncryption: !Equals [!Ref Encryption, true]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -133,41 +133,6 @@ Resources:
       FromPort: 443
       ToPort: 443
       SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
-  Key:
-    Condition: HasEncryption
-    DeletionPolicy: Retain
-    Type: 'AWS::KMS::Key'
-    Properties:
-      KeyPolicy:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
-          Action: 'kms:*'
-          Resource: '*'
-        - Effect: Allow
-          Principal:
-            AWS: '*'
-          Action:
-          - 'kms:Encrypt'
-          - 'kms:Decrypt'
-          - 'kms:ReEncrypt*'
-          - 'kms:GenerateDataKey*'
-          - 'kms:CreateGrant'
-          - 'kms:ListGrants'
-          - 'kms:DescribeKey'
-          Resource: '*'
-          Condition:
-            StringEquals:
-              'kms:CallerAccount': !Ref 'AWS::AccountId'
-              'kms:ViaService': !Sub 'es.${AWS::Region}.amazonaws.com'
-  KeyAlias:
-    Condition: HasEncryption
-    Type: 'AWS::KMS::Alias'
-    Properties:
-      AliasName: !Sub 'alias/${AWS::StackName}'
-      TargetKeyId: !Ref Key
   ElasticsearchDomain:
     Type: 'AWS::Elasticsearch::Domain'
     Properties:
@@ -193,7 +158,7 @@ Resources:
         InstanceType: !Ref ClusterInstanceType
         ZoneAwarenessEnabled: !If [HasSingleClusterInstance, false, true]
       ElasticsearchVersion: '5.5'
-      EncryptionAtRestOptions: !If [HasEncryption, {Enabled: true, KmsKeyId: !Ref Key}, !Ref 'AWS::NoValue']
+      EncryptionAtRestOptions: !If [HasKmsKey, {Enabled: true, KmsKeyId: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}}, !Ref 'AWS::NoValue']
       SnapshotOptions:
         AutomatedSnapshotStartHour: 10
       VPCOptions:

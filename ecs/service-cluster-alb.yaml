@@ -92,16 +92,6 @@ Parameters:
   Image:
     Description: 'The image to use for a container, which is passed directly to the Docker daemon. You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag).'
     Type: String
-  Cpu:
-    Description: 'Optional minimum number of vCPUs to reserve for the container.'
-    Type: String
-    Default: ''
-    AllowedValues: ['', 0.25', '0,5', '1', '2', '4']
-  Memory:
-    Description: 'The amount (in GB) of memory used by the task.'
-    Type: String
-    Default: '0.5'
-    AllowedValues: ['0.5', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30']
   DesiredCount:
     Description: 'The number of simultaneous tasks, that you want to run on the cluster.'
     Type: Number
@@ -135,81 +125,6 @@ Parameters:
     Default: 60
     MinValue: 0
     MaxValue: 1800
-Mappings:
-  CpuMap:
-    '0.25':
-      Cpu: 256
-    '0.5':
-      Cpu: 512
-    '1':
-      Cpu: 1024
-    '2':
-      Cpu: 2048
-    '4':
-      Cpu: 4096
-  MemoryMap:
-    '0.5':
-      Memory: 512
-    '1':
-      Memory: 1024
-    '2':
-      Memory: 2048
-    '3':
-      Memory: 3072
-    '4':
-      Memory: 4096
-    '5':
-      Memory: 5120
-    '6':
-      Memory: 6144
-    '7':
-      Memory: 7168
-    '8':
-      Memory: 8192
-    '9':
-      Memory: 9216
-    '10':
-      Memory: 10240
-    '11':
-      Memory: 11264
-    '12':
-      Memory: 12288
-    '13':
-      Memory: 13312
-    '14':
-      Memory: 14336
-    '15':
-      Memory: 15360
-    '16':
-      Memory: 16384
-    '17':
-      Memory: 17408
-    '18':
-      Memory: 18432
-    '19':
-      Memory: 19456
-    '20':
-      Memory: 20480
-    '21':
-      Memory: 21504
-    '22':
-      Memory: 22528
-    '23':
-      Memory: 23552
-    '24':
-      Memory: 24576
-    '25':
-      Memory: 25600
-    '26':
-      Memory: 26624
-    '27':
-      Memory: 27648
-    '28':
-      Memory: 28672
-    '29':
-      Memory: 29696
-    '30':
-      Memory: 30720
 Conditions:
   HasLoadBalancerHttps: !Equals [!Ref LoadBalancerHttps, 'true']
   HasLoadBalancerPath: !Not [!Equals [!Ref LoadBalancerPath, '']]
@@ -217,7 +132,6 @@ Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasAutoScaling: !Equals [!Ref AutoScaling, 'true']
-  HasCpu: !Not [!Equals [!Ref Cpu, '']]
 Resources:
   TaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
@@ -225,10 +139,9 @@ Resources:
       Family: !Ref 'AWS::StackName'
       NetworkMode: bridge
       ContainerDefinitions:
-      - Cpu: !If [HasCpu, !FindInMap [CpuMap, !Ref Cpu, Cpu], !Ref 'AWS::NoValue']
-        Name: main # if you change this, you also must change the AWS::ECS::Service
+      - Name: main # if you change this, you also must change the AWS::ECS::Service
         Image: !Ref Image
-        Memory: !FindInMap [MemoryMap, !Ref Memory, Memory]
+        Memory: 128
         PortMappings:
         - ContainerPort: 80 # if you change this, you also must change the AWS::ECS::Service
           Protocol: tcp

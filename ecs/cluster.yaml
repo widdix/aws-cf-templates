@@ -153,7 +153,7 @@ Parameters:
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
   DesiredCapacity:
-    Description: 'The desired start size of the Auto Scaling group.'
+    Description: 'Deprecated in v9, will be removed in v11, use `MinSize` instead!'
     Type: Number
     Default: 2
     ConstraintDescription: 'Must be >= 1'
@@ -161,10 +161,10 @@ Parameters:
   DrainingTimeoutInSeconds:
     Description: 'Maximum time in seconds an EC2 instance waits when terminating until all containers are moved to another EC2 instance (draining).'
     Type: Number
-    Default: 60
-    ConstraintDescription: 'Must be in the range [60-7200]'
+    Default: 600 # 10 minutes
+    ConstraintDescription: 'Must be in the range [60-86400]'
     MinValue: 60
-    MaxValue: 7200
+    MaxValue: 86400 # 24 hours
   ContainerMaxCPU:
     Description: 'The maximum number of cpu reservation per container that you plan to run on this cluster. A container instance has 1,024 CPU units for every CPU core.'
     Type: Number
@@ -187,36 +187,38 @@ Parameters:
     ConstraintDescription: 'Must be >= 2'
 Mappings:
   RegionMap:
+    'eu-north-1':
+      ECSAMI: 'ami-036cf93383aba5279'
     'ap-south-1':
-      ECSAMI: 'ami-0b7c3be99909df6ef'
+      ECSAMI: 'ami-0d143ad35f29ad632'
     'eu-west-3':
-      ECSAMI: 'ami-0caadc4f0db31a303'
+      ECSAMI: 'ami-0b4b8274f0c0d3bac'
     'eu-west-2':
-      ECSAMI: 'ami-0b5225210a12d9951'
+      ECSAMI: 'ami-016a20f0624bae8c5'
     'eu-west-1':
-      ECSAMI: 'ami-0acc9f8be17a41897'
+      ECSAMI: 'ami-09cd8db92c6bf3a84'
     'ap-northeast-2':
-      ECSAMI: 'ami-0bdc871079baf9649'
+      ECSAMI: 'ami-0470f8828abe82a87'
     'ap-northeast-1':
-      ECSAMI: 'ami-0c38293d60d98af86'
+      ECSAMI: 'ami-00f839709b07ffb58'
     'sa-east-1':
-      ECSAMI: 'ami-078146697425f25a7'
+      ECSAMI: 'ami-04e333c875fae9d77'
     'ca-central-1':
-      ECSAMI: 'ami-02c80e9173258d289'
+      ECSAMI: 'ami-039a05a64b90f63ee'
     'ap-southeast-1':
-      ECSAMI: 'ami-0e28ff4e3f1776d86'
+      ECSAMI: 'ami-0c5b69a05af2f0e23'
     'ap-southeast-2':
-      ECSAMI: 'ami-0eed1c915ea891aca'
+      ECSAMI: 'ami-011ce3fbe73731dfe'
     'eu-central-1':
-      ECSAMI: 'ami-055aa9664ef169e25'
+      ECSAMI: 'ami-0ab1db011871746ef'
     'us-east-1':
-      ECSAMI: 'ami-0a6b7e0cc0b1f464f'
+      ECSAMI: 'ami-0bc08634af113cccb'
     'us-east-2':
-      ECSAMI: 'ami-037a92bf1efdb11a2'
+      ECSAMI: 'ami-00cffcd24cb08edf1'
     'us-west-1':
-      ECSAMI: 'ami-0184f498956de7db5'
+      ECSAMI: 'ami-05cc68a00d392447a'
     'us-west-2':
-      ECSAMI: 'ami-0c1f4871ebaae6d86'
+      ECSAMI: 'ami-0054160a688deeb6a'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -275,7 +277,6 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
-            - 'ecs:DeregisterContainerInstance'
             - 'ecs:RegisterContainerInstance'
             - 'ecs:SubmitContainerStateChange'
             - 'ecs:SubmitTaskStateChange'
@@ -318,24 +319,6 @@ Resources:
             - 'logs:PutLogEvents'
             - 'logs:DescribeLogStreams'
             Resource: !GetAtt 'LogGroup.Arn'
-      - PolicyName: autoscaling
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Sid: write
-            Effect: Allow
-            Action: 'autoscaling:CompleteLifecycleAction'
-            Resource: '*'
-      - PolicyName: sqs
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Sid: write
-            Effect: Allow
-            Action:
-            - 'sqs:DeleteMessage'
-            - 'sqs:ReceiveMessage'
-            Resource: !GetAtt 'AutoScalingGroupLifecycleHookQueue.Arn'
   IAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
     Condition: HasIAMUserSSHAccess
@@ -788,173 +771,6 @@ Resources:
                 path=Resources.LaunchConfiguration.Metadata.AWS::CloudFormation::Init
                 action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=LaunchConfiguration
                 runas=root
-            '/etc/init.d/lifecycle-poller':
-              content: |
-                #!/usr/bin/env ruby
-                # chkconfig:    - 80 20
-                APP_NAME = 'lifecycle-poller'
-                APP_PATH = '/opt/lifecycle-poller/daemon.rb'
-                case ARGV.first
-                  when 'start'
-                    puts "Starting #{APP_NAME}..."
-                    system(APP_PATH, 'start')
-                    exit($?.exitstatus)
-                  when 'stop'
-                    system(APP_PATH, 'stop')
-                    exit($?.exitstatus)
-                  when 'restart'
-                    system(APP_PATH, 'restart')
-                    exit($?.exitstatus)
-                  when 'status'
-                    system(APP_PATH, 'status')
-                    exit($?.exitstatus)
-                end
-                unless %w{start stop restart status}.include? ARGV.first
-                  puts "Usage: #{APP_NAME} {start|stop|restart|status}"
-                  exit(1)
-                end
-              mode: '000755'
-              owner: root
-              group: root
-            '/opt/lifecycle-poller/poller.conf':
-              content: !Sub |
-                region: ${AWS::Region}
-                cluster: ${Cluster}
-                queueUrl: ${AutoScalingGroupLifecycleHookQueue}
-                maxWaitInSeconds: ${DrainingTimeoutInSeconds}
-              mode: '000400'
-              owner: root
-              group: root
-            '/opt/lifecycle-poller/daemon.rb':
-              content: |
-                #!/usr/bin/env ruby
-                require 'daemons'
-                Daemons.run(__dir__ + '/worker.rb', {:monitor => true, :log_output_syslog => true})
-              mode: '000500'
-              owner: root
-              group: root
-            '/opt/lifecycle-poller/worker.rb':
-              content: |
-                #!/usr/bin/env ruby
-                require 'net/http'
-                require 'aws-sdk-ecs'
-                require 'aws-sdk-autoscaling'
-                require 'aws-sdk-sqs'
-                require 'json'
-                require 'uri'
-                require 'yaml'
-                require 'syslog/logger'
-                $log = Syslog::Logger.new 'poller'
-                $conf = YAML::load_file(__dir__ + '/poller.conf')
-                Aws.config.update(region: $conf['region'])
-                $log.info 'poller started'
-                def fetchContainerInstanceId(ec2InstanceId)
-                  ecs = Aws::ECS::Client.new()
-                  resp1 = ecs.list_container_instances({
-                    cluster: $conf['cluster']
-                  })
-                  resp2 = ecs.describe_container_instances({
-                    cluster: $conf['cluster'],
-                    container_instances: resp1.container_instance_arns,
-                  })
-                  cis = resp2.container_instances.select {|ci| ci.ec2_instance_id == ec2InstanceId}
-                  if cis.first().nil?
-                    return nil
-                  else
-                    return cis.first().container_instance_arn.split("/").last()
-                  end
-                end
-                def drainContainerInstanceId(containerInstanceId)
-                  ecs = Aws::ECS::Client.new()
-                  ecs.update_container_instances_state({
-                    cluster: $conf['cluster'],
-                    container_instances: [containerInstanceId],
-                    status: "DRAINING"
-                  })
-                end
-                def isContainerInstanceIdle(containerInstanceId)
-                  ecs = Aws::ECS::Client.new()
-                  resp = ecs.list_tasks({
-                    cluster: $conf['cluster'],
-                    container_instance: containerInstanceId
-                  })
-                  return resp.task_arns.empty?
-                end
-                def awaitContainerInstanceIdle(containerInstanceId)
-                  endTime = Time.now.to_i + $conf['maxWaitInSeconds']
-                  while Time.now.to_i < endTime do
-                    if isContainerInstanceIdle containerInstanceId
-                      $log.info "container instance #{containerInstanceId} is idle"
-                      return true
-                    end
-                    sleep 5 # seconds
-                  end
-                  $log.error "container instance #{containerInstanceId} is not idle, but wait time elapsed"
-                  return false
-                end
-                def deregisterContainerInstance(containerInstanceId)
-                  ecs = Aws::ECS::Client.new()
-                  resp = ecs.deregister_container_instance({
-                    cluster: $conf['cluster'],
-                    container_instance: containerInstanceId,
-                    force: false
-                  })
-                end
-                def completeLifecycleAction(token, hook, asg)
-                  begin
-                    autoscaling = Aws::AutoScaling::Client.new()
-                    autoscaling.complete_lifecycle_action(
-                      lifecycle_hook_name: hook,
-                      auto_scaling_group_name: asg,
-                      lifecycle_action_token: token,
-                      lifecycle_action_result: 'CONTINUE'
-                    )
-                    $log.info "Lifecycle action completed"
-                    return true
-                  rescue Exception => e
-                    if e.code == 'ValidationError'
-                      $log.info "Lifecycle action failed validation: #{e.inspect}"
-                      return true
-                    else
-                      raise e
-                    end
-                  end
-                end
-                def pollSQS()
-                  poller = Aws::SQS::QueuePoller.new($conf['queueUrl'])
-                  poller.poll do |msg|
-                    begin
-                      body = JSON.parse(msg.body)
-                      $log.debug "message #{body}"
-                      if body['Event'] == 'autoscaling:TEST_NOTIFICATION'
-                        $log.info 'received test notification'
-                      else
-                        if body['LifecycleTransition'] == 'autoscaling:EC2_INSTANCE_TERMINATING'
-                          $log.info "lifecycle transition for EC2 instance #{body['EC2InstanceId']}"
-                          containerInstanceId = fetchContainerInstanceId body['EC2InstanceId']
-                          if containerInstanceId.nil?
-                            $log.info "no container instance found for EC2 instance #{body['EC2InstanceId']}"
-                          else
-                            $log.info "lifecycle transition for container instance #{containerInstanceId}"
-                            drainContainerInstanceId containerInstanceId
-                            awaitContainerInstanceIdle containerInstanceId
-                            deregisterContainerInstance containerInstanceId
-                          end
-                          completeLifecycleAction body['LifecycleActionToken'], body['LifecycleHookName'], body['AutoScalingGroupName']
-                        else
-                          $log.error "received unsupported lifecycle transition: #{body['LifecycleTransition']}"
-                        end
-                      end
-                    rescue Exception => e
-                      $log.error "message failed: #{e.inspect} #{msg.inspect}"
-                      raise e
-                    end
-                  end
-                end
-                pollSQS
-              mode: '000500'
-              owner: root
-              group: root
           services:
             sysvinit:
               cfn-hup:
@@ -969,14 +785,6 @@ Resources:
                 packages:
                   yum:
                   - amazon-ssm-agent
-              lifecycle-poller:
-                enabled: true
-                ensureRunning: true
-                files:
-                - '/etc/init.d/lifecycle-poller'
-                - '/opt/lifecycle-poller/poller.conf'
-                - '/opt/lifecycle-poller/daemon.rb'
-                - '/opt/lifecycle-poller/worker.rb'
     Properties:
       ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', ECSAMI]
       IamInstanceProfile: !Ref InstanceProfile
@@ -1001,7 +809,6 @@ Resources:
       LaunchConfigurationName: !Ref LaunchConfiguration
       MinSize: !Ref MinSize
       MaxSize: !Ref MaxSize
-      DesiredCapacity: !Ref DesiredCapacity
       HealthCheckGracePeriod: 300
       HealthCheckType: ELB
       TargetGroupARNs:
@@ -1052,7 +859,7 @@ Resources:
     Type: 'AWS::SQS::Queue'
     Properties:
       QueueName: !Sub '${AWS::StackName}-lifecycle-hook'
-      VisibilityTimeout: !Ref DrainingTimeoutInSeconds
+      VisibilityTimeout: 60
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt 'AutoScalingGroupLifecycleHookDeadLetterQueue.Arn'
         maxReceiveCount: 5
@@ -1121,7 +928,7 @@ Resources:
   AutoScalingGroupTerminatingLifecycleHook:
     Type: 'AWS::AutoScaling::LifecycleHook'
     Properties:
-      HeartbeatTimeout: !Ref DrainingTimeoutInSeconds
+      HeartbeatTimeout: 600
       DefaultResult: CONTINUE
       AutoScalingGroupName: !Ref AutoScalingGroup
       LifecycleTransition: 'autoscaling:EC2_INSTANCE_TERMINATING'
@@ -1415,7 +1222,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'SchedulableContainersLambdaRole.Arn'
-      Runtime: 'nodejs6.10'
+      Runtime: 'nodejs8.10'
       Timeout: 60
   SchedulableContainersLogGroup:
     Type: 'AWS::Logs::LogGroup'
@@ -1456,6 +1263,175 @@ Resources:
       Dimensions:
       - Name: FunctionName
         Value: !Ref SchedulableContainersLambdaV2
+  DrainInstanceLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'lambda.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      ManagedPolicyArns: # TODO get rid of managed policy
+      - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+      - PolicyName: draininstance
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'sqs:DeleteMessage'
+            - 'sqs:ReceiveMessage'
+            - 'sqs:SendMessage'
+            - 'sqs:GetQueueAttributes'
+            Resource: !GetAtt 'AutoScalingGroupLifecycleHookQueue.Arn'
+          - Effect: Allow
+            Action:
+            - 'ecs:ListContainerInstances'
+            Resource: !GetAtt 'Cluster.Arn'
+          - Effect: Allow
+            Action:
+            - 'ecs:updateContainerInstancesState'
+            - 'ecs:listTasks'
+            Resource: '*'
+            Condition:
+              StringEquals:
+                'ecs:cluster': !GetAtt 'Cluster.Arn'
+          - Effect: Allow
+            Action:
+            - 'autoscaling:CompleteLifecycleAction'
+            - 'autoscaling:RecordLifecycleActionHeartbeat'
+            Resource: !Sub 'arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${AutoScalingGroup}'
+  DrainInstanceEventSourceMapping:
+    Type: 'AWS::Lambda::EventSourceMapping'
+    Properties:
+      BatchSize: 1
+      Enabled: true
+      EventSourceArn: !GetAtt 'AutoScalingGroupLifecycleHookQueue.Arn'
+      FunctionName: !GetAtt DrainInstanceLambda.Arn
+  DrainInstanceLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        ZipFile: |
+          'use strict';
+          const AWS = require('aws-sdk');
+          const ecs = new AWS.ECS({apiVersion: '2014-11-13'});
+          const sqs = new AWS.SQS({apiVersion: '2012-11-05'});
+          const asg = new AWS.AutoScaling({apiVersion: '2011-01-01'});
+          const cluster = process.env.CLUSTER;
+          const queueUrl = process.env.QUEUE_URL;
+          const drainingTimeout = process.env.DRAINING_TIMEOUT;
+          async function getContainerInstanceArn(ec2InstanceId) {
+            console.log(`getContainerInstanceArn(${[...arguments].join(', ')})`);
+            const listResult = await ecs.listContainerInstances({cluster: cluster, filter: `ec2InstanceId == '${ec2InstanceId}'`}).promise();
+            return listResult.containerInstanceArns[0];
+          }
+          async function drainInstance(ciArn) {
+            console.log(`drainInstance(${[...arguments].join(', ')})`);
+            await ecs.updateContainerInstancesState({cluster: cluster, containerInstances: [ciArn], status: 'DRAINING'}).promise();
+          }
+          async function wait(ciArn, asgName, lchName, lcaToken, terminateTime) {
+            console.log(`wait(${[...arguments].join(', ')})`);
+            const payload = {
+              Service: 'DrainInstance',
+              Event: 'custom:DRAIN_WAIT',
+              ContainerInstanceArn: ciArn,
+              AutoScalingGroupName: asgName,
+              LifecycleHookName: lchName,
+              LifecycleActionToken: lcaToken,
+              TerminateTime: terminateTime
+            };
+            await sqs.sendMessage({
+              QueueUrl: queueUrl,
+              DelaySeconds: 60,
+              MessageBody: JSON.stringify(payload)
+            }).promise();
+          }
+          async function countTasks(ciArn) {
+            console.log(`countTasks(${[...arguments].join(', ')})`);
+            const listResult = await ecs.listTasks({cluster: cluster, containerInstance: ciArn}).promise();
+            return listResult.taskArns.length;
+          }
+          async function terminateInstance(asgName, lchName, lcaToken) {
+            console.log(`terminateInstance(${[...arguments].join(', ')})`);
+            await asg.completeLifecycleAction({
+              AutoScalingGroupName: asgName,
+              LifecycleHookName: lchName,
+              LifecycleActionToken: lcaToken,
+              LifecycleActionResult: 'CONTINUE'
+            }).promise();
+          }
+          async function heartbeat(asgName, lchName, lcaToken) {
+            console.log(`heartbeat(${[...arguments].join(', ')})`);
+            await asg.recordLifecycleActionHeartbeat({
+              AutoScalingGroupName: asgName,
+              LifecycleHookName: lchName,
+              LifecycleActionToken: lcaToken
+            }).promise();
+          }
+          exports.handler = async function(event, context) {
+            console.log(`Invoke: ${JSON.stringify(event)}`);
+            const body = JSON.parse(event.Records[0].body); // batch size is 1
+            if (body.Service === 'AWS Auto Scaling' && body.Event === 'autoscaling:TEST_NOTIFICATION') {
+              console.log('Ignore autoscaling:TEST_NOTIFICATION')
+            } else if (body.Service === 'AWS Auto Scaling' && body.LifecycleTransition === 'autoscaling:EC2_INSTANCE_TERMINATING') {
+              const lcaToken = body.LifecycleActionToken;
+              const ciArn = await getContainerInstanceArn(body.EC2InstanceId);
+              await drainInstance(ciArn);
+              await wait(ciArn, body.AutoScalingGroupName, body.LifecycleHookName, body.LifecycleActionToken, body.Time);
+            } else if (body.Service === 'DrainInstance' && body.Event === 'custom:DRAIN_WAIT') {
+              const taskCount = await countTasks(body.ContainerInstanceArn);
+              if (taskCount === 0) {
+                await terminateInstance(body.AutoScalingGroupName, body.LifecycleHookName, body.LifecycleActionToken);
+              } else {
+                const actionDuration = (Date.now() - new Date(body.TerminateTime).getTime()) / 1000;
+                if (actionDuration < drainingTimeout) {
+                  await heartbeat(body.AutoScalingGroupName, body.LifecycleHookName, body.LifecycleActionToken);
+                  await wait(body.ContainerInstanceArn, body.AutoScalingGroupName, body.LifecycleHookName, body.LifecycleActionToken, body.TerminateTime);
+                } else {
+                  console.log('Timeout for instance termination reached.');
+                  await terminateInstance(body.AutoScalingGroupName, body.LifecycleHookName, body.LifecycleActionToken);
+                }
+              }
+            } else {
+              console.log('Ignore unxpected event');
+            }
+          };
+      Handler: 'index.handler'
+      MemorySize: 128
+      Role: !GetAtt 'DrainInstanceLambdaRole.Arn'
+      Runtime: 'nodejs8.10'
+      Timeout: 30
+      Environment:
+        Variables:
+          CLUSTER: !Ref Cluster
+          QUEUE_URL: !Ref AutoScalingGroupLifecycleHookQueue
+          DRAINING_TIMEOUT: !Ref DrainingTimeoutInSeconds
+      ReservedConcurrentExecutions: 1
+  DrainInstanceLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${DrainInstanceLambda}'
+      RetentionInDays: !Ref LogsRetentionInDays
+  DrainInstanceLambdaErrorsTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Invocations failed due to errors in the function'
+      Namespace: 'AWS/Lambda'
+      MetricName: Errors
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref DrainInstanceLambda
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'

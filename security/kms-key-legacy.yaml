@@ -74,6 +74,6 @@ Outputs:
       Name: !Sub '${AWS::StackName}-KeyId'
   KeyArn:
     Description: 'Key ARN.'
-    Value: !Sub 'arn:aws:${AWS::Partition}:${AWS::Region}:${AWS::AccountId}:key/${KeyId}'
+    Value: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KeyId}'
     Export:
       Name: !Sub '${AWS::StackName}-KeyArn'
