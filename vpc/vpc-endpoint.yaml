@@ -31,7 +31,7 @@ Parameters:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
   ParentClientStack:
-    Description: 'Stack name of parent client stack based on state/client-sg.yaml template.'
+    Description: 'Optionel stack name of parent client stack based on state/client-sg.yaml template.'
     Type: String
   ServiceName:
     Description: 'The name of the service.'
@@ -77,6 +77,8 @@ Parameters:
     - ssmmessages
     - transfer
     - 'transfer.server'
+Conditions:
+  HasParentClientStack: !Not [!Equals [!Ref ParentClientStack, '']]
 Resources:
   SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -84,15 +86,20 @@ Resources:
       GroupDescription: !Ref 'AWS::StackName'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: 443
-        ToPort: 443
-        SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+      - !If
+        - HasParentClientStack
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
   Endpoint:
     Type: 'AWS::EC2::VPCEndpoint'
     Properties:
       PrivateDnsEnabled: true
-      RouteTableIds: !Split [',', !Join [',', [{'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablesPublic'}, {'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablesPrivate'}]]]
       SecurityGroupIds: [!Ref SecurityGroup]
       ServiceName: !Sub 'com.amazonaws.${AWS::Region}.${ServiceName}'
       SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
