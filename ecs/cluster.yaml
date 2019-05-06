@@ -809,6 +809,7 @@ Resources:
       LaunchConfigurationName: !Ref LaunchConfiguration
       MinSize: !Ref MinSize
       MaxSize: !Ref MaxSize
+      Cooldown: '120'
       HealthCheckGracePeriod: 300
       HealthCheckType: ELB
       TargetGroupARNs:
@@ -937,19 +938,23 @@ Resources:
   ScaleUpPolicy:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      PolicyType: StepScaling
       AdjustmentType: PercentChangeInCapacity
       MinAdjustmentMagnitude: 1
-      AutoScalingGroupName: !Ref AutoScalingGroup
-      Cooldown: '600'
-      ScalingAdjustment: 25
+      StepAdjustments:
+      - MetricIntervalUpperBound: 0.0
+        ScalingAdjustment: 25
   ScaleDownPolicy:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      PolicyType: StepScaling
       AdjustmentType: PercentChangeInCapacity
       MinAdjustmentMagnitude: 1
-      AutoScalingGroupName: !Ref AutoScalingGroup
-      Cooldown: '600'
-      ScalingAdjustment: -25
+      StepAdjustments:
+      - MetricIntervalLowerBound: 0.0
+        ScalingAdjustment: -25
   ContainerInstancesShortageAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
