@@ -1,0 +1,122 @@
+---
+# Copyright 2018 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'VPC: Interface Endpoint, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+      - ParentClientStack
+    - Label:
+        default: 'Endpoint Parameters'
+      Parameters:
+      - ServiceName
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+  ParentClientStack:
+    Description: 'Optionel stack name of parent client stack based on state/client-sg.yaml template.'
+    Type: String
+  ServiceName:
+    Description: 'The name of the service.'
+    Type: String
+    AllowedValues: # generate list with aws --region us-east-1 ec2 describe-vpc-endpoint-services --query 'ServiceDetails[].ServiceName'
+    - notebook
+    - cloudformation
+    - cloudtrail
+    - codebuild
+    - 'codebuild-fips'
+    - codecommit
+    - 'codecommit-fips'
+    - codepipeline
+    - config
+    - dynamodb
+    - ec2
+    - ec2messages
+    - 'ecr.api'
+    - 'ecr.dkr'
+    - ecs
+    - 'ecs-agent'
+    - 'ecs-telemetry'
+    - 'elastic-inference.runtime'
+    - elasticloadbalancing
+    - events
+    - 'execute-api'
+    - 'git-codecommit'
+    - 'git-codecommit-fips'
+    - 'kinesis-firehose'
+    - 'kinesis-streams'
+    - kms
+    - logs
+    - monitoring
+    - s3
+    - 'sagemaker.api'
+    - 'sagemaker.runtime'
+    - 'sagemaker.runtime-fips'
+    - secretsmanager
+    - servicecatalog
+    - sns
+    - sqs
+    - ssm
+    - ssmmessages
+    - transfer
+    - 'transfer.server'
+Conditions:
+  HasParentClientStack: !Not [!Equals [!Ref ParentClientStack, '']]
+Resources:
+  SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Ref 'AWS::StackName'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+      SecurityGroupIngress:
+      - !If
+        - HasParentClientStack
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
+  Endpoint:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds: [!Ref SecurityGroup]
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.${ServiceName}'
+      SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
+      VpcEndpointType: Interface
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'vpc/vpc-endpoint'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
+  Endpoint:
+    Description: 'The VPC endpoint to a service.'
+    Value: !Ref Endpoint
+    Export:
+      Name: !Sub '${AWS::StackName}-Endpoint'
