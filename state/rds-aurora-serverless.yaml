@@ -102,11 +102,11 @@ Parameters:
     Type: String
     Default: 'aurora.'
   PreferredBackupWindow:
-    Description: 'The daily time range in UTC during which you want to create automated backups.'
+    Description: 'IGNORED BECAUSE OF A BUG IN CLOUDFORMATION! VALUE WILL APPLY IN THE FUTURE! The daily time range in UTC during which you want to create automated backups.' # TODO remove uppercase warning
     Type: String
     Default: '09:54-10:24'
   PreferredMaintenanceWindow:
-    Description: The weekly time range (in UTC) during which system maintenance can occur.
+    Description: 'IGNORED BECAUSE OF A BUG IN CLOUDFORMATION! VALUE WILL APPLY IN THE FUTURE! The weekly time range (in UTC) during which system maintenance can occur.' # TODO remove uppercase warning
     Type: String
     Default: 'sat:07:00-sat:07:30'
   AutoPause:
@@ -209,9 +209,9 @@ Resources:
       KmsKeyId: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}]
       MasterUsername: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUsername]
       MasterUserPassword: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUserPassword]
-      Port: !FindInMap [EngineMap, !Ref Engine, Port]
-      PreferredBackupWindow: !Ref PreferredBackupWindow
-      PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
+      # Port: !FindInMap [EngineMap, !Ref Engine, Port] TODO re-enable as soon as CloudFormation bug ix fixed
+      # PreferredBackupWindow: !Ref PreferredBackupWindow TODO re-enable as soon as CloudFormation bug ix fixed
+      # PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow TODO re-enable as soon as CloudFormation bug ix fixed
       ScalingConfiguration:
         AutoPause: !Ref AutoPause
         MaxCapacity: !Ref MaxCapacity
