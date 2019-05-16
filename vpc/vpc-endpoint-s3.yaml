@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'VPC: Endpoint to S3 for private subnets, a cloudonaut.io template, contributed by https://github.com/btsuhako'
+Description: 'VPC: Gateway Endpoint (S3), a cloudonaut.io template, contributed by https://github.com/btsuhako'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:

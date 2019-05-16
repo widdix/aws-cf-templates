@@ -191,8 +191,8 @@ There is no graphical tool available for Linux. You can establish an SSH connect
 ## Limitations
 * Only one EC2 instance is managed by the ASG. In case of an outage the instance will be replaced within 5 minutes.
 
-# VPC Endpoint to S3
-This template describes a VPC endpoint to securely route traffic within a VPC for private instances to access S3 without the need of a NAT Gateway, NAT instance, or public internet. Refer to [AWS VPC endpoint](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-endpoints.html) documentation if this is necessary for your stack. By default, access to all S3 actions and buckets is allowed, but may be constrained with a policy document.
+# Gateway Endpoint (S3)
+This template describes a Gateway VPC endpoint to securely access S3 without the need of a NAT Gateway, NAT instance, or public internet. Refer to [AWS documentation](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-endpoints-s3.html) if this is necessary for your stack. By default, access to all S3 actions and buckets is allowed, but may be constrained with a policy document.
 
 ![Architecture](./img/vpc-endpoint-s3.png)
 ## Installation Guide
@@ -202,15 +202,14 @@ This template describes a VPC endpoint to securely route traffic within a VPC fo
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
 1. Click **Next** to skip the **Options** step of the wizard.
-1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
 
-# VPC Endpoint to DynamoDB
-This template describes a VPC endpoint to securely route traffic within a VPC for private instances to access DynamoDB without the need of a NAT Gateway, NAT instance, or public internet. Refer to [AWS VPC endpoint](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-endpoints.html) documentation if this is necessary for your stack. By default, access to all DynamoDB actions and tables is allowed, but may be constrained with a policy document.
+# Gateway Endpoint (DynamoDB)
+This template describes a Gateway VPC endpoint to securely access DynamoDB without the need of a NAT Gateway, NAT instance, or public internet. Refer to [AWS documentation](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-endpoints-ddb.html) if this is necessary for your stack. By default, access to all DynamoDB actions and tables is allowed, but may be constrained with a policy document.
 
 ## Installation Guide
 1. This templates depends on one of our `vpc-*azs.yaml` templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
@@ -219,7 +218,22 @@ This template describes a VPC endpoint to securely route traffic within a VPC fo
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
 1. Click **Next** to skip the **Options** step of the wizard.
-1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
+1. Click **Create** to start the creation of the stack.
+1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
+## Dependencies
+* `vpc/vpc-*azs.yaml` (**required**)
+
+# Interface Endpoint
+This template describes a Interface VPC endpoint to securely access services without the need of a NAT Gateway, NAT instance, or public internet. Refer to [AWS documentation](https://docs.aws.amazon.com/vpc/latest/userguide/vpce-interface.html) if this is necessary for your stack. 
+
+## Installation Guide
+1. This templates depends on one of our `vpc-*azs.yaml` templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-endpoint.yaml&stackName=vpc-endpoint&param_ParentVPCStack=vpc)
+1. Click **Next** to proceed with the next step of the wizard.
+1. Specify a name and all parameters for the stack.
+1. Click **Next** to proceed with the next step of the wizard.
+1. Click **Next** to skip the **Options** step of the wizard.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
