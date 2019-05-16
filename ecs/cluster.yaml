@@ -50,6 +50,7 @@ Metadata:
       - MinSize
       - DesiredCapacity
       - DrainingTimeoutInSeconds
+      - StopContainerTimeoutInSeconds
     - Label:
         default: 'Cluster Scaling Parameters'
       Parameters:
@@ -165,6 +166,13 @@ Parameters:
     ConstraintDescription: 'Must be in the range [60-86400]'
     MinValue: 60
     MaxValue: 86400 # 24 hours
+  StopContainerTimeoutInSeconds:
+    Description: 'Time in seconds the ECS agent waits before killing a stopped container (see ECS_CONTAINER_STOP_TIMEOUT).'
+    Type: Number
+    Default: 30
+    ConstraintDescription: 'Must be in the range [30-3600]'
+    MinValue: 30
+    MaxValue: 3600
   ContainerMaxCPU:
     Description: 'The maximum number of cpu reservation per container that you plan to run on this cluster. A container instance has 1,024 CPU units for every CPU core.'
     Type: Number
@@ -801,6 +809,7 @@ Resources:
           #!/bin/bash -ex
           trap '/opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}' ERR
           echo "ECS_CLUSTER=${Cluster}" >> /etc/ecs/ecs.config
+           echo "ECS_CONTAINER_STOP_TIMEOUT=${StopContainerTimeoutInSeconds}s" >> /etc/ecs/ecs.config
           yum install -y aws-cfn-bootstrap
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
           /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
@@ -984,7 +993,8 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Statistic: Maximum # special rule because we scale on reservations and not utilization
       Period: 60
-      EvaluationPeriods: 1
+      EvaluationPeriods: 15
+      DatapointsToAlarm: 15
       Threshold: !Ref ContainerExcessThreshold
       AlarmActions:
       - !Ref ScaleDownPolicy
@@ -1057,35 +1067,6 @@ Resources:
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
   # scaling based on SchedulableContainers is described in detail here: http://garbe.io/blog/2017/04/12/a-better-solution-to-ecs-autoscaling/
-  SchedulableContainersRule:
-    Type: 'AWS::Events::Rule'
-    Properties:
-      EventPattern:
-        source:
-        - 'aws.ecs'
-        'detail-type':
-        - 'ECS Container Instance State Change'
-      State: ENABLED
-      Targets:
-      - Arn: !GetAtt 'SchedulableContainersLambdaV2.Arn'
-        Id: lambda
-  SchedulableContainersRuleFailedInvocationsTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Invocations failed permanently'
-      Namespace: 'AWS/Events'
-      MetricName: FailedInvocations
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Dimensions:
-      - Name: RuleName
-        Value: !Ref SchedulableContainersRule
   SchedulableContainersCron:
     Type: 'AWS::Events::Rule'
     Properties:
@@ -1142,13 +1123,6 @@ Resources:
           - Effect: Allow
             Action: 'cloudwatch:PutMetricData'
             Resource: '*'
-  SchedulableContainersLambdaPermission:
-    Type: 'AWS::Lambda::Permission'
-    Properties:
-      Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref SchedulableContainersLambdaV2
-      Principal: 'events.amazonaws.com'
-      SourceArn: !GetAtt 'SchedulableContainersRule.Arn'
   SchedulableContainersLambdaPermission2:
     Type: 'AWS::Lambda::Permission'
     Properties:
