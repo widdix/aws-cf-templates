@@ -555,6 +555,7 @@ Resources:
             - 'logs:CreateLogStream'
             - 'logs:PutLogEvents'
             - 'logs:DescribeLogStreams'
+            - 'logs:CreateLogGroup'
             Resource: !GetAtt 'WebServerLogs.Arn'
   WebServerIAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
