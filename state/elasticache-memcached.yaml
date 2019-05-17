@@ -28,6 +28,7 @@ Metadata:
     - Label:
         default: 'ElastiCache Parameters'
       Parameters:
+      - EngineVersion
       - CacheNodeType
       - NumCacheNodes
       - SubDomainNameWithDot

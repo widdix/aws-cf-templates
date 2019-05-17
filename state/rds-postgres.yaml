@@ -30,6 +30,7 @@ Metadata:
         default: 'RDS Parameters'
       Parameters:
       - DBSnapshotIdentifier
+      - EngineVersion
       - DBAllocatedStorage
       - DBInstanceClass
       - DBName

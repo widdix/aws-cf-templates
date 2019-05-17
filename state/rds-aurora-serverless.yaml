@@ -29,7 +29,7 @@ Metadata:
     - Label:
         default: 'RDS Parameters'
       Parameters:
-      - Engine
+      - EngineVersion
       - DBSnapshotIdentifier
       - DBName
       - DBBackupRetentionPeriod

@@ -30,6 +30,7 @@ Metadata:
         default: 'Elasticsearch Parameters'
       Parameters:
       - DomainName
+      - ElasticsearchVersion
       - EBSEnabled
       - EBSVolumeSize
       - ClusterInstanceCount

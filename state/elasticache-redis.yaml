@@ -28,8 +28,8 @@ Metadata:
     - Label:
         default: 'ElastiCache Parameters'
       Parameters:
-      - CacheNodeType
       - EngineVersion
+      - CacheNodeType
       - TransitEncryption
       - AuthToken
       - SubDomainName
