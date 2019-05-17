@@ -67,10 +67,10 @@ Parameters:
     Description: 'Aurora engine and version'
     Type: String
     AllowedValues:
-    - '5.6.mysql_aurora.1.19.1' # aws rds describe-db-engine-versions --engine aurora --query 'DBEngineVersions[?contains(SupportedEngineModes,`provisioned`)].EngineVersion'
+    - '5.6.mysql-aurora.1.19.1' # aws rds describe-db-engine-versions --engine aurora --query 'DBEngineVersions[?contains(SupportedEngineModes,`provisioned`)].EngineVersion'
     - aurora
-    - '5.7.mysql_aurora.2.04.3' # aws rds describe-db-engine-versions --engine aurora-mysql --query 'DBEngineVersions[?contains(SupportedEngineModes,`provisioned`)].EngineVersion'
-    - '5.7.mysql_aurora.2.03.4'
+    - '5.7.mysql-aurora.2.04.3' # aws rds describe-db-engine-versions --engine aurora-mysql --query 'DBEngineVersions[?contains(SupportedEngineModes,`provisioned`)].EngineVersion'
+    - '5.7.mysql-aurora.2.03.4'
     - 'aurora-mysql'
     - 'aurora-postgresql-10.7' # aws rds describe-db-engine-versions --engine aurora-postgresql --query 'DBEngineVersions[?contains(SupportedEngineModes,`provisioned`)].EngineVersion'
     - 'aurora-postgresql-10.6'
@@ -130,7 +130,7 @@ Mappings:
       Port: 3306
       ClusterParameterGroupFamily: 'aurora5.6'
       ParameterGroupFamily: 'aurora5.6'
-    '5.6.mysql_aurora.1.19.1':
+    '5.6.mysql-aurora.1.19.1':
       Engine: aurora
       EngineVersion: '5.6.mysql_aurora.1.19.1'
       Port: 3306
@@ -142,13 +142,13 @@ Mappings:
       Port: 3306
       ClusterParameterGroupFamily: 'aurora-mysql5.7'
       ParameterGroupFamily: 'aurora-mysql5.7'
-    '5.7.mysql_aurora.2.03.4':
+    '5.7.mysql-aurora.2.03.4':
       Engine: aurora-mysql'
       EngineVersion: '5.7.mysql_aurora.2.03.4'
       Port: 3306
       ClusterParameterGroupFamily: 'aurora-mysql5.7'
       ParameterGroupFamily: 'aurora-mysql5.7'
-    '5.7.mysql_aurora.2.04.3':
+    '5.7.mysql-aurora.2.04.3':
       Engine: aurora-mysql'
       EngineVersion: '5.7.mysql_aurora.2.04.3'
       Port: 3306
