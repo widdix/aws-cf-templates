@@ -170,26 +170,26 @@ Mappings:
       Engine: 'aurora-postgresql'
       EngineVersion: '10.4'
       Port: 5432
-      ClusterParameterGroupFamily: 'aurora-postgresql10.4'
-      ParameterGroupFamily: 'aurora-postgresql10.4'
+      ClusterParameterGroupFamily: 'aurora-postgresql10'
+      ParameterGroupFamily: 'aurora-postgresql10'
     'aurora-postgresql-10.5':
       Engine: 'aurora-postgresql'
       EngineVersion: '10.5'
       Port: 5432
-      ClusterParameterGroupFamily: 'aurora-postgresql10.5'
-      ParameterGroupFamily: 'aurora-postgresql10.5'
+      ClusterParameterGroupFamily: 'aurora-postgresql10'
+      ParameterGroupFamily: 'aurora-postgresql10'
     'aurora-postgresql-10.6':
       Engine: 'aurora-postgresql'
       EngineVersion: '10.6'
       Port: 5432
-      ClusterParameterGroupFamily: 'aurora-postgresql10.6'
-      ParameterGroupFamily: 'aurora-postgresql10.6'
+      ClusterParameterGroupFamily: 'aurora-postgresql10'
+      ParameterGroupFamily: 'aurora-postgresql10'
     'aurora-postgresql-10.7':
       Engine: 'aurora-postgresql'
       EngineVersion: '10.7'
       Port: 5432
-      ClusterParameterGroupFamily: 'aurora-postgresql10.7'
-      ParameterGroupFamily: 'aurora-postgresql10.7'
+      ClusterParameterGroupFamily: 'aurora-postgresql10'
+      ParameterGroupFamily: 'aurora-postgresql10'
 Conditions:
   HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
@@ -302,7 +302,7 @@ Resources:
       DBInstanceClass: !Ref DBInstanceClass
       DBParameterGroupName: !Ref DBParameterGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
-      Engine: !Ref Engine
+      Engine: !FindInMap [EngineMap, !Ref Engine, Engine]
   DBInstanceB:
     Type: 'AWS::RDS::DBInstance'
     Properties:
@@ -313,7 +313,7 @@ Resources:
       DBInstanceClass: !Ref DBInstanceClass
       DBParameterGroupName: !Ref DBParameterGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
-      Engine: !Ref Engine
+      Engine: !FindInMap [EngineMap, !Ref Engine, Engine]
   DatabaseACPUUtilizationTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
