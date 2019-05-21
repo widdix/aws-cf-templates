@@ -63,10 +63,10 @@ Resources:
     Type: 'AWS::Lambda::Function'
     Properties:
       Code:
-        # If you change the ZipFile, rename the logical id LambdaVersionV4 to trigger a new version creation!
+        # If you change the ZipFile, rename the logical id LambdaVersionV5 to trigger a new version creation!
         ZipFile: !Sub |
           'use strict';
-          const regex = /\.[a-z0-9]+$/;
+          const regex = /\.[A-Za-z0-9]+$/;
           const indexDocument = '${IndexDocument}';
           const domainName = '${DomainName}'.toLowerCase();
           const redirectDomainName = '${RedirectDomainName}'.toLowerCase();
@@ -129,7 +129,7 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/${LambdaFunction}'
       RetentionInDays: !Ref LogsRetentionInDays
-  LambdaVersionV4:
+  LambdaVersionV5:
     Type: 'AWS::Lambda::Version'
     Properties:
       FunctionName: !Ref LambdaFunction
@@ -145,4 +145,4 @@ Outputs:
     Value: !Sub '${AWS::StackName}'
   LambdaVersionArn:
     Description: 'Version ARN of Lambda@Edge function.'
-    Value: !Ref LambdaVersionV4
+    Value: !Ref LambdaVersionV5
