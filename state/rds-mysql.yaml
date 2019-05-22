@@ -30,6 +30,7 @@ Metadata:
         default: 'RDS Parameters'
       Parameters:
       - DBSnapshotIdentifier
+      - EngineVersion
       - DBAllocatedStorage
       - DBInstanceClass
       - DBName
@@ -113,6 +114,11 @@ Parameters:
     Description: The weekly time range (in UTC) during which system maintenance can occur.
     Type: String
     Default: 'sat:07:00-sat:07:30'
+  EngineVersion:
+    Description: 'MySQL version.'
+    Type: String
+    Default: '5.7.21'
+    AllowedValues: ['8.0.15', '5.7.25', '5.7.21', '5.6.41', '5.5.61'] # aws rds describe-db-engine-versions --engine mysql --query "DBEngineVersions[].EngineVersion"
 Conditions:
   HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
@@ -173,7 +179,7 @@ Resources:
       DBSnapshotIdentifier: !If [HasDBSnapshotIdentifier, !Ref DBSnapshotIdentifier, !Ref 'AWS::NoValue']
       DBSubnetGroupName: !Ref DBSubnetGroup
       Engine: mysql
-      EngineVersion: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', '5.7.21']
+      EngineVersion: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref EngineVersion]
       KmsKeyId: !If [HasKmsKeyAndNotDBSnapshotIdentifier, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}, !Ref 'AWS::NoValue']
       MasterUsername: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUsername]
       MasterUserPassword: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUserPassword]

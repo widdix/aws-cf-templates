@@ -64,11 +64,19 @@ Parameters:
     Type: String
     Default: ''
   Engine:
-    Description: 'The name of the database engine that you want to use for this DB cluster.'
+    Description: 'Aurora engine and version'
     Type: String
     AllowedValues:
-    - aurora # MySQL 5.6-compatible Aurora
-    - 'aurora-mysql' # MySQL 5.7-compatible Aurora
+    - '5.6.mysql-aurora.1.19.1' # aws rds describe-db-engine-versions --engine aurora --query 'DBEngineVersions[?contains(SupportedEngineModes,`provisioned`)].EngineVersion'
+    - aurora
+    - '5.7.mysql-aurora.2.04.3' # aws rds describe-db-engine-versions --engine aurora-mysql --query 'DBEngineVersions[?contains(SupportedEngineModes,`provisioned`)].EngineVersion'
+    - '5.7.mysql-aurora.2.03.4'
+    - 'aurora-mysql'
+    - 'aurora-postgresql-10.7' # aws rds describe-db-engine-versions --engine aurora-postgresql --query 'DBEngineVersions[?contains(SupportedEngineModes,`provisioned`)].EngineVersion'
+    - 'aurora-postgresql-10.6'
+    - 'aurora-postgresql-10.5'
+    - 'aurora-postgresql-10.4'
+    - 'aurora-postgresql-9.6.12'
     - 'aurora-postgresql'
     Default: aurora
   DBSnapshotIdentifier:
@@ -117,20 +125,71 @@ Parameters:
 Mappings:
   EngineMap:
     aurora:
+      Engine: aurora
       EngineVersion: '5.6.10a'
       Port: 3306
       ClusterParameterGroupFamily: 'aurora5.6'
       ParameterGroupFamily: 'aurora5.6'
+    '5.6.mysql-aurora.1.19.1':
+      Engine: aurora
+      EngineVersion: '5.6.mysql_aurora.1.19.1'
+      Port: 3306
+      ClusterParameterGroupFamily: 'aurora5.6'
+      ParameterGroupFamily: 'aurora5.6'
     'aurora-mysql':
+      Engine: 'aurora-mysql'
       EngineVersion: '5.7.12'
       Port: 3306
       ClusterParameterGroupFamily: 'aurora-mysql5.7'
       ParameterGroupFamily: 'aurora-mysql5.7'
+    '5.7.mysql-aurora.2.03.4':
+      Engine: 'aurora-mysql'
+      EngineVersion: '5.7.mysql_aurora.2.03.4'
+      Port: 3306
+      ClusterParameterGroupFamily: 'aurora-mysql5.7'
+      ParameterGroupFamily: 'aurora-mysql5.7'
+    '5.7.mysql-aurora.2.04.3':
+      Engine: 'aurora-mysql'
+      EngineVersion: '5.7.mysql_aurora.2.04.3'
+      Port: 3306
+      ClusterParameterGroupFamily: 'aurora-mysql5.7'
+      ParameterGroupFamily: 'aurora-mysql5.7'
     'aurora-postgresql':
+      Engine: 'aurora-postgresql'
       EngineVersion: '9.6.3'
       Port: 5432
       ClusterParameterGroupFamily: 'aurora-postgresql9.6'
       ParameterGroupFamily: 'aurora-postgresql9.6'
+    'aurora-postgresql-9.6.12':
+      Engine: 'aurora-postgresql'
+      EngineVersion: '9.6.12'
+      Port: 5432
+      ClusterParameterGroupFamily: 'aurora-postgresql9.6'
+      ParameterGroupFamily: 'aurora-postgresql9.6'
+    'aurora-postgresql-10.4':
+      Engine: 'aurora-postgresql'
+      EngineVersion: '10.4'
+      Port: 5432
+      ClusterParameterGroupFamily: 'aurora-postgresql10'
+      ParameterGroupFamily: 'aurora-postgresql10'
+    'aurora-postgresql-10.5':
+      Engine: 'aurora-postgresql'
+      EngineVersion: '10.5'
+      Port: 5432
+      ClusterParameterGroupFamily: 'aurora-postgresql10'
+      ParameterGroupFamily: 'aurora-postgresql10'
+    'aurora-postgresql-10.6':
+      Engine: 'aurora-postgresql'
+      EngineVersion: '10.6'
+      Port: 5432
+      ClusterParameterGroupFamily: 'aurora-postgresql10'
+      ParameterGroupFamily: 'aurora-postgresql10'
+    'aurora-postgresql-10.7':
+      Engine: 'aurora-postgresql'
+      EngineVersion: '10.7'
+      Port: 5432
+      ClusterParameterGroupFamily: 'aurora-postgresql10'
+      ParameterGroupFamily: 'aurora-postgresql10'
 Conditions:
   HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
@@ -138,7 +197,7 @@ Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, '']]
   HasKmsKeyAndNotDBSnapshotIdentifier: !And [!Condition HasKmsKey, !Not [!Condition HasDBSnapshotIdentifier]]
-  HasEngineMySQL: !Or [!Equals [!Ref Engine, 'aurora'], !Equals [!Ref Engine, 'aurora-mysql']]
+  HasEngineMySQL: !Or [!Equals [!FindInMap [EngineMap, !Ref Engine, Engine], 'aurora'], !Equals [!FindInMap [EngineMap, !Ref Engine, Engine], 'aurora-mysql']]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -215,7 +274,7 @@ Resources:
       DatabaseName: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBName]
       DBClusterParameterGroupName: !Ref DBClusterParameterGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
-      Engine: !Ref Engine
+      Engine: !FindInMap [EngineMap, !Ref Engine, Engine]
       EngineMode: provisioned
       EngineVersion: !FindInMap [EngineMap, !Ref Engine, EngineVersion]
       KmsKeyId: !If [HasKmsKeyAndNotDBSnapshotIdentifier, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}, !Ref 'AWS::NoValue']
@@ -243,7 +302,7 @@ Resources:
       DBInstanceClass: !Ref DBInstanceClass
       DBParameterGroupName: !Ref DBParameterGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
-      Engine: !Ref Engine
+      Engine: !FindInMap [EngineMap, !Ref Engine, Engine]
   DBInstanceB:
     Type: 'AWS::RDS::DBInstance'
     Properties:
@@ -254,7 +313,7 @@ Resources:
       DBInstanceClass: !Ref DBInstanceClass
       DBParameterGroupName: !Ref DBParameterGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
-      Engine: !Ref Engine
+      Engine: !FindInMap [EngineMap, !Ref Engine, Engine]
   DatabaseACPUUtilizationTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
