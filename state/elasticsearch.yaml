@@ -30,6 +30,7 @@ Metadata:
         default: 'Elasticsearch Parameters'
       Parameters:
       - DomainName
+      - ElasticsearchVersion
       - EBSEnabled
       - EBSVolumeSize
       - ClusterInstanceCount
@@ -72,6 +73,11 @@ Parameters:
     Description: 'The size of the EBS volume for each data node. The minimum and maximum size of an EBS volume depends on the EBS volume type and the instance type to which it is attached.'
     Type: Number
     Default: 10
+  ElasticsearchVersion:
+    Description: 'Elasticsearch version'
+    Type: String
+    Default: '5.5'
+    AllowedValues: ['6.5', '6.4', '6.3', '6.2', '6.0', '5.6', '5.5'] # aws es list-elasticsearch-versions --query "ElasticsearchVersions[]"
   ClusterInstanceCount:
     Description: 'The number of data nodes (instances) to use in the Amazon ES domain.'
     Type: Number
@@ -157,7 +163,7 @@ Resources:
         InstanceCount: !Ref ClusterInstanceCount
         InstanceType: !Ref ClusterInstanceType
         ZoneAwarenessEnabled: !If [HasSingleClusterInstance, false, true]
-      ElasticsearchVersion: '5.5'
+      ElasticsearchVersion: !Ref ElasticsearchVersion
       EncryptionAtRestOptions: !If [HasKmsKey, {Enabled: true, KmsKeyId: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}}, !Ref 'AWS::NoValue']
       SnapshotOptions:
         AutomatedSnapshotStartHour: 10

@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# FIXME add to cfn-modules
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'VPC: a private service registry (aka. Cloud Map private namespace), a cloudonaut.io template'
 Metadata:
