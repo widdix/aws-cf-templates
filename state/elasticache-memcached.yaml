@@ -28,6 +28,7 @@ Metadata:
     - Label:
         default: 'ElastiCache Parameters'
       Parameters:
+      - EngineVersion
       - CacheNodeType
       - NumCacheNodes
       - SubDomainNameWithDot
@@ -54,6 +55,14 @@ Parameters:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
+  EngineVersion:
+    Description: 'memcached version'
+    Type: String
+    Default: '1.4.34'
+    AllowedValues: # aws elasticache describe-cache-engine-versions --engine memcached --query "CacheEngineVersions[].EngineVersion"
+    - '1.5.10'
+    - '1.4.5'
+    - '1.4.34'
   CacheNodeType:
     Description: 'The compute and memory capacity of the nodes in the node group (shard).'
     Type: 'String'
@@ -71,6 +80,14 @@ Parameters:
     Type: Number
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+Mappings:
+  EngineVersionMap:
+    '1.4.34':
+      CacheParameterGroupFamily: 'memcached1.4'
+    '1.4.5':
+      CacheParameterGroupFamily: 'memcached1.4'
+    '1.5.10':
+      CacheParameterGroupFamily: 'memcached1.5'
 Conditions:
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
@@ -93,7 +110,7 @@ Resources:
   CacheParameterGroupName:
     Type: 'AWS::ElastiCache::ParameterGroup'
     Properties:
-      CacheParameterGroupFamily: 'memcached1.4'
+      CacheParameterGroupFamily: !FindInMap [EngineVersionMap, !Ref EngineVersion, CacheParameterGroupFamily]
       Description: !Ref 'AWS::StackName'
       Properties: {}
   CacheSubnetGroupName:
@@ -131,7 +148,7 @@ Resources:
       CacheParameterGroupName: !Ref CacheParameterGroupName
       CacheSubnetGroupName: !Ref CacheSubnetGroupName
       Engine: memcached
-      EngineVersion: '1.4.34'
+      EngineVersion: !Ref EngineVersion
       NotificationTopicArn: !If [HasAlertTopic, {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}, !Ref 'AWS::NoValue']
       NumCacheNodes: !Ref NumCacheNodes
       PreferredAvailabilityZones: !Split [',', !GetAtt 'PreferredAvailabilityZonesSelector.PreferredAvailabilityZones']
