@@ -756,13 +756,7 @@ Resources:
         install:
           packages:
             yum:
-              ruby: []
               amazon-ssm-agent: []
-            rubygems:
-              'aws-sdk-ecs': ['1.26.0']
-              'aws-sdk-autoscaling': ['1.13.0']
-              'aws-sdk-sqs': ['1.10.0']
-              daemons: ['1.2.6']
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
