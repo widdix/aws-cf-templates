@@ -1076,6 +1076,9 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
   # scaling based on SchedulableContainers is described in detail here: http://garbe.io/blog/2017/04/12/a-better-solution-to-ecs-autoscaling/
   SchedulableContainersCron:
+    DependsOn:
+    - SchedulableContainersLambdaPolicy
+    - SchedulableContainersLambdaPermission2
     Type: 'AWS::Events::Rule'
     Properties:
       ScheduleExpression: 'rate(1 minute)'
@@ -1111,14 +1114,6 @@ Resources:
             Service: 'lambda.amazonaws.com'
           Action: 'sts:AssumeRole'
       Policies:
-      - PolicyName: lambda
-        PolicyDocument:
-          Statement:
-          - Effect: Allow
-            Action:
-            - 'logs:CreateLogStream'
-            - 'logs:PutLogEvents'
-            Resource: !GetAtt 'SchedulableContainersLogGroup.Arn'
       - PolicyName: ecs
         PolicyDocument:
           Statement:
@@ -1137,6 +1132,19 @@ Resources:
           - Effect: Allow
             Action: 'cloudwatch:PutMetricData'
             Resource: '*'
+  SchedulableContainersLambdaPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Roles:
+      - !Ref SchedulableContainersLambdaRole
+      PolicyName: lambda
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action:
+          - 'logs:CreateLogStream'
+          - 'logs:PutLogEvents'
+          Resource: !GetAtt 'SchedulableContainersLogGroup.Arn'
   SchedulableContainersLambdaPermission2:
     Type: 'AWS::Lambda::Permission'
     Properties:

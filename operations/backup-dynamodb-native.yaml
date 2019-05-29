@@ -55,21 +55,29 @@ Resources:
             Service: 'lambda.amazonaws.com'
           Action: 'sts:AssumeRole'
       Policies:
-      - PolicyName: lambda
-        PolicyDocument:
-          Statement:
-          - Effect: Allow
-            Action:
-            - 'logs:CreateLogStream'
-            - 'logs:PutLogEvents'
-            Resource: !GetAtt 'LambdaLogGroup.Arn'
       - PolicyName: dynamodb
         PolicyDocument:
           Statement:
           - Effect: Allow
             Action: 'dynamodb:CreateBackup'
             Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}'
+  LambdaPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Roles:
+      - !Ref LambdaRole
+      PolicyName: lambda
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action:
+          - 'logs:CreateLogStream'
+          - 'logs:PutLogEvents'
+          Resource: !GetAtt 'LambdaLogGroup.Arn'
   LambdaRule:
+    DependsOn:
+    - LambdaPolicy
+    - LambdaPermission
     Type: 'AWS::Events::Rule'
     Properties:
       ScheduleExpression: 'rate(1 day)'

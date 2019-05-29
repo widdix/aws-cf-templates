@@ -57,15 +57,19 @@ Resources:
             - 'lambda.amazonaws.com'
             - 'edgelambda.amazonaws.com'
           Action: 'sts:AssumeRole'
-      Policies:
-      - PolicyName: lambda
-        PolicyDocument:
-          Statement:
-          - Effect: Allow
-            Action:
-            - 'logs:CreateLogStream'
-            - 'logs:PutLogEvents'
-            Resource: !GetAtt 'LambdaLogGroup.Arn'
+  LambdaPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Roles:
+      - !Ref LambdaRole
+      PolicyName: lambda
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action:
+          - 'logs:CreateLogStream'
+          - 'logs:PutLogEvents'
+          Resource: !GetAtt 'LambdaLogGroup.Arn'
   LambdaFunction:
     Type: 'AWS::Lambda::Function'
     Properties:
