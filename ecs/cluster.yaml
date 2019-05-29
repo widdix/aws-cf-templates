@@ -1276,14 +1276,6 @@ Resources:
             Service: 'lambda.amazonaws.com'
           Action: 'sts:AssumeRole'
       Policies:
-      - PolicyName: lambda
-        PolicyDocument:
-          Statement:
-          - Effect: Allow
-            Action:
-            - 'logs:CreateLogStream'
-            - 'logs:PutLogEvents'
-            Resource: !GetAtt 'DrainInstanceLogGroup.Arn'
       - PolicyName: draininstance
         PolicyDocument:
           Statement:
@@ -1311,7 +1303,23 @@ Resources:
             - 'autoscaling:CompleteLifecycleAction'
             - 'autoscaling:RecordLifecycleActionHeartbeat'
             Resource: !Sub 'arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${AutoScalingGroup}'
+  DrainInstanceLambdaPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Roles:
+      - !Ref DrainInstanceLambdaRole
+      PolicyName: lambda
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action:
+          - 'logs:CreateLogStream'
+          - 'logs:PutLogEvents'
+          Resource: !GetAtt 'DrainInstanceLogGroup.Arn'
   DrainInstanceEventSourceMapping:
+    DependsOn:
+    - DrainInstanceLambdaPolicy
+    - DrainInstanceLogGroup
     Type: 'AWS::Lambda::EventSourceMapping'
     Properties:
       BatchSize: 1
