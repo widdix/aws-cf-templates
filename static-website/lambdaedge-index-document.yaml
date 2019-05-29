@@ -57,8 +57,15 @@ Resources:
             - 'lambda.amazonaws.com'
             - 'edgelambda.amazonaws.com'
           Action: 'sts:AssumeRole'
-      ManagedPolicyArns: # TODO get rid of managed policy
-      - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+      - PolicyName: lambda
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+            Resource: !GetAtt 'LambdaLogGroup.Arn'
   LambdaFunction:
     Type: 'AWS::Lambda::Function'
     Properties:
