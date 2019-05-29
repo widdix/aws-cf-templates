@@ -1078,7 +1078,6 @@ Resources:
   SchedulableContainersCron:
     DependsOn:
     - SchedulableContainersLambdaPolicy
-    - SchedulableContainersLambdaPermission2
     Type: 'AWS::Events::Rule'
     Properties:
       ScheduleExpression: 'rate(1 minute)'
