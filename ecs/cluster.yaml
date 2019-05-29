@@ -34,6 +34,7 @@ Metadata:
       - KeyName
       - IAMUserSSHAccess
       - SystemsManagerAccess
+      - ManagedPolicyArns
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
@@ -244,6 +245,7 @@ Conditions:
   HasClientSecurityGroup1: !Not [!Equals [!Ref ParentClientStack1, '']]
   HasClientSecurityGroup2: !Not [!Equals [!Ref ParentClientStack2, '']]
   HasClientSecurityGroup3: !Not [!Equals [!Ref ParentClientStack3, '']]
+  HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
 Resources:
   Cluster:
     Type: 'AWS::ECS::Cluster'
@@ -255,7 +257,6 @@ Resources:
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
-      Path: '/'
       Roles:
       - !Ref Role
   Role:
@@ -268,9 +269,21 @@ Resources:
           Principal:
             Service: 'ec2.amazonaws.com'
           Action: 'sts:AssumeRole'
-      Path: '/'
-      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []] # TODO get rid of managed policy
+      ManagedPolicyArns: !If [HasManagedPolicyArns, !Split [',', !Ref ManagedPolicyArns], !Ref 'AWS::NoValue']
       Policies:
+      - !If
+        - HasSystemsManagerAccess
+        - PolicyName: ssm
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - 'ssmmessages:*' # SSM Agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ssm:UpdateInstanceInformation' # SSM agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ec2messages:*' # SSM Session Manager by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              Resource: '*'
+        - !Ref 'AWS::NoValue'
       - PolicyName: ecs
         PolicyDocument:
           Version: '2012-10-17'
@@ -914,11 +927,8 @@ Resources:
         Statement:
         - Effect: Allow
           Principal:
-            Service:
-            - 'autoscaling.amazonaws.com'
-          Action:
-          - 'sts:AssumeRole'
-      Path: '/'
+            Service: 'autoscaling.amazonaws.com'
+          Action: 'sts:AssumeRole'
       Policies:
       - PolicyName: sqs
         PolicyDocument:

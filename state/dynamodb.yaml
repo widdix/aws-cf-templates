@@ -135,8 +135,7 @@ Resources:
         Statement:
         - Effect: Allow
           Principal:
-            Service:
-              'application-autoscaling.amazonaws.com'
+            Service: 'application-autoscaling.amazonaws.com'
           Action: 'sts:AssumeRole'
       Policies:
       - PolicyName: scaling
