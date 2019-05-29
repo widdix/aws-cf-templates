@@ -37,10 +37,18 @@ Parameters:
     Description: 'Optional The log file prefix.'
     Type: String
     Default: ''
+  S3DataEvents:
+    Description: 'Record data events of all S3 buckets? (Warning: additional charges apply.)'
+    Type: String
+    Default: 'false'
+    AllowedValues:
+    - 'true'
+    - 'false'
 Conditions:
   InternalBucket: !Equals [!Ref ExternalTrailBucket, '']
   ExternalBucket: !Not [!Equals [!Ref ExternalTrailBucket, '']]
   HasLogFilePrefix: !Not [!Equals [!Ref LogFilePrefix, '']]
+  IsS3DataEvents: !Equals [!Ref S3DataEvents, 'true']
 Resources:
   TrailBucket:
     Condition: InternalBucket
@@ -121,8 +129,10 @@ Resources:
       IncludeGlobalServiceEvents: true
       IsLogging: true
       IsMultiRegionTrail: true
+      EventSelectors: !If [IsS3DataEvents, [{DataResources: [{Type: 'AWS::S3::Object', Values: ['arn:aws:s3:::']}], IncludeManagementEvents: true, ReadWriteType: All}], !Ref 'AWS::NoValue']
       S3BucketName: !Ref TrailBucket
       S3KeyPrefix: !Ref LogFilePrefix
+      EnableLogFileValidation: true
       CloudWatchLogsLogGroupArn: !GetAtt 'TrailLogGroup.Arn'
       CloudWatchLogsRoleArn: !GetAtt 'TrailLogGroupRole.Arn'
       SnsTopicName: !GetAtt 'TrailTopic.TopicName'
@@ -135,8 +145,10 @@ Resources:
       IncludeGlobalServiceEvents: true
       IsLogging: true
       IsMultiRegionTrail: true
+      EventSelectors: !If [IsS3DataEvents, [{DataResources: [{Type: 'AWS::S3::Object', Values: ['arn:aws:s3:::']}], IncludeManagementEvents: true, ReadWriteType: All}], !Ref 'AWS::NoValue']
       S3BucketName: !Ref ExternalTrailBucket
       S3KeyPrefix: !Ref LogFilePrefix
+      EnableLogFileValidation: true
       CloudWatchLogsLogGroupArn: !GetAtt 'TrailLogGroup.Arn'
       CloudWatchLogsRoleArn: !GetAtt 'TrailLogGroupRole.Arn'
       SnsTopicName: !GetAtt 'TrailTopic.TopicName'

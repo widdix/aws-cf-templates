@@ -28,8 +28,8 @@ Metadata:
     - Label:
         default: 'ElastiCache Parameters'
       Parameters:
-      - CacheNodeType
       - EngineVersion
+      - CacheNodeType
       - TransitEncryption
       - AuthToken
       - SubDomainName
@@ -53,10 +53,11 @@ Parameters:
     Type: String
     Default: ''
   EngineVersion:
-    Description: 'Version of the redis engine to be used'
+    Description: 'Redis version'
     Type: String
     Default: '5.0.0'
-    AllowedValues:
+    AllowedValues: # aws elasticache describe-cache-engine-versions --engine redis --query "CacheEngineVersions[].EngineVersion"
+    - '5.0.4'
     - '5.0.0'
     - '4.0.10'
     - '3.2.6' # 3.2.4 and 3.2.10 do not support encryption
@@ -64,30 +65,6 @@ Parameters:
     Description: 'The compute and memory capacity of the nodes in the node group (shard).'
     Type: 'String'
     Default: 'cache.t2.micro'
-    AllowedValues:
-    - 'cache.t2.micro'
-    - 'cache.t2.small'
-    - 'cache.t2.medium'
-    - 'cache.m3.medium'
-    - 'cache.m3.large'
-    - 'cache.m3.xlarge'
-    - 'cache.m3.2xlarge'
-    - 'cache.m4.large'
-    - 'cache.m4.xlarge'
-    - 'cache.m4.2xlarge'
-    - 'cache.m4.4xlarge'
-    - 'cache.m4.10xlarge'
-    - 'cache.r3.large'
-    - 'cache.r3.xlarge'
-    - 'cache.r3.2xlarge'
-    - 'cache.r3.4xlarge'
-    - 'cache.r3.8xlarge'
-    - 'cache.r4.large'
-    - 'cache.r4.xlarge'
-    - 'cache.r4.2xlarge'
-    - 'cache.r4.4xlarge'
-    - 'cache.r4.8xlarge'
-    - 'cache.r4.16xlarge'
   TransitEncryption:
     Description: 'Enable encryption for data in transit? When transit encryption is enabled also specify an auth token.'
     Type: 'String'
@@ -105,13 +82,15 @@ Parameters:
     Type: String
     Default: redis
 Mappings:
-  CacheParameterGroupFamilyMap:
-    '5.0.0':
-      redis: 'redis5.0'
-    '4.0.10':
-      redis: 'redis4.0'
+  EngineVersionMap:
     '3.2.6':
-      redis: 'redis3.2'
+      CacheParameterGroupFamily: 'redis3.2'
+    '4.0.10':
+      CacheParameterGroupFamily: 'redis4.0'
+    '5.0.0':
+      CacheParameterGroupFamily: 'redis5.0'
+    '5.0.4':
+      CacheParameterGroupFamily: 'redis5.0'
 Conditions:
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
@@ -136,7 +115,7 @@ Resources:
   CacheParameterGroup:
     Type: 'AWS::ElastiCache::ParameterGroup'
     Properties:
-      CacheParameterGroupFamily: !FindInMap [CacheParameterGroupFamilyMap, !Ref EngineVersion, redis]
+      CacheParameterGroupFamily: !FindInMap [EngineVersionMap, !Ref EngineVersion, CacheParameterGroupFamily]
       Description: !Ref 'AWS::StackName'
       Properties: {}
   CacheSubnetGroupName:
@@ -180,7 +159,7 @@ Resources:
       CacheNodeType: !Ref CacheNodeType
       CacheParameterGroupName: !Ref CacheParameterGroup
       CacheSubnetGroupName: !Ref CacheSubnetGroupName
-      Engine: 'redis'
+      Engine: redis
       EngineVersion: !Ref EngineVersion
       NotificationTopicArn: !If [HasAlertTopic, {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}, !Ref 'AWS::NoValue']
       NumNodeGroups: 1
