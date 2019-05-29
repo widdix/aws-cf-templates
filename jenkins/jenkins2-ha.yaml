@@ -132,38 +132,38 @@ Parameters:
     Default: 'jenkins.'
 Mappings:
   RegionMap:
-    'ap-south-1':
-      AMI: 'ami-06bcd1131b2f55803'
-    'eu-west-3':
-      AMI: 'ami-051707cdba246187b'
     'eu-north-1':
-      AMI: 'ami-07ec6279'
+      AMI: 'ami-1fb13961'
+    'ap-south-1':
+      AMI: 'ami-00e782930f1c3dbc7'
+    'eu-west-3':
+      AMI: 'ami-0ebb3a801d5fb8b9b'
     'eu-west-2':
-      AMI: 'ami-0274e11dced17bb5b'
+      AMI: 'ami-0009a33f033d8b7b6'
     'eu-west-1':
-      AMI: 'ami-09693313102a30b2c'
+      AMI: 'ami-030dbca661d402413'
     'ap-northeast-2':
-      AMI: 'ami-0b4fdb56a00adb616'
+      AMI: 'ami-08ab3f7e72215fe91'
     'ap-northeast-1':
-      AMI: 'ami-0a2de1c3b415889d2'
+      AMI: 'ami-00d101850e971728d'
     'sa-east-1':
-      AMI: 'ami-0112d42866980b373'
+      AMI: 'ami-058141e091292ecf0'
     'ca-central-1':
-      AMI: 'ami-076b4adb3f90cd384'
+      AMI: 'ami-08a9b721ecc5b0a53'
     'ap-southeast-1':
-      AMI: 'ami-0b84d2c53ad5250c2'
+      AMI: 'ami-0b5a47f8865280111'
     'ap-southeast-2':
-      AMI: 'ami-08589eca6dcc9b39c'
+      AMI: 'ami-0fb7513bcdc525c3b'
     'eu-central-1':
-      AMI: 'ami-034fffcc6a0063961'
+      AMI: 'ami-0ebe657bc328d4e82'
     'us-east-1':
-      AMI: 'ami-009d6802948d06e52'
+      AMI: 'ami-0c6b1d09930fac512'
     'us-east-2':
-      AMI: 'ami-02e680c4540db351e'
+      AMI: 'ami-0ebbf2179e615c338'
     'us-west-1':
-      AMI: 'ami-011b6930a81cd6aaf'
+      AMI: 'ami-015954d5e5548d13b'
     'us-west-2':
-      AMI: 'ami-01bbe152bf19d0289'
+      AMI: 'ami-0cb72367e98845d43'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -427,6 +427,7 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
+            - 'logs:CreateLogGroup'
             - 'logs:CreateLogStream'
             - 'logs:PutLogEvents'
             - 'logs:DescribeLogStreams'
@@ -498,7 +499,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, install, setup, extras, custom, run], [awslogs, mount, install, setup, extras, custom, run]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, extras, install, setup, custom, run], [awslogs, mount, extras, install, setup, custom, run]]
         awslogs:
           packages:
             yum:
@@ -705,6 +706,14 @@ Resources:
                 commands:
                 - 'a_configure_sshd_command'
                 - 'b_configure_sshd_commanduser'
+        extras:
+          commands:
+            'a_enable_docker':
+              command: 'amazon-linux-extras enable docker=18.06.1'
+              test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
+            'b_enable_corretto8':
+              command: 'amazon-linux-extras enable corretto8=1.8.0_202'
+              test: "! grep -Fxq '[amzn2extra-corretto8]' /etc/yum.repos.d/amzn2-extras.repo"
         mount:
           packages:
             yum:
@@ -725,9 +734,9 @@ Resources:
         install:
           packages:
             rpm:
-              jenkins: 'https://pkg.jenkins.io/redhat-stable/jenkins-2.150.1-1.1.noarch.rpm'
+              jenkins: 'https://pkg.jenkins.io/redhat-stable/jenkins-2.164.3-1.1.noarch.rpm'
             yum:
-              'java-1.8.0-openjdk': []
+              'java-1.8.0-amazon-corretto': []
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -817,11 +826,6 @@ Resources:
             'z_create_setup_done_file':
               command: 'echo "Setup done. Don not delete this file." > /var/lib/jenkins/setup_done.txt'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-        extras:
-          commands:
-            a_enable_docker:
-              command: 'amazon-linux-extras enable docker=18.06.1'
-              test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
         custom:
           packages:
             yum:
@@ -873,7 +877,6 @@ Resources:
       LaunchConfigurationName: !Ref MasterLC
       MinSize: '1'
       MaxSize: '1'
-      DesiredCapacity: '1'
       HealthCheckGracePeriod: 900
       HealthCheckType: ELB
       NotificationConfigurations: !If

@@ -6,6 +6,7 @@ import com.evanlennick.retry4j.CallResults;
 import com.evanlennick.retry4j.RetryConfig;
 import com.evanlennick.retry4j.RetryConfigBuilder;
 import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import org.junit.Assert;
 
@@ -38,6 +39,7 @@ public abstract class ATest {
         public final String userName;
         public final byte[] sshPrivateKeyBlob;
         public final String sshPublicKeyId;
+
         public User(final String userName, final byte[] sshPrivateKeyBlob, final String sshPublicKeyId) {
             super();
             this.userName = userName;
@@ -70,6 +72,16 @@ public abstract class ATest {
             return true;
         };
         Assert.assertTrue(this.retry(callable));
+    }
+
+    protected final Session tunnelSSH(final String host, final KeyPair key, final Integer localPort, final String remoteHost, final Integer remotePort) throws JSchException {
+        final JSch jsch = new JSch();
+        final Session session = jsch.getSession("ec2-user", host);
+        jsch.addIdentity(key.getKeyName(), key.getKeyMaterial().getBytes(), null, null);
+        jsch.setConfig("StrictHostKeyChecking", "no"); // for testing this should be fine. adding the host key seems to be only possible via a file which is not very useful here
+        session.setPortForwardingL(localPort, remoteHost, remotePort);
+        session.connect(10000);
+        return session;
     }
 
 }
