@@ -75,9 +75,7 @@ Resources:
           - 'logs:PutLogEvents'
           Resource: !GetAtt 'LambdaLogGroup.Arn'
   LambdaRule:
-    DependsOn:
-    - LambdaPolicy
-    - LambdaPermission
+    DependsOn: LambdaPolicy
     Type: 'AWS::Events::Rule'
     Properties:
       ScheduleExpression: 'rate(1 day)'
