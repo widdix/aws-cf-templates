@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'VPC: Endpoint to DynamoDB for private subnets, a cloudonaut.io template'
+Description: 'VPC: Gateway Endpoint (DynamoDB), a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -29,7 +29,7 @@ Resources:
   Endpoint:
     Type: 'AWS::EC2::VPCEndpoint'
     Properties:
-      RouteTableIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablesPrivate'}]
+      RouteTableIds: !Split [',', !Join [',', [{'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablesPublic'}, {'Fn::ImportValue': !Sub '${ParentVPCStack}-RouteTablesPrivate'}]]]
       ServiceName: !Sub 'com.amazonaws.${AWS::Region}.dynamodb'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
 Outputs:
