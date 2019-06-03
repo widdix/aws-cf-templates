@@ -4,21 +4,19 @@
 
 # Migrate from v9 to v10
 
-> WARNING: Follow this guideline to avoid data loss!
+## *
 
-## fargate/service-cloudmap
+If you have `SystemsManagerAccess` set to `true`, we previously attached the managed policy `AmazonEC2RoleforSSM` but now only attach the following IAM permissions:
 
-* Rename parameter from `AmbassadorImage` to `ProxyImage`.
-* Rename parameter from `AmbassadorCommand` to `ProxyCommand`.
-* Rename parameter from `AmbassadorPort` to `ProxyPort`.
-* Rename parameter from `AmbassadorEnvironment1Key` to `ProxyEnvironment1Key`.
-* Rename parameter from `AmbassadorEnvironment1Value` to `ProxyEnvironment1Value`.
-* Rename parameter from `AmbassadorEnvironment2Key` to `ProxyEnvironment2Key`.
-* Rename parameter from `AmbassadorEnvironment2Value` to `ProxyEnvironment2Value`.
-* Rename parameter from `AmbassadorEnvironment3Key` to `ProxyEnvironment3Key`.
-* Rename parameter from `AmbassadorEnvironment3Value` to `ProxyEnvironment3Value`.
+* `ssmmessages:*`
+* `ssm:UpdateInstanceInformation`
+* `ec2messages:*`
 
-## fargate/service-cluster-alb
+This reducdes the permissions but is sufficient to make SSM Session Manager and Run Commands work.
+
+To restore the previous permissions (which are not following the least privilege principle), set the new parameter `ManagedPolicyArns` to `arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM`.
+
+## fargate/service-*
 
 * Rename parameter from `AmbassadorImage` to `ProxyImage`.
 * Rename parameter from `AmbassadorCommand` to `ProxyCommand`.
@@ -30,14 +28,8 @@
 * Rename parameter from `AmbassadorEnvironment3Key` to `ProxyEnvironment3Key`.
 * Rename parameter from `AmbassadorEnvironment3Value` to `ProxyEnvironment3Value`.
 
-## fargate/service-dedicated-alb
+## Deprecation warnings
 
-* Rename parameter from `AmbassadorImage` to `ProxyImage`.
-* Rename parameter from `AmbassadorCommand` to `ProxyCommand`.
-* Rename parameter from `AmbassadorPort` to `ProxyPort`.
-* Rename parameter from `AmbassadorEnvironment1Key` to `ProxyEnvironment1Key`.
-* Rename parameter from `AmbassadorEnvironment1Value` to `ProxyEnvironment1Value`.
-* Rename parameter from `AmbassadorEnvironment2Key` to `ProxyEnvironment2Key`.
-* Rename parameter from `AmbassadorEnvironment2Value` to `ProxyEnvironment2Value`.
-* Rename parameter from `AmbassadorEnvironment3Key` to `ProxyEnvironment3Key`.
-* Rename parameter from `AmbassadorEnvironment3Value` to `ProxyEnvironment3Value`.
+* `ecs/cluster`: The parameter `DesiredCapacity` will be removed in v11 (not needed anymore)
+* `jenkins/jenkins2-ha-agents`: The parameter `AgentDesiredCapacity` will be removed in v11 (not needed anymore)
+* `state/rds-aurora-serverless`: The parameter `Engine` will be removed in v11 (replaced by `EngineVersion`)
