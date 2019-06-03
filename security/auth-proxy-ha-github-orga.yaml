@@ -43,6 +43,7 @@ Metadata:
       - SystemsManagerAccess
       - LogsRetentionInDays
       - SubDomainNameWithDot
+      - ManagedPolicyArns
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
@@ -118,6 +119,10 @@ Parameters:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
     Default: 'secure.'
+  ManagedPolicyArns:
+    Description: 'Optional comma-delimited list of IAM managed policy ARNs to attach to the instance''s IAM role'
+    Type: String
+    Default: ''
   LoadBalancerIdleTimeout:
     Description: 'The idle timeout value, in seconds.'
     Type: Number
@@ -167,6 +172,7 @@ Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+  HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
 Resources:
   Logs:
     Type: 'AWS::Logs::LogGroup'
@@ -387,7 +393,6 @@ Resources:
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
-      Path: '/'
       Roles:
       - !Ref IAMRole
   IAMRole:
@@ -398,13 +403,23 @@ Resources:
         Statement:
         - Effect: Allow
           Principal:
-            Service:
-            - 'ec2.amazonaws.com'
-          Action:
-          - 'sts:AssumeRole'
-      Path: /
-      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []] # TODO get rid of managed policy
+            Service: 'ec2.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      ManagedPolicyArns: !If [HasManagedPolicyArns, !Split [',', !Ref ManagedPolicyArns], !Ref 'AWS::NoValue']
       Policies:
+      - !If
+        - HasSystemsManagerAccess
+        - PolicyName: ssm
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - 'ssmmessages:*' # SSM Agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ssm:UpdateInstanceInformation' # SSM agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ec2messages:*' # SSM Session Manager by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              Resource: '*'
+        - !Ref 'AWS::NoValue'
       - PolicyName: logs
         PolicyDocument:
           Version: '2012-10-17'

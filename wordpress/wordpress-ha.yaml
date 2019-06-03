@@ -47,6 +47,7 @@ Metadata:
       - WebServerSystemsManagerAccess
       - WebServerInstanceType
       - WebServerLogsRetentionInDays
+      - ManagedPolicyArns
     - Label:
         default: 'EFS Parameters'
       Parameters:
@@ -134,6 +135,10 @@ Parameters:
     Type: Number
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  ManagedPolicyArns:
+    Description: 'Optional comma-delimited list of IAM managed policy ARNs to attach to the instance''s IAM role'
+    Type: String
+    Default: ''
   EFSProvisionedThroughputInMibps:
     Description: 'The provisioned throughput for the Elastic File System (EFS) in Mibps. Default is 0.0 which enables the bursting mode and disables provisioned throughput.'
     Type: Number
@@ -211,6 +216,7 @@ Conditions:
   HasNotEFSProvisionedThroughput: !Equals [!Ref EFSProvisionedThroughputInMibps, '0.0']
   HasAlertTopicAndEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasEFSProvisionedThroughput]
   HasAlertTopicAndNotEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasNotEFSProvisionedThroughput]
+  HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
 Resources:
   WebServerLogs:
     Type: 'AWS::Logs::LogGroup'
@@ -528,7 +534,6 @@ Resources:
   WebServerInstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
-      Path: '/'
       Roles:
       - !Ref WebServerIAMRole
   WebServerIAMRole:
@@ -539,13 +544,23 @@ Resources:
         Statement:
         - Effect: Allow
           Principal:
-            Service:
-            - 'ec2.amazonaws.com'
-          Action:
-          - 'sts:AssumeRole'
-      Path: '/'
-      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []] # TODO get rid of managed policy
+            Service: 'ec2.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      ManagedPolicyArns: !If [HasManagedPolicyArns, !Split [',', !Ref ManagedPolicyArns], !Ref 'AWS::NoValue']
       Policies:
+      - !If
+        - HasSystemsManagerAccess
+        - PolicyName: ssm
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - 'ssmmessages:*' # SSM Agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ssm:UpdateInstanceInformation' # SSM agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ec2messages:*' # SSM Session Manager by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              Resource: '*'
+        - !Ref 'AWS::NoValue'
       - PolicyName: logs
         PolicyDocument:
           Version: '2012-10-17'
@@ -1087,11 +1102,20 @@ Resources:
         - Effect: Allow
           Principal:
             Service: 'lambda.amazonaws.com'
+          Action: 'sts:AssumeRole'
+  LambdaPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Roles:
+      - !Ref LambdaRole
+      PolicyName: lambda
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
           Action:
-          - 'sts:AssumeRole'
-      Path: '/'
-      ManagedPolicyArns:
-      - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+          - 'logs:CreateLogStream'
+          - 'logs:PutLogEvents'
+          Resource: !GetAtt 'LambdaLogGroup.Arn'
   LambdaFunction: # needs no monitoring because it is used as a custom resource
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -1116,7 +1140,9 @@ Resources:
       RetentionInDays: !Ref WebServerLogsRetentionInDays
   MaxThroughputCalculator:
     Type: 'Custom::MaxThroughputCalculator'
-    DependsOn: LambdaLogGroup
+    DependsOn:
+    - LambdaLogGroup
+    - LambdaPolicy
     Version: '1.0'
     Properties:
       ThroughputInMibps: !Ref EFSProvisionedThroughputInMibps

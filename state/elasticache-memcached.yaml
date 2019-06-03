@@ -222,8 +222,19 @@ Resources:
           Principal:
             Service: 'lambda.amazonaws.com'
           Action: 'sts:AssumeRole'
-      ManagedPolicyArns:
-      - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+  CustomResourceLambdaPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Roles:
+      - !Ref CustomResourceLambdaRole
+      PolicyName: lambda
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action:
+          - 'logs:CreateLogStream'
+          - 'logs:PutLogEvents'
+          Resource: !GetAtt 'CustomResourceLambdaLogGroup.Arn'
   CustomResourceLambdaFunction: # needs no monitoring because it is used as a custom resource
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -251,7 +262,9 @@ Resources:
       RetentionInDays: !Ref LogsRetentionInDays
   PreferredAvailabilityZonesSelector:
     Type: 'Custom::PreferredAvailabilityZonesSelector'
-    DependsOn: CustomResourceLambdaLogGroup
+    DependsOn:
+    - CustomResourceLambdaLogGroup
+    - CustomResourceLambdaPolicy
     Version: '1.0'
     Properties:
       NumCacheNodes: !Ref NumCacheNodes

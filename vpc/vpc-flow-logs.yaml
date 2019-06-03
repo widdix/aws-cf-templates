@@ -52,8 +52,7 @@ Resources:
         Statement:
         - Effect: Allow
           Principal:
-            Service:
-            - 'vpc-flow-logs.amazonaws.com'
+            Service: 'vpc-flow-logs.amazonaws.com'
           Action: 'sts:AssumeRole'
       Policies:
       - PolicyName: 'flowlogs-policy'

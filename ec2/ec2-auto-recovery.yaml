@@ -42,6 +42,7 @@ Metadata:
       - IngressTcpPort1
       - IngressTcpPort2
       - IngressTcpPort3
+      - ManagedPolicyArns
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -134,6 +135,10 @@ Parameters:
     Description: 'Optional port allowing ingress TCP traffic.'
     Type: String
     Default: ''
+  ManagedPolicyArns:
+    Description: 'Optional comma-delimited list of IAM managed policy ARNs to attach to the instance''s IAM role'
+    Type: String
+    Default: ''
 Mappings:
   RegionMap:
     'eu-north-1':
@@ -182,6 +187,7 @@ Conditions:
   HasClientSecurityGroup1: !Not [!Equals [!Ref ParentClientStack1, '']]
   HasClientSecurityGroup2: !Not [!Equals [!Ref ParentClientStack2, '']]
   HasClientSecurityGroup3: !Not [!Equals [!Ref ParentClientStack3, '']]
+  HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -271,7 +277,6 @@ Resources:
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
-      Path: '/'
       Roles:
       - !Ref IAMRole
   IAMRole:
@@ -282,13 +287,23 @@ Resources:
         Statement:
         - Effect: Allow
           Principal:
-            Service:
-            - 'ec2.amazonaws.com'
-          Action:
-          - 'sts:AssumeRole'
-      Path: '/'
-      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []] # TODO get rid of managed policy
+            Service: 'ec2.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      ManagedPolicyArns: !If [HasManagedPolicyArns, !Split [',', !Ref ManagedPolicyArns], !Ref 'AWS::NoValue']
       Policies:
+      - !If
+        - HasSystemsManagerAccess
+        - PolicyName: ssm
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - 'ssmmessages:*' # SSM Agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ssm:UpdateInstanceInformation' # SSM agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ec2messages:*' # SSM Session Manager by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              Resource: '*'
+        - !Ref 'AWS::NoValue'
       - PolicyName: logs
         PolicyDocument:
           Version: '2012-10-17'

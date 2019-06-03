@@ -33,6 +33,7 @@ Metadata:
       - IAMUserSSHAccess
       - SystemsManagerAccess
       - SubDomainNameWithDot
+      - ManagedPolicyArns
     - Label:
         default: 'Master Parameters'
       Parameters:
@@ -190,6 +191,10 @@ Parameters:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
     Default: 'jenkins.'
+  ManagedPolicyArns:
+    Description: 'Optional comma-delimited list of IAM managed policy ARNs to attach to the instance''s IAM role'
+    Type: String
+    Default: ''
 Mappings:
   RegionMap:
     'eu-north-1':
@@ -237,6 +242,7 @@ Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+  HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
 Resources:
   MasterStorageSG:
     Type: 'AWS::EC2::SecurityGroup'
@@ -464,7 +470,6 @@ Resources:
   MasterIP:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
-      Path: '/'
       Roles:
       - !Ref MasterIAMRole
   MasterIAMRole:
@@ -475,13 +480,23 @@ Resources:
         Statement:
         - Effect: Allow
           Principal:
-            Service:
-            - 'ec2.amazonaws.com'
-          Action:
-          - 'sts:AssumeRole'
-      Path: '/'
-      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []] # TODO get rid of managed policy
+            Service: 'ec2.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      ManagedPolicyArns: !If [HasManagedPolicyArns, !Split [',', !Ref ManagedPolicyArns], !Ref 'AWS::NoValue']
       Policies:
+      - !If
+        - HasSystemsManagerAccess
+        - PolicyName: ssm
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - 'ssmmessages:*' # SSM Agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ssm:UpdateInstanceInformation' # SSM agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ec2messages:*' # SSM Session Manager by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              Resource: '*'
+        - !Ref 'AWS::NoValue'
       - PolicyName: cloudwatch
         PolicyDocument:
           Version: '2012-10-17'
@@ -525,10 +540,8 @@ Resources:
           Version: '2012-10-17'
           Statement:
           - Effect: Allow
-            Action:
-            - 'sts:AssumeRole'
-            Resource:
-            - '*'
+            Action: 'sts:AssumeRole'
+            Resource: '*'
   MasterIAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
     Condition: HasIAMUserSSHAccess
@@ -1353,7 +1366,6 @@ Resources:
   AgentIP:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
-      Path: '/'
       Roles:
       - !Ref AgentIAMRole
   AgentIAMRole:
@@ -1364,13 +1376,22 @@ Resources:
         Statement:
         - Effect: Allow
           Principal:
-            Service:
-            - 'ec2.amazonaws.com'
-          Action:
-          - 'sts:AssumeRole'
-      Path: /
-      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []] # TODO get rid of managed policy
+            Service: 'ec2.amazonaws.com'
+          Action: 'sts:AssumeRole'
       Policies:
+      - !If
+        - HasSystemsManagerAccess
+        - PolicyName: ssm
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - 'ssmmessages:*' # SSM Agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ssm:UpdateInstanceInformation' # SSM agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ec2messages:*' # SSM Session Manager by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              Resource: '*'
+        - !Ref 'AWS::NoValue'
       - PolicyName: ec2
         PolicyDocument:
           Version: '2012-10-17'
@@ -1397,10 +1418,8 @@ Resources:
           Version: '2012-10-17'
           Statement:
           - Effect: Allow
-            Action:
-            - 'sts:AssumeRole'
-            Resource:
-            - '*'
+            Action: 'sts:AssumeRole'
+            Resource: '*'
   AgentIAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
     Condition: HasIAMUserSSHAccess
@@ -2039,11 +2058,8 @@ Resources:
         Statement:
         - Effect: Allow
           Principal:
-            Service:
-            - 'autoscaling.amazonaws.com'
-          Action:
-          - 'sts:AssumeRole'
-      Path: '/'
+            Service: 'autoscaling.amazonaws.com'
+          Action: 'sts:AssumeRole'
       Policies:
       - PolicyName: sqs
         PolicyDocument:

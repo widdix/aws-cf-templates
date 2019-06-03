@@ -278,7 +278,7 @@ Resources:
   ServiceRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      ManagedPolicyArns: # TODO get rid of managed policy
+      ManagedPolicyArns:
       - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole'
       AssumeRolePolicyDocument:
         Version: '2008-10-17'
@@ -337,7 +337,6 @@ Resources:
           Principal:
             Service: 'application-autoscaling.amazonaws.com'
           Action: 'sts:AssumeRole'
-      Path: '/'
       Policies:
       - PolicyName: ecs
         PolicyDocument:

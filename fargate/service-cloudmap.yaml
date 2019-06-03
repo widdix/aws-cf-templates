@@ -377,9 +377,9 @@ Resources:
       DnsConfig:
         DnsRecords:
         - Type: A
-          TTL: '30'
+          TTL: 30
         - Type: SRV
-          TTL: '30'
+          TTL: 30
         NamespaceId: {'Fn::ImportValue': !Sub '${ParentCloudMapStack}-NamespaceID'}
         RoutingPolicy: MULTIVALUE
       HealthCheckCustomConfig:

@@ -34,6 +34,7 @@ Metadata:
       # TODO - SystemsManagerAccess
       - LogsRetentionInDays
       - SubDomainNameWithDot
+      - ManagedPolicyArns
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -83,6 +84,10 @@ Parameters:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
     Default: 'nat.'
+  ManagedPolicyArns:
+    Description: 'Optional comma-delimited list of IAM managed policy ARNs to attach to the instance''s IAM role'
+    Type: String
+    Default: ''
 Mappings:
   RegionMap: # TODO update to Amazon Linux 2 (don't forget to adjust awslogs config as well)
     'ap-south-1':
@@ -124,6 +129,7 @@ Conditions:
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+  HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -198,7 +204,6 @@ Resources:
   NATInstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
-      Path: '/'
       Roles:
       - !Ref NATIAMRole
   NATIAMRole:
@@ -209,11 +214,9 @@ Resources:
         Statement:
         - Effect: Allow
           Principal:
-            Service:
-            - 'ec2.amazonaws.com'
-          Action:
-          - 'sts:AssumeRole'
-      Path: '/'
+            Service: 'ec2.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      ManagedPolicyArns: !If [HasManagedPolicyArns, !Split [',', !Ref ManagedPolicyArns], !Ref 'AWS::NoValue']
       Policies:
       - PolicyName: ec2
         PolicyDocument:

@@ -54,8 +54,6 @@ Resources:
           Principal:
             Service: 'lambda.amazonaws.com'
           Action: 'sts:AssumeRole'
-      ManagedPolicyArns: # TODO get rid of managed policy
-      - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
       Policies:
       - PolicyName: dynamodb
         PolicyDocument:
@@ -63,7 +61,21 @@ Resources:
           - Effect: Allow
             Action: 'dynamodb:CreateBackup'
             Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}'
+  LambdaPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Roles:
+      - !Ref LambdaRole
+      PolicyName: lambda
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action:
+          - 'logs:CreateLogStream'
+          - 'logs:PutLogEvents'
+          Resource: !GetAtt 'LambdaLogGroup.Arn'
   LambdaRule:
+    DependsOn: LambdaPolicy
     Type: 'AWS::Events::Rule'
     Properties:
       ScheduleExpression: 'rate(1 day)'
