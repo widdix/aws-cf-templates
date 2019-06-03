@@ -39,15 +39,15 @@ Metadata:
         default: 'Task Parameters'
       Parameters:
       - TaskPolicies
-      - AmbassadorImage
-      - AmbassadorCommand
-      - AmbassadorPort
-      - AmbassadorEnvironment1Key
-      - AmbassadorEnvironment1Value
-      - AmbassadorEnvironment2Key
-      - AmbassadorEnvironment2Value
-      - AmbassadorEnvironment3Key
-      - AmbassadorEnvironment3Value
+      - ProxyImage
+      - ProxyCommand
+      - ProxyPort
+      - ProxyEnvironment1Key
+      - ProxyEnvironment1Value
+      - ProxyEnvironment2Key
+      - ProxyEnvironment2Value
+      - ProxyEnvironment3Key
+      - ProxyEnvironment3Value
       - AppImage
       - AppCommand
       - AppPort
@@ -143,42 +143,42 @@ Parameters:
     Description: 'Comma-delimited list of IAM managed policy ARNs to attach to the task IAM role'
     Type: String
     Default: ''
-  AmbassadorImage:
-    Description: 'Optional Docker image to use for the ambassador container (https://docs.microsoft.com/en-us/azure/architecture/patterns/ambassador). You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag).'
+  ProxyImage:
+    Description: 'Optional Docker image to use for the proxy container. You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag).'
     Type: String
     Default: ''
-  AmbassadorCommand:
-    Description: 'Optional command used when starting the ambassador container.'
+  ProxyCommand:
+    Description: 'Optional command used when starting the proxy container.'
     Type: String
     Default: ''
-  AmbassadorPort:
-    Description: 'The port exposed by the ambassador container that receives traffic from the load balancer (AmbassadorPort <> AppPort <> SidecarPort; ignored if AmbassadorImage is not set).'
+  ProxyPort:
+    Description: 'The port exposed by the proxy container that receives traffic from the load balancer (ProxyPort <> AppPort <> SidecarPort; ignored if ProxyImage is not set).'
     Type: Number
     Default: 8000
     MinValue: 1
     MaxValue: 49150
-  AmbassadorEnvironment1Key:
-    Description: 'Optional environment variable 1 key for ambassador container.'
+  ProxyEnvironment1Key:
+    Description: 'Optional environment variable 1 key for proxy container.'
     Type: String
     Default: ''
-  AmbassadorEnvironment1Value:
-    Description: 'Optional environment variable 1 value for ambassador container.'
+  ProxyEnvironment1Value:
+    Description: 'Optional environment variable 1 value for proxy container.'
     Type: String
     Default: ''
-  AmbassadorEnvironment2Key:
-    Description: 'Optional environment variable 2 key for ambassador container.'
+  ProxyEnvironment2Key:
+    Description: 'Optional environment variable 2 key for proxy container.'
     Type: String
     Default: ''
-  AmbassadorEnvironment2Value:
-    Description: 'Optional environment variable 2 value for ambassador container.'
+  ProxyEnvironment2Value:
+    Description: 'Optional environment variable 2 value for proxy container.'
     Type: String
     Default: ''
-  AmbassadorEnvironment3Key:
-    Description: 'Optional environment variable 3 key for ambassador container.'
+  ProxyEnvironment3Key:
+    Description: 'Optional environment variable 3 key for proxy container.'
     Type: String
     Default: ''
-  AmbassadorEnvironment3Value:
-    Description: 'Optional environment variable 3 value for ambassador container.'
+  ProxyEnvironment3Value:
+    Description: 'Optional environment variable 3 value for proxy container.'
     Type: String
     Default: ''
   AppImage:
@@ -190,7 +190,7 @@ Parameters:
     Type: String
     Default: ''
   AppPort:
-    Description: 'The port exposed by the app container that receives traffic from the load balancer or the ambassador container (AppPort <> AmbassadorPort <> SidecarPort).'
+    Description: 'The port exposed by the app container that receives traffic from the load balancer or the proxy container (AppPort <> ProxyPort <> SidecarPort).'
     Type: Number
     Default: 80
     MinValue: 1
@@ -220,7 +220,7 @@ Parameters:
     Type: String
     Default: ''
   SidecarImage:
-    Description: 'Optional Docker image to use for the sidecar container (https://docs.microsoft.com/en-us/azure/architecture/patterns/sidecar). You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag).'
+    Description: 'Optional Docker image to use for the sidecar container. You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag).'
     Type: String
     Default: ''
   SidecarCommand:
@@ -228,7 +228,7 @@ Parameters:
     Type: String
     Default: ''
   SidecarPort:
-    Description: 'The port exposed by the sidecar container reachable from the app container on host localhost (SidecarPort <> AmbassadorPort <> AppPort).'
+    Description: 'The port exposed by the sidecar container reachable from the app container on host localhost (SidecarPort <> ProxyPort <> AppPort).'
     Type: Number
     Default: 9000
     MinValue: 1
@@ -403,11 +403,11 @@ Conditions:
   HasAppEnvironment1Key: !Not [!Equals [!Ref AppEnvironment1Key, '']]
   HasAppEnvironment2Key: !Not [!Equals [!Ref AppEnvironment2Key, '']]
   HasAppEnvironment3Key: !Not [!Equals [!Ref AppEnvironment3Key, '']]
-  HasAmbassadorImage: !Not [!Equals [!Ref AmbassadorImage, '']]
-  HasAmbassadorCommand: !Not [!Equals [!Ref AmbassadorCommand, '']]
-  HasAmbassadorEnvironment1Key: !Not [!Equals [!Ref AmbassadorEnvironment1Key, '']]
-  HasAmbassadorEnvironment2Key: !Not [!Equals [!Ref AmbassadorEnvironment2Key, '']]
-  HasAmbassadorEnvironment3Key: !Not [!Equals [!Ref AmbassadorEnvironment3Key, '']]
+  HasProxyImage: !Not [!Equals [!Ref ProxyImage, '']]
+  HasProxyCommand: !Not [!Equals [!Ref ProxyCommand, '']]
+  HasProxyEnvironment1Key: !Not [!Equals [!Ref ProxyEnvironment1Key, '']]
+  HasProxyEnvironment2Key: !Not [!Equals [!Ref ProxyEnvironment2Key, '']]
+  HasProxyEnvironment3Key: !Not [!Equals [!Ref ProxyEnvironment3Key, '']]
   HasSidecarImage: !Not [!Equals [!Ref SidecarImage, '']]
   HasSidecarCommand: !Not [!Equals [!Ref SidecarCommand, '']]
   HasSidecarEnvironment1Key: !Not [!Equals [!Ref SidecarEnvironment1Key, '']]
@@ -550,12 +550,12 @@ Resources:
     Properties:
       ContainerDefinitions:
       - !If
-        - HasAmbassadorImage
-        - Name: ambassador
-          Image: !Ref AmbassadorImage
-          Command: !If [HasAmbassadorCommand, !Ref AmbassadorCommand, !Ref 'AWS::NoValue']
+        - HasProxyImage
+        - Name: proxy
+          Image: !Ref ProxyImage
+          Command: !If [HasProxyCommand, !Ref ProxyCommand, !Ref 'AWS::NoValue']
           PortMappings:
-          - ContainerPort: !Ref AmbassadorPort
+          - ContainerPort: !Ref ProxyPort
             Protocol: tcp
           Essential: true
           LogConfiguration:
@@ -563,11 +563,11 @@ Resources:
             Options:
               'awslogs-region': !Ref 'AWS::Region'
               'awslogs-group': !Ref LogGroup
-              'awslogs-stream-prefix': ambassador
+              'awslogs-stream-prefix': proxy
           Environment:
-          - !If [HasAmbassadorEnvironment1Key, {Name: !Ref AmbassadorEnvironment1Key, Value: !Ref AmbassadorEnvironment1Value}, !Ref 'AWS::NoValue']
-          - !If [HasAmbassadorEnvironment2Key, {Name: !Ref AmbassadorEnvironment2Key, Value: !Ref AmbassadorEnvironment2Value}, !Ref 'AWS::NoValue']
-          - !If [HasAmbassadorEnvironment3Key, {Name: !Ref AmbassadorEnvironment3Key, Value: !Ref AmbassadorEnvironment3Value}, !Ref 'AWS::NoValue']
+          - !If [HasProxyEnvironment1Key, {Name: !Ref ProxyEnvironment1Key, Value: !Ref ProxyEnvironment1Value}, !Ref 'AWS::NoValue']
+          - !If [HasProxyEnvironment2Key, {Name: !Ref ProxyEnvironment2Key, Value: !Ref ProxyEnvironment2Value}, !Ref 'AWS::NoValue']
+          - !If [HasProxyEnvironment3Key, {Name: !Ref ProxyEnvironment3Key, Value: !Ref ProxyEnvironment3Value}, !Ref 'AWS::NoValue']
         - !Ref 'AWS::NoValue'
       - Name: app
         Image: !Ref AppImage
@@ -624,8 +624,8 @@ Resources:
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
       - SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerSecurityGroup'}
-        FromPort: !If [HasAmbassadorImage, !Ref AmbassadorPort, !Ref AppPort]
-        ToPort: !If [HasAmbassadorImage, !Ref AmbassadorPort, !Ref AppPort]
+        FromPort: !If [HasProxyImage, !Ref ProxyPort, !Ref AppPort]
+        ToPort: !If [HasProxyImage, !Ref ProxyPort, !Ref AppPort]
         IpProtocol: tcp
   Service:
     DependsOn: LoadBalancerListenerRule
@@ -639,8 +639,8 @@ Resources:
       HealthCheckGracePeriodSeconds: !Ref HealthCheckGracePeriod
       LaunchType: FARGATE
       LoadBalancers:
-      - ContainerName: !If [HasAmbassadorImage, ambassador, app]
-        ContainerPort: !If [HasAmbassadorImage, !Ref AmbassadorPort, !Ref AppPort]
+      - ContainerName: !If [HasProxyImage, proxy, app]
+        ContainerPort: !If [HasProxyImage, !Ref ProxyPort, !Ref AppPort]
         TargetGroupArn: !Ref TargetGroup
       NetworkConfiguration:
         AwsvpcConfiguration:
