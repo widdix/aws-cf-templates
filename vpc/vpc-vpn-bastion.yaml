@@ -34,6 +34,10 @@ Metadata:
       - SubDomainNameWithDot
       - ManagedPolicyArns
     - Label:
+        default: 'EFS Parameters'
+      Parameters:
+      - EFSProvisionedThroughputInMibps
+    - Label:
         default: 'VPN Parameters'
       Parameters:
       - VPNPSK
@@ -102,6 +106,10 @@ Parameters:
     Description: 'SoftEther VPN admin password.'
     Type: String
     NoEcho: true
+  EFSProvisionedThroughputInMibps:
+    Description: 'The provisioned throughput for the Elastic File System (EFS) in Mibps. Default is 0 which enables the bursting mode and disables provisioned throughput.'
+    Type: Number
+    Default: 0
 Mappings:
   RegionMap:
     'eu-north-1':
@@ -143,6 +151,10 @@ Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
+  HasEFSProvisionedThroughput: !Not [!Condition HasNotEFSProvisionedThroughput]
+  HasNotEFSProvisionedThroughput: !Equals [!Ref EFSProvisionedThroughputInMibps, '0']
+  HasAlertTopicAndEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasEFSProvisionedThroughput]
+  HasAlertTopicAndNotEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasNotEFSProvisionedThroughput]
 Resources:
   StorageSG:
     Type: 'AWS::EC2::SecurityGroup'
@@ -157,39 +169,58 @@ Resources:
   Storage:
     Type: 'AWS::EFS::FileSystem'
     Properties:
+      ThroughputMode: !If [HasEFSProvisionedThroughput, 'provisioned', 'bursting']
+      ProvisionedThroughputInMibps: !If [HasEFSProvisionedThroughput, !Ref EFSProvisionedThroughputInMibps, !Ref 'AWS::NoValue']
       FileSystemTags:
       - Key: Name
         Value: !Ref 'AWS::StackName'
       PerformanceMode: generalPurpose
-  StoragePercentIOLimitTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Average IO utilization over last 10 minutes higher than 80%'
-      Namespace: 'AWS/EFS'
-      MetricName: PercentIOLimit
-      Statistic: Average
-      Period: 600
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 80
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Dimensions:
-      - Name: FileSystemId
-        Value: !Ref Storage
   StorageBurstCreditBalanceTooLowAlarm:
-    Condition: HasAlertTopic
+    Condition: HasAlertTopicAndNotEFSProvisionedThroughput
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'EFS file system is running out of burst credits. You can expect a significant performance drop in the next hour.'
+      AlarmDescription: 'Average burst credit balance over last 10 minutes too low, expect a significant performance drop soon.'
       Namespace: 'AWS/EFS'
       MetricName: BurstCreditBalance
       Statistic: Average
       Period: 600
       EvaluationPeriods: 1
       ComparisonOperator: LessThanThreshold
-      Threshold: 192416666667 # 192 GB in Bytes (last hour where you can burst at 100 MB/sec)
+      Threshold: 192000000000 # 192 GB in Bytes (last hour where you can burst at 100 MB/sec)
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: FileSystemId
+        Value: !Ref Storage
+  StoragePercentIOLimitTooHighAlarm:
+    Condition: HasAlertTopicAndNotEFSProvisionedThroughput
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'I/O limit has been reached, consider using Max I/O performance mode.'
+      Namespace: 'AWS/EFS'
+      MetricName: PercentIOLimit
+      Statistic: Maximum
+      Period: 600
+      EvaluationPeriods: 3
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 95
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: FileSystemId
+        Value: !Ref Storage
+  StorageThroughputAlarm:
+    Condition: HasAlertTopicAndEFSProvisionedThroughput
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Reached 90% of the provisioned throughput over last 10 minutes.'
+      Namespace: 'AWS/EFS'
+      MetricName: TotalIOBytes
+      Statistic: Sum
+      Period: 600
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: !GetAtt MaxThroughputCalculator.Threshold
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
@@ -768,6 +799,65 @@ Resources:
       Dimensions:
       - Name: AutoScalingGroupName
         Value: !Ref AutoScalingGroup
+  LambdaRole:
+    Condition: HasEFSProvisionedThroughput
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'lambda.amazonaws.com'
+          Action: 'sts:AssumeRole'
+  LambdaPolicy:
+    Condition: HasEFSProvisionedThroughput
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Roles:
+      - !Ref LambdaRole
+      PolicyName: lambda
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action:
+          - 'logs:CreateLogStream'
+          - 'logs:PutLogEvents'
+          Resource: !GetAtt 'LambdaLogGroup.Arn'
+  LambdaFunction: # needs no monitoring because it is used as a custom resource
+    Condition: HasEFSProvisionedThroughput
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        ZipFile: |
+          'use strict';
+          const response = require('cfn-response');
+          exports.handler = (event, context, cb) => {
+            const throughput = parseInt(event.ResourceProperties.ThroughputInMibps, 10);
+            const threshold = Math.round(throughput * 1048576 * 600 * 0.9);
+            response.send(event, context, response.SUCCESS, {Threshold: threshold});
+          };
+      Handler: 'index.handler'
+      MemorySize: 128
+      Role: !GetAtt 'LambdaRole.Arn'
+      Runtime: 'nodejs8.10'
+      Timeout: 60
+  LambdaLogGroup:
+    Condition: HasEFSProvisionedThroughput
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${LambdaFunction}'
+      RetentionInDays: !Ref LogsRetentionInDays
+  MaxThroughputCalculator:
+    Condition: HasEFSProvisionedThroughput
+    Type: 'Custom::MaxThroughputCalculator'
+    DependsOn:
+    - LambdaLogGroup
+    - LambdaPolicy
+    Version: '1.0'
+    Properties:
+      ThroughputInMibps: !Ref EFSProvisionedThroughputInMibps
+      ServiceToken: !GetAtt 'LambdaFunction.Arn'
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
