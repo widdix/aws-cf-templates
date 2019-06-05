@@ -35,7 +35,9 @@ Metadata:
       - MaxReadCapacityUnits
       - MinReadCapacityUnits
       - ReadCapacityUnitsUtilizationTarget
+      - Encryption
       - TimeToLiveAttributeName
+      - StreamViewType
 Parameters:
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
@@ -100,6 +102,11 @@ Parameters:
     Description: 'Optional name of the Time to Live attribute used to store the expiration time (unix timestamp in seconds)'
     Type: String
     Default: ''
+  StreamViewType:
+    Description: 'Determines the information that the stream captures when an item in the table is modified.'
+    Type: String
+    Default: DISABLED
+    AllowedValues: [DISABLED, KEYS_ONLY, NEW_IMAGE, OLD_IMAGE, NEW_AND_OLD_IMAGES]
 Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasSortKey: !Not [!Equals [!Ref SortKeyName, '']]
@@ -107,6 +114,7 @@ Conditions:
   HasAwsManagedEncryption: !Equals [!Ref Encryption, aws]
   HasBillingAndScalingModeProvisioned: !Equals [!Ref BillingAndScalingMode, PROVISIONED]
   HasTimeToLiveAttributeName: !Not [!Equals [!Ref TimeToLiveAttributeName, '']]
+  HasStream: !Not [!Equals [!Ref StreamViewType, 'DISABLED']]
 Resources:
   Table:
     Type: 'AWS::DynamoDB::Table'
@@ -133,6 +141,7 @@ Resources:
       SSESpecification:
         SSEEnabled: !If [HasAwsManagedEncryption, true, false]
       TimeToLiveSpecification: !If [HasTimeToLiveAttributeName, {AttributeName: !Ref TimeToLiveAttributeName, Enabled: true}, !Ref 'AWS::NoValue']
+      StreamSpecification: !If [HasStream, {StreamViewType: !Ref StreamViewType}, !Ref 'AWS::NoValue']
   RoleScaling:
     Condition: HasBillingAndScalingModeProvisioned
     Type: 'AWS::IAM::Role'
@@ -313,3 +322,10 @@ Outputs:
   TableName:
     Description: 'Name of the table'
     Value: !Ref Table
+    Export:
+      Name: !Sub '${AWS::StackName}-TableName'
+  StreamArn:
+    Condition: HasStream
+    Value: !GetAtt 'Table.StreamArn'
+    Export:
+      Name: !Sub '${AWS::StackName}-StreamArn'
