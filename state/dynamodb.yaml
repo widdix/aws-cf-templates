@@ -35,6 +35,7 @@ Metadata:
       - MaxReadCapacityUnits
       - MinReadCapacityUnits
       - ReadCapacityUnitsUtilizationTarget
+      - TimeToLiveAttributeName
 Parameters:
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
@@ -95,12 +96,17 @@ Parameters:
     Type: String
     Default: false
     AllowedValues: [aws, false]
+  TimeToLiveAttributeName:
+    Description: 'Optional name of the Time to Live attribute used to store the expiration time (unix timestamp in seconds)'
+    Type: String
+    Default: ''
 Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasSortKey: !Not [!Equals [!Ref SortKeyName, '']]
   HasTableName: !Not [!Equals [!Ref TableName, '']]
   HasAwsManagedEncryption: !Equals [!Ref Encryption, aws]
   HasBillingAndScalingModeProvisioned: !Equals [!Ref BillingAndScalingMode, PROVISIONED]
+  HasTimeToLiveAttributeName: !Not [!Equals [!Ref TimeToLiveAttributeName, '']]
 Resources:
   Table:
     Type: 'AWS::DynamoDB::Table'
@@ -126,6 +132,7 @@ Resources:
       ProvisionedThroughput: !If [HasBillingAndScalingModeProvisioned, {ReadCapacityUnits: !Ref MinReadCapacityUnits, WriteCapacityUnits: !Ref MinWriteCapacityUnits}, !Ref 'AWS::NoValue']
       SSESpecification:
         SSEEnabled: !If [HasAwsManagedEncryption, true, false]
+      TimeToLiveSpecification: !If [HasTimeToLiveAttributeName, {AttributeName: !Ref TimeToLiveAttributeName, Enabled: true}, !Ref 'AWS::NoValue']
   RoleScaling:
     Condition: HasBillingAndScalingModeProvisioned
     Type: 'AWS::IAM::Role'
