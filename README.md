@@ -13,7 +13,7 @@ widdix, a CLI tool to manage Free Templates for AWS CloudFormation.
 Learn more: https://github.com/widdix/aws-cf-templates-cli
 
 ### cfn-modules
-Easy-going CloudFormation: Modular, production ready, open source.
+Rapid CloudFormation: Modular, production ready, open source.
 
 Learn more: https://github.com/cfn-modules/docs
 
