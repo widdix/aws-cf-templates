@@ -20,7 +20,7 @@ Your source for free [AWS CloudFormation](https://aws.amazon.com/cloudformation/
 [widdix, a CLI tool to manage Free Templates for AWS CloudFormation](./cli/).
 
 ## cfn-modules
-[Easy-going CloudFormation](https://github.com/cfn-modules/docs): Modular, production ready, open source.
+[Rapid CloudFormation](https://github.com/cfn-modules/docs): Modular, production ready, open source.
 
 # Infrastructure Templates
 Choose from our template catalog:
