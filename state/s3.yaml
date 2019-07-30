@@ -120,6 +120,7 @@ Resources:
     Properties:
       Bucket: !Ref Bucket
       PolicyDocument:
+        Version: '2012-10-17'
         Statement:
         - Principal: '*'
           Action: 's3:PutObject*'
@@ -135,6 +136,7 @@ Resources:
     Properties:
       Bucket: !Ref Bucket
       PolicyDocument:
+        Version: '2012-10-17'
         Statement:
         - Principal: '*'
           Action: 's3:GetObject'
@@ -146,6 +148,7 @@ Resources:
     Properties:
       Bucket: !Ref Bucket
       PolicyDocument:
+        Version: '2012-10-17'
         Statement:
         - Principal:
             CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
@@ -158,6 +161,7 @@ Resources:
     Properties:
       Bucket: !Ref Bucket
       PolicyDocument:
+        Version: '2012-10-17'
         Statement:
         - Principal:
             AWS: # https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html#access-logging-bucket-permissions
@@ -191,6 +195,7 @@ Resources:
     Properties:
       Bucket: !Ref Bucket
       PolicyDocument:
+        Version: '2012-10-17'
         Statement:
         - Principal:
             AWS: # https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html#access-logging-bucket-permissions
@@ -224,6 +229,7 @@ Resources:
     Properties:
       Bucket: !Ref Bucket
       PolicyDocument:
+        Version: '2012-10-17'
         Statement:
         - Effect: Allow
           Principal:
@@ -244,6 +250,7 @@ Resources:
     Properties:
       Bucket: !Ref Bucket
       PolicyDocument:
+        Version: '2012-10-17'
         Statement:
         - Effect: Allow
           Principal:
@@ -264,6 +271,7 @@ Resources:
     Properties:
       Bucket: !Ref Bucket
       PolicyDocument:
+        Version: '2012-10-17'
         Statement:
         - Effect: Allow
           Principal:
@@ -284,6 +292,7 @@ Resources:
     Properties:
       Bucket: !Ref Bucket
       PolicyDocument:
+        Version: '2012-10-17'
         Statement:
         - Effect: Allow
           Principal:
@@ -304,6 +313,7 @@ Resources:
     Properties:
       Bucket: !Ref Bucket
       PolicyDocument:
+        Version: '2012-10-17'
         Statement:
         - Principal: '*'
           Action: 's3:GetObject'
@@ -318,6 +328,7 @@ Resources:
     Properties:
       Bucket: !Ref Bucket
       PolicyDocument:
+        Version: '2012-10-17'
         Statement: # https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs-s3.html#flow-logs-s3-permissions
         - Sid: AWSLogDeliveryWrite
           Effect: Allow
@@ -340,6 +351,7 @@ Resources:
     Properties:
       Bucket: !Ref Bucket
       PolicyDocument:
+        Version: '2012-10-17'
         Statement: # https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs-s3.html#flow-logs-s3-permissions
         - Sid: AWSLogDeliveryWrite
           Effect: Allow
