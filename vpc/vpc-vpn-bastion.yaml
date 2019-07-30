@@ -596,7 +596,7 @@ Resources:
               'amazon-efs-utils': []
           commands:
             'a_mount':
-              command: !Sub 'mkdir /mnt/storage && echo "${Storage} /mnt/storage efs defaults,_netdev 0 0" >> /etc/fstab && mount -a -t efs'
+              command: !Sub 'mkdir /mnt/storage && echo "${Storage}:/ /mnt/storage efs tls,_netdev 0 0" >> /etc/fstab && mount -a -t efs'
               test: '[ ! -d /mnt/storage ]'
             'b_mkdir_backup':
               command: 'mkdir backup.vpn_server.config && chmod 700 backup.vpn_server.config'

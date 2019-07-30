@@ -848,6 +848,20 @@ Resources:
                 commands:
                 - 'a_configure_sshd_command'
                 - 'b_configure_sshd_commanduser'
+        mount:
+          packages:
+            yum:
+              'amazon-efs-utils': []
+          commands:
+            'a_groupadd':
+              command: 'groupadd -g 497 jenkins'
+              test: 'if grep -q jenkins: /etc/group; then exit 1; else exit 0; fi'
+            'b_useradd':
+              command: 'adduser -u 498 -g 497 -s /bin/false -d /var/lib/jenkins -M -c ''Jenkins Continuous Integration Server'' jenkins'
+              test: 'if grep -q jenkins: /etc/passwd; then exit 1; else exit 0; fi'
+            'c_mount':
+              command: !Sub 'mkdir /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins && echo "${MasterStorage}:/ /var/lib/jenkins efs tls,_netdev 0 0" >> /etc/fstab && mount -a -t efs'
+              test: '[ ! -d /var/lib/jenkins ]'
         extras:
           commands:
             'a_enable_docker':
@@ -856,34 +870,17 @@ Resources:
             'b_enable_corretto8':
               command: 'amazon-linux-extras enable corretto8'
               test: "! grep -Fxq '[amzn2extra-corretto8]' /etc/yum.repos.d/amzn2-extras.repo"
-        mount:
-          packages:
-            yum:
-              'nfs-utils': []
-              'ruby': []
-            rubygems:
-              'aws-sdk-autoscaling': ['1.13.0']
-              'aws-sdk-sqs': ['1.10.0']
-              daemons: ['1.2.6']
-          commands:
-            'a_groupadd':
-              command: 'groupadd -g 497 jenkins'
-              test: 'if grep -q jenkins: /etc/group; then exit 1; else exit 0; fi'
-            'b_useradd':
-              command: 'adduser -u 498 -g 497 -s /bin/false -d /var/lib/jenkins -c ''Jenkins Continuous Integration Server'' jenkins'
-              test: 'if grep -q jenkins: /etc/passwd; then exit 1; else exit 0; fi'
-            'c_mountpoint_mkdir':
-              command: 'mkdir /var/lib/jenkins && chown -R jenkins:jenkins /var/lib/jenkins'
-              test: '[ ! -d /var/lib/jenkins ]'
-            'd_mountpoint_mount':
-              command: !Sub 'while ! (echo > /dev/tcp/${MasterStorage}.efs.${AWS::Region}.amazonaws.com/2049) >/dev/null 2>&1; do sleep 10; done && sleep 10 && mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 "${MasterStorage}.efs.${AWS::Region}.amazonaws.com:/" /var/lib/jenkins'
-              test: 'if mount | grep -q /var/lib/jenkins; then exit 1; else exit 0; fi'
         install:
           packages:
             rpm:
               jenkins: 'https://pkg.jenkins.io/redhat-stable/jenkins-2.176.2-1.1.noarch.rpm'
             yum:
               'java-1.8.0-amazon-corretto': []
+              'ruby': []
+            rubygems:
+              'aws-sdk-autoscaling': ['1.13.0']
+              'aws-sdk-sqs': ['1.10.0']
+              daemons: ['1.2.6']
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -1758,7 +1755,6 @@ Resources:
         setup:
           packages:
             yum:
-              'nfs-utils': []
               'ruby': []
             rubygems:
               'aws-sdk-autoscaling': ['1.13.0']

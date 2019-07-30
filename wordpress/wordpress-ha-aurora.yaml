@@ -615,7 +615,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, extras, config], [awslogs, extras, config]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, extras, config], [awslogs, mount, extras, config]]
         awslogs:
           packages:
             yum:
@@ -826,6 +826,14 @@ Resources:
                 commands:
                 - 'a_configure_sshd_command'
                 - 'b_configure_sshd_commanduser'
+        mount:
+          packages:
+            yum:
+              'amazon-efs-utils': []
+          commands:
+            'a_mount':
+              command: !Sub 'mkdir /var/www && echo "${EFSFileSystem}:/ /var/www efs tls,_netdev 0 0" >> /etc/fstab && mount -a -t efs'
+              test: '[ ! -d /var/www ]'
         extras:
           commands:
             'a_enable_php':
@@ -932,10 +940,6 @@ Resources:
         'Fn::Base64': !Sub |
           #!/bin/bash -ex
           trap '/opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}' ERR
-          while ! (echo > /dev/tcp/${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com/2049) >/dev/null 2>&1; do sleep 10; done
-          sleep 10
-          mkdir /var/www
-          mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 "${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com:/" /var/www/
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
           /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
