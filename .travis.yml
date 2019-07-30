@@ -10,7 +10,7 @@ python:
 install:
 - 'pip install yamllint==1.15.0'
 - 'pip install awscli==1.16.167'
-- 'pip install cfn-lint==0.21.3'
+- 'pip install cfn-lint==0.22.4'
 script:
 - 'yamllint .'
 - 'cfn-lint -i E3002 W2001 W6001 W2030 -t ''**/*.yaml''' # TODO get rid of check ignores
