@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Operations: DynamoDB native backup, a cloudonaut.io template'
+Description: 'Operations: DynamoDB native backup, deprecated in v9, will be removed in v11, use state/dynamodb instead with AWS Backup enabled, a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
