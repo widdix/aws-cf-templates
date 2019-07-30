@@ -52,7 +52,7 @@ Parameters:
     Description: 'Access policy of the bucket.'
     Type: String
     Default: Private
-    AllowedValues: [Private, PublicRead, CloudFrontRead, CloudFrontAccessLogWrite, ElbAccessLogWrite, ConfigWrite, CloudTrailWrite, VpcEndpointRead]
+    AllowedValues: [Private, PublicRead, CloudFrontRead, CloudFrontAccessLogWrite, ElbAccessLogWrite, ElbAccessLogCrossAccountWrite, ConfigWrite, ConfigCrossAccountWrite, CloudTrailWrite, CloudTrailCrossAccountWrite, VpcEndpointRead, FlowLogWrite, FlowLogCrossAccountWrite]
   Versioning:
     Description: 'Enable versioning to keep a backup if objects change.'
     Type: String
@@ -75,9 +75,14 @@ Conditions:
   HasPublicReadAccess: !Equals [!Ref Access, PublicRead]
   HasCloudFrontReadAccess: !Equals [!Ref Access, CloudFrontRead]
   HasElbAccessLogWriteAccess: !Equals [!Ref Access, ElbAccessLogWrite]
+  HasElbAccessLogCrossAccountWriteAccess: !Equals [!Ref Access, ElbAccessLogCrossAccountWrite]
   HasConfigWriteAccess: !Equals [!Ref Access, ConfigWrite]
+  HasConfigCrossAccountWriteAccess: !Equals [!Ref Access, ConfigCrossAccountWrite]
   HasCloudTrailWriteAccess: !Equals [!Ref Access, CloudTrailWrite]
+  HasCloudTrailCrossAccountWriteAccess: !Equals [!Ref Access, CloudTrailCrossAccountWrite]
   HasVpcEndpointReadAccess: !Equals [!Ref Access, VpcEndpointRead]
+  HasFlowLogWriteAccess: !Equals [!Ref Access, FlowLogWrite]
+  HasFlowLogCrossAccountWriteAccess: !Equals [!Ref Access, FlowLogCrossAccountWrite]
   HasBucketName: !Not [!Equals [!Ref BucketName, '']]
   HasVersioning: !Equals [!Ref Versioning, true]
   HadVersioning: !Equals [!Ref Versioning, 'false-but-was-true']
@@ -173,6 +178,35 @@ Resources:
           Action: 's3:PutObject'
           Effect: Allow
           Resource: !Sub '${Bucket.Arn}/*AWSLogs/${AWS::AccountId}/*'
+  BucketPolicyElbAccessLogCrossAccountWrite:
+    Condition: HasElbAccessLogCrossAccountWriteAccess
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Statement:
+        - Principal:
+            AWS: # https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html#access-logging-bucket-permissions
+            - 'arn:aws:iam::127311923021:root' # us-east-1
+            - 'arn:aws:iam::033677994240:root' # us-east-2
+            - 'arn:aws:iam::027434742980:root' # us-west-1
+            - 'arn:aws:iam::797873946194:root' # us-west-2
+            - 'arn:aws:iam::985666609251:root' # ca-central-1
+            - 'arn:aws:iam::054676820928:root' # eu-central-1
+            - 'arn:aws:iam::156460612806:root' # eu-west-1
+            - 'arn:aws:iam::652711504416:root' # eu-west-2
+            - 'arn:aws:iam::009996457667:root' # eu-west-3
+            - 'arn:aws:iam::897822967062:root' # eu-north-1
+            - 'arn:aws:iam::582318560864:root' # ap-northeast-1
+            - 'arn:aws:iam::600734575887:root' # ap-northeast-2
+            - 'arn:aws:iam::383597477331:root' # ap-northeast-3
+            - 'arn:aws:iam::114774131450:root' # ap-southeast-1
+            - 'arn:aws:iam::783225319266:root' # ap-southeast-2
+            - 'arn:aws:iam::718504428378:root' # ap-south-1
+            - 'arn:aws:iam::507241528517:root' # sa-east-1
+          Action: 's3:PutObject'
+          Effect: Allow
+          Resource: !Sub '${Bucket.Arn}/*AWSLogs/*'
   BucketPolicyConfigWrite:
     Condition: HasConfigWriteAccess
     Type: 'AWS::S3::BucketPolicy'
@@ -189,7 +223,27 @@ Resources:
           Principal:
             Service: 'config.amazonaws.com'
           Action: 's3:PutObject'
-          Resource: !Sub '${Bucket.Arn}/*AWSLogs/${AWS::AccountId}/Config/*'
+          Resource: !Sub '${Bucket.Arn}/*AWSLogs/${AWS::AccountId}/*'
+          Condition:
+            StringEquals:
+              's3:x-amz-acl': 'bucket-owner-full-control'
+  BucketPolicyConfigCrossAccountWrite:
+    Condition: HasConfigCrossAccountWriteAccess
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'config.amazonaws.com'
+          Action: 's3:GetBucketAcl'
+          Resource: !GetAtt 'Bucket.Arn'
+        - Effect: Allow
+          Principal:
+            Service: 'config.amazonaws.com'
+          Action: 's3:PutObject'
+          Resource: !Sub '${Bucket.Arn}/*AWSLogs/*'
           Condition:
             StringEquals:
               's3:x-amz-acl': 'bucket-owner-full-control'
@@ -213,6 +267,26 @@ Resources:
           Condition:
             StringEquals:
               's3:x-amz-acl': 'bucket-owner-full-control'
+  BucketPolicyCloudTrailCrossAccountWrite:
+    Condition: HasCloudTrailCrossAccountWriteAccess
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'cloudtrail.amazonaws.com'
+          Action: 's3:GetBucketAcl'
+          Resource: !GetAtt 'Bucket.Arn'
+        - Effect: Allow
+          Principal:
+            Service: 'cloudtrail.amazonaws.com'
+          Action: 's3:PutObject'
+          Resource: !Sub '${Bucket.Arn}/*AWSLogs/*'
+          Condition:
+            StringEquals:
+              's3:x-amz-acl': 'bucket-owner-full-control'
   BucketPolicyVpcEndpointRead:
     Condition: HasVpcEndpointReadAccess
     Type: 'AWS::S3::BucketPolicy'
@@ -227,6 +301,50 @@ Resources:
           Condition:
             StringEquals:
               'aws:sourceVpce': {'Fn::ImportValue': !Sub '${ParentVpcEndpointStack}-EndpointS3'}
+  BucketPolicyFlowLogWrite:
+    Condition: HasFlowLogWriteAccess
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Statement: # https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs-s3.html#flow-logs-s3-permissions
+        - Sid: AWSLogDeliveryWrite
+          Effect: Allow
+          Principal:
+            Service: 'delivery.logs.amazonaws.com'
+          Action: 's3:PutObject'
+          Resource: !Sub '${Bucket.Arn}/*AWSLogs/${AWS::AccountId}/*'
+          Condition:
+            StringEquals:
+              's3:x-amz-acl': 'bucket-owner-full-control'
+        - Sid: AWSLogDeliveryAclCheck
+          Effect: Allow
+          Principal:
+            Service: 'delivery.logs.amazonaws.com'
+          Action: 's3:GetBucketAcl'
+          Resource: !GetAtt 'Bucket.Arn'
+  BucketPolicyFlowLogCrossAccountWrite:
+    Condition: HasFlowLogCrossAccountWriteAccess
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Statement: # https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs-s3.html#flow-logs-s3-permissions
+        - Sid: AWSLogDeliveryWrite
+          Effect: Allow
+          Principal:
+            Service: 'delivery.logs.amazonaws.com'
+          Action: 's3:PutObject'
+          Resource: !Sub '${Bucket.Arn}/*AWSLogs/*'
+          Condition:
+            StringEquals:
+              's3:x-amz-acl': 'bucket-owner-full-control'
+        - Sid: AWSLogDeliveryAclCheck
+          Effect: Allow
+          Principal:
+            Service: 'delivery.logs.amazonaws.com'
+          Action: 's3:GetBucketAcl'
+          Resource: !GetAtt 'Bucket.Arn'
   CloudFrontOriginAccessIdentity:
     Condition: HasCloudFrontReadAccess
     Type: 'AWS::CloudFront::CloudFrontOriginAccessIdentity'
