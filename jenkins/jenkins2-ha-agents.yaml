@@ -2223,9 +2223,7 @@ Resources:
   BackupVault:
     Type: 'AWS::Backup::BackupVault'
     Properties:
-      # AccessPolicy: # FIXME later
       BackupVaultName: !Ref 'AWS::StackName'
-      # EncryptionKeyArn: # FIXME later
       Notifications: !If [HasAlertTopic, {BackupVaultEvents: [BACKUP_JOB_STARTED, BACKUP_JOB_COMPLETED, RESTORE_JOB_STARTED, RESTORE_JOB_COMPLETED, RECOVERY_POINT_MODIFIED], SNSTopicArn: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}}, !Ref 'AWS::NoValue']
   BackupPlan:
     Type: 'AWS::Backup::BackupPlan'
@@ -2233,12 +2231,12 @@ Resources:
       BackupPlan:
         BackupPlanName: !Ref 'AWS::StackName'
         BackupPlanRule:
-        - CompletionWindowMinutes: 10080
+        - CompletionWindowMinutes: 1440
           Lifecycle:
             DeleteAfterDays: !Ref EFSBackupRetentionPeriod
           RuleName: !Ref 'AWS::StackName'
           ScheduleExpression: !Ref EFSBackupScheduleExpression
-          StartWindowMinutes: 480
+          StartWindowMinutes: 60
           TargetBackupVault: !Ref BackupVault
   BackupRole:
     Type: 'AWS::IAM::Role'
