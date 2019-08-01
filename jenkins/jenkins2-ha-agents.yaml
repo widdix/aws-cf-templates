@@ -2220,7 +2220,7 @@ Resources:
     Properties:
       ThroughputInMibps: !Ref EFSProvisionedThroughputInMibps
       ServiceToken: !GetAtt 'LambdaFunction.Arn'
-  BackupVault:
+  BackupVault: # cannot be deleted with data
     Type: 'AWS::Backup::BackupVault'
     Properties:
       BackupVaultName: !Ref 'AWS::StackName'

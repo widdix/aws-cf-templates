@@ -1309,7 +1309,7 @@ Resources:
           AcmCertificateArn: !Ref CloudFrontAcmCertificate
           SslSupportMethod: 'sni-only'
           MinimumProtocolVersion: TLSv1
-  BackupVault:
+  BackupVault: # cannot be deleted with data
     Type: 'AWS::Backup::BackupVault'
     Properties:
       BackupVaultName: !Ref 'AWS::StackName'
