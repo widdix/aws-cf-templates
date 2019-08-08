@@ -93,7 +93,7 @@ Conditions:
   HasPartitionChina: !Equals [!Ref 'AWS::Partition', 'aws-cn']
   HasPartitionUsGov: !Equals [!Ref 'AWS::Partition', 'aws-us-gov']
 Resources:
-  Bucket:
+  Bucket: # cannot be deleted with data
     Type: 'AWS::S3::Bucket'
     Properties:
       BucketName: !If [HasBucketName, !Ref BucketName, !Ref 'AWS::NoValue']

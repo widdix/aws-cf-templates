@@ -40,7 +40,6 @@ DynamoDB table with auto scaling for read and write capacity.
 * `operations/alert.yaml` (recommended)
 
 ## Limitations
-* No backup (see `operations/backup-dynamodb-native.yaml`)
 * Encryption at rest with AWS managed CMK (customer managed is not supported)
 
 # ElastiCache memcached
