@@ -115,9 +115,9 @@ Parameters:
     Default: DISABLED
     AllowedValues: [DISABLED, KEYS_ONLY, NEW_IMAGE, OLD_IMAGE, NEW_AND_OLD_IMAGES]
   BackupRetentionPeriod:
-    Description: 'The number of days to keep backups of the table.'
+    Description: 'The number of days to keep backups of the table (set to 0 to disable).'
     Type: Number
-    MinValue: 1
+    MinValue: 0
     MaxValue: 35
     Default: 30
   BackupScheduleExpression:
@@ -137,6 +137,7 @@ Conditions:
   HasBillingAndScalingModeProvisioned: !Equals [!Ref BillingAndScalingMode, PROVISIONED]
   HasTimeToLiveAttributeName: !Not [!Equals [!Ref TimeToLiveAttributeName, '']]
   HasStream: !Not [!Equals [!Ref StreamViewType, 'DISABLED']]
+  HasBackupRetentionPeriod: !Not [!Equals [!Ref BackupRetentionPeriod, 0]]
 Resources:
   Table:
     Type: 'AWS::DynamoDB::Table'
@@ -334,11 +335,13 @@ Resources:
       OKActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
   BackupVault: # cannot be deleted with data
+    Condition: HasBackupRetentionPeriod
     Type: 'AWS::Backup::BackupVault'
     Properties:
       BackupVaultName: !Ref 'AWS::StackName'
       Notifications: !If [HasAlertTopic, {BackupVaultEvents: [BACKUP_JOB_STARTED, BACKUP_JOB_COMPLETED, RESTORE_JOB_STARTED, RESTORE_JOB_COMPLETED, RECOVERY_POINT_MODIFIED], SNSTopicArn: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}}, !Ref 'AWS::NoValue']
   BackupPlan:
+    Condition: HasBackupRetentionPeriod
     Type: 'AWS::Backup::BackupPlan'
     Properties:
       BackupPlan:
@@ -352,6 +355,7 @@ Resources:
           StartWindowMinutes: 60
           TargetBackupVault: !Ref BackupVault
   BackupRole:
+    Condition: HasBackupRetentionPeriod
     Type: 'AWS::IAM::Role'
     Properties:
       AssumeRolePolicyDocument:
@@ -377,6 +381,7 @@ Resources:
             - 'dynamodb:DeleteBackup'
             Resource: !Sub '${Table.Arn}/backup/*'
   BackupSelection:
+    Condition: HasBackupRetentionPeriod
     Type: 'AWS::Backup::BackupSelection'
     Properties:
       BackupPlanId: !Ref BackupPlan
