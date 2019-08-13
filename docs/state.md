@@ -244,6 +244,7 @@ S3 bucket with different access requirements:
 | ConfigWrite              | Allow Config to store data in this bucket.                                                             |
 | CloudTrailWrite          | Allow CloudTrail to store data in this bucket.                                                         |
 | VpcEndpointRead          | Allow reads from requests coming over a specific VPC endpoint (see `ParentVpcEndpointStack` parameter) |
+| FlowLogWrite             | Allow VPC Flow Logs to store data in this bucket.                                                      |
 
 ## Installation Guide
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/state/s3.yaml&stackName=s3)
