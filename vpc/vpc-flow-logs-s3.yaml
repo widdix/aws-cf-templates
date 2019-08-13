@@ -108,3 +108,6 @@ Outputs:
   StackName:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
+  LogBucketName:
+    Description: 'Log bucket name.'
+    Value: !If [InternalBucket, !Ref LogBucket, !Ref ExternalLogBucket]

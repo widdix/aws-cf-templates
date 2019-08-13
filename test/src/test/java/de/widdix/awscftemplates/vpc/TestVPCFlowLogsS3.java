@@ -22,6 +22,7 @@ public class TestVPCFlowLogsS3 extends ACloudFormationTest {
                         new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName)
                 );
                 // TODO how can we check if this stack works?
+                this.emptyBucket(this.getStackOutputValue(flowLogsStackName, "LogBucketName"));
             } finally {
                 this.deleteStack(flowLogsStackName);
             }
