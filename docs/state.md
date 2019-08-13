@@ -241,14 +241,10 @@ S3 bucket with different access requirements:
 | CloudFrontRead                | Allow reads from CloudFront via Origin Access Identity (see `CloudFrontOriginAccessIdentity` output)   |
 | CloudFrontAccessLogWrite      | Allow CloudFront to store access logs in this bucket.                                                  |
 | ElbAccessLogWrite             | Allow ELB to store access logs in this bucket.                                                         |
-| ElbAccessLogCrossAccountWrite | Allow ELB to store access logs in this bucket from same or other AWS accounts.                         |
 | ConfigWrite                   | Allow Config to store data in this bucket.                                                             |
-| ConfigCrossAccountWrite       | Allow Config to store data in this bucket from same or other AWS accounts.                             |
 | CloudTrailWrite               | Allow CloudTrail to store data in this bucket.                                                         |
-| CloudTrailCrossAccountWrite   | Allow CloudTrail to store data in this bucket from same or other AWS accounts.                         |
 | VpcEndpointRead               | Allow reads from requests coming over a specific VPC endpoint (see `ParentVpcEndpointStack` parameter) |
 | FlowLogWrite                  | Allow VPC Flow Logs to store data in this bucket.                                                      |
-| FlowLogCrossAccountWrite      | Allow VPC Flow Logs to store data in this bucket from same or other AWS accounts.                      |
 
 ## Installation Guide
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/state/s3.yaml&stackName=s3)

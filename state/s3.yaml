@@ -52,7 +52,7 @@ Parameters:
     Description: 'Access policy of the bucket.'
     Type: String
     Default: Private
-    AllowedValues: [Private, PublicRead, CloudFrontRead, CloudFrontAccessLogWrite, ElbAccessLogWrite, ElbAccessLogCrossAccountWrite, ConfigWrite, ConfigCrossAccountWrite, CloudTrailWrite, CloudTrailCrossAccountWrite, VpcEndpointRead, FlowLogWrite, FlowLogCrossAccountWrite]
+    AllowedValues: [Private, PublicRead, CloudFrontRead, CloudFrontAccessLogWrite, ElbAccessLogWrite, ConfigWrite, CloudTrailWrite, VpcEndpointRead, FlowLogWrite]
   Versioning:
     Description: 'Enable versioning to keep a backup if objects change.'
     Type: String
@@ -75,14 +75,10 @@ Conditions:
   HasPublicReadAccess: !Equals [!Ref Access, PublicRead]
   HasCloudFrontReadAccess: !Equals [!Ref Access, CloudFrontRead]
   HasElbAccessLogWriteAccess: !Equals [!Ref Access, ElbAccessLogWrite]
-  HasElbAccessLogCrossAccountWriteAccess: !Equals [!Ref Access, ElbAccessLogCrossAccountWrite]
   HasConfigWriteAccess: !Equals [!Ref Access, ConfigWrite]
-  HasConfigCrossAccountWriteAccess: !Equals [!Ref Access, ConfigCrossAccountWrite]
   HasCloudTrailWriteAccess: !Equals [!Ref Access, CloudTrailWrite]
-  HasCloudTrailCrossAccountWriteAccess: !Equals [!Ref Access, CloudTrailCrossAccountWrite]
   HasVpcEndpointReadAccess: !Equals [!Ref Access, VpcEndpointRead]
   HasFlowLogWriteAccess: !Equals [!Ref Access, FlowLogWrite]
-  HasFlowLogCrossAccountWriteAccess: !Equals [!Ref Access, FlowLogCrossAccountWrite]
   HasBucketName: !Not [!Equals [!Ref BucketName, '']]
   HasVersioning: !Equals [!Ref Versioning, true]
   HadVersioning: !Equals [!Ref Versioning, 'false-but-was-true']
@@ -189,40 +185,6 @@ Resources:
           Action: 's3:PutObject'
           Effect: Allow
           Resource: !Sub '${Bucket.Arn}/*AWSLogs/${AWS::AccountId}/*'
-  BucketPolicyElbAccessLogCrossAccountWrite:
-    Condition: HasElbAccessLogCrossAccountWriteAccess
-    Type: 'AWS::S3::BucketPolicy'
-    Properties:
-      Bucket: !Ref Bucket
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Principal:
-            AWS: # https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html#access-logging-bucket-permissions
-            - !If [HasPartitionPublic, 'arn:aws:iam::127311923021:root', !Ref 'AWS::NoValue'] # us-east-1
-            - !If [HasPartitionPublic, 'arn:aws:iam::033677994240:root', !Ref 'AWS::NoValue'] # us-east-2
-            - !If [HasPartitionPublic, 'arn:aws:iam::027434742980:root', !Ref 'AWS::NoValue'] # us-west-1
-            - !If [HasPartitionPublic, 'arn:aws:iam::797873946194:root', !Ref 'AWS::NoValue'] # us-west-2
-            - !If [HasPartitionPublic, 'arn:aws:iam::985666609251:root', !Ref 'AWS::NoValue'] # ca-central-1
-            - !If [HasPartitionPublic, 'arn:aws:iam::054676820928:root', !Ref 'AWS::NoValue'] # eu-central-1
-            - !If [HasPartitionPublic, 'arn:aws:iam::156460612806:root', !Ref 'AWS::NoValue'] # eu-west-1
-            - !If [HasPartitionPublic, 'arn:aws:iam::652711504416:root', !Ref 'AWS::NoValue'] # eu-west-2
-            - !If [HasPartitionPublic, 'arn:aws:iam::009996457667:root', !Ref 'AWS::NoValue'] # eu-west-3
-            - !If [HasPartitionPublic, 'arn:aws:iam::897822967062:root', !Ref 'AWS::NoValue'] # eu-north-1
-            - !If [HasPartitionPublic, 'arn:aws:iam::582318560864:root', !Ref 'AWS::NoValue'] # ap-northeast-1
-            - !If [HasPartitionPublic, 'arn:aws:iam::600734575887:root', !Ref 'AWS::NoValue'] # ap-northeast-2
-            - !If [HasPartitionPublic, 'arn:aws:iam::383597477331:root', !Ref 'AWS::NoValue'] # ap-northeast-3
-            - !If [HasPartitionPublic, 'arn:aws:iam::114774131450:root', !Ref 'AWS::NoValue'] # ap-southeast-1
-            - !If [HasPartitionPublic, 'arn:aws:iam::783225319266:root', !Ref 'AWS::NoValue'] # ap-southeast-2
-            - !If [HasPartitionPublic, 'arn:aws:iam::718504428378:root', !Ref 'AWS::NoValue'] # ap-south-1
-            - !If [HasPartitionPublic, 'arn:aws:iam::507241528517:root', !Ref 'AWS::NoValue'] # sa-east-1
-            - !If [HasPartitionUsGov, 'arn:aws-us-gov:iam::048591011584:root', !Ref 'AWS::NoValue'] # us-gov-west-1*
-            - !If [HasPartitionUsGov, 'arn:aws-us-gov:iam::190560391635:root', !Ref 'AWS::NoValue'] # us-gov-east-1*
-            - !If [HasPartitionChina, 'arn:aws-cn:iam::638102146993:root', !Ref 'AWS::NoValue'] # cn-north-1*
-            - !If [HasPartitionChina, 'arn:aws-cn:iam::037604701340:root', !Ref 'AWS::NoValue'] # cn-northwest-1*
-          Action: 's3:PutObject'
-          Effect: Allow
-          Resource: !Sub '${Bucket.Arn}/*AWSLogs/*'
   BucketPolicyConfigWrite:
     Condition: HasConfigWriteAccess
     Type: 'AWS::S3::BucketPolicy'
@@ -244,27 +206,6 @@ Resources:
           Condition:
             StringEquals:
               's3:x-amz-acl': 'bucket-owner-full-control'
-  BucketPolicyConfigCrossAccountWrite:
-    Condition: HasConfigCrossAccountWriteAccess
-    Type: 'AWS::S3::BucketPolicy'
-    Properties:
-      Bucket: !Ref Bucket
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service: 'config.amazonaws.com'
-          Action: 's3:GetBucketAcl'
-          Resource: !GetAtt 'Bucket.Arn'
-        - Effect: Allow
-          Principal:
-            Service: 'config.amazonaws.com'
-          Action: 's3:PutObject'
-          Resource: !Sub '${Bucket.Arn}/*AWSLogs/*'
-          Condition:
-            StringEquals:
-              's3:x-amz-acl': 'bucket-owner-full-control'
   BucketPolicyCloudTrailWrite:
     Condition: HasCloudTrailWriteAccess
     Type: 'AWS::S3::BucketPolicy'
@@ -283,27 +224,6 @@ Resources:
             Service: 'cloudtrail.amazonaws.com'
           Action: 's3:PutObject'
           Resource: !Sub '${Bucket.Arn}/*AWSLogs/${AWS::AccountId}/*'
-          Condition:
-            StringEquals:
-              's3:x-amz-acl': 'bucket-owner-full-control'
-  BucketPolicyCloudTrailCrossAccountWrite:
-    Condition: HasCloudTrailCrossAccountWriteAccess
-    Type: 'AWS::S3::BucketPolicy'
-    Properties:
-      Bucket: !Ref Bucket
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service: 'cloudtrail.amazonaws.com'
-          Action: 's3:GetBucketAcl'
-          Resource: !GetAtt 'Bucket.Arn'
-        - Effect: Allow
-          Principal:
-            Service: 'cloudtrail.amazonaws.com'
-          Action: 's3:PutObject'
-          Resource: !Sub '${Bucket.Arn}/*AWSLogs/*'
           Condition:
             StringEquals:
               's3:x-amz-acl': 'bucket-owner-full-control'
@@ -336,29 +256,6 @@ Resources:
             Service: 'delivery.logs.amazonaws.com'
           Action: 's3:PutObject'
           Resource: !Sub '${Bucket.Arn}/*AWSLogs/${AWS::AccountId}/*'
-          Condition:
-            StringEquals:
-              's3:x-amz-acl': 'bucket-owner-full-control'
-        - Sid: AWSLogDeliveryAclCheck
-          Effect: Allow
-          Principal:
-            Service: 'delivery.logs.amazonaws.com'
-          Action: 's3:GetBucketAcl'
-          Resource: !GetAtt 'Bucket.Arn'
-  BucketPolicyFlowLogCrossAccountWrite:
-    Condition: HasFlowLogCrossAccountWriteAccess
-    Type: 'AWS::S3::BucketPolicy'
-    Properties:
-      Bucket: !Ref Bucket
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement: # https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs-s3.html#flow-logs-s3-permissions
-        - Sid: AWSLogDeliveryWrite
-          Effect: Allow
-          Principal:
-            Service: 'delivery.logs.amazonaws.com'
-          Action: 's3:PutObject'
-          Resource: !Sub '${Bucket.Arn}/*AWSLogs/*'
           Condition:
             StringEquals:
               's3:x-amz-acl': 'bucket-owner-full-control'
