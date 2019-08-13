@@ -113,9 +113,9 @@ Parameters:
     Type: Number
     Default: 0
   EFSBackupRetentionPeriod:
-    Description: 'The number of days to keep backups of the EFS file system.'
+    Description: 'The number of days to keep backups of the EFS file system (set to 0 to disable).'
     Type: Number
-    MinValue: 1
+    MinValue: 0
     MaxValue: 35
     Default: 30
   EFSBackupScheduleExpression:
@@ -169,6 +169,7 @@ Conditions:
   HasNotEFSProvisionedThroughput: !Equals [!Ref EFSProvisionedThroughputInMibps, '0']
   HasAlertTopicAndEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasEFSProvisionedThroughput]
   HasAlertTopicAndNotEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasNotEFSProvisionedThroughput]
+  HasEFSBackupRetentionPeriod: !Not [!Equals [!Ref EFSBackupRetentionPeriod, 0]]
 Resources:
   StorageSG:
     Type: 'AWS::EC2::SecurityGroup'
@@ -873,11 +874,13 @@ Resources:
       ThroughputInMibps: !Ref EFSProvisionedThroughputInMibps
       ServiceToken: !GetAtt 'LambdaFunction.Arn'
   BackupVault: # cannot be deleted with data
+    Condition: HasEFSBackupRetentionPeriod
     Type: 'AWS::Backup::BackupVault'
     Properties:
       BackupVaultName: !Ref 'AWS::StackName'
       Notifications: !If [HasAlertTopic, {BackupVaultEvents: [BACKUP_JOB_STARTED, BACKUP_JOB_COMPLETED, RESTORE_JOB_STARTED, RESTORE_JOB_COMPLETED, RECOVERY_POINT_MODIFIED], SNSTopicArn: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}}, !Ref 'AWS::NoValue']
   BackupPlan:
+    Condition: HasEFSBackupRetentionPeriod
     Type: 'AWS::Backup::BackupPlan'
     Properties:
       BackupPlan:
@@ -891,6 +894,7 @@ Resources:
           StartWindowMinutes: 60
           TargetBackupVault: !Ref BackupVault
   BackupRole:
+    Condition: HasEFSBackupRetentionPeriod
     Type: 'AWS::IAM::Role'
     Properties:
       AssumeRolePolicyDocument:
@@ -911,6 +915,7 @@ Resources:
             - 'elasticfilesystem:DescribeTags'
             Resource: !Sub 'arn:${AWS::Partition}:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:file-system/${Storage}'
   BackupSelection:
+    Condition: HasEFSBackupRetentionPeriod
     Type: 'AWS::Backup::BackupSelection'
     Properties:
       BackupPlanId: !Ref BackupPlan
