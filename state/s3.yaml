@@ -185,6 +185,19 @@ Resources:
           Action: 's3:PutObject'
           Effect: Allow
           Resource: !Sub '${Bucket.Arn}/*AWSLogs/${AWS::AccountId}/*'
+        - Principal:
+            Service: 'delivery.logs.amazonaws.com' # https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-access-logs.html
+          Action: 's3:PutObject'
+          Effect: Allow
+          Resource: !Sub '${Bucket.Arn}/*AWSLogs/${AWS::AccountId}/*'
+          Condition:
+            StringEquals:
+              's3:x-amz-acl': 'bucket-owner-full-control'
+        - Principal:
+            Service: 'delivery.logs.amazonaws.com' # https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-access-logs.html
+          Action: 's3:GetBucketAcl'
+          Effect: Allow
+          Resource: !GetAtt 'Bucket.Arn'
   BucketPolicyConfigWrite:
     Condition: HasConfigWriteAccess
     Type: 'AWS::S3::BucketPolicy'
