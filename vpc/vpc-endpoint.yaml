@@ -31,8 +31,9 @@ Parameters:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
   ParentClientStack:
-    Description: 'Optionel stack name of parent client stack based on state/client-sg.yaml template.'
+    Description: 'Optional stack name of parent client stack based on state/client-sg.yaml template.'
     Type: String
+    Default: ''
   ServiceName:
     Description: 'The name of the service.'
     Type: String
