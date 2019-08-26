@@ -454,6 +454,7 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
+      TreatMissingData: notBreaching
   HTTPCodeTarget5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -473,6 +474,7 @@ Resources:
         Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
       - Name: TargetGroup
         Value: !GetAtt 'DefaultTargetGroup.TargetGroupFullName'
+      TreatMissingData: notBreaching
   RejectedConnectionCountTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -490,6 +492,7 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
+      TreatMissingData: notBreaching
   TargetConnectionErrorCountTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -509,6 +512,7 @@ Resources:
         Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
       - Name: TargetGroup
         Value: !GetAtt 'DefaultTargetGroup.TargetGroupFullName'
+      TreatMissingData: notBreaching
   LoadBalancer: # not monitored, but DefaultTargetGroup is monitored!
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
@@ -904,6 +908,7 @@ Resources:
       Dimensions:
       - Name: QueueName
         Value: !GetAtt 'AutoScalingGroupLifecycleHookQueue.QueueName'
+      TreatMissingData: notBreaching
   AutoScalingGroupLifecycleHookDeadLetterQueue:
     Type: 'AWS::SQS::Queue'
     Properties:
@@ -925,6 +930,7 @@ Resources:
       Dimensions:
       - Name: QueueName
         Value: !GetAtt 'AutoScalingGroupLifecycleHookDeadLetterQueue.QueueName'
+      TreatMissingData: notBreaching
   AutoScalingGroupLifecycleHookIAMRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -1104,6 +1110,7 @@ Resources:
       Dimensions:
       - Name: RuleName
         Value: !Ref SchedulableContainersCron
+      TreatMissingData: notBreaching
   SchedulableContainersLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -1249,6 +1256,7 @@ Resources:
       Dimensions:
       - Name: FunctionName
         Value: !Ref SchedulableContainersLambdaV2
+      TreatMissingData: notBreaching
   SchedulableContainersLambdaThrottlesTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -1266,6 +1274,7 @@ Resources:
       Dimensions:
       - Name: FunctionName
         Value: !Ref SchedulableContainersLambdaV2
+      TreatMissingData: notBreaching
   DrainInstanceLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -1449,6 +1458,7 @@ Resources:
       Dimensions:
       - Name: FunctionName
         Value: !Ref DrainInstanceLambda
+      TreatMissingData: notBreaching
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'

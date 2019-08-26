@@ -110,6 +110,7 @@ Resources:
       Dimensions:
       - Name: TopicName
         Value: !GetAtt Topic.TopicName
+      TreatMissingData: notBreaching
   EmailSubscription:
     Condition: HasEmail
     Type: 'AWS::SNS::Subscription'
