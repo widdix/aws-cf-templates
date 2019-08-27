@@ -201,6 +201,7 @@ Resources:
         Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'}
       - Name: TargetGroup
         Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
+      TreatMissingData: notBreaching
   TargetConnectionErrorCountTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -220,6 +221,7 @@ Resources:
         Value: {'Fn::ImportValue': !Sub '${ParentClusterStack}-LoadBalancerFullName'}
       - Name: TargetGroup
         Value: !GetAtt LoadBalancerTargetGroup.TargetGroupFullName
+      TreatMissingData: notBreaching
   LoadBalancerHttpListenerRule:
     Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
     Properties:

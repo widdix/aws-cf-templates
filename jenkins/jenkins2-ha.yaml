@@ -334,6 +334,7 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt MasterELB.LoadBalancerFullName
+      TreatMissingData: notBreaching
   MasterHTTPCodeTarget5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -351,6 +352,7 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt MasterELB.LoadBalancerFullName
+      TreatMissingData: notBreaching
   MasterRejectedConnectionCountTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -368,6 +370,7 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt MasterELB.LoadBalancerFullName
+      TreatMissingData: notBreaching
   MasterTargetConnectionErrorCountTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -385,6 +388,7 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt MasterELB.LoadBalancerFullName
+      TreatMissingData: notBreaching
   RecordSet:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
