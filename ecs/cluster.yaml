@@ -204,7 +204,7 @@ Mappings:
     'us-west-1':
       ECSAMI: 'ami-0935a5e8655c6d896'
     'us-west-2':
-      ECSAMI: 'ami-0302f3ec240b9d23c'
+      ECSAMI: 'ami-0e434a58221275ed4'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
