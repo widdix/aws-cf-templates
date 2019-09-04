@@ -5,6 +5,8 @@
 # S3 VirusScan
 This template creates a Antivirus cluster for S3 buckets. You can connect as many buckets as you like by using [S3 Event Notifications](http://docs.aws.amazon.com/AmazonS3/latest/dev/NotificationHowTo.html). The template has it's own repository: [aws-s3-virusscan](https://github.com/widdix/aws-s3-virusscan)
 
+> The [S3 VirusScan](https://s3-virusscan.widdix.net/) with additional integrations is available in the [AWS Marketplace](https://aws.amazon.com/marketplace/pp/B07XFR781T).
+
 ## Features
 
 * Uses ClamAV to scan newly added files on S3 buckets
@@ -13,6 +15,14 @@ This template creates a Antivirus cluster for S3 buckets. You can connect as man
 * Publishes a message to SNS in case of a finding
 * Can optionally delete compromised files automatically
 * Logs to CloudWatch Logs
+
+## Commercial Features
+
+* CloudWatch Integration (Metrics and Dashboard)
+* Security Hub Integration
+* SSM OpsCenter Integration
+
+> The [S3 VirusScan](https://s3-virusscan.widdix.net/) with additional integrations is available in the [AWS Marketplace](https://aws.amazon.com/marketplace/pp/B07XFR781T).
 
 ## Installation Guide
 Visit the template's repository for installation instructions: [aws-s3-virusscan](https://github.com/widdix/aws-s3-virusscan)
