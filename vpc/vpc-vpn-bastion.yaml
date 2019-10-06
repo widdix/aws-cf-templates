@@ -298,7 +298,7 @@ Resources:
       - CidrIp: 0.0.0.0/0
         IpProtocol: udp
         FromPort: 40000
-        ToPort: 40000
+        ToPort: 44999
       - CidrIp: 0.0.0.0/0
         IpProtocol: udp
         FromPort: 500
