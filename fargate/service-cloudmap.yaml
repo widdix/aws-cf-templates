@@ -319,7 +319,6 @@ Resources:
         ServiceSecurityGroup: !Ref ServiceSecurityGroup
         ParentClusterStack: !Ref ParentClusterStack
         ParentAlertStack: !Ref ParentAlertStack
-        ParentClientStack: !Ref ParentClientStack
         ParentClientStack1: !Ref ParentClientStack1
         ParentClientStack2: !Ref ParentClientStack2
         ParentClientStack3: !Ref ParentClientStack3
