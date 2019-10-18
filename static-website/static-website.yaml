@@ -25,7 +25,10 @@ Metadata:
     - Label:
         default: 'Lambda@Edge Parameters'
       Parameters:
-      - LambdaEdgeSubdirectoriesVersionArn
+      - ViewerRequestLambdaEdgeFunctionVersionARN
+      - OriginRequestLambdaEdgeFunctionVersionARN
+      - OriginResponseLambdaEdgeFunctionVersionARN
+      - ViewerResponseLambdaEdgeFunctionVersionARN
     - Label:
         default: 'CloudFront Parameters'
       Parameters:
@@ -54,16 +57,28 @@ Parameters:
     Description: 'Primary mame that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain.'
     Type: String
     Default: 'www.'
-  LambdaEdgeSubdirectoriesVersionArn:
-    Description: 'Optional version ARN of Lambda@Edge function based on static-website/lambdaedge-index-document.yaml template and exposed as output LambdaVersionArn.'
+  ViewerRequestLambdaEdgeFunctionVersionARN: # max 5s timeout
+    Description: 'Optional version ARN of Lambda@Edge viewer request function (e.g., ViewerRequestLambdaEdgeFunctionVersionARN output of static-website/lambdaedge-index-document.yaml).'
+    Type: String
+    Default: ''
+  OriginRequestLambdaEdgeFunctionVersionARN: # max 30s timeout
+    Description: 'Optional version ARN of Lambda@Edge origin request function (e.g., OriginRequestLambdaEdgeFunctionVersionARN output of static-website/lambdaedge-index-document.yaml).'
+    Type: String
+    Default: ''
+  OriginResponseLambdaEdgeFunctionVersionARN: # max 30s timeout
+    Description: 'Optional version ARN of Lambda@Edge origin response function.'
+    Type: String
+    Default: ''
+  ViewerResponseLambdaEdgeFunctionVersionARN: # max 5s timeout
+    Description: 'Optional version ARN of Lambda@Edge viewer response function.'
     Type: String
     Default: ''
   DefaultRootObject:
-    Description: 'The name of the index document for the website (ignored when LambdaEdgeSubdirectoriesVersionArn is set).'
+    Description: 'Optional name of the index document for the website (e.g., index.html).'
     Type: String
     Default: 'index.html'
   DefaultErrorPagePath:
-    Description: 'The path of the error page for the website (e.g. /error.html).'
+    Description: 'Optional path of the error page for the website (e.g. /error.html).'
     Type: String
     Default: ''
   EnableRedirectSubDomainName:
@@ -93,7 +108,13 @@ Conditions:
   HasAcmCertificateArn: !Equals [!Ref CertificateType, 'AcmCertificateArn']
   HasIamCertificateId: !Equals [!Ref CertificateType, 'IamCertificateId']
   HasCreateAcmCertificate: !Equals [!Ref CertificateType, 'CreateAcmCertificate']
-  HasLambdaEdgeSubdirectoriesVersionArn: !Not [!Equals [!Ref LambdaEdgeSubdirectoriesVersionArn, '']]
+  HasViewerRequestLambdaEdgeFunctionVersionARN: !Not [!Equals [!Ref ViewerRequestLambdaEdgeFunctionVersionARN, '']]
+  HasOriginRequestLambdaEdgeFunctionVersionARN: !Not [!Equals [!Ref OriginRequestLambdaEdgeFunctionVersionARN, '']]
+  HasOriginResponseLambdaEdgeFunctionVersionARN: !Not [!Equals [!Ref OriginResponseLambdaEdgeFunctionVersionARN, '']]
+  HasViewerResponseLambdaEdgeFunctionVersionARN: !Not [!Equals [!Ref ViewerResponseLambdaEdgeFunctionVersionARN, '']]
+
+
+  HasDefaultRootObject: !Not [!Equals [!Ref DefaultRootObject, '']]
   HasDefaultErrorPagePath: !Not [!Equals [!Ref DefaultErrorPagePath, '']]
 Resources:
   Certificate:
@@ -206,18 +227,16 @@ Resources:
             Cookies:
               Forward: none
             QueryString: false
-          LambdaFunctionAssociations: !If
-          - HasLambdaEdgeSubdirectoriesVersionArn
-          - - EventType: 'viewer-request'
-              LambdaFunctionARN: !Ref LambdaEdgeSubdirectoriesVersionArn
-            - EventType: 'origin-request'
-              LambdaFunctionARN: !Ref LambdaEdgeSubdirectoriesVersionArn
-          - []
+          LambdaFunctionAssociations:
+          - !If [HasViewerRequestLambdaEdgeFunctionVersionARN, {EventType: 'viewer-request', LambdaFunctionARN: !Ref ViewerRequestLambdaEdgeFunctionVersionARN}, !Ref 'AWS::NoValue']
+          - !If [HasOriginRequestLambdaEdgeFunctionVersionARN, {EventType: 'origin-request', LambdaFunctionARN: !Ref OriginRequestLambdaEdgeFunctionVersionARN}, !Ref 'AWS::NoValue']
+          - !If [HasOriginResponseLambdaEdgeFunctionVersionARN, {EventType: 'origin-response', LambdaFunctionARN: !Ref OriginResponseLambdaEdgeFunctionVersionARN}, !Ref 'AWS::NoValue']
+          - !If [HasViewerResponseLambdaEdgeFunctionVersionARN, {EventType: 'viewer-response', LambdaFunctionARN: !Ref ViewerResponseLambdaEdgeFunctionVersionARN}, !Ref 'AWS::NoValue']
           MaxTTL: 86400 # in seconds
           MinTTL: 60 # in seconds
           TargetOriginId: s3origin
           ViewerProtocolPolicy: 'redirect-to-https'
-        DefaultRootObject: !If [HasLambdaEdgeSubdirectoriesVersionArn, !Ref 'AWS::NoValue', !Ref DefaultRootObject]
+        DefaultRootObject: !If [HasDefaultRootObject, !Ref DefaultRootObject, !Ref 'AWS::NoValue'] # FIXME check if this has an impact if we always set it!
         Enabled: true
         HttpVersion: http2
         Logging: !If [HasS3Bucket, {Bucket: {'Fn::ImportValue': !Sub '${ParentS3StackAccessLog}-BucketDomainName'}, Prefix: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']

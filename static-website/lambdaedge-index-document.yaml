@@ -45,7 +45,7 @@ Parameters:
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
 Resources:
-  LambdaRole:
+  Role:
     Type: 'AWS::IAM::Role'
     Properties:
       AssumeRolePolicyDocument:
@@ -57,93 +57,105 @@ Resources:
             - 'lambda.amazonaws.com'
             - 'edgelambda.amazonaws.com'
           Action: 'sts:AssumeRole'
-  LambdaPolicy:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      Roles:
-      - !Ref LambdaRole
-      PolicyName: lambda
-      PolicyDocument:
-        Statement:
-        - Effect: Allow
-          Action:
-          - 'logs:CreateLogStream'
-          - 'logs:PutLogEvents'
-          Resource: !GetAtt 'LambdaLogGroup.Arn'
-  LambdaFunction:
+      Policies:
+      - PolicyName: edge
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'logs:CreateLogGroup' # FIXME is this really needed for @Edge?
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+            Resource: '*' # FIXME is this really needed for @Edge
+  ViewerRequestFunction:
     Type: 'AWS::Lambda::Function'
     Properties:
       Code:
-        # If you change the ZipFile, rename the logical id LambdaVersionV5 to trigger a new version creation!
+        # If you change the ZipFile, rename the logical id LambdaVersionVX to trigger a new version creation!
         ZipFile: !Sub |
-          'use strict';
-          const regex = /\.[A-Za-z0-9]+$/;
-          const indexDocument = '${IndexDocument}';
           const domainName = '${DomainName}'.toLowerCase();
           const redirectDomainName = '${RedirectDomainName}'.toLowerCase();
-          exports.handler = (event, context, cb) => {
+          exports.handler = async function(event) {
             const cf = event.Records[0].cf;
-            const config = cf.config;
-            const request = cf.request;
-            if ('requestId' in config) { // viewer-request
-              if (request.headers.host[0].value.toLowerCase() === redirectDomainName) {
-                cb(null, {
-                  status: '301',
-                  statusDescription: 'Moved Permanently',
-                  headers: {
-                    location: [{
-                      key: 'Location',
-                      value: `https://${!domainName}${!request.uri}`,
-                    }],
-                  }
-                });
-              } else {
-                cb(null, request);
-              }
-            } else {  // origin-request
-              if (request.uri.endsWith('/')) {
-                cb(null, Object.assign({}, request, {uri: `${!request.uri}${!indexDocument}`}));
-              } else if (request.uri.endsWith(`/${!indexDocument}`)) {
-                cb(null, {
-                  status: '302',
-                  statusDescription: 'Found',
-                  headers: {
-                    location: [{
-                      key: 'Location',
-                      value: request.uri.substr(0, request.uri.length - indexDocument.length),
-                    }],
-                  }
-                });
-              } else if (!regex.test(request.uri)) {
-                cb(null, {
-                  status: '302',
-                  statusDescription: 'Found',
-                  headers: {
-                    location: [{
-                      key: 'Location',
-                      value: `${!request.uri}/`,
-                    }],
-                  }
-                });
-              } else {
-                cb(null, request);
-              }
+            if (cf.request.headers.host[0].value.toLowerCase() === redirectDomainName) {
+              return {
+                status: '301',
+                statusDescription: 'Moved Permanently',
+                headers: {
+                  location: [{
+                    key: 'Location',
+                    value: `https://${!domainName}${!cf.request.uri}`,
+                  }],
+                }
+              };
             }
+            return cf.request;
           };
       Handler: 'index.handler'
       MemorySize: 128
-      Role: !GetAtt 'LambdaRole.Arn'
+      Role: !GetAtt 'Role.Arn'
       Runtime: 'nodejs8.10'
       Timeout: 5
-  LambdaLogGroup:
-    Type: 'AWS::Logs::LogGroup'
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/${LambdaFunction}'
-      RetentionInDays: !Ref LogsRetentionInDays
-  LambdaVersionV5:
+  ViewerRequestVersionV1:
     Type: 'AWS::Lambda::Version'
     Properties:
-      FunctionName: !Ref LambdaFunction
+      FunctionName: !Ref ViewerRequestFunction
+  ViewerRequestLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ViewerRequestFunction}'
+      RetentionInDays: !Ref LogsRetentionInDays
+  OriginRequestFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        # If you change the ZipFile, rename the logical id OriginRequestVersionVX to trigger a new version creation!
+        ZipFile: !Sub |
+          const regex = /\.[A-Za-z0-9]+$/;
+          const indexDocument = '${IndexDocument}';
+          exports.handler = async function(event) {
+            const cf = event.Records[0].cf;
+            if (cf.request.uri.endsWith('/')) {
+              return Object.assign({}, cf.request, {uri: `${!cf.request.uri}${!indexDocument}`});
+            } else if (cf.request.uri.endsWith(`/${!indexDocument}`)) {
+              return {
+                status: '302',
+                statusDescription: 'Found',
+                headers: {
+                  location: [{
+                    key: 'Location',
+                    value: cf.request.uri.substr(0, cf.request.uri.length - indexDocument.length),
+                  }],
+                }
+              };
+            } else if (!regex.test(cf.request.uri)) {
+              return {
+                status: '302',
+                statusDescription: 'Found',
+                headers: {
+                  location: [{
+                    key: 'Location',
+                    value: `${!cf.request.uri}/`,
+                  }],
+                }
+              };
+            }
+            return cf.request;
+          };
+      Handler: 'index.handler'
+      MemorySize: 128
+      Role: !GetAtt 'Role.Arn'
+      Runtime: 'nodejs8.10'
+      Timeout: 5
+  OriginRequestVersionV1:
+    Type: 'AWS::Lambda::Version'
+    Properties:
+      FunctionName: !Ref OriginRequestFunction
+  OriginRequestLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${OriginRequestFunction}'
+      RetentionInDays: !Ref LogsRetentionInDays
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
@@ -154,6 +166,9 @@ Outputs:
   StackName:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
-  LambdaVersionArn:
-    Description: 'Version ARN of Lambda@Edge function.'
-    Value: !Ref LambdaVersionV5
+  ViewerRequestLambdaEdgeFunctionVersionARN:
+    Description: 'Version ARN of Lambda@Edge viewer request function.'
+    Value: !Ref ViewerRequestVersionV1
+  OriginRequestLambdaEdgeFunctionVersionARN:
+    Description: 'Version ARN of Lambda@Edge origin request function.'
+    Value: !Ref OriginRequestVersionV1

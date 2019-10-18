@@ -9,7 +9,7 @@ This template describes the infrastructure for hosting a static website over HTT
 
 ## Index Document / Default Root Object
 
-S3 and CloudFront behave differently when it comes to index document support in subdirectories. You might expect that if you have a subdirectory (e.g. `folder`) with a `index.html` file inside, that you get the file if you make q HTTP request to `/folder/`. Unfortunately, that's not the default behavior of CloudFront but there is a workaround using Lambda@Edge.
+S3 and CloudFront behave differently when it comes to index document support in subdirectories. You might expect that if you have a subdirectory (e.g. `folder`) with a `index.html` file inside, that you get the file if you make a HTTP request to `/folder/`. Unfortunately, that's not the default behavior of CloudFront but there is a workaround using Lambda@Edge.
 
 ### S3 Website Hosting behavior with Index Document (not provided by the template!)
 
@@ -35,6 +35,8 @@ S3 and CloudFront behave differently when it comes to index document support in 
 
 To improve the default CloudFront behavior, we developed a Lambda@Edge solution that gives you the following search engine optimized result.
 
+> Set the `DefaultRootObject` parameter to en emtpy string if you use this approach!
+
 | Resource             | Response                   |
 | -------------------- | -------------------------- |
 | `/`                  | 200 Content of index.html  |
@@ -54,13 +56,15 @@ To improve the default CloudFront behavior, we developed a Lambda@Edge solution 
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
-1. Copy the `LambdaVersionArn` output of the stack to your clipboard.
+1. Copy the `ViewerRequestLambdaEdgeFunctionVersionARN` and `OriginRequestLambdaEdgeFunctionVersionARN` output of the stack.
 1. Switch to the region where you want to S3 bucket with static files to be created in.
 1. This templates depends on one of our [`zone-*.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/zone-public.yaml&stackName=zone)
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/static-website/static-website.yaml&stackName=static-website&param_ParentZoneStack=zone)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
-    a. Set the `LambdaEdgeSubdirectoriesVersionArn` to the value of the `LambdaVersionArn` output. 
+    a. Set the `ViewerRequestLambdaEdgeFunctionVersionARN` to the value of the `ViewerRequestLambdaEdgeFunctionVersionARN` output. 
+    a. Set the `OriginRequestLambdaEdgeFunctionVersionARN` to the value of the `ViewerRequestLambdaEdgeFunctionVersionARN` output. 
+    a. Set the `DefaultRootObject` parameter to an empty string.
 1. Click **Next** to proceed with the next step of the wizard.
 1. Click **Next** to skip the **Options** step of the wizard.
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
