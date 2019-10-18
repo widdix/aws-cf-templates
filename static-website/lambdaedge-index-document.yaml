@@ -117,7 +117,8 @@ Resources:
             const cf = event.Records[0].cf;
             if (cf.request.uri.endsWith('/')) {
               return Object.assign({}, cf.request, {uri: `${!cf.request.uri}${!indexDocument}`});
-            } else if (cf.request.uri.endsWith(`/${!indexDocument}`)) {
+            }
+            if (cf.request.uri.endsWith(`/${!indexDocument}`)) {
               return {
                 status: '302',
                 statusDescription: 'Found',
@@ -128,7 +129,8 @@ Resources:
                   }],
                 }
               };
-            } else if (!regex.test(cf.request.uri)) {
+            }
+            if (!regex.test(cf.request.uri)) {
               return {
                 status: '302',
                 statusDescription: 'Found',

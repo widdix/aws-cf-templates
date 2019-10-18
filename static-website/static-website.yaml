@@ -112,8 +112,6 @@ Conditions:
   HasOriginRequestLambdaEdgeFunctionVersionARN: !Not [!Equals [!Ref OriginRequestLambdaEdgeFunctionVersionARN, '']]
   HasOriginResponseLambdaEdgeFunctionVersionARN: !Not [!Equals [!Ref OriginResponseLambdaEdgeFunctionVersionARN, '']]
   HasViewerResponseLambdaEdgeFunctionVersionARN: !Not [!Equals [!Ref ViewerResponseLambdaEdgeFunctionVersionARN, '']]
-
-
   HasDefaultRootObject: !Not [!Equals [!Ref DefaultRootObject, '']]
   HasDefaultErrorPagePath: !Not [!Equals [!Ref DefaultErrorPagePath, '']]
 Resources:
