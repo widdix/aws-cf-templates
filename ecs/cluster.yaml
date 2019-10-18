@@ -159,7 +159,7 @@ Parameters:
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
   DesiredCapacity:
-    Description: 'Deprecated in v9, will be removed in v11, use `MinSize` instead!'
+    Description: 'Deprecated in v9, will be removed in v11, use MinSize instead!'
     Type: Number
     Default: 2
     ConstraintDescription: 'Must be >= 1'
