@@ -71,6 +71,49 @@ Parameters:
     Type: String
     Default: N
     AllowedValues: [S, N, B]
+  Index1PartitionKeyName:
+    Description: 'Optional name of the partition key for index 1, must match with one of the following: PartitionKeyName, SortKeyName, or Attribute*Name.'
+    Type: String
+    Default: ''
+  Index1SortKeyName:
+    Description: 'Optional name of the sort key for index 1, must match with one of the following: PartitionKeyName, SortKeyName, or Attribute*Name.'
+    Type: String
+    Default: ''
+  Index2PartitionKeyName:
+    Description: 'Optional name of the partition key for index 2, must match with one of the following: PartitionKeyName, SortKeyName, or Attribute*Name.'
+    Type: String
+    Default: ''
+  Index2SortKeyName:
+    Description: 'Optional name of the sort key for index 2, must match with one of the following: PartitionKeyName, SortKeyName, or Attribute*Name.'
+    Type: String
+    Default: ''
+  Attribute1Name:
+    Description: 'Name of the attribute 1, not allowed to overlap with PartitionKeyName and SortKeyName.'
+    Type: String
+    Default: ''
+  Attribute1Type:
+    Description: 'Type of the attribute 1.'
+    Type: String
+    Default: S
+    AllowedValues: [S, N, B]
+  Attribute2Name:
+    Description: 'Name of the attribute 2, not allowed to overlap with PartitionKeyName and SortKeyName.'
+    Type: String
+    Default: ''
+  Attribute2Type:
+    Description: 'Type of the attribute 2.'
+    Type: String
+    Default: S
+    AllowedValues: [S, N, B]
+  Attribute3Name:
+    Description: 'Name of the attribute 3, not allowed to overlap with PartitionKeyName and SortKeyName.'
+    Type: String
+    Default: ''
+  Attribute3Type:
+    Description: 'Type of the attribute 3.'
+    Type: String
+    Default: S
+    AllowedValues: [S, N, B]
   BillingAndScalingMode:
     Description: 'Specify how you are charged for read and write throughput and how you manage capacity.'
     Type: String
@@ -132,6 +175,13 @@ Parameters:
 Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasSortKey: !Not [!Equals [!Ref SortKeyName, '']]
+  HasIndex1: !Not [!Equals [!Ref Index1PartitionKeyName, '']]
+  HasIndex1SortKey: !Not [!Equals [!Ref Index1SortKeyName, '']]
+  HasIndex2: !Not [!Equals [!Ref Index2PartitionKeyName, '']]
+  HasIndex2SortKey: !Not [!Equals [!Ref Index2SortKeyName, '']]
+  HasAttribute1Definition: !Not [!Equals [!Ref Attribute1Name, '']]
+  HasAttribute2Definition: !Not [!Equals [!Ref Attribute2Name, '']]
+  HasAttribute3Definition: !Not [!Equals [!Ref Attribute3Name, '']]
   HasTableName: !Not [!Equals [!Ref TableName, '']]
   HasAwsManagedEncryption: !Equals [!Ref Encryption, aws]
   HasBillingAndScalingModeProvisioned: !Equals [!Ref BillingAndScalingMode, PROVISIONED]
@@ -143,23 +193,75 @@ Resources:
     Type: 'AWS::DynamoDB::Table'
     Properties:
       TableName: !If [HasTableName, !Ref TableName, !Ref 'AWS::NoValue']
-      AttributeDefinitions: !If
-      - HasSortKey
-      - - AttributeName: !Ref PartitionKeyName
-          AttributeType: !Ref PartitionKeyType
+      AttributeDefinitions:
+      - AttributeName: !Ref PartitionKeyName
+        AttributeType: !Ref PartitionKeyType
+      - !If
+        - HasSortKey
         - AttributeName: !Ref SortKeyName
           AttributeType: !Ref SortKeyType
-      - - AttributeName: !Ref PartitionKeyName
-          AttributeType: !Ref PartitionKeyType
+        - !Ref 'AWS::NoValue'
+      - !If
+        - HasAttribute1Definition
+        - AttributeName: !Ref Attribute1Name
+          AttributeType: !Ref Attribute1Type
+        - !Ref 'AWS::NoValue'
+      - !If
+        - HasAttribute2Definition
+        - AttributeName: !Ref Attribute2Name
+          AttributeType: !Ref Attribute2Type
+        - !Ref 'AWS::NoValue'
+      - !If
+        - HasAttribute3Definition
+        - AttributeName: !Ref Attribute3Name
+          AttributeType: !Ref Attribute3Type
+        - !Ref 'AWS::NoValue'
+      GlobalSecondaryIndexes:
+      - !If
+        - HasIndex1
+        - IndexName: !If
+          - HasIndex1SortKey
+          - !Sub 'Index-${Index1PartitionKeyName}-${Index1SortKeyName}'
+          - !Sub 'Index-${Index1PartitionKeyName}'
+          KeySchema:
+          - AttributeName: !Ref Index1PartitionKeyName
+            KeyType: HASH
+          - !If
+            - HasIndex1SortKey
+            - AttributeName: !Ref Index1SortKeyName
+              KeyType: RANGE
+            - !Ref 'AWS::NoValue'
+          Projection:
+            ProjectionType: 'ALL'
+          ProvisionedThroughput: !If [HasBillingAndScalingModeProvisioned, {ReadCapacityUnits: !Ref MinReadCapacityUnits, WriteCapacityUnits: !Ref MinWriteCapacityUnits}, !Ref 'AWS::NoValue']
+        - !Ref 'AWS::NoValue'
+      - !If
+        - HasIndex2
+        - IndexName: !If
+          - HasIndex2SortKey
+          - !Sub 'Index-${Index2PartitionKeyName}-${Index2SortKeyName}'
+          - !Sub 'Index-${Index2PartitionKeyName}'
+          KeySchema:
+          - AttributeName: !Ref Index2PartitionKeyName
+            KeyType: HASH
+          - !If
+            - HasIndex2SortKey
+            - AttributeName: !Ref Index2SortKeyName
+              KeyType: RANGE
+            - !Ref 'AWS::NoValue'
+          Projection:
+            ProjectionType: 'ALL'
+          ProvisionedThroughput: !If [HasBillingAndScalingModeProvisioned, {ReadCapacityUnits: !Ref MinReadCapacityUnits, WriteCapacityUnits: !Ref MinWriteCapacityUnits}, !Ref 'AWS::NoValue']
+        - !Ref 'AWS::NoValue'
       BillingMode: !If [HasBillingAndScalingModeProvisioned, PROVISIONED, PAY_PER_REQUEST]
-      KeySchema: !If
-      - HasSortKey
-      - - AttributeName: !Ref PartitionKeyName
-          KeyType: HASH
+      KeySchema:
+      - AttributeName: !Ref PartitionKeyName
+        KeyType: HASH
+      - !If
+        - HasSortKey
         - AttributeName: !Ref SortKeyName
           KeyType: RANGE
-      - - AttributeName: !Ref PartitionKeyName
-          KeyType: HASH
+        - !Ref 'AWS::NoValue'
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: !Ref PointInTimeRecoveryEnabled
       ProvisionedThroughput: !If [HasBillingAndScalingModeProvisioned, {ReadCapacityUnits: !Ref MinReadCapacityUnits, WriteCapacityUnits: !Ref MinWriteCapacityUnits}, !Ref 'AWS::NoValue']
@@ -401,7 +503,7 @@ Outputs:
     Value: 'state/dynamodb'
   TemplateVersion:
     Description: 'cloudonaut.io template version.'
-    Value: '__VERSION__'
+    Value: '10.6.0'
   StackName:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
