@@ -57,7 +57,7 @@ To improve the default CloudFront behavior, we developed a Lambda@Edge solution 
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 1. Copy the `ViewerRequestLambdaEdgeFunctionVersionARN` and `OriginRequestLambdaEdgeFunctionVersionARN` output of the stack.
-1. Switch to the region where you want to S3 bucket with static files to be created in.
+1. Switch to the region where you want to S3 bucket with static files to be created in (we recommend the use the us-east-1 (N. Virginia) region if possible).
 1. This templates depends on one of our [`zone-*.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/zone-public.yaml&stackName=zone)
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/static-website/static-website.yaml&stackName=static-website&param_ParentZoneStack=zone)
 1. Click **Next** to proceed with the next step of the wizard.
@@ -70,6 +70,7 @@ To improve the default CloudFront behavior, we developed a Lambda@Edge solution 
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
+1. If you deployed the previous stack **not** to the us-east-1 (N. Virginia) region: TODO add docs to deploy the monitoring stack.
 
 ## Dependencies
 * `static-website/lambdaedge-index-document.yaml` (**required**)

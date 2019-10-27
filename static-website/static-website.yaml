@@ -21,6 +21,7 @@ Metadata:
         default: 'Parent Stacks'
       Parameters:
       - ParentZoneStack
+      - ParentAlertStack
       - ParentS3StackAccessLog
     - Label:
         default: 'Lambda@Edge Parameters'
@@ -49,6 +50,10 @@ Parameters:
   ParentZoneStack:
     Description: 'Stack name of parent zone stack based on vpc/zone-*.yaml template.'
     Type: String
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
   ParentS3StackAccessLog:
     Description: 'Optional stack name of parent s3 stack based on state/s3.yaml template (with Access set to ElbAccessLogWrite) to store access logs.'
     Type: String
@@ -114,6 +119,9 @@ Conditions:
   HasViewerResponseLambdaEdgeFunctionVersionARN: !Not [!Equals [!Ref ViewerResponseLambdaEdgeFunctionVersionARN, '']]
   HasDefaultRootObject: !Not [!Equals [!Ref DefaultRootObject, '']]
   HasDefaultErrorPagePath: !Not [!Equals [!Ref DefaultErrorPagePath, '']]
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasRegionNorthVirginia: !Equals [!Ref 'AWS::Region', 'us-east-1']
+  HasAlertTopicAndRegionNorthVirginia: !And [!Condition HasAlertTopic, !Condition HasRegionNorthVirginia]
 Resources:
   Certificate:
     Condition: HasCreateAcmCertificate
@@ -276,6 +284,66 @@ Resources:
         AliasTarget:
           HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
           DNSName: !GetAtt 'CloudFrontDistribution.DomainName'
+  LambdaExecutionErrorTooHighAlarm:
+    Condition: HasAlertTopicAndRegionNorthVirginia
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Lambde@Edge execution errors'
+      Namespace: 'AWS/CloudFront'
+      MetricName: LambdaExecutionError
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: Region
+        Value: Global
+      - Name: DistributionId
+        Value: !Ref CloudFrontDistribution
+      TreatMissingData: notBreaching
+  LambdaValidationErrorTooHighAlarm:
+    Condition: HasAlertTopicAndRegionNorthVirginia
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Lambde@Edge invalid responses'
+      Namespace: 'AWS/CloudFront'
+      MetricName: LambdaValidationError
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: Region
+        Value: Global
+      - Name: DistributionId
+        Value: !Ref CloudFrontDistribution
+      TreatMissingData: notBreaching
+  5xxErrorRateTooHighAlarm:
+    Condition: HasAlertTopicAndRegionNorthVirginia
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: '5xx errors'
+      Namespace: 'AWS/CloudFront'
+      MetricName: 5xxErrorRate
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 1
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: Region
+        Value: Global
+      - Name: DistributionId
+        Value: !Ref CloudFrontDistribution
+      TreatMissingData: notBreaching
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
