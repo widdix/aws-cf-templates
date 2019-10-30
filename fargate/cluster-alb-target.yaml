@@ -110,8 +110,8 @@ Resources:
       Protocol: HTTP
       TargetType: ip
       TargetGroupAttributes:
-        - Key: deregistration_delay.timeout_seconds
-          Value: !Ref LoadBalancerDeregistrationDelay
+      - Key: deregistration_delay.timeout_seconds
+        Value: !Ref LoadBalancerDeregistrationDelay
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
   RecordSet:
     Condition: HasZone
