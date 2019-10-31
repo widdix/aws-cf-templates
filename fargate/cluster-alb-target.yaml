@@ -23,7 +23,6 @@ Metadata:
       - ParentVPCStack
       - ParentClusterStack
       - ParentAlertStack
-      - ParentZoneStack
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
@@ -32,10 +31,6 @@ Metadata:
       - LoadBalancerPathPattern
       - LoadBalancerHttps
       - LoadBalancerDeregistrationDelay
-    - Label:
-        default: 'Service Parameters'
-      Parameters:
-      - SubDomainNameWithDot
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -45,10 +40,6 @@ Parameters:
     Type: String
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
-    Type: String
-    Default: ''
-  ParentZoneStack:
-    Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
     Type: String
     Default: ''
   LoadBalancerPriority:
@@ -84,16 +75,11 @@ Parameters:
     ConstraintDescription: 'Must be in the range [0-3600]'
     MinValue: 0
     MaxValue: 3600
-  SubDomainNameWithDot:
-    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
-    Type: String
-    Default: ''
 Conditions:
   HasLoadBalancerHttps: !Equals [!Ref LoadBalancerHttps, 'true']
   HasLoadBalancerPathPattern: !Not [!Equals [!Ref LoadBalancerPathPattern, '']]
   HasLoadBalancerHostPattern: !Not [!Equals [!Ref LoadBalancerHostPattern, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
-  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
 Resources:
   TargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
@@ -113,19 +99,6 @@ Resources:
       - Key: deregistration_delay.timeout_seconds
         Value: !Ref LoadBalancerDeregistrationDelay
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
-  RecordSet:
-    Condition: HasZone
-    Type: 'AWS::Route53::RecordSet'
-    Properties:
-      AliasTarget:
-        HostedZoneId: {'Fn::ImportValue': !Sub '${ParentClusterStack}-CanonicalHostedZoneID'}
-        DNSName: {'Fn::ImportValue': !Sub '${ParentClusterStack}-DNSName'}
-      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
-      Name: !Sub
-      - '${SubDomainNameWithDot}${HostedZoneName}'
-      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
-      Type: A
   HTTPCodeTarget5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'

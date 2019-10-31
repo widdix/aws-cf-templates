@@ -540,15 +540,13 @@ Resources:
           ToPort: !If [HasProxyImage, !Ref ProxyPort, !Ref AppPort]
           SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentALBTargetStack}-SecurityGroup'}
         - !Ref 'AWS::NoValue'
-  ServiceSecurityGroupInSSHBastion:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasSSHBastionSecurityGroup
-    Properties:
-      GroupId: !Ref ServiceSecurityGroup
-      IpProtocol: tcp
-      FromPort: !If [HasProxyImage, !Ref ProxyPort, !Ref AppPort]
-      ToPort: !If [HasProxyImage, !Ref ProxyPort, !Ref AppPort]
-      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
+      - !If
+        - HasSSHBastionSecurityGroup
+        - IpProtocol: tcp
+          FromPort: !If [HasProxyImage, !Ref ProxyPort, !Ref AppPort]
+          ToPort: !If [HasProxyImage, !Ref ProxyPort, !Ref AppPort]
+          SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
+        - !Ref 'AWS::NoValue'
   Service:
     Type: 'AWS::ECS::Service'
     Properties:
