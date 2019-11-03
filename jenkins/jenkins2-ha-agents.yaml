@@ -176,7 +176,7 @@ Parameters:
     ConstraintDescription: 'Must be >= 0'
     MinValue: 0
   AgentDesiredCapacity:
-    Description: 'Deprecated in v9, will be removed in v11, use `AgentMinSize` instead!'
+    Description: 'Deprecated in v9, will be removed in v11, use AgentMinSize instead!'
     Type: Number
     Default: 0
     ConstraintDescription: 'Must be >= 0'
@@ -892,7 +892,7 @@ Resources:
         install:
           packages:
             rpm:
-              jenkins: 'https://pkg.jenkins.io/redhat-stable/jenkins-2.190.1-1.1.noarch.rpm'
+              jenkins: 'https://pkg.jenkins.io/redhat-stable/jenkins-2.190.2-1.1.noarch.rpm'
             yum:
               'java-1.8.0-amazon-corretto': []
               'ruby': []

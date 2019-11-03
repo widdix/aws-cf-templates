@@ -67,4 +67,5 @@
 
 ## Deprecation warnings
 
-none
+* `ecs/cluser`: Parameter `DesiredCapacity` will be removed in v11, use `MinSize` instead
+* `jenkins/jenkins2-ha-agents`: Parameter `AgentDesiredCapacity` will be removed in v11, use `AgentMinSize` instead
