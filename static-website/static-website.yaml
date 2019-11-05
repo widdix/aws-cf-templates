@@ -288,61 +288,67 @@ Resources:
     Condition: HasAlertTopicAndRegionNorthVirginia
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Lambde@Edge execution errors'
-      Namespace: 'AWS/CloudFront'
-      MetricName: LambdaExecutionError
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      AlarmDescription: 'Lambde@Edge execution errors'
+      ComparisonOperator: GreaterThanThreshold
       Dimensions:
       - Name: Region
         Value: Global
       - Name: DistributionId
         Value: !Ref CloudFrontDistribution
+      EvaluationPeriods: 1
+      MetricName: LambdaExecutionError
+      Namespace: 'AWS/CloudFront'
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
       TreatMissingData: notBreaching
   LambdaValidationErrorTooHighAlarm:
     Condition: HasAlertTopicAndRegionNorthVirginia
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Lambde@Edge invalid responses'
-      Namespace: 'AWS/CloudFront'
-      MetricName: LambdaValidationError
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      AlarmDescription: 'Lambde@Edge invalid responses'
+      ComparisonOperator: GreaterThanThreshold
       Dimensions:
       - Name: Region
         Value: Global
       - Name: DistributionId
         Value: !Ref CloudFrontDistribution
+      EvaluationPeriods: 1
+      MetricName: LambdaValidationError
+      Namespace: 'AWS/CloudFront'
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
       TreatMissingData: notBreaching
   5xxErrorRateTooHighAlarm:
     Condition: HasAlertTopicAndRegionNorthVirginia
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: '5xx errors'
-      Namespace: 'AWS/CloudFront'
-      MetricName: 5xxErrorRate
-      Statistic: Average
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 1
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      AlarmDescription: '5xx errors'
+      ComparisonOperator: GreaterThanThreshold
       Dimensions:
       - Name: Region
         Value: Global
       - Name: DistributionId
         Value: !Ref CloudFrontDistribution
+      EvaluationPeriods: 1
+      MetricName: 5xxErrorRate
+      Namespace: 'AWS/CloudFront'
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Period: 60
+      Statistic: Average
+      Threshold: 1
       TreatMissingData: notBreaching
 Outputs:
   TemplateID:
