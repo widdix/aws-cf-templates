@@ -70,8 +70,10 @@ To improve the default CloudFront behavior, we developed a Lambda@Edge solution 
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
-1. If you deployed the previous stack **not** to the us-east-1 (N. Virginia) region: TODO add docs to deploy the monitoring stack.
+
+> If you deployed the previous stack **not** to the us-east-1 (N. Virginia) region you need to deploy a monitoring stack to us-east-1 (N. Virginia)! [Launch Stack](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/static-website/monitoring.yaml&stackName=static-website-monitoring)
 
 ## Dependencies
-* `static-website/lambdaedge-index-document.yaml` (**required**)
 * `vpc/zone-*.yaml` (**required**)
+* `operations/alert.yaml` (recommended)
+* `state/s3.yaml` (recommended)
