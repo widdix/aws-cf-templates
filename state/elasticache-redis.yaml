@@ -73,7 +73,7 @@ Parameters:
     Type: 'String'
     Default: 'cache.t2.micro'
   TransitEncryption:
-    Description: 'Enable encryption for data in transit?'
+    Description: 'Enable encryption for data in transit? (see https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/in-transit-encryption.html)'
     Type: 'String'
     Default: 'true'
     AllowedValues:
