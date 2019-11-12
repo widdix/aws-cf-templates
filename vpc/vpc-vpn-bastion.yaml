@@ -861,7 +861,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'LambdaRole.Arn'
-      Runtime: 'nodejs8.10'
+      Runtime: 'nodejs10.x'
       Timeout: 60
   LambdaLogGroup:
     Condition: HasEFSProvisionedThroughput
