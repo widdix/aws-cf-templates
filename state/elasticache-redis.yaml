@@ -22,6 +22,7 @@ Metadata:
       Parameters:
       - ParentVPCStack
       - ParentClientStack
+      - ParentKmsKeyStack
       - ParentZoneStack
       - ParentSSHBastionStack
       - ParentAlertStack
@@ -32,6 +33,8 @@ Metadata:
       - CacheNodeType
       - TransitEncryption
       - AuthToken
+      - SnapshotRetentionLimit
+      - SnapshotName
       - SubDomainName
 Parameters:
   ParentVPCStack:
@@ -40,6 +43,10 @@ Parameters:
   ParentClientStack:
     Description: 'Stack name of parent client stack based on state/client-sg.yaml template.'
     Type: String
+  ParentKmsKeyStack:
+    Description: 'Optional stack name of parent KMS key stack based on security/kms-key.yaml template.'
+    Type: String
+    Default: ''
   ParentZoneStack:
     Description: 'Optional stack name of parent zone stack based on vpc/vpc-zone-*.yaml template.'
     Type: String
@@ -66,17 +73,27 @@ Parameters:
     Type: 'String'
     Default: 'cache.t2.micro'
   TransitEncryption:
-    Description: 'Enable encryption for data in transit? When transit encryption is enabled also specify an auth token.'
+    Description: 'Enable encryption for data in transit? (see https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/in-transit-encryption.html)'
     Type: 'String'
     Default: 'true'
     AllowedValues:
     - 'true'
     - 'false'
   AuthToken:
-    Description: 'Password (16 to 128 characters) used to authenticate against Redis. Requried when TransitEncryption = true. Leave blank to disable password-protection.'
+    Description: 'Optional password (16 to 128 characters) used to authenticate against Redis (requires TransitEncryption := true; leave blank to disable password-protection).'
     Type: 'String'
     Default: ''
     MaxLength: 128
+  SnapshotRetentionLimit:
+    Description: 'The number of days for which ElastiCache retains automatic snapshots before deleting them (set to 0 to disable backups).'
+    Type: Number
+    Default: 35
+    MinValue: 0
+    MaxValue: 35
+  SnapshotName:
+    Description: 'Optional name of a snapshot from which you want to restore (leave blank to create an empty cache).'
+    Type: 'String'
+    Default: ''
   SubDomainName:
     Description: 'Name that is used to create the DNS entry §{SubDomainName}.§{HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
     Type: String
@@ -92,10 +109,12 @@ Mappings:
     '5.0.4':
       CacheParameterGroupFamily: 'redis5.0'
 Conditions:
+  HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasAuthToken: !Not [!Equals [!Ref AuthToken, '']]
+  HasSnapshotName: !Not [!Equals [!Ref SnapshotName, '']]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -161,13 +180,15 @@ Resources:
       CacheSubnetGroupName: !Ref CacheSubnetGroupName
       Engine: redis
       EngineVersion: !Ref EngineVersion
+      KmsKeyId: !If [HasKmsKey, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}, !Ref 'AWS::NoValue']
       NotificationTopicArn: !If [HasAlertTopic, {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}, !Ref 'AWS::NoValue']
       NumNodeGroups: 1
       ReplicasPerNodeGroup: 1
       PreferredMaintenanceWindow: 'sat:07:00-sat:08:00'
       SecurityGroupIds:
       - !Ref SecurityGroup
-      SnapshotRetentionLimit: 35
+      SnapshotName: !If [HasSnapshotName, !Ref SnapshotName, !Ref 'AWS::NoValue']
+      SnapshotRetentionLimit: !Ref SnapshotRetentionLimit
       SnapshotWindow: '00:00-03:00'
       TransitEncryptionEnabled: !Ref TransitEncryption
   Node1CPUUtilizationTooHighAlarm:
