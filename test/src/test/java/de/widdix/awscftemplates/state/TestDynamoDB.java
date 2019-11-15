@@ -21,7 +21,7 @@ public class TestDynamoDB extends ACloudFormationTest {
     }
 
     @Test
-    public void test() {
+    public void testGSI() {
         final String stackName = "dynamodb-" + this.random8String();
         try {
             this.createStack(stackName,
