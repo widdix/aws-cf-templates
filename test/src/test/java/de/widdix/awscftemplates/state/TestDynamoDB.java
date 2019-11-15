@@ -32,7 +32,7 @@ public class TestDynamoDB extends ACloudFormationTest {
                     new Parameter().withParameterKey("Attribute2Name").withParameterValue("category"),
                     new Parameter().withParameterKey("Index1PartitionKeyName").withParameterValue("timestamp"),
                     new Parameter().withParameterKey("Index2PartitionKeyName").withParameterValue("organisation"),
-                    new Parameter().withParameterKey("Index2SortKeyName").withParameterValue("timestamp")
+                    new Parameter().withParameterKey("Index2SortKeyName").withParameterValue("category")
             );
             // TODO how can we check if this stack works?
         } finally {
