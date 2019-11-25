@@ -18,6 +18,7 @@ pages:
   - 'WordPress': 'wordpress.md'
 - 'widdix CLI': 'cli.md'
 - 'Migration Guides':
+  - 'Migrate to v11': 'migrate-v11.md'
   - 'Migrate to v10': 'migrate-v10.md'
   - 'Migrate to v9': 'migrate-v9.md'
   - 'Migrate to v8': 'migrate-v8.md'
