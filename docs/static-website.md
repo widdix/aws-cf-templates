@@ -21,7 +21,7 @@ S3 and CloudFront behave differently when it comes to index document support in 
 | `/folder/`           | 200 Content of index.html  |                                                                                             |
 | `/folder/index.html` | 200 Content of index.html  | Not SEO friendly because of duplicate content on `/folder/`, should redirect to `/folder/`  |
 
-### CloudFront with Default Root Object (provided by the template static-website.yaml template!)
+### CloudFront with Default Root Object (provided by the template static-website.yaml template)
 
 | Resource             | Response                   | Comment                                                                                     |
 | -------------------- | -------------------------- | ------------------------------------------------------------------------------------------- |
@@ -31,11 +31,9 @@ S3 and CloudFront behave differently when it comes to index document support in 
 | `/folder/`           | 403 Error                  | Not user friendly                                                                           |
 | `/folder/index.html` | 200 Content of index.html  | Not user friendly                                                                           |
 
-### Lambda@Edge solution (provided by the template static-website.yaml and lambdaedge-index-document.yaml template!)
+### Lambda@Edge solution (provided by the template static-website.yaml and lambdaedge-index-document.yaml template)
 
 To improve the default CloudFront behavior, we developed a Lambda@Edge solution that gives you the following search engine optimized result.
-
-> Set the `DefaultRootObject` parameter to en emtpy string if you use this approach!
 
 | Resource             | Response                   |
 | -------------------- | -------------------------- |
@@ -56,15 +54,13 @@ To improve the default CloudFront behavior, we developed a Lambda@Edge solution 
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
-1. Copy the `ViewerRequestLambdaEdgeFunctionVersionARN` and `OriginRequestLambdaEdgeFunctionVersionARN` output of the stack.
+1. Copy the `ViewerRequestLambdaEdgeFunctionVersionARN` output of the stack.
 1. Switch to the region where you want to S3 bucket with static files to be created in (we recommend the use the us-east-1 (N. Virginia) region if possible).
 1. This templates depends on one of our [`zone-*.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/zone-public.yaml&stackName=zone)
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/static-website/static-website.yaml&stackName=static-website&param_ParentZoneStack=zone)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
     a. Set the `ViewerRequestLambdaEdgeFunctionVersionARN` to the value of the `ViewerRequestLambdaEdgeFunctionVersionARN` output. 
-    a. Set the `OriginRequestLambdaEdgeFunctionVersionARN` to the value of the `ViewerRequestLambdaEdgeFunctionVersionARN` output. 
-    a. Set the `DefaultRootObject` parameter to an empty string.
 1. Click **Next** to proceed with the next step of the wizard.
 1. Click **Next** to skip the **Options** step of the wizard.
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.

@@ -67,7 +67,7 @@ Parameters:
     Type: String
     Default: ''
   OriginRequestLambdaEdgeFunctionVersionARN: # max 30s timeout
-    Description: 'Optional version ARN of Lambda@Edge origin request function (e.g., OriginRequestLambdaEdgeFunctionVersionARN output of static-website/lambdaedge-index-document.yaml).'
+    Description: 'Optional version ARN of Lambda@Edge origin request function.'
     Type: String
     Default: ''
   OriginResponseLambdaEdgeFunctionVersionARN: # max 30s timeout
@@ -242,7 +242,7 @@ Resources:
           MinTTL: 60 # in seconds
           TargetOriginId: s3origin
           ViewerProtocolPolicy: 'redirect-to-https'
-        DefaultRootObject: !If [HasDefaultRootObject, !Ref DefaultRootObject, !Ref 'AWS::NoValue'] # FIXME check if this has an impact if we always set it!
+        DefaultRootObject: !If [HasDefaultRootObject, !Ref DefaultRootObject, !Ref 'AWS::NoValue']
         Enabled: true
         HttpVersion: http2
         Logging: !If [HasS3Bucket, {Bucket: {'Fn::ImportValue': !Sub '${ParentS3StackAccessLog}-BucketDomainName'}, Prefix: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']

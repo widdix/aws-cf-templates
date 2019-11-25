@@ -92,6 +92,8 @@ Resources:
       Code:
         # If you change the ZipFile, rename the logical id LambdaVersionVX to trigger a new version creation!
         ZipFile: !Sub |
+          const regex = /\.[A-Za-z0-9]+$/;
+          const indexDocument = '${IndexDocument}';
           const domainName = '${DomainName}'.toLowerCase();
           const redirectDomainName = '${RedirectDomainName}'.toLowerCase();
           exports.handler = async function(event) {
@@ -108,73 +110,6 @@ Resources:
                 }
               };
             }
-            return cf.request;
-          };
-      Handler: 'index.handler'
-      MemorySize: 128
-      Role: !GetAtt 'ViewerRequestRole.Arn'
-      Runtime: 'nodejs10.x'
-      Timeout: 5
-  ViewerRequestVersionV1:
-    Type: 'AWS::Lambda::Version'
-    Properties:
-      FunctionName: !Ref ViewerRequestFunction
-  ViewerRequestLogGroup:
-    Type: 'AWS::Logs::LogGroup'
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/${ViewerRequestFunction}'
-      RetentionInDays: !Ref LogsRetentionInDays
-  OriginRequestRole:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - 'lambda.amazonaws.com'
-            - 'edgelambda.amazonaws.com'
-          Action: 'sts:AssumeRole'
-  OriginRequestLambdaPolicy:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyDocument:
-        Statement:
-        - Effect: Allow
-          Action:
-          - 'logs:CreateLogStream'
-          - 'logs:PutLogEvents'
-          Resource: !GetAtt 'OriginRequestLogGroup.Arn'
-      PolicyName: lambda
-      Roles:
-      - !Ref OriginRequestRole
-  OriginRequestLambdaEdgePolicy:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyDocument:
-        Statement:
-        - Effect: Allow
-          Action: 'logs:CreateLogGroup'
-          Resource: !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/lambda/us-east-1.${OriginRequestFunction}:log-stream:'
-        - Effect: Allow
-          Action:
-          - 'logs:CreateLogStream'
-          - 'logs:PutLogEvents'
-          Resource: !Sub 'arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/lambda/us-east-1.${OriginRequestFunction}:log-stream:*'
-      PolicyName: 'lambda-edge'
-      Roles:
-      - !Ref OriginRequestRole
-  OriginRequestFunction:
-    Type: 'AWS::Lambda::Function'
-    Properties:
-      Code:
-        # If you change the ZipFile, rename the logical id OriginRequestVersionVX to trigger a new version creation!
-        ZipFile: !Sub |
-          const regex = /\.[A-Za-z0-9]+$/;
-          const indexDocument = '${IndexDocument}';
-          exports.handler = async function(event) {
-            const cf = event.Records[0].cf;
             if (cf.request.uri.endsWith('/')) {
               return Object.assign({}, cf.request, {uri: `${!cf.request.uri}${!indexDocument}`});
             }
@@ -206,17 +141,17 @@ Resources:
           };
       Handler: 'index.handler'
       MemorySize: 128
-      Role: !GetAtt 'OriginRequestRole.Arn'
+      Role: !GetAtt 'ViewerRequestRole.Arn'
       Runtime: 'nodejs10.x'
       Timeout: 5
-  OriginRequestVersionV1:
+  ViewerRequestVersionV1:
     Type: 'AWS::Lambda::Version'
     Properties:
-      FunctionName: !Ref OriginRequestFunction
-  OriginRequestLogGroup:
+      FunctionName: !Ref ViewerRequestFunction
+  ViewerRequestLogGroup:
     Type: 'AWS::Logs::LogGroup'
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${OriginRequestFunction}'
+      LogGroupName: !Sub '/aws/lambda/${ViewerRequestFunction}'
       RetentionInDays: !Ref LogsRetentionInDays
 Outputs:
   TemplateID:
@@ -231,6 +166,3 @@ Outputs:
   ViewerRequestLambdaEdgeFunctionVersionARN:
     Description: 'Version ARN of Lambda@Edge viewer request function.'
     Value: !Ref ViewerRequestVersionV1
-  OriginRequestLambdaEdgeFunctionVersionARN:
-    Description: 'Version ARN of Lambda@Edge origin request function.'
-    Value: !Ref OriginRequestVersionV1

@@ -33,14 +33,12 @@ public class TestStaticWebsite extends ACloudFormationTest {
                         new Parameter().withParameterKey("RedirectDomainName").withParameterValue(redirectDomainName)
                 );
                 final String viewerRequestLambdaEdgeFunctionVersionARN = this.getStackOutputValue(stackNameLambdaEdge, "ViewerRequestLambdaEdgeFunctionVersionARN");
-                final String originRequestLambdaEdgeFunctionVersionARN = this.getStackOutputValue(stackNameLambdaEdge, "OriginRequestLambdaEdgeFunctionVersionARN");
                 try {
                     this.createStack(stackName,
                             "static-website/static-website.yaml",
                             new Parameter().withParameterKey("ParentZoneStack").withParameterValue(zoneStackName),
                             new Parameter().withParameterKey("SubDomainNameWithDot").withParameterValue(subDomainName + "."),
                             new Parameter().withParameterKey("ViewerRequestLambdaEdgeFunctionVersionARN").withParameterValue(viewerRequestLambdaEdgeFunctionVersionARN),
-                            new Parameter().withParameterKey("OriginRequestLambdaEdgeFunctionVersionARN").withParameterValue(originRequestLambdaEdgeFunctionVersionARN),
                             new Parameter().withParameterKey("DefaultRootObject").withParameterValue(""),
                             new Parameter().withParameterKey("EnableRedirectSubDomainName").withParameterValue("true"),
                             new Parameter().withParameterKey("RedirectSubDomainNameWithDot").withParameterValue(redirectSubDomainName + "."),
