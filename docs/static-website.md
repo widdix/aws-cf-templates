@@ -60,7 +60,7 @@ To improve the default CloudFront behavior, we developed a Lambda@Edge solution 
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/static-website/static-website.yaml&stackName=static-website&param_ParentZoneStack=zone)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
-    a. Set the `ViewerRequestLambdaEdgeFunctionVersionARN` to the value of the `ViewerRequestLambdaEdgeFunctionVersionARN` output. 
+    a. Set the `ViewerRequestLambdaEdgeFunctionVersionARN` to the value of the `ViewerRequestLambdaEdgeFunctionVersionARN` output from the `lambdaedge-index-document` stack. 
 1. Click **Next** to proceed with the next step of the wizard.
 1. Click **Next** to skip the **Options** step of the wizard.
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
