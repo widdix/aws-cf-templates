@@ -1,0 +1,108 @@
+---
+# Copyright 2018 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Static Website: monitoring, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentAlertStack
+    - Label:
+        default: 'CloudFront Parameters'
+      Parameters:
+      - DistributionId
+Parameters:
+  ParentAlertStack:
+    Description: 'Stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+  DistributionId:
+    Description: 'DistributionId output of the static-website/static-website stack.'
+    Type: String
+Resources:
+  LambdaExecutionErrorTooHighAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      AlarmDescription: 'Lambde@Edge execution errors'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: Region
+        Value: Global
+      - Name: DistributionId
+        Value: !Ref DistributionId
+      EvaluationPeriods: 1
+      MetricName: LambdaExecutionError
+      Namespace: 'AWS/CloudFront'
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+  LambdaValidationErrorTooHighAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      AlarmDescription: 'Lambde@Edge invalid responses'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: Region
+        Value: Global
+      - Name: DistributionId
+        Value: !Ref DistributionId
+      EvaluationPeriods: 1
+      MetricName: LambdaValidationError
+      Namespace: 'AWS/CloudFront'
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+  5xxErrorRateTooHighAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      AlarmDescription: '5xx errors'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: Region
+        Value: Global
+      - Name: DistributionId
+        Value: !Ref DistributionId
+      EvaluationPeriods: 1
+      MetricName: 5xxErrorRate
+      Namespace: 'AWS/CloudFront'
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Period: 60
+      Statistic: Average
+      Threshold: 0
+      TreatMissingData: notBreaching
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'static-website/monitoring'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
