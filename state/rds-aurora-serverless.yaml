@@ -68,11 +68,6 @@ Parameters:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
-  Engine:
-    Description: 'DEPRECATED since v9, removed in v11, value is ignored!'
-    Type: String
-    AllowedValues: [aurora]
-    Default: aurora
   DBSnapshotIdentifier:
     Description: 'Optional identifier for the DB cluster snapshot from which you want to restore (leave blank to create an empty cluster).'
     Type: String

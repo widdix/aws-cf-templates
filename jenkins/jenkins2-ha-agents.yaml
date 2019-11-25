@@ -58,7 +58,6 @@ Metadata:
       - AgentVolumeSize
       - AgentMaxSize
       - AgentMinSize
-      - AgentDesiredCapacity
       - AgentMaxBuildWaitTimeInSeconds
       - AgentLogsRetentionInDays
 Parameters:
@@ -171,12 +170,6 @@ Parameters:
     MinValue: 1
   AgentMinSize:
     Description: 'The minimum size of the agents Auto Scaling group.'
-    Type: Number
-    Default: 0
-    ConstraintDescription: 'Must be >= 0'
-    MinValue: 0
-  AgentDesiredCapacity:
-    Description: 'Deprecated in v9, will be removed in v11, use AgentMinSize instead!'
     Type: Number
     Default: 0
     ConstraintDescription: 'Must be >= 0'
