@@ -39,7 +39,6 @@ public class TestStaticWebsite extends ACloudFormationTest {
                             new Parameter().withParameterKey("ParentZoneStack").withParameterValue(zoneStackName),
                             new Parameter().withParameterKey("SubDomainNameWithDot").withParameterValue(subDomainName + "."),
                             new Parameter().withParameterKey("ViewerRequestLambdaEdgeFunctionVersionARN").withParameterValue(viewerRequestLambdaEdgeFunctionVersionARN),
-                            new Parameter().withParameterKey("DefaultRootObject").withParameterValue(""),
                             new Parameter().withParameterKey("EnableRedirectSubDomainName").withParameterValue("true"),
                             new Parameter().withParameterKey("RedirectSubDomainNameWithDot").withParameterValue(redirectSubDomainName + "."),
                             new Parameter().withParameterKey("CertificateType").withParameterValue("AcmCertificateArn"),
