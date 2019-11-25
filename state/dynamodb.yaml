@@ -503,7 +503,7 @@ Outputs:
     Value: 'state/dynamodb'
   TemplateVersion:
     Description: 'cloudonaut.io template version.'
-    Value: '10.6.0'
+    Value: '__VERSION__'
   StackName:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
