@@ -23,6 +23,7 @@ Metadata:
       - ParentVPCStack
       - ParentSSHBastionStack
       - ParentAlertStack
+      - ParentKmsKeyStack
       - ParentZoneStack
       - ParentClientStack1
       - ParentClientStack2
@@ -43,6 +44,7 @@ Metadata:
       - IngressTcpPort2
       - IngressTcpPort3
       - ManagedPolicyArns
+      - RootVolumeSize
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -53,6 +55,10 @@ Parameters:
     Default: ''
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  ParentKmsKeyStack:
+    Description: 'Optional stack name of parent KMS key stack based on security/kms-key.yaml template.'
     Type: String
     Default: ''
   ParentZoneStack:
@@ -139,6 +145,13 @@ Parameters:
     Description: 'Optional comma-delimited list of IAM managed policy ARNs to attach to the instance''s IAM role'
     Type: String
     Default: ''
+  RootVolumeSize:
+    Description: 'The root volume size, in Gibibytes (GiB).'
+    Type: Number
+    Default: 8
+    ConstraintDescription: 'Must be in the range [8-1024]'
+    MinValue: 8
+    MaxValue: 1024
 Mappings:
   RegionMap:
     'eu-north-1':
@@ -178,6 +191,7 @@ Mappings:
     'us-west-2':
       AMI: 'ami-0c5204531f799e0c6'
 Conditions:
+  HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
   HasSystemsManagerAccess: !Equals [!Ref SystemsManagerAccess, 'true']
@@ -564,6 +578,13 @@ Resources:
       ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
       InstanceType: !Ref InstanceType
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+      BlockDeviceMappings:
+      - DeviceName: '/dev/xvda'
+        Ebs:
+          Encrypted: !If [HasKmsKey, true, !Ref 'AWS::NoValue']
+          KmsKeyId: !If [HasKmsKey, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}, !Ref 'AWS::NoValue']
+          VolumeSize: !Ref RootVolumeSize
+          VolumeType: gp2
       NetworkInterfaces:
       - DeviceIndex: '0'
         NetworkInterfaceId: !Ref NetworkInterface
