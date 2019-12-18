@@ -34,7 +34,7 @@ Metadata:
       - EBSEnabled
       - EBSVolumeSize
       - AvailabilityZones
-      - OverwriteClusterInstanceCount
+      - ClusterInstanceCount
       - ClusterInstanceType
       - DedicatedMasterCount
       - DedicatedMasterType
@@ -84,7 +84,7 @@ Parameters:
     Type: String
     Default: '1-AZ'
     AllowedValues: ['1-AZ', '2-AZ', '3-AZ']
-  OverwriteClusterInstanceCount:
+  ClusterInstanceCount:
     Description: 'The default is to use the same number of data nodes (instances) then availability zones. If you need more data nodes (instances) then you can overwrite the default with this value.'
     Type: Number
     Default: 0
@@ -113,7 +113,7 @@ Conditions:
   HasZoneAwareness: !Not [!Equals [!Ref AvailabilityZones, '1-AZ']]
   HasAlertTopicAndZoneAwareness: !And [!Condition HasAlertTopic, !Condition HasZoneAwareness]
   Has3AvailitityZones: !Equals [!Ref AvailabilityZones, '3-AZ']
-  HasCustomClusterInstanceCount: !Not [!Equals [!Ref OverwriteClusterInstanceCount, 0]]
+  HasCustomClusterInstanceCount: !Not [!Equals [!Ref ClusterInstanceCount, 0]]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -170,7 +170,7 @@ Resources:
         DedicatedMasterType: !If [HasDedicatedMasterNodes, !Ref DedicatedMasterType, !Ref 'AWS::NoValue']
         InstanceCount: !If
         - HasCustomClusterInstanceCount
-        - !Ref OverwriteClusterInstanceCount
+        - !Ref ClusterInstanceCount
         - !Select ['0', {'Fn::Split': ['-', !Ref AvailabilityZones]}]
         InstanceType: !Ref ClusterInstanceType
         ZoneAwarenessEnabled: !If [HasZoneAwareness, true, false]
