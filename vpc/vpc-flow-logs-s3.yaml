@@ -1,0 +1,113 @@
+---
+# Copyright 2018 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'VPC: Publish flow logs to S3, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+    - Label:
+        default: 'Flow Logs Parameters'
+      Parameters:
+      - ExternalLogBucket
+      - LogFilePrefix
+      - TrafficType
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+  ExternalLogBucket:
+    Description: 'Optional The name of an S3 bucket where you want to store flow logs. If you leave this empty, the Amazon S3 bucket is created for you.'
+    Type: String
+    Default: ''
+  LogFilePrefix:
+    Description: 'Optional The log file prefix.'
+    Type: String
+    Default: ''
+  TrafficType:
+    Description: 'The type of traffic to log.'
+    Type: String
+    Default: REJECT
+    AllowedValues:
+    - ACCEPT
+    - REJECT
+    - ALL
+Conditions:
+  InternalBucket: !Equals [!Ref ExternalLogBucket, '']
+  ExternalBucket: !Not [!Equals [!Ref ExternalLogBucket, '']]
+  HasLogFilePrefix: !Not [!Equals [!Ref LogFilePrefix, '']]
+Resources:
+  LogBucket:
+    Condition: InternalBucket
+    Type: 'AWS::S3::Bucket'
+    Properties: {}
+  LogBucketPolicy:
+    Condition: InternalBucket
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref LogBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement: # https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs-s3.html#flow-logs-s3-permissions
+        - Sid: AWSLogDeliveryWrite
+          Effect: Allow
+          Principal:
+            Service: 'delivery.logs.amazonaws.com'
+          Action: 's3:PutObject'
+          Resource: !If [HasLogFilePrefix, !Sub '${LogBucket.Arn}/${LogFilePrefix}/AWSLogs/${AWS::AccountId}/*', !Sub '${LogBucket.Arn}/AWSLogs/${AWS::AccountId}/*']
+          Condition:
+            StringEquals:
+              's3:x-amz-acl': 'bucket-owner-full-control'
+        - Sid: AWSLogDeliveryAclCheck
+          Effect: Allow
+          Principal:
+            Service: 'delivery.logs.amazonaws.com'
+          Action: 's3:GetBucketAcl'
+          Resource: !GetAtt 'LogBucket.Arn'
+  FlowLogInternalBucket:
+    Condition: InternalBucket
+    DependsOn: LogBucketPolicy
+    Type: 'AWS::EC2::FlowLog'
+    Properties:
+      LogDestination: !If [HasLogFilePrefix, !Sub '${LogBucket.Arn}/${LogFilePrefix}/', !GetAtt 'LogBucket.Arn']
+      LogDestinationType: s3
+      ResourceId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+      ResourceType: 'VPC'
+      TrafficType: !Ref TrafficType
+  FlowLogExternalBucket:
+    Condition: ExternalBucket
+    Type: 'AWS::EC2::FlowLog'
+    Properties:
+      LogDestination: !If [HasLogFilePrefix, !Sub 'arn:aws:s3:::${ExternalLogBucket}/${LogFilePrefix}/', !Sub 'arn:aws:s3:::${ExternalLogBucket}']
+      LogDestinationType: s3
+      ResourceId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+      ResourceType: 'VPC'
+      TrafficType: !Ref TrafficType
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'vpc/vpc-flow-logs-s3'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
+  LogBucketName:
+    Description: 'Log bucket name.'
+    Value: !If [InternalBucket, !Ref LogBucket, !Ref ExternalLogBucket]

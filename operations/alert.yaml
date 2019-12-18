@@ -37,7 +37,7 @@ Parameters:
     Type: String
     Default: ''
   HttpsEndpoint:
-    Description: 'Optional HTTPS endpoint that will receive alerts via POST requests (e.g., a marbot.io endpoint for easy-going incident management).'
+    Description: 'Optional HTTPS endpoint that will receive alerts via POST requests (e.g., a marbot.io endpoint for incident management in Slack).'
     Type: String
     Default: ''
   FallbackEmail:
@@ -68,6 +68,7 @@ Resources:
             - 'budgets.amazonaws.com' # Allow Budget Notifications
             - 'rds.amazonaws.com' # Allow RDS Events
             - 's3.amazonaws.com' # Allow S3 Event Notifications
+            - 'backup.amazonaws.com' # Allow Backup Events
           Action: 'sns:Publish'
           Resource: !Ref Topic
         - Sid: Sid2
@@ -109,6 +110,7 @@ Resources:
       Dimensions:
       - Name: TopicName
         Value: !GetAtt Topic.TopicName
+      TreatMissingData: notBreaching
   EmailSubscription:
     Condition: HasEmail
     Type: 'AWS::SNS::Subscription'

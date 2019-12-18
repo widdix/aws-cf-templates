@@ -42,6 +42,7 @@ Metadata:
       - IngressTcpPort1
       - IngressTcpPort2
       - IngressTcpPort3
+      - ManagedPolicyArns
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -134,40 +135,48 @@ Parameters:
     Description: 'Optional port allowing ingress TCP traffic.'
     Type: String
     Default: ''
+  ManagedPolicyArns:
+    Description: 'Optional comma-delimited list of IAM managed policy ARNs to attach to the instance''s IAM role'
+    Type: String
+    Default: ''
 Mappings:
   RegionMap:
     'eu-north-1':
-      AMI: 'ami-1fb13961'
+      AMI: 'ami-006cda581cf39451b'
     'ap-south-1':
-      AMI: 'ami-00e782930f1c3dbc7'
+      AMI: 'ami-0ce933e2ae91880d3'
     'eu-west-3':
-      AMI: 'ami-0ebb3a801d5fb8b9b'
+      AMI: 'ami-0e9e6ba6d3d38faa8'
     'eu-west-2':
-      AMI: 'ami-0009a33f033d8b7b6'
+      AMI: 'ami-05f37c3995fffb4fd'
     'eu-west-1':
-      AMI: 'ami-030dbca661d402413'
+      AMI: 'ami-01f14919ba412de34'
     'ap-northeast-2':
-      AMI: 'ami-08ab3f7e72215fe91'
+      AMI: 'ami-0d59ddf55cdda6e21'
+    'me-south-1':
+      AMI: 'ami-0c55b36523aa89a7c'
     'ap-northeast-1':
-      AMI: 'ami-00d101850e971728d'
+      AMI: 'ami-068a6cefc24c301d2'
     'sa-east-1':
-      AMI: 'ami-058141e091292ecf0'
+      AMI: 'ami-07820a4443539a2b0'
     'ca-central-1':
-      AMI: 'ami-08a9b721ecc5b0a53'
+      AMI: 'ami-0ff24797826ebbcd5'
+    'ap-east-1':
+      AMI: 'ami-cd86fcbc'
     'ap-southeast-1':
-      AMI: 'ami-0b5a47f8865280111'
+      AMI: 'ami-07539a31f72d244e7'
     'ap-southeast-2':
-      AMI: 'ami-0fb7513bcdc525c3b'
+      AMI: 'ami-0119aa4d67e59007c'
     'eu-central-1':
-      AMI: 'ami-0ebe657bc328d4e82'
+      AMI: 'ami-0d4c3eabb9e72650a'
     'us-east-1':
-      AMI: 'ami-0c6b1d09930fac512'
+      AMI: 'ami-00068cd7555f543d5'
     'us-east-2':
-      AMI: 'ami-0ebbf2179e615c338'
+      AMI: 'ami-0dacb0c129b49f529'
     'us-west-1':
-      AMI: 'ami-015954d5e5548d13b'
+      AMI: 'ami-0b2d8d1abb76a53d8'
     'us-west-2':
-      AMI: 'ami-0cb72367e98845d43'
+      AMI: 'ami-0c5204531f799e0c6'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -182,6 +191,7 @@ Conditions:
   HasClientSecurityGroup1: !Not [!Equals [!Ref ParentClientStack1, '']]
   HasClientSecurityGroup2: !Not [!Equals [!Ref ParentClientStack2, '']]
   HasClientSecurityGroup3: !Not [!Equals [!Ref ParentClientStack3, '']]
+  HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -271,7 +281,6 @@ Resources:
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
-      Path: '/'
       Roles:
       - !Ref IAMRole
   IAMRole:
@@ -282,13 +291,23 @@ Resources:
         Statement:
         - Effect: Allow
           Principal:
-            Service:
-            - 'ec2.amazonaws.com'
-          Action:
-          - 'sts:AssumeRole'
-      Path: '/'
-      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []] # TODO get rid of managed policy
+            Service: 'ec2.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      ManagedPolicyArns: !If [HasManagedPolicyArns, !Split [',', !Ref ManagedPolicyArns], !Ref 'AWS::NoValue']
       Policies:
+      - !If
+        - HasSystemsManagerAccess
+        - PolicyName: ssm
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - 'ssmmessages:*' # SSM Agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ssm:UpdateInstanceInformation' # SSM agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ec2messages:*' # SSM Session Manager by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              Resource: '*'
+        - !Ref 'AWS::NoValue'
       - PolicyName: logs
         PolicyDocument:
           Version: '2012-10-17'

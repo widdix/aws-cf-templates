@@ -34,6 +34,7 @@ Metadata:
       - KeyName
       - IAMUserSSHAccess
       - SystemsManagerAccess
+      - ManagedPolicyArns
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
@@ -48,7 +49,6 @@ Metadata:
       - LogsRetentionInDays
       - MaxSize
       - MinSize
-      - DesiredCapacity
       - DrainingTimeoutInSeconds
       - StopContainerTimeoutInSeconds
     - Label:
@@ -108,6 +108,10 @@ Parameters:
     AllowedValues:
     - true
     - false
+  ManagedPolicyArns:
+    Description: 'Optional comma-delimited list of IAM managed policy ARNs to attach to the instance''s IAM role'
+    Type: String
+    Default: ''
   SubnetsReach:
     Description: 'Should the cluster have direct access to the Internet or do you prefer private subnets with NAT?'
     Type: String
@@ -153,12 +157,6 @@ Parameters:
     Default: 2
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
-  DesiredCapacity:
-    Description: 'Deprecated in v9, will be removed in v11, use `MinSize` instead!'
-    Type: Number
-    Default: 2
-    ConstraintDescription: 'Must be >= 1'
-    MinValue: 1
   DrainingTimeoutInSeconds:
     Description: 'Maximum time in seconds an EC2 instance waits when terminating until all containers are moved to another EC2 instance (draining).'
     Type: Number
@@ -196,37 +194,41 @@ Parameters:
 Mappings:
   RegionMap:
     'eu-north-1':
-      ECSAMI: 'ami-0dddc4daca44e6e99'
+      ECSAMI: 'ami-0f8edbbca6bac13a6'
     'ap-south-1':
-      ECSAMI: 'ami-04322e867758d97a8'
+      ECSAMI: 'ami-0312d67ff59a3db34'
     'eu-west-3':
-      ECSAMI: 'ami-07273195833e4f20c'
+      ECSAMI: 'ami-03490ca40775a62f0'
     'eu-west-2':
-      ECSAMI: 'ami-0204aa6a92a54561e'
+      ECSAMI: 'ami-0393b5f363fbd613a'
     'eu-west-1':
-      ECSAMI: 'ami-0c5abd45f676aab4f'
+      ECSAMI: 'ami-0bf45a5f4ab05b949'
     'ap-northeast-2':
-      ECSAMI: 'ami-08834c8c57e502d6d'
+      ECSAMI: 'ami-0fa5d85859452a178'
+    'me-south-1':
+      ECSAMI: 'ami-083574c628ab7ed55'
     'ap-northeast-1':
-      ECSAMI: 'ami-0e52aad6ac7733a6a'
+      ECSAMI: 'ami-0934e28fe3e390537'
     'sa-east-1':
-      ECSAMI: 'ami-00d851648873aaabc'
+      ECSAMI: 'ami-0c947c117562538ee'
     'ca-central-1':
-      ECSAMI: 'ami-0498c464ec4d2ba83'
+      ECSAMI: 'ami-0057d82f917a17334'
+    'ap-east-1':
+      ECSAMI: 'ami-06f0831524c0965d8'
     'ap-southeast-1':
-      ECSAMI: 'ami-0047bfdb16f1f6781'
+      ECSAMI: 'ami-01f07b3fa86406c96'
     'ap-southeast-2':
-      ECSAMI: 'ami-09475847322e5566f'
+      ECSAMI: 'ami-07610e278b1ddf331'
     'eu-central-1':
-      ECSAMI: 'ami-096a38c97b80cd8ec'
+      ECSAMI: 'ami-074dc9dd588b6ea52'
     'us-east-1':
-      ECSAMI: 'ami-00cf4737e238866a3'
+      ECSAMI: 'ami-097e3d1cdb541f43e'
     'us-east-2':
-      ECSAMI: 'ami-012ca23958772cf72'
+      ECSAMI: 'ami-0fbd313043845c4f2'
     'us-west-1':
-      ECSAMI: 'ami-06d87f0156b1d4407'
+      ECSAMI: 'ami-03d7632ea0ab75eaa'
     'us-west-2':
-      ECSAMI: 'ami-0a9f5be2a016dccad'
+      ECSAMI: 'ami-0fb71e703258ab7eb'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -244,6 +246,7 @@ Conditions:
   HasClientSecurityGroup1: !Not [!Equals [!Ref ParentClientStack1, '']]
   HasClientSecurityGroup2: !Not [!Equals [!Ref ParentClientStack2, '']]
   HasClientSecurityGroup3: !Not [!Equals [!Ref ParentClientStack3, '']]
+  HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
 Resources:
   Cluster:
     Type: 'AWS::ECS::Cluster'
@@ -255,7 +258,6 @@ Resources:
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
-      Path: '/'
       Roles:
       - !Ref Role
   Role:
@@ -268,9 +270,21 @@ Resources:
           Principal:
             Service: 'ec2.amazonaws.com'
           Action: 'sts:AssumeRole'
-      Path: '/'
-      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []] # TODO get rid of managed policy
+      ManagedPolicyArns: !If [HasManagedPolicyArns, !Split [',', !Ref ManagedPolicyArns], !Ref 'AWS::NoValue']
       Policies:
+      - !If
+        - HasSystemsManagerAccess
+        - PolicyName: ssm
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - 'ssmmessages:*' # SSM Agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ssm:UpdateInstanceInformation' # SSM agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ec2messages:*' # SSM Session Manager by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              Resource: '*'
+        - !Ref 'AWS::NoValue'
       - PolicyName: ecs
         PolicyDocument:
           Version: '2012-10-17'
@@ -435,6 +449,7 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
+      TreatMissingData: notBreaching
   HTTPCodeTarget5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -454,6 +469,7 @@ Resources:
         Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
       - Name: TargetGroup
         Value: !GetAtt 'DefaultTargetGroup.TargetGroupFullName'
+      TreatMissingData: notBreaching
   RejectedConnectionCountTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -471,6 +487,7 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
+      TreatMissingData: notBreaching
   TargetConnectionErrorCountTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -490,6 +507,7 @@ Resources:
         Value: !GetAtt 'LoadBalancer.LoadBalancerFullName'
       - Name: TargetGroup
         Value: !GetAtt 'DefaultTargetGroup.TargetGroupFullName'
+      TreatMissingData: notBreaching
   LoadBalancer: # not monitored, but DefaultTargetGroup is monitored!
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
@@ -885,6 +903,7 @@ Resources:
       Dimensions:
       - Name: QueueName
         Value: !GetAtt 'AutoScalingGroupLifecycleHookQueue.QueueName'
+      TreatMissingData: notBreaching
   AutoScalingGroupLifecycleHookDeadLetterQueue:
     Type: 'AWS::SQS::Queue'
     Properties:
@@ -906,6 +925,7 @@ Resources:
       Dimensions:
       - Name: QueueName
         Value: !GetAtt 'AutoScalingGroupLifecycleHookDeadLetterQueue.QueueName'
+      TreatMissingData: notBreaching
   AutoScalingGroupLifecycleHookIAMRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -914,11 +934,8 @@ Resources:
         Statement:
         - Effect: Allow
           Principal:
-            Service:
-            - 'autoscaling.amazonaws.com'
-          Action:
-          - 'sts:AssumeRole'
-      Path: '/'
+            Service: 'autoscaling.amazonaws.com'
+          Action: 'sts:AssumeRole'
       Policies:
       - PolicyName: sqs
         PolicyDocument:
@@ -1062,6 +1079,8 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
   # scaling based on SchedulableContainers is described in detail here: http://garbe.io/blog/2017/04/12/a-better-solution-to-ecs-autoscaling/
   SchedulableContainersCron:
+    DependsOn:
+    - SchedulableContainersLambdaPolicy
     Type: 'AWS::Events::Rule'
     Properties:
       ScheduleExpression: 'rate(1 minute)'
@@ -1086,6 +1105,7 @@ Resources:
       Dimensions:
       - Name: RuleName
         Value: !Ref SchedulableContainersCron
+      TreatMissingData: notBreaching
   SchedulableContainersLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -1096,8 +1116,6 @@ Resources:
           Principal:
             Service: 'lambda.amazonaws.com'
           Action: 'sts:AssumeRole'
-      ManagedPolicyArns: # TODO get rid of managed policy
-      - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
       Policies:
       - PolicyName: ecs
         PolicyDocument:
@@ -1117,6 +1135,19 @@ Resources:
           - Effect: Allow
             Action: 'cloudwatch:PutMetricData'
             Resource: '*'
+  SchedulableContainersLambdaPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Roles:
+      - !Ref SchedulableContainersLambdaRole
+      PolicyName: lambda
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action:
+          - 'logs:CreateLogStream'
+          - 'logs:PutLogEvents'
+          Resource: !GetAtt 'SchedulableContainersLogGroup.Arn'
   SchedulableContainersLambdaPermission2:
     Type: 'AWS::Lambda::Permission'
     Properties:
@@ -1196,7 +1227,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'SchedulableContainersLambdaRole.Arn'
-      Runtime: 'nodejs8.10'
+      Runtime: 'nodejs10.x'
       Timeout: 60
   SchedulableContainersLogGroup:
     Type: 'AWS::Logs::LogGroup'
@@ -1220,6 +1251,7 @@ Resources:
       Dimensions:
       - Name: FunctionName
         Value: !Ref SchedulableContainersLambdaV2
+      TreatMissingData: notBreaching
   SchedulableContainersLambdaThrottlesTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -1237,6 +1269,7 @@ Resources:
       Dimensions:
       - Name: FunctionName
         Value: !Ref SchedulableContainersLambdaV2
+      TreatMissingData: notBreaching
   DrainInstanceLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -1247,8 +1280,6 @@ Resources:
           Principal:
             Service: 'lambda.amazonaws.com'
           Action: 'sts:AssumeRole'
-      ManagedPolicyArns: # TODO get rid of managed policy
-      - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
       Policies:
       - PolicyName: draininstance
         PolicyDocument:
@@ -1277,7 +1308,23 @@ Resources:
             - 'autoscaling:CompleteLifecycleAction'
             - 'autoscaling:RecordLifecycleActionHeartbeat'
             Resource: !Sub 'arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${AutoScalingGroup}'
+  DrainInstanceLambdaPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Roles:
+      - !Ref DrainInstanceLambdaRole
+      PolicyName: lambda
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action:
+          - 'logs:CreateLogStream'
+          - 'logs:PutLogEvents'
+          Resource: !GetAtt 'DrainInstanceLogGroup.Arn'
   DrainInstanceEventSourceMapping:
+    DependsOn:
+    - DrainInstanceLambdaPolicy
+    - DrainInstanceLogGroup
     Type: 'AWS::Lambda::EventSourceMapping'
     Properties:
       BatchSize: 1
@@ -1376,7 +1423,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'DrainInstanceLambdaRole.Arn'
-      Runtime: 'nodejs8.10'
+      Runtime: 'nodejs10.x'
       Timeout: 30
       Environment:
         Variables:
@@ -1406,6 +1453,7 @@ Resources:
       Dimensions:
       - Name: FunctionName
         Value: !Ref DrainInstanceLambda
+      TreatMissingData: notBreaching
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'

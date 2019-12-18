@@ -52,7 +52,6 @@ This template combines the following services:
 * PHP files are cached for 300 seconds on the web servers.
 * Static files `wp-includes` and `wp-content` are cached for 15 minutes on the CDN.
 * Pre-defined auto-scaling might not be able to cover your requirements and needs load and performance testing.
-* No backup of EFS file system
 
 # WordPress: fault tolerant and scalable (Aurora)
 Use this CloudFormation template to create a fault tolerant and scalable WordPress environment on AWS running on Aurora.
@@ -106,4 +105,3 @@ This template combines the following services:
 * PHP files are cached for 300 seconds on the web servers.
 * Static files `wp-includes` and `wp-content` are cached for 15 minutes on the CDN.
 * Pre-defined auto-scaling might not be able to cover your requirements and needs load and performance testing.
-* No backup of EFS file system

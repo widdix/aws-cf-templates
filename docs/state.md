@@ -40,7 +40,6 @@ DynamoDB table with auto scaling for read and write capacity.
 * `operations/alert.yaml` (recommended)
 
 ## Limitations
-* No backup (see `operations/backup-dynamodb-native.yaml`)
 * Encryption at rest with AWS managed CMK (customer managed is not supported)
 
 # ElastiCache memcached
@@ -152,15 +151,40 @@ Two node Aurora cluster for HA.
 ## Limitations
 * No auto scaling
 
-# RDS Aurora Serverless
+# RDS Aurora Serverless MySQL
 
-Aurora Serverless cluster.
+RDS Aurora Serverless MySQL cluster.
 
 ## Installation Guide
 1. This templates depends on one of our [`vpc-*azs.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
 1. This templates depends on the `client-sg.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/state/client-sg.yaml&stackName=client-sg&param_ParentVPCStack=vpc)
 1. This templates depends on the [`kms-key.yaml`](./security/) template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/security/kms-key.yaml&stackName=kms-key)
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/state/rds-aurora-serverless.yaml&stackName=rds-aurora-serverless&param_ParentVPCStack=vpc&param_ParentClientStack=client-sg&param_ParentKmsKeyStack=kms-key)
+1. Click **Next** to proceed with the next step of the wizard.
+1. Specify a name and all parameters for the stack.
+1. Click **Next** to proceed with the next step of the wizard.
+1. Click **Next** to skip the **Options** step of the wizard.
+1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
+1. Click **Create** to start the creation of the stack.
+1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
+## Dependencies
+* `vpc/vpc-*azs.yaml` (**required**)
+* `state/client-sg.yaml` (**required**)
+* `security/kms-key.yaml` (**required**)
+* `vpc/zone-*.yaml`
+* `vpc/vpc-*-bastion.yaml`
+* `operations/alert.yaml` (recommended)
+
+# RDS Aurora Serverless Postgres
+
+RDS Aurora Serverless Postgres cluster.
+
+## Installation Guide
+1. This templates depends on one of our [`vpc-*azs.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
+1. This templates depends on the `client-sg.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/state/client-sg.yaml&stackName=client-sg&param_ParentVPCStack=vpc)
+1. This templates depends on the [`kms-key.yaml`](./security/) template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/security/kms-key.yaml&stackName=kms-key)
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/state/rds-aurora-serverless-postgres.yaml&stackName=rds-aurora-serverless-postgres&param_ParentVPCStack=vpc&param_ParentClientStack=client-sg&param_ParentKmsKeyStack=kms-key)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
@@ -245,6 +269,7 @@ S3 bucket with different access requirements:
 | ConfigWrite              | Allow Config to store data in this bucket.                                                             |
 | CloudTrailWrite          | Allow CloudTrail to store data in this bucket.                                                         |
 | VpcEndpointRead          | Allow reads from requests coming over a specific VPC endpoint (see `ParentVpcEndpointStack` parameter) |
+| FlowLogWrite             | Allow VPC Flow Logs to store data in this bucket.                                                      |
 
 ## Installation Guide
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/state/s3.yaml&stackName=s3)

@@ -47,10 +47,13 @@ Metadata:
       - WebServerSystemsManagerAccess
       - WebServerInstanceType
       - WebServerLogsRetentionInDays
+      - ManagedPolicyArns
     - Label:
         default: 'EFS Parameters'
       Parameters:
       - EFSProvisionedThroughputInMibps
+      - EFSBackupRetentionPeriod
+      - EFSBackupScheduleExpression
     - Label:
         default: 'Database Parameters'
       Parameters:
@@ -134,10 +137,24 @@ Parameters:
     Type: Number
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  ManagedPolicyArns:
+    Description: 'Optional comma-delimited list of IAM managed policy ARNs to attach to the instance''s IAM role'
+    Type: String
+    Default: ''
   EFSProvisionedThroughputInMibps:
     Description: 'The provisioned throughput for the Elastic File System (EFS) in Mibps. Default is 0 which enables the bursting mode and disables provisioned throughput.'
     Type: Number
     Default: 0
+  EFSBackupRetentionPeriod:
+    Description: 'The number of days to keep backups of the EFS file system (set to 0 to disable).'
+    Type: Number
+    MinValue: 0
+    MaxValue: 35
+    Default: 30
+  EFSBackupScheduleExpression:
+    Description: 'A CRON expression specifying when AWS Backup initiates a backup job.'
+    Type: String
+    Default: 'cron(0 5 ? * * *)'
   DBServerInstanceType:
     Description: 'The instance type of database server (e.g. db.t2.small).'
     Type: String
@@ -166,37 +183,41 @@ Parameters:
 Mappings:
   RegionMap:
     'eu-north-1':
-      AMI: 'ami-1fb13961'
+      AMI: 'ami-006cda581cf39451b'
     'ap-south-1':
-      AMI: 'ami-00e782930f1c3dbc7'
+      AMI: 'ami-0ce933e2ae91880d3'
     'eu-west-3':
-      AMI: 'ami-0ebb3a801d5fb8b9b'
+      AMI: 'ami-0e9e6ba6d3d38faa8'
     'eu-west-2':
-      AMI: 'ami-0009a33f033d8b7b6'
+      AMI: 'ami-05f37c3995fffb4fd'
     'eu-west-1':
-      AMI: 'ami-030dbca661d402413'
+      AMI: 'ami-01f14919ba412de34'
     'ap-northeast-2':
-      AMI: 'ami-08ab3f7e72215fe91'
+      AMI: 'ami-0d59ddf55cdda6e21'
+    'me-south-1':
+      AMI: 'ami-0c55b36523aa89a7c'
     'ap-northeast-1':
-      AMI: 'ami-00d101850e971728d'
+      AMI: 'ami-068a6cefc24c301d2'
     'sa-east-1':
-      AMI: 'ami-058141e091292ecf0'
+      AMI: 'ami-07820a4443539a2b0'
     'ca-central-1':
-      AMI: 'ami-08a9b721ecc5b0a53'
+      AMI: 'ami-0ff24797826ebbcd5'
+    'ap-east-1':
+      AMI: 'ami-cd86fcbc'
     'ap-southeast-1':
-      AMI: 'ami-0b5a47f8865280111'
+      AMI: 'ami-07539a31f72d244e7'
     'ap-southeast-2':
-      AMI: 'ami-0fb7513bcdc525c3b'
+      AMI: 'ami-0119aa4d67e59007c'
     'eu-central-1':
-      AMI: 'ami-0ebe657bc328d4e82'
+      AMI: 'ami-0d4c3eabb9e72650a'
     'us-east-1':
-      AMI: 'ami-0c6b1d09930fac512'
+      AMI: 'ami-00068cd7555f543d5'
     'us-east-2':
-      AMI: 'ami-0ebbf2179e615c338'
+      AMI: 'ami-0dacb0c129b49f529'
     'us-west-1':
-      AMI: 'ami-015954d5e5548d13b'
+      AMI: 'ami-0b2d8d1abb76a53d8'
     'us-west-2':
-      AMI: 'ami-0cb72367e98845d43'
+      AMI: 'ami-0c5204531f799e0c6'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref WebServerKeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref WebServerIAMUserSSHAccess, 'true']
@@ -207,10 +228,12 @@ Conditions:
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
-  HasEFSProvisionedThroughput: !Not [!Equals [!Ref EFSProvisionedThroughputInMibps, '0']]
+  HasEFSProvisionedThroughput: !Not [!Condition HasNotEFSProvisionedThroughput]
   HasNotEFSProvisionedThroughput: !Equals [!Ref EFSProvisionedThroughputInMibps, '0']
   HasAlertTopicAndEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasEFSProvisionedThroughput]
   HasAlertTopicAndNotEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasNotEFSProvisionedThroughput]
+  HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
+  HasEFSBackupRetentionPeriod: !Not [!Equals [!Ref EFSBackupRetentionPeriod, 0]]
 Resources:
   WebServerLogs:
     Type: 'AWS::Logs::LogGroup'
@@ -303,6 +326,7 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt LoadBalancer.LoadBalancerFullName
+      TreatMissingData: notBreaching
   HTTPCodeTarget5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -320,6 +344,7 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt LoadBalancer.LoadBalancerFullName
+      TreatMissingData: notBreaching
   RejectedConnectionCountTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -337,6 +362,7 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt LoadBalancer.LoadBalancerFullName
+      TreatMissingData: notBreaching
   TargetConnectionErrorCountTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -354,6 +380,7 @@ Resources:
       Dimensions:
       - Name: LoadBalancer
         Value: !GetAtt LoadBalancer.LoadBalancerFullName
+      TreatMissingData: notBreaching
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
@@ -542,7 +569,6 @@ Resources:
   WebServerInstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
-      Path: '/'
       Roles:
       - !Ref WebServerIAMRole
   WebServerIAMRole:
@@ -553,13 +579,23 @@ Resources:
         Statement:
         - Effect: Allow
           Principal:
-            Service:
-            - 'ec2.amazonaws.com'
-          Action:
-          - 'sts:AssumeRole'
-      Path: '/'
-      ManagedPolicyArns: !If [HasSystemsManagerAccess, ['arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM'], []] # TODO get rid of managed policy
+            Service: 'ec2.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      ManagedPolicyArns: !If [HasManagedPolicyArns, !Split [',', !Ref ManagedPolicyArns], !Ref 'AWS::NoValue']
       Policies:
+      - !If
+        - HasSystemsManagerAccess
+        - PolicyName: ssm
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - 'ssmmessages:*' # SSM Agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ssm:UpdateInstanceInformation' # SSM agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ec2messages:*' # SSM Session Manager by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              Resource: '*'
+        - !Ref 'AWS::NoValue'
       - PolicyName: logs
         PolicyDocument:
           Version: '2012-10-17'
@@ -598,7 +634,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, extras, config], [awslogs, extras, config]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, extras, config], [awslogs, mount, extras, config]]
         awslogs:
           packages:
             yum:
@@ -809,6 +845,14 @@ Resources:
                 commands:
                 - 'a_configure_sshd_command'
                 - 'b_configure_sshd_commanduser'
+        mount:
+          packages:
+            yum:
+              'amazon-efs-utils': []
+          commands:
+            'a_mount':
+              command: !Sub 'mkdir /var/www && echo "${EFSFileSystem}:/ /var/www efs tls,_netdev 0 0" >> /etc/fstab && mount -a -t efs'
+              test: '[ ! -d /var/www ]'
         extras:
           commands:
             'a_enable_php':
@@ -866,7 +910,7 @@ Resources:
                     cd /var/www/html
                     wget -q -T 60 https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
                     if ! php wp-cli.phar core is-installed --allow-root; then
-                      php wp-cli.phar core download --allow-root --version=5.2.1
+                      php wp-cli.phar core download --allow-root --version=5.3.1
                       php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='${DBMasterUserPassword}' --dbhost='${DBHost}' --allow-root
                       php wp-cli.phar core install --url='https://${DomainName}' --title='${BlogTitle}' --admin_user='${BlogAdminUsername}' --admin_password='${BlogAdminPassword}' --admin_email='${BlogAdminEMail}' --skip-email --allow-root
                       sed -i "/$table_prefix = 'wp_';/a\$_SERVER['HTTPS'] = 'on';" /var/www/html/wp-config.php
@@ -915,10 +959,6 @@ Resources:
         'Fn::Base64': !Sub |
           #!/bin/bash -ex
           trap '/opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}' ERR
-          while ! (echo > /dev/tcp/${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com/2049) >/dev/null 2>&1; do sleep 10; done
-          sleep 10
-          mkdir /var/www
-          mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 "${EFSFileSystem}.efs.${AWS::Region}.amazonaws.com:/" /var/www/
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
           /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
@@ -1041,14 +1081,31 @@ Resources:
     Condition: HasAlertTopicAndNotEFSProvisionedThroughput
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'EFS file system is running out of burst credits. You can expect a significant performance drop in the next hour.'
+      AlarmDescription: 'Average burst credit balance over last 10 minutes too low, expect a significant performance drop soon.'
       Namespace: 'AWS/EFS'
       MetricName: BurstCreditBalance
       Statistic: Average
       Period: 600
       EvaluationPeriods: 1
       ComparisonOperator: LessThanThreshold
-      Threshold: 192416666667 # 192 GB in Bytes (last hour where you can burst at 100 MB/sec)
+      Threshold: 192000000000 # 192 GB in Bytes (last hour where you can burst at 100 MB/sec)
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: FileSystemId
+        Value: !Ref EFSFileSystem
+  EFSFileSystemPercentIOLimitTooHighAlarm:
+    Condition: HasAlertTopicAndNotEFSProvisionedThroughput
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'I/O limit has been reached, consider using Max I/O performance mode.'
+      Namespace: 'AWS/EFS'
+      MetricName: PercentIOLimit
+      Statistic: Maximum
+      Period: 600
+      EvaluationPeriods: 3
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 95
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
@@ -1058,7 +1115,7 @@ Resources:
     Condition: HasAlertTopicAndEFSProvisionedThroughput
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Reached 90% of the provisioned throughput within a period of 10 minutes.'
+      AlarmDescription: 'Reached 90% of the provisioned throughput over last 10 minutes.'
       Namespace: 'AWS/EFS'
       MetricName: TotalIOBytes
       Statistic: Sum
@@ -1103,6 +1160,7 @@ Resources:
         ToPort: 2049
         SourceSecurityGroupId: !Ref WebServerSecurityGroup
   LambdaRole:
+    Condition: HasEFSProvisionedThroughput
     Type: 'AWS::IAM::Role'
     Properties:
       AssumeRolePolicyDocument:
@@ -1111,18 +1169,29 @@ Resources:
         - Effect: Allow
           Principal:
             Service: 'lambda.amazonaws.com'
+          Action: 'sts:AssumeRole'
+  LambdaPolicy:
+    Condition: HasEFSProvisionedThroughput
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Roles:
+      - !Ref LambdaRole
+      PolicyName: lambda
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
           Action:
-          - 'sts:AssumeRole'
-      Path: '/'
-      ManagedPolicyArns:
-      - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+          - 'logs:CreateLogStream'
+          - 'logs:PutLogEvents'
+          Resource: !GetAtt 'LambdaLogGroup.Arn'
   LambdaFunction: # needs no monitoring because it is used as a custom resource
+    Condition: HasEFSProvisionedThroughput
     Type: 'AWS::Lambda::Function'
     Properties:
       Code:
         ZipFile: |
           'use strict';
-          const response = require('cfn-response');
+          const response = require('./cfn-response');
           exports.handler = (event, context, cb) => {
             const throughput = parseInt(event.ResourceProperties.ThroughputInMibps, 10);
             const threshold = Math.round(throughput * 1048576 * 600 * 0.9);
@@ -1131,16 +1200,20 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'LambdaRole.Arn'
-      Runtime: 'nodejs8.10'
+      Runtime: 'nodejs10.x'
       Timeout: 60
   LambdaLogGroup:
+    Condition: HasEFSProvisionedThroughput
     Type: 'AWS::Logs::LogGroup'
     Properties:
       LogGroupName: !Sub '/aws/lambda/${LambdaFunction}'
       RetentionInDays: !Ref WebServerLogsRetentionInDays
   MaxThroughputCalculator:
+    Condition: HasEFSProvisionedThroughput
     Type: 'Custom::MaxThroughputCalculator'
-    DependsOn: LambdaLogGroup
+    DependsOn:
+    - LambdaLogGroup
+    - LambdaPolicy
     Version: '1.0'
     Properties:
       ThroughputInMibps: !Ref EFSProvisionedThroughputInMibps
@@ -1243,6 +1316,57 @@ Resources:
           AcmCertificateArn: !Ref CloudFrontAcmCertificate
           SslSupportMethod: 'sni-only'
           MinimumProtocolVersion: TLSv1
+  BackupVault: # cannot be deleted with data
+    Condition: HasEFSBackupRetentionPeriod
+    Type: 'AWS::Backup::BackupVault'
+    Properties:
+      BackupVaultName: !Ref 'AWS::StackName'
+      Notifications: !If [HasAlertTopic, {BackupVaultEvents: [BACKUP_JOB_STARTED, BACKUP_JOB_COMPLETED, RESTORE_JOB_STARTED, RESTORE_JOB_COMPLETED, RECOVERY_POINT_MODIFIED], SNSTopicArn: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}}, !Ref 'AWS::NoValue']
+  BackupPlan:
+    Condition: HasEFSBackupRetentionPeriod
+    Type: 'AWS::Backup::BackupPlan'
+    Properties:
+      BackupPlan:
+        BackupPlanName: !Ref 'AWS::StackName'
+        BackupPlanRule:
+        - CompletionWindowMinutes: 1440
+          Lifecycle:
+            DeleteAfterDays: !Ref EFSBackupRetentionPeriod
+          RuleName: !Ref 'AWS::StackName'
+          ScheduleExpression: !Ref EFSBackupScheduleExpression
+          StartWindowMinutes: 60
+          TargetBackupVault: !Ref BackupVault
+  BackupRole:
+    Condition: HasEFSBackupRetentionPeriod
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'backup.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      Policies:
+      - PolicyName: backup
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'elasticfilesystem:Backup'
+            - 'elasticfilesystem:DescribeTags'
+            Resource: !Sub 'arn:${AWS::Partition}:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:file-system/${EFSFileSystem}'
+  BackupSelection:
+    Condition: HasEFSBackupRetentionPeriod
+    Type: 'AWS::Backup::BackupSelection'
+    Properties:
+      BackupPlanId: !Ref BackupPlan
+      BackupSelection:
+        IamRoleArn: !GetAtt 'BackupRole.Arn'
+        Resources:
+        - !Sub 'arn:${AWS::Partition}:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:file-system/${EFSFileSystem}'
+        SelectionName: !Ref 'AWS::StackName'
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'

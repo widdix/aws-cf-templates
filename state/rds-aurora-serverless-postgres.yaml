@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'State: RDS Aurora Serverless MySQL, a cloudonaut.io template, sponsored by https://github.com/ngault'
+Description: 'State: RDS Aurora Serverless PostgreSQL, a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -125,14 +125,14 @@ Parameters:
     MaxValue: 86400
     Default: 300
   EngineVersion:
-    Description: 'Aurora Serverless MySQL version.'
+    Description: 'Aurora Serverless PostgreSQL version.'
     Type: String
-    Default: '5.6.10a'
-    AllowedValues: ['5.6.10a'] # aws rds describe-db-engine-versions --engine aurora --query 'DBEngineVersions[?contains(SupportedEngineModes,`serverless`)]'
+    Default: '10.7'
+    AllowedValues: ['10.7'] # aws rds describe-db-engine-versions --engine aurora-postgresql --query 'DBEngineVersions[?contains(SupportedEngineModes,`serverless`)]'
 Mappings:
   EngineVersionMap:
-    '5.6.10a':
-      ClusterParameterGroupFamily: 'aurora5.6'
+    '10.7':
+      ClusterParameterGroupFamily: 'aurora-postgresql10'
 Conditions:
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
@@ -159,8 +159,8 @@ Resources:
       GroupDescription: !Ref 'AWS::StackName'
       SecurityGroupIngress:
       - IpProtocol: tcp
-        FromPort: 3306
-        ToPort: 3306
+        FromPort: 5432
+        ToPort: 5432
         SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
   ClusterSecurityGroupInSSHBastion:
@@ -169,8 +169,8 @@ Resources:
     Properties:
       GroupId: !Ref ClusterSecurityGroup
       IpProtocol: tcp
-      FromPort: 3306
-      ToPort: 3306
+      FromPort: 5432
+      ToPort: 5432
       SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
   DBSubnetGroup:
     Type: 'AWS::RDS::DBSubnetGroup'
@@ -183,14 +183,7 @@ Resources:
       Description: !Ref 'AWS::StackName'
       Family: !FindInMap [EngineVersionMap, !Ref EngineVersion, ClusterParameterGroupFamily]
       Parameters:
-        character_set_client: utf8
-        character_set_connection: utf8
-        character_set_database: utf8
-        character_set_filesystem: utf8
-        character_set_results: utf8
-        character_set_server: utf8
-        collation_connection: utf8_general_ci
-        collation_server: utf8_general_ci
+        client_encoding: 'UTF8'
   DBCluster:
     DeletionPolicy: Snapshot # default
     UpdateReplacePolicy: Snapshot
@@ -200,7 +193,7 @@ Resources:
       DatabaseName: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBName]
       DBClusterParameterGroupName: !Ref DBClusterParameterGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
-      Engine: aurora
+      Engine: aurora-postgresql
       EngineMode: serverless
       EngineVersion: !Ref EngineVersion
       KmsKeyId: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}]
@@ -231,7 +224,7 @@ Resources:
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
-    Value: 'state/rds-aurora-serverless'
+    Value: 'state/rds-aurora-serverless-postgres'
   TemplateVersion:
     Description: 'cloudonaut.io template version.'
     Value: '__VERSION__'

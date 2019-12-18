@@ -29,6 +29,16 @@ Metadata:
       - PartitionKeyType
       - SortKeyName
       - SortKeyType
+      - BillingAndScalingMode
+      - Encryption
+      - TimeToLiveAttributeName
+      - StreamViewType
+      - BackupRetentionPeriod
+      - BackupScheduleExpression
+      - PointInTimeRecoveryEnabled
+    - Label:
+        default: 'DynamoDB PROVISIONED Mode Parameters'
+      Parameters:
       - MaxWriteCapacityUnits
       - MinWriteCapacityUnits
       - WriteCapacityUnitsUtilizationTarget
@@ -60,6 +70,49 @@ Parameters:
     Description: 'Type of the sort key (if SortKeyName is set).'
     Type: String
     Default: N
+    AllowedValues: [S, N, B]
+  Index1PartitionKeyName:
+    Description: 'Optional name of the partition key for index 1, must match with one of the following: PartitionKeyName, SortKeyName, or Attribute*Name.'
+    Type: String
+    Default: ''
+  Index1SortKeyName:
+    Description: 'Optional name of the sort key for index 1, must match with one of the following: PartitionKeyName, SortKeyName, or Attribute*Name.'
+    Type: String
+    Default: ''
+  Index2PartitionKeyName:
+    Description: 'Optional name of the partition key for index 2, must match with one of the following: PartitionKeyName, SortKeyName, or Attribute*Name.'
+    Type: String
+    Default: ''
+  Index2SortKeyName:
+    Description: 'Optional name of the sort key for index 2, must match with one of the following: PartitionKeyName, SortKeyName, or Attribute*Name.'
+    Type: String
+    Default: ''
+  Attribute1Name:
+    Description: 'Name of the attribute 1, not allowed to overlap with PartitionKeyName and SortKeyName.'
+    Type: String
+    Default: ''
+  Attribute1Type:
+    Description: 'Type of the attribute 1.'
+    Type: String
+    Default: S
+    AllowedValues: [S, N, B]
+  Attribute2Name:
+    Description: 'Name of the attribute 2, not allowed to overlap with PartitionKeyName and SortKeyName.'
+    Type: String
+    Default: ''
+  Attribute2Type:
+    Description: 'Type of the attribute 2.'
+    Type: String
+    Default: S
+    AllowedValues: [S, N, B]
+  Attribute3Name:
+    Description: 'Name of the attribute 3, not allowed to overlap with PartitionKeyName and SortKeyName.'
+    Type: String
+    Default: ''
+  Attribute3Type:
+    Description: 'Type of the attribute 3.'
+    Type: String
+    Default: S
     AllowedValues: [S, N, B]
   BillingAndScalingMode:
     Description: 'Specify how you are charged for read and write throughput and how you manage capacity.'
@@ -95,37 +148,127 @@ Parameters:
     Type: String
     Default: false
     AllowedValues: [aws, false]
+  TimeToLiveAttributeName:
+    Description: 'Optional name of the Time to Live attribute used to store the expiration time (unix timestamp in seconds)'
+    Type: String
+    Default: ''
+  StreamViewType:
+    Description: 'Determines the information that the stream captures when an item in the table is modified.'
+    Type: String
+    Default: DISABLED
+    AllowedValues: [DISABLED, KEYS_ONLY, NEW_IMAGE, OLD_IMAGE, NEW_AND_OLD_IMAGES]
+  BackupRetentionPeriod:
+    Description: 'The number of days to keep backups of the table (set to 0 to disable).'
+    Type: Number
+    MinValue: 0
+    MaxValue: 35
+    Default: 30
+  BackupScheduleExpression:
+    Description: 'A CRON expression specifying when AWS Backup initiates a backup job.'
+    Type: String
+    Default: 'cron(0 5 ? * * *)'
+  PointInTimeRecoveryEnabled:
+    Description: 'Indicates whether point in time recovery is enabled (true) or disabled (false) on the table.'
+    Type: String
+    Default: true
+    AllowedValues: [true, false]
 Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasSortKey: !Not [!Equals [!Ref SortKeyName, '']]
+  HasIndex1: !Not [!Equals [!Ref Index1PartitionKeyName, '']]
+  HasIndex1SortKey: !Not [!Equals [!Ref Index1SortKeyName, '']]
+  HasIndex2: !Not [!Equals [!Ref Index2PartitionKeyName, '']]
+  HasIndex2SortKey: !Not [!Equals [!Ref Index2SortKeyName, '']]
+  HasAttribute1Definition: !Not [!Equals [!Ref Attribute1Name, '']]
+  HasAttribute2Definition: !Not [!Equals [!Ref Attribute2Name, '']]
+  HasAttribute3Definition: !Not [!Equals [!Ref Attribute3Name, '']]
   HasTableName: !Not [!Equals [!Ref TableName, '']]
   HasAwsManagedEncryption: !Equals [!Ref Encryption, aws]
   HasBillingAndScalingModeProvisioned: !Equals [!Ref BillingAndScalingMode, PROVISIONED]
+  HasTimeToLiveAttributeName: !Not [!Equals [!Ref TimeToLiveAttributeName, '']]
+  HasStream: !Not [!Equals [!Ref StreamViewType, 'DISABLED']]
+  HasBackupRetentionPeriod: !Not [!Equals [!Ref BackupRetentionPeriod, 0]]
 Resources:
   Table:
     Type: 'AWS::DynamoDB::Table'
     Properties:
       TableName: !If [HasTableName, !Ref TableName, !Ref 'AWS::NoValue']
-      AttributeDefinitions: !If
-      - HasSortKey
-      - - AttributeName: !Ref PartitionKeyName
-          AttributeType: !Ref PartitionKeyType
+      AttributeDefinitions:
+      - AttributeName: !Ref PartitionKeyName
+        AttributeType: !Ref PartitionKeyType
+      - !If
+        - HasSortKey
         - AttributeName: !Ref SortKeyName
           AttributeType: !Ref SortKeyType
-      - - AttributeName: !Ref PartitionKeyName
-          AttributeType: !Ref PartitionKeyType
+        - !Ref 'AWS::NoValue'
+      - !If
+        - HasAttribute1Definition
+        - AttributeName: !Ref Attribute1Name
+          AttributeType: !Ref Attribute1Type
+        - !Ref 'AWS::NoValue'
+      - !If
+        - HasAttribute2Definition
+        - AttributeName: !Ref Attribute2Name
+          AttributeType: !Ref Attribute2Type
+        - !Ref 'AWS::NoValue'
+      - !If
+        - HasAttribute3Definition
+        - AttributeName: !Ref Attribute3Name
+          AttributeType: !Ref Attribute3Type
+        - !Ref 'AWS::NoValue'
+      GlobalSecondaryIndexes:
+      - !If
+        - HasIndex1
+        - IndexName: !If
+          - HasIndex1SortKey
+          - !Sub 'Index-${Index1PartitionKeyName}-${Index1SortKeyName}'
+          - !Sub 'Index-${Index1PartitionKeyName}'
+          KeySchema:
+          - AttributeName: !Ref Index1PartitionKeyName
+            KeyType: HASH
+          - !If
+            - HasIndex1SortKey
+            - AttributeName: !Ref Index1SortKeyName
+              KeyType: RANGE
+            - !Ref 'AWS::NoValue'
+          Projection:
+            ProjectionType: 'ALL'
+          ProvisionedThroughput: !If [HasBillingAndScalingModeProvisioned, {ReadCapacityUnits: !Ref MinReadCapacityUnits, WriteCapacityUnits: !Ref MinWriteCapacityUnits}, !Ref 'AWS::NoValue']
+        - !Ref 'AWS::NoValue'
+      - !If
+        - HasIndex2
+        - IndexName: !If
+          - HasIndex2SortKey
+          - !Sub 'Index-${Index2PartitionKeyName}-${Index2SortKeyName}'
+          - !Sub 'Index-${Index2PartitionKeyName}'
+          KeySchema:
+          - AttributeName: !Ref Index2PartitionKeyName
+            KeyType: HASH
+          - !If
+            - HasIndex2SortKey
+            - AttributeName: !Ref Index2SortKeyName
+              KeyType: RANGE
+            - !Ref 'AWS::NoValue'
+          Projection:
+            ProjectionType: 'ALL'
+          ProvisionedThroughput: !If [HasBillingAndScalingModeProvisioned, {ReadCapacityUnits: !Ref MinReadCapacityUnits, WriteCapacityUnits: !Ref MinWriteCapacityUnits}, !Ref 'AWS::NoValue']
+        - !Ref 'AWS::NoValue'
       BillingMode: !If [HasBillingAndScalingModeProvisioned, PROVISIONED, PAY_PER_REQUEST]
-      KeySchema: !If
-      - HasSortKey
-      - - AttributeName: !Ref PartitionKeyName
-          KeyType: HASH
+      KeySchema:
+      - AttributeName: !Ref PartitionKeyName
+        KeyType: HASH
+      - !If
+        - HasSortKey
         - AttributeName: !Ref SortKeyName
           KeyType: RANGE
-      - - AttributeName: !Ref PartitionKeyName
-          KeyType: HASH
+        - !Ref 'AWS::NoValue'
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: !Ref PointInTimeRecoveryEnabled
       ProvisionedThroughput: !If [HasBillingAndScalingModeProvisioned, {ReadCapacityUnits: !Ref MinReadCapacityUnits, WriteCapacityUnits: !Ref MinWriteCapacityUnits}, !Ref 'AWS::NoValue']
       SSESpecification:
         SSEEnabled: !If [HasAwsManagedEncryption, true, false]
+      TimeToLiveSpecification: !If [HasTimeToLiveAttributeName, {AttributeName: !Ref TimeToLiveAttributeName, Enabled: true}, !Ref 'AWS::NoValue']
+      StreamSpecification: !If [HasStream, {StreamViewType: !Ref StreamViewType}, !Ref 'AWS::NoValue']
   RoleScaling:
     Condition: HasBillingAndScalingModeProvisioned
     Type: 'AWS::IAM::Role'
@@ -135,8 +278,7 @@ Resources:
         Statement:
         - Effect: Allow
           Principal:
-            Service:
-              'application-autoscaling.amazonaws.com'
+            Service: 'application-autoscaling.amazonaws.com'
           Action: 'sts:AssumeRole'
       Policies:
       - PolicyName: scaling
@@ -218,6 +360,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       OKActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      TreatMissingData: notBreaching
   WriteThrottleEventsAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -237,6 +380,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       OKActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      TreatMissingData: notBreaching
   ThrottledRequestsEventsAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -256,6 +400,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       OKActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      TreatMissingData: notBreaching
   UserErrorsAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -275,6 +420,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       OKActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      TreatMissingData: notBreaching
   SystemErrorsAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -294,6 +440,63 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       OKActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      TreatMissingData: notBreaching
+  BackupVault: # cannot be deleted with data
+    Condition: HasBackupRetentionPeriod
+    Type: 'AWS::Backup::BackupVault'
+    Properties:
+      BackupVaultName: !Ref 'AWS::StackName'
+      Notifications: !If [HasAlertTopic, {BackupVaultEvents: [BACKUP_JOB_STARTED, BACKUP_JOB_COMPLETED, RESTORE_JOB_STARTED, RESTORE_JOB_COMPLETED, RECOVERY_POINT_MODIFIED], SNSTopicArn: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}}, !Ref 'AWS::NoValue']
+  BackupPlan:
+    Condition: HasBackupRetentionPeriod
+    Type: 'AWS::Backup::BackupPlan'
+    Properties:
+      BackupPlan:
+        BackupPlanName: !Ref 'AWS::StackName'
+        BackupPlanRule:
+        - CompletionWindowMinutes: 1440
+          Lifecycle:
+            DeleteAfterDays: !Ref BackupRetentionPeriod
+          RuleName: !Ref 'AWS::StackName'
+          ScheduleExpression: !Ref BackupScheduleExpression
+          StartWindowMinutes: 60
+          TargetBackupVault: !Ref BackupVault
+  BackupRole:
+    Condition: HasBackupRetentionPeriod
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'backup.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      Policies:
+      - PolicyName: backup
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'dynamodb:DescribeTable'
+            - 'dynamodb:CreateBackup'
+            Resource: !GetAtt 'Table.Arn'
+          - Effect: Allow
+            Action:
+            - 'dynamodb:DescribeBackup'
+            - 'dynamodb:DeleteBackup'
+            Resource: !Sub '${Table.Arn}/backup/*'
+  BackupSelection:
+    Condition: HasBackupRetentionPeriod
+    Type: 'AWS::Backup::BackupSelection'
+    Properties:
+      BackupPlanId: !Ref BackupPlan
+      BackupSelection:
+        IamRoleArn: !GetAtt 'BackupRole.Arn'
+        Resources:
+        - !GetAtt 'Table.Arn'
+        SelectionName: !Ref 'AWS::StackName'
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
@@ -307,3 +510,10 @@ Outputs:
   TableName:
     Description: 'Name of the table'
     Value: !Ref Table
+    Export:
+      Name: !Sub '${AWS::StackName}-TableName'
+  StreamArn:
+    Condition: HasStream
+    Value: !GetAtt 'Table.StreamArn'
+    Export:
+      Name: !Sub '${AWS::StackName}-StreamArn'

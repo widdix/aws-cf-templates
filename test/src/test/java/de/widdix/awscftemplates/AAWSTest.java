@@ -103,23 +103,25 @@ public abstract class AAWSTest extends ATest {
         }
     }
 
-    private void emptyBucket(final String name) {
-        ObjectListing objectListing = s3.listObjects(name);
-        while (true) {
-            objectListing.getObjectSummaries().forEach((summary) -> s3.deleteObject(name, summary.getKey()));
-            if (objectListing.isTruncated()) {
-                objectListing = s3.listNextBatchOfObjects(objectListing);
-            } else {
-                break;
+    protected final void emptyBucket(final String name) {
+        if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
+            ObjectListing objectListing = s3.listObjects(name);
+            while (true) {
+                objectListing.getObjectSummaries().forEach((summary) -> s3.deleteObject(name, summary.getKey()));
+                if (objectListing.isTruncated()) {
+                    objectListing = s3.listNextBatchOfObjects(objectListing);
+                } else {
+                    break;
+                }
             }
-        }
-        VersionListing versionListing = s3.listVersions(new ListVersionsRequest().withBucketName(name));
-        while (true) {
-            versionListing.getVersionSummaries().forEach((vs) -> s3.deleteVersion(name, vs.getKey(), vs.getVersionId()));
-            if (versionListing.isTruncated()) {
-                versionListing = s3.listNextBatchOfVersions(versionListing);
-            } else {
-                break;
+            VersionListing versionListing = s3.listVersions(new ListVersionsRequest().withBucketName(name));
+            while (true) {
+                versionListing.getVersionSummaries().forEach((vs) -> s3.deleteVersion(name, vs.getKey(), vs.getVersionId()));
+                if (versionListing.isTruncated()) {
+                    versionListing = s3.listNextBatchOfVersions(versionListing);
+                } else {
+                    break;
+                }
             }
         }
     }
