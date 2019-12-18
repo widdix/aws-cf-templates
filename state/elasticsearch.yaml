@@ -169,15 +169,15 @@ Resources:
         DedicatedMasterEnabled: !If [HasDedicatedMasterNodes, true, false]
         DedicatedMasterType: !If [HasDedicatedMasterNodes, !Ref DedicatedMasterType, !Ref 'AWS::NoValue']
         InstanceCount: !If
-          - HasCustomClusterInstanceCount
-          - !Ref OverwriteClusterInstanceCount
-          - !Select [ '0', { 'Fn::Split': [ '-', !Ref AvailabilityZones ]}]
+        - HasCustomClusterInstanceCount
+        - !Ref OverwriteClusterInstanceCount
+        - !Select ['0', {'Fn::Split': ['-', !Ref AvailabilityZones]}]
         InstanceType: !Ref ClusterInstanceType
         ZoneAwarenessEnabled: !If [HasZoneAwareness, true, false]
         ZoneAwarenessConfig: !If
-          - HasZoneAwareness
-          - AvailabilityZoneCount: !Select [ '0', { 'Fn::Split': [ '-', !Ref AvailabilityZones ]}]
-          - !Ref 'AWS::NoValue'
+        - HasZoneAwareness
+        - AvailabilityZoneCount: !Select ['0', {'Fn::Split': ['-', !Ref AvailabilityZones]}]
+        - !Ref 'AWS::NoValue'
       ElasticsearchVersion: !Ref ElasticsearchVersion
       EncryptionAtRestOptions: !If [HasKmsKey, {Enabled: true, KmsKeyId: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}}, !Ref 'AWS::NoValue']
       SnapshotOptions:
