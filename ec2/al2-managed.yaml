@@ -338,9 +338,6 @@ Resources:
             Resource:
             - !Sub 'arn:${AWS::Partition}:s3:::aws-ssm-${AWS::Region}/*'
             - !Sub 'arn:${AWS::Partition}:s3:::patch-baseline-snapshot-${AWS::Region}/*'
-          - Effect: Allow
-            Action: 'ssm:GetDocument'
-            Resource: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}::document/AWS-GatherSoftwareInventory'
   IAMPolicySSM:
     Type: 'AWS::IAM::Policy'
     Properties:
@@ -701,14 +698,6 @@ Resources:
             Operation: [Install]
       TaskType: 'RUN_COMMAND'
       WindowId: !Ref MaintenanceWindow
-  AssociationGatherSoftwareInventory:
-    Type: 'AWS::SSM::Association'
-    Properties:
-      Name: 'AWS-GatherSoftwareInventory'
-      ScheduleExpression: 'rate(1 hour)'
-      Targets:
-      - Key: InstanceIds
-        Values: [!Ref VirtualMachine]
   AssociationRunPatchBaselineScan:
     Type: 'AWS::SSM::Association'
     Properties:
