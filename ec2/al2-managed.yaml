@@ -359,7 +359,6 @@ Resources:
           Action: 'ssm:UpdateInstanceAssociationStatus'
           Resource:
           - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${VirtualMachine}'
-          - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:association/${AssociationGatherSoftwareInventory}'
           - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:association/${AssociationRunPatchBaselineScan}'
   IAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
