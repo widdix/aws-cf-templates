@@ -491,7 +491,7 @@ Resources:
       Actions:
       - Type: forward
         TargetGroupArn: !Ref TargetGroup
-      Conditions: !If
+      Condition: !If
       - HasLoadBalancerPathPattern
       - !If
         - HasLoadBalancerHostPattern
