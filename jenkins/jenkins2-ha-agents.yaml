@@ -50,6 +50,7 @@ Metadata:
       - MasterLogsRetentionInDays
       - MasterVolumeSize
       - MasterLoadBalancerIdleTimeout
+      - MasterEnableMetrics
     - Label:
         default: 'Agent Parameters'
       Parameters:
@@ -60,6 +61,15 @@ Metadata:
       - AgentMinSize
       - AgentMaxBuildWaitTimeInSeconds
       - AgentLogsRetentionInDays
+      - AgentEnableMetrics
+    - Label:
+        default: 'Security'
+      Parameters:
+      - CIDRWhiteList
+    - Label:
+        default: 'Jenkins'
+      Parameters:
+      - JenkinsPackage
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -117,7 +127,7 @@ Parameters:
     - 'internet-facing'
     - internal
   MasterInstanceType:
-    Description: 'The instance type of the Jenkins master.'
+    Description: 'The instance type of the Jenkins master. t2.micro works but t3.medium is better.'
     Type: String
     Default: 't2.micro'
   MasterAdminPassword:
@@ -144,6 +154,11 @@ Parameters:
     Default: 60
     MinValue: 1
     MaxValue: 4000
+  MasterEnableMetrics:
+    Description: 'Should the master have Group Metrics collection enabled?'
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
   AgentSubnetsReach:
     Description: 'Should the agents have direct access to the Internet or do you prefer private subnets with NAT?'
     Type: String
@@ -152,7 +167,7 @@ Parameters:
     - Public
     - Private
   AgentInstanceType:
-    Description: 'The instance type of the Jenkins agents.'
+    Description: 'The instance type of the Jenkins agents. t2.micro works but t3.medium or c5.large work better.'
     Type: String
     Default: 't2.micro'
   AgentVolumeSize:
@@ -186,6 +201,11 @@ Parameters:
     Type: Number
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  AgentEnableMetrics:
+    Description: 'Should the slave have Group Metrics collection enabled?'
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
   SubDomainNameWithDot:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
@@ -208,6 +228,14 @@ Parameters:
     Description: 'A CRON expression specifying when AWS Backup initiates a backup job.'
     Type: String
     Default: 'cron(0 5 ? * * *)'
+  CIDRWhiteList:
+    Description: 'A whitelist of CIDR ranges which will be allowed to access Jenkins.'
+    # AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Type: String
+  JenkinsPackage:
+    Description: 'The name of the package to install from this list: https://pkg.jenkins.io/redhat-stable/'
+    Type: String
+    Default: 'jenkins-2.204.1-1.1.noarch.rpm'
 Mappings:
   RegionMap:
     'eu-north-1':
@@ -265,6 +293,8 @@ Conditions:
   HasAlertTopicAndEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasEFSProvisionedThroughput]
   HasAlertTopicAndNotEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasNotEFSProvisionedThroughput]
   HasEFSBackupRetentionPeriod: !Not [!Equals [!Ref EFSBackupRetentionPeriod, 0]]
+  HasMasterMetrics: !Equals [!Ref MasterEnableMetrics, "true"]
+  HasAgentMetrics: !Equals [!Ref AgentEnableMetrics, "true"]
 Resources:
   MasterStorageSG:
     Type: 'AWS::EC2::SecurityGroup'
@@ -363,7 +393,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 80
       ToPort: 80
-      CidrIp: '0.0.0.0/0'
+      CidrIp: !Ref CIDRWhiteList
   MasterELBSGInAuthProxy:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasAuthProxySecurityGroup
@@ -885,7 +915,7 @@ Resources:
         install:
           packages:
             rpm:
-              jenkins: 'https://pkg.jenkins.io/redhat-stable/jenkins-2.204.1-1.1.noarch.rpm'
+              jenkins: !Join [ "/", ['https://pkg.jenkins.io/redhat-stable', !Ref JenkinsPackage ] ]
             yum:
               'java-1.8.0-amazon-corretto': []
               'ruby': []
@@ -1307,6 +1337,11 @@ Resources:
       - Key: Name
         Value: 'jenkins-master'
         PropagateAtLaunch: true
+      MetricsCollection: 
+        - Fn::If:
+          - HasMasterMetrics
+          - Granularity: 1Minute
+          - !Ref 'AWS::NoValue'
     CreationPolicy:
       ResourceSignal:
         Timeout: PT15M
@@ -2016,6 +2051,11 @@ Resources:
       - Key: Name
         Value: 'jenkins-agent'
         PropagateAtLaunch: true
+      MetricsCollection: 
+        - Fn::If:
+          - HasAgentMetrics
+          - Granularity: 1Minute
+          - !Ref 'AWS::NoValue'
     CreationPolicy:
       ResourceSignal:
         Timeout: PT10M
