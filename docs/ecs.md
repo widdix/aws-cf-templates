@@ -37,6 +37,11 @@ This template describes a fault tolerant and scalable ECS cluster on AWS. The cl
 # ECS service
 This template describes a fault tolerant and scalable ECS service on AWS. The service scales based on CPU utilization.
 
+> :books: Check out our new book [Rapid Docker on AWS](https://cloudonaut.io/rapid-docker-on-aws/?utm_source=aws-cf-templates&utm_medium=doc&utm_campaign=ecs)
+> * Written for DevOps engineers and web developers who want to run dockerized web applications on AWS.
+> * Prior knowledge of Docker and AWS is not required.
+> * Continuous Deployment of your Web Application and Infrastructure as Code.
+
 > The image needs to expose port 80 or the `AWS::ECS::TaskDefinition` needs to be adjusted!
 
 We provide two service templates:

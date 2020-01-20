@@ -34,6 +34,11 @@ This template describes a fault tolerant and scalable Fargate cluster on AWS.
 # Fargate service
 This template describes a fault tolerant and scalable Fargate service on AWS. The service scales based on CPU utilization.
 
+> :books: Check out our new book [Rapid Docker on AWS](https://cloudonaut.io/rapid-docker-on-aws/?utm_source=aws-cf-templates&utm_medium=doc&utm_campaign=fargate)
+> * Written for DevOps engineers and web developers who want to run dockerized web applications on AWS.
+> * Prior knowledge of Docker and AWS is not required.
+> * Continuous Deployment of your Web Application and Infrastructure as Code.
+
 We provide three service templates:
 * `service-cluster-alb.yaml` uses the cluster's load balancer and path and/or host based routing.
 * `service-dedicated-alb.yaml` includes a dedicated load balancer (ALB).
