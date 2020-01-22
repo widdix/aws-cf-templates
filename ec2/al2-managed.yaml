@@ -151,7 +151,7 @@ Parameters:
   MaintenanceWindowSchedule:
     Description: 'SSM cron expressions to trigger the maintenace window for patch installation.'
     Type: String
-    Default: 'cron(0 5 * * ? *)' # FIXME only on Sundays
+    Default: 'cron(0 5 ? * SUN *)'
   MaintenanceWindowScheduleTimezone:
     Description: 'Timezone for maintenance window schedule (in IANA format).'
     Type: String
@@ -165,7 +165,7 @@ Parameters:
   BackupScheduleExpression:
     Description: 'A CRON expression specifying when AWS Backup initiates a backup job.'
     Type: String
-    Default: 'cron(0 5 ? * * *)'
+    Default: 'cron(0 4 ? * * *)'
 Mappings:
   RegionMap:
     'eu-north-1':
@@ -704,8 +704,6 @@ Resources:
       TaskArn: 'AWS-RunPatchBaseline'
       TaskInvocationParameters:
         MaintenanceWindowRunCommandParameters:
-          DocumentHash: 945ae15356b0f6ba7bce2a738101b8822cedef3bf5c027abc3bb9023aaec8b1b
-          DocumentHashType: Sha256
           Parameters:
             Operation: [Install]
       TaskType: 'RUN_COMMAND'
