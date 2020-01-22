@@ -46,6 +46,8 @@ Metadata:
       - RootVolumeSize
       - MaintenanceWindowSchedule
       - MaintenanceWindowScheduleTimezone
+      - BackupRetentionPeriod
+      - BackupScheduleExpression
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -92,7 +94,7 @@ Parameters:
   InstanceType:
     Description: 'The instance type for the EC2 instance.'
     Type: String
-    Default: 't2.micro'
+    Default: 't3.micro'
   Name:
     Description: 'The name for the EC2 instance.'
     Type: String
@@ -154,44 +156,54 @@ Parameters:
     Description: 'Timezone for maintenance window schedule (in IANA format).'
     Type: String
     Default: UTC
+  BackupRetentionPeriod:
+    Description: 'The number of days to keep backups of the EC2 instance (set to 0 to disable).'
+    Type: Number
+    MinValue: 0
+    MaxValue: 35
+    Default: 30
+  BackupScheduleExpression:
+    Description: 'A CRON expression specifying when AWS Backup initiates a backup job.'
+    Type: String
+    Default: 'cron(0 5 ? * * *)'
 Mappings:
   RegionMap:
     'eu-north-1':
-      AMI: 'ami-006cda581cf39451b'
+      AMI: 'ami-0662eb9b9b8685935'
     'ap-south-1':
-      AMI: 'ami-0ce933e2ae91880d3'
+      AMI: 'ami-0217a85e28e625474'
     'eu-west-3':
-      AMI: 'ami-0e9e6ba6d3d38faa8'
+      AMI: 'ami-007fae589fdf6e955'
     'eu-west-2':
-      AMI: 'ami-05f37c3995fffb4fd'
+      AMI: 'ami-0089b31e09ac3fffc'
     'eu-west-1':
-      AMI: 'ami-01f14919ba412de34'
+      AMI: 'ami-0713f98de93617bb4'
     'ap-northeast-2':
-      AMI: 'ami-0d59ddf55cdda6e21'
+      AMI: 'ami-0bea7fd38fabe821a'
     'me-south-1':
-      AMI: 'ami-0c55b36523aa89a7c'
+      AMI: 'ami-05f93aaf03b9bf20c'
     'ap-northeast-1':
-      AMI: 'ami-068a6cefc24c301d2'
+      AMI: 'ami-011facbea5ec0363b'
     'sa-east-1':
-      AMI: 'ami-07820a4443539a2b0'
+      AMI: 'ami-09de7b4017733e2af'
     'ca-central-1':
-      AMI: 'ami-0ff24797826ebbcd5'
+      AMI: 'ami-0a269ca7cc3e3beff'
     'ap-east-1':
-      AMI: 'ami-cd86fcbc'
+      AMI: 'ami-db3d78aa'
     'ap-southeast-1':
-      AMI: 'ami-07539a31f72d244e7'
+      AMI: 'ami-05c64f7b4062b0a21'
     'ap-southeast-2':
-      AMI: 'ami-0119aa4d67e59007c'
+      AMI: 'ami-0b8b10b5bf11f3a22'
     'eu-central-1':
-      AMI: 'ami-0d4c3eabb9e72650a'
+      AMI: 'ami-07cda0db070313c52'
     'us-east-1':
-      AMI: 'ami-00068cd7555f543d5'
+      AMI: 'ami-062f7200baf2fa504'
     'us-east-2':
-      AMI: 'ami-0dacb0c129b49f529'
+      AMI: 'ami-02ccb28830b645a41'
     'us-west-1':
-      AMI: 'ami-0b2d8d1abb76a53d8'
+      AMI: 'ami-03caa3f860895f82e'
     'us-west-2':
-      AMI: 'ami-0c5204531f799e0c6'
+      AMI: 'ami-04590e7389a6e577c'
 Conditions:
   HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
@@ -207,6 +219,7 @@ Conditions:
   HasClientSecurityGroup2: !Not [!Equals [!Ref ParentClientStack2, '']]
   HasClientSecurityGroup3: !Not [!Equals [!Ref ParentClientStack3, '']]
   HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
+  HasBackupRetentionPeriod: !Not [!Equals [!Ref BackupRetentionPeriod, 0]]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -707,6 +720,83 @@ Resources:
       Targets:
       - Key: InstanceIds
         Values: [!Ref VirtualMachine]
+  BackupVault: # cannot be deleted with data
+    Condition: HasBackupRetentionPeriod
+    Type: 'AWS::Backup::BackupVault'
+    Properties:
+      BackupVaultName: !Ref 'AWS::StackName'
+      Notifications: !If [HasAlertTopic, {BackupVaultEvents: [BACKUP_JOB_STARTED, BACKUP_JOB_COMPLETED, RESTORE_JOB_STARTED, RESTORE_JOB_COMPLETED, RECOVERY_POINT_MODIFIED], SNSTopicArn: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}}, !Ref 'AWS::NoValue']
+  BackupPlan:
+    Condition: HasBackupRetentionPeriod
+    Type: 'AWS::Backup::BackupPlan'
+    Properties:
+      BackupPlan:
+        BackupPlanName: !Ref 'AWS::StackName'
+        BackupPlanRule:
+        - CompletionWindowMinutes: 1440
+          Lifecycle:
+            DeleteAfterDays: !Ref BackupRetentionPeriod
+          RuleName: !Ref 'AWS::StackName'
+          ScheduleExpression: !Ref BackupScheduleExpression
+          StartWindowMinutes: 60
+          TargetBackupVault: !Ref BackupVault
+  BackupRole:
+    Condition: HasBackupRetentionPeriod
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'backup.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      Policies:
+      - PolicyName: backup
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'ec2:CreateTags'
+            - 'ec2:DeleteSnapshot'
+            Resource: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}::snapshot/*'
+          - Effect: Allow
+            Action:
+            - 'ec2:CreateImage'
+            - 'ec2:DeregisterImage'
+            - 'ec2:DescribeSnapshots'
+            - 'ec2:DescribeTags'
+            - 'ec2:DescribeImages'
+            - 'ec2:DescribeInstances'
+            - 'ec2:DescribeInstanceAttribute'
+            - 'ec2:DescribeInstanceCreditSpecifications'
+            - 'ec2:DescribeNetworkInterfaces'
+            - 'ec2:DescribeElasticGpus'
+            - 'ec2:DescribeSpotInstanceRequests'
+            Resource: '*'
+          - Effect: Allow
+            Action: 'ec2:CreateTags'
+            Resource: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}::image/*'
+          - Effect: Allow
+            Action:
+            - 'ec2:CreateSnapshot'
+            - 'ec2:DeleteSnapshot'
+            - 'ec2:DescribeVolumes'
+            - 'ec2:DescribeSnapshots'
+            Resource:
+            - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}::snapshot/*'
+            - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:volume/*'
+  BackupSelection:
+    Condition: HasBackupRetentionPeriod
+    Type: 'AWS::Backup::BackupSelection'
+    Properties:
+      BackupPlanId: !Ref BackupPlan
+      BackupSelection:
+        IamRoleArn: !GetAtt 'BackupRole.Arn'
+        Resources:
+        - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${VirtualMachine}'
+        SelectionName: !Ref 'AWS::StackName'
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
