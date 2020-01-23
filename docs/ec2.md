@@ -62,7 +62,6 @@ This template describes an EC2 instance with auto-recovery. If the instance fail
 * `vpc/vpc-*azs.yaml` (**required**)
 * `vpc/vpc-*-bastion.yaml` (recommended)
 * `operations/alert.yaml` (recommended)
-* `security/kms-key.yaml`
 * `vpc/zone-*.yaml`
 
 ## Limitations
