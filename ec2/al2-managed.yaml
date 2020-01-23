@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'EC2: Amazon Linux 2 with managed maintenance, a cloudonaut.io template'
+Description: 'EC2: Amazon Linux 2 (managed), a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -29,21 +29,32 @@ Metadata:
       - ParentClientStack2
       - ParentClientStack3
     - Label:
-        default: 'EC2 Parameters'
+        default: 'Network Parameters'
       Parameters:
-      - InstanceType
-      - Name
       - SubnetName
-      - KeyName
-      - IAMUserSSHAccess
-      - LogsRetentionInDays
       - SubDomainNameWithDot
-      - UserData
       - IngressTcpPort1
       - IngressTcpPort2
       - IngressTcpPort3
+    - Label:
+        default: 'Permission Parameters'
+      Parameters:
+      - KeyName
+      - IAMUserSSHAccess
       - ManagedPolicyArns
+    - Label:
+        default: 'EC2 Parameters'
+      Parameters:
+      - Name
+      - AmazonLinux2Version
+      - RestoreImageId
+      - InstanceType
+      - UserData
       - RootVolumeSize
+    - Label:
+        default: 'Operational Parameters'
+      Parameters:
+      - LogsRetentionInDays
       - MaintenanceWindowSchedule
       - MaintenanceWindowScheduleTimezone
       - BackupRetentionPeriod
@@ -142,7 +153,7 @@ Parameters:
     Type: String
     Default: ''
   RootVolumeSize:
-    Description: 'The root volume size, in Gibibytes (GiB).'
+    Description: 'The root volume size, in Gibibytes (GiB) (if RestoreImageId is set, value must be >= snapshot of AMI).'
     Type: Number
     Default: 8
     ConstraintDescription: 'Must be in the range [8-1024]'
@@ -166,8 +177,20 @@ Parameters:
     Description: 'A CRON expression specifying when AWS Backup initiates a backup job.'
     Type: String
     Default: 'cron(0 4 ? * * *)'
+  RestoreImageId:
+    Description: 'Restore from existing Amazon Machine Image (AMI).'
+    Type: String
+    Default: ''
+  AmazonLinux2Version:
+    Description: 'Version of Amazon Linux 2 to boot from the first time (ignored if RestoreImageId is set; select the latest version for new stacks; OS updates are enabled to patch the system).'
+    Type: String
+    Default: '20191217.0'
+    AllowedValues: ['20191217.0']
 Mappings:
-  RegionMap:
+  VersionMap:
+    '20191217.0':
+      Map: RegionMap201912170
+  RegionMap201912170:
     'eu-north-1':
       AMI: 'ami-0662eb9b9b8685935'
     'ap-south-1':
@@ -220,6 +243,7 @@ Conditions:
   HasClientSecurityGroup3: !Not [!Equals [!Ref ParentClientStack3, '']]
   HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
   HasBackupRetentionPeriod: !Not [!Equals [!Ref BackupRetentionPeriod, 0]]
+  HasRestoreImageId: !Not [!Equals [!Ref RestoreImageId, '']]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -615,7 +639,7 @@ Resources:
                 ensureRunning: true
     Properties:
       IamInstanceProfile: !Ref InstanceProfile
-      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+      ImageId: !If [HasRestoreImageId, !Ref RestoreImageId, !FindInMap [!FindInMap [VersionMap, !Ref AmazonLinux2Version, Map], !Ref 'AWS::Region', AMI]]
       InstanceType: !Ref InstanceType
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
       BlockDeviceMappings:
