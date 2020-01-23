@@ -54,7 +54,7 @@ public class TestAL2Managed extends ACloudFormationTest {
                 );
                 try {
                     this.createStack(stackName,
-                            "ec2/eal2-managed.yaml",
+                            "ec2/al2-managed.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("IAMUserSSHAccess").withParameterValue("true")
                     );
