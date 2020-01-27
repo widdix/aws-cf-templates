@@ -4,9 +4,9 @@
 
 There are two approaches when it comes to managing EC2 instances: mutable and immutable.
 
-A **mutable** EC2 instance is created once and then lives for many years. OS updates are applied to the running system, new packages are installed from time to time, configuration files are modified when needed.
+A **mutable** EC2 instance is created once and then lives for many years. Humans log on to the machine (e.g., via SSH or RDP) and do their work. OS updates are applied to the running system, new packages are installed from time to time, configuration files are modified when needed. Deployments happen while the EC2 instance is running.
 
-An **immutable** EC2 instance is never changed after creation. If you want to update the OS, you create a new EC2 instance that starts from a fresher image (AMI). If new packages are needed, a new AMI is created that contains those packages. The EC2 instance is ephemeral and must not be used to persists data!
+An **immutable** EC2 instance is never changed after creation. If you want to update the OS, you create a new EC2 instance that starts from a fresher image (AMI). If new packages are needed, a new AMI is created that contains those packages. If a new deployment is needed, a new AMI is created and rolled out be replacing the EC2 instances. The EC2 instance is ephemeral and must not be used to persists data!
 
 The EC2 templates follow both approaches, choose them according to your needs.
 
