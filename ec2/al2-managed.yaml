@@ -105,7 +105,7 @@ Parameters:
   InstanceType:
     Description: 'The instance type for the EC2 instance.'
     Type: String
-    Default: 't3.micro'
+    Default: 't3.nano'
   Name:
     Description: 'The name for the EC2 instance.'
     Type: String
