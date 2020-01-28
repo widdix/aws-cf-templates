@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'EC2: instance with auto-recovery, a cloudonaut.io template (Deprecated in v11, will be removed in v13! Use ec2/al2-mutable-public or ec2/al2-mutable-private instead.)'
+Description: 'EC2: Amazon Linux 2 (mutable, private), a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -23,29 +23,45 @@ Metadata:
       - ParentVPCStack
       - ParentSSHBastionStack
       - ParentAlertStack
+      - ParentKmsKeyStack
       - ParentZoneStack
       - ParentClientStack1
       - ParentClientStack2
       - ParentClientStack3
     - Label:
-        default: 'EC2 Parameters'
+        default: 'Network Parameters'
       Parameters:
-      - InstanceType
-      - Name
       - SubnetName
-      - KeyName
-      - IAMUserSSHAccess
-      - SystemsManagerAccess
-      - LogsRetentionInDays
       - SubDomainNameWithDot
-      - UserData
       - IngressTcpPort1
       - IngressTcpParentClientStack1
       - IngressTcpPort2
       - IngressTcpParentClientStack2
       - IngressTcpPort3
       - IngressTcpParentClientStack3
+    - Label:
+        default: 'Permission Parameters'
+      Parameters:
+      - KeyName
+      - IAMUserSSHAccess
       - ManagedPolicyArns
+    - Label:
+        default: 'EC2 Parameters'
+      Parameters:
+      - Name
+      - AmazonLinux2Version
+      - RestoreImageId
+      - InstanceType
+      - UserData
+      - RootVolumeSize
+    - Label:
+        default: 'Operational Parameters'
+      Parameters:
+      - LogsRetentionInDays
+      - MaintenanceWindowSchedule
+      - MaintenanceWindowScheduleTimezone
+      - BackupRetentionPeriod
+      - BackupScheduleExpression
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -56,6 +72,10 @@ Parameters:
     Default: ''
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  ParentKmsKeyStack:
+    Description: 'Optional stack name of parent KMS key stack based on security/kms-key.yaml template.'
     Type: String
     Default: ''
   ParentZoneStack:
@@ -85,17 +105,10 @@ Parameters:
     AllowedValues:
     - true
     - false
-  SystemsManagerAccess:
-    Description: 'Enable AWS Systems Manager agent and authorization.'
-    Type: String
-    Default: true
-    AllowedValues:
-    - true
-    - false
   InstanceType:
     Description: 'The instance type for the EC2 instance.'
     Type: String
-    Default: 't2.micro'
+    Default: 't3.nano'
   Name:
     Description: 'The name for the EC2 instance.'
     Type: String
@@ -103,15 +116,11 @@ Parameters:
   SubnetName:
     Description: 'Subnet name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
-    Default: SubnetAPublic
+    Default: SubnetAPrivate
     AllowedValues:
-    - SubnetAPublic
     - SubnetAPrivate
-    - SubnetBPublic
     - SubnetBPrivate
-    - SubnetCPublic
     - SubnetCPrivate
-    - SubnetDPublic
     - SubnetDPrivate
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain log events.'
@@ -151,11 +160,48 @@ Parameters:
     Type: String
     Default: ''
   ManagedPolicyArns:
-    Description: 'Optional comma-delimited list of IAM managed policy ARNs to attach to the instance''s IAM role'
+    Description: 'Optional comma-delimited list of IAM managed policy ARNs to attach to the instance''s IAM role.'
     Type: String
     Default: ''
+  RootVolumeSize:
+    Description: 'The root volume size, in Gibibytes (GiB) (if RestoreImageId is set, value must be >= snapshot of AMI).'
+    Type: Number
+    Default: 8
+    ConstraintDescription: 'Must be in the range [8-1024]'
+    MinValue: 8
+    MaxValue: 1024
+  MaintenanceWindowSchedule:
+    Description: 'SSM cron expressions to trigger the maintenace window for patch installation.'
+    Type: String
+    Default: 'cron(0 5 ? * SUN *)'
+  MaintenanceWindowScheduleTimezone:
+    Description: 'Timezone for maintenance window schedule (in IANA format).'
+    Type: String
+    Default: UTC
+  BackupRetentionPeriod:
+    Description: 'The number of days to keep backups of the EC2 instance (set to 0 to disable).'
+    Type: Number
+    MinValue: 0
+    MaxValue: 35
+    Default: 30
+  BackupScheduleExpression:
+    Description: 'A CRON expression specifying when AWS Backup initiates a backup job.'
+    Type: String
+    Default: 'cron(0 4 ? * * *)'
+  RestoreImageId:
+    Description: 'Restore from existing Amazon Machine Image (AMI).'
+    Type: String
+    Default: ''
+  AmazonLinux2Version:
+    Description: 'Version of Amazon Linux 2 to boot from the first time (ignored if RestoreImageId is set; select the latest version for new stacks; OS updates are enabled to patch the system).'
+    Type: String
+    Default: '20191217.0'
+    AllowedValues: ['20191217.0']
 Mappings:
-  RegionMap:
+  VersionMap:
+    '20191217.0':
+      Map: RegionMap201912170
+  RegionMap201912170:
     'eu-north-1':
       AMI: 'ami-0662eb9b9b8685935'
     'ap-south-1':
@@ -193,9 +239,9 @@ Mappings:
     'us-west-2':
       AMI: 'ami-04590e7389a6e577c'
 Conditions:
+  HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
-  HasSystemsManagerAccess: !Equals [!Ref SystemsManagerAccess, 'true']
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
@@ -210,6 +256,8 @@ Conditions:
   HasClientSecurityGroup2: !Not [!Equals [!Ref ParentClientStack2, '']]
   HasClientSecurityGroup3: !Not [!Equals [!Ref ParentClientStack3, '']]
   HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
+  HasBackupRetentionPeriod: !Not [!Equals [!Ref BackupRetentionPeriod, 0]]
+  HasRestoreImageId: !Not [!Equals [!Ref RestoreImageId, '']]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -221,13 +269,9 @@ Resources:
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
         HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
-      - !Ref ElasticIP
+      - !GetAtt 'NetworkInterface.PrimaryPrivateIpAddress'
       TTL: '60'
       Type: A
-  ElasticIP:
-    Type: 'AWS::EC2::EIP'
-    Properties:
-      Domain: vpc
   NetworkInterface:
     Type: 'AWS::EC2::NetworkInterface'
     Properties:
@@ -237,11 +281,6 @@ Resources:
       - !If [HasClientSecurityGroup2, {'Fn::ImportValue': !Sub '${ParentClientStack2}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
       - !If [HasClientSecurityGroup3, {'Fn::ImportValue': !Sub '${ParentClientStack3}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
       SubnetId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-${SubnetName}'}
-  EIPAssociation:
-    Type: 'AWS::EC2::EIPAssociation'
-    Properties:
-      AllocationId: !GetAtt 'ElasticIP.AllocationId'
-      NetworkInterfaceId: !Ref NetworkInterface
   Logs:
     Type: 'AWS::Logs::LogGroup'
     Properties:
@@ -316,30 +355,63 @@ Resources:
           Action: 'sts:AssumeRole'
       ManagedPolicyArns: !If [HasManagedPolicyArns, !Split [',', !Ref ManagedPolicyArns], !Ref 'AWS::NoValue']
       Policies:
-      - !If
-        - HasSystemsManagerAccess
-        - PolicyName: ssm
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-            - Effect: Allow
-              Action:
-              - 'ssmmessages:*' # SSM Agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
-              - 'ssm:UpdateInstanceInformation' # SSM agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
-              - 'ec2messages:*' # SSM Session Manager by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
-              Resource: '*'
-        - !Ref 'AWS::NoValue'
-      - PolicyName: logs
+      - PolicyName: ssm
         PolicyDocument:
           Version: '2012-10-17'
           Statement:
+          - Effect: Allow
+            Action:
+            - 'ssmmessages:*' # SSM Agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+            - 'ssm:UpdateInstanceInformation' # SSM agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+            - 'ec2messages:*' # SSM Session Manager by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+            - 'ssm:GetDeployablePatchSnapshotForInstance'
+            - 'ssm:ListAssociations'
+            Resource: '*'
+          - Effect: Allow
+            Action: 's3:GetObject'
+            Resource:
+            - !Sub 'arn:${AWS::Partition}:s3:::aws-ssm-${AWS::Region}/*'
+            - !Sub 'arn:${AWS::Partition}:s3:::patch-baseline-snapshot-${AWS::Region}/*'
+      - PolicyName: cloudwatch
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action: 'cloudwatch:PutMetricData'
+            Resource: '*'
+            Condition:
+              StringEquals:
+                'cloudwatch:namespace': !Ref 'AWS::StackName'
           - Effect: Allow
             Action:
             - 'logs:CreateLogGroup'
             - 'logs:CreateLogStream'
             - 'logs:PutLogEvents'
             - 'logs:DescribeLogStreams'
+            - 'logs:DescribeLogGroups'
             Resource: !GetAtt 'Logs.Arn'
+  IAMPolicySSM:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Roles:
+      - !Ref IAMRole
+      PolicyName: ssm2
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action: 'ssm:ListInstanceAssociations'
+          Resource: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${VirtualMachine}'
+        - Effect: Allow
+          Action: 'ssm:PutInventory'
+          Resource:
+          - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${VirtualMachine}'
+          - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:managed-instance-inventory/${VirtualMachine}'
+        - Effect: Allow
+          Action: 'ssm:UpdateInstanceAssociationStatus'
+          Resource:
+          - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${VirtualMachine}'
+          - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:association/${AssociationRunPatchBaselineScan}'
   IAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
     Condition: HasIAMUserSSHAccess
@@ -362,129 +434,149 @@ Resources:
           Resource:
           - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
   VirtualMachine:
-    DependsOn: EIPAssociation
     Type: 'AWS::EC2::Instance'
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, config], [awslogs, config]]
-        awslogs:
+          default: !If [HasIAMUserSSHAccess, [cloudwatch, ssh-access, config], [cloudwatch, config]]
+        cloudwatch:
           packages:
-            yum:
-              awslogs: []
+            rpm:
+              cloudwatch: 'https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm'
           files:
-            '/etc/awslogs/awscli.conf':
+            '/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json': # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-Configuration-File-Details.html
               content: !Sub |
-                [default]
-                region = ${AWS::Region}
-                [plugins]
-                cwlogs = cwlogs
+                {
+                  "logs": {
+                    "logs_collected": {
+                      "files": {
+                        "collect_list": [{
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/amazon/amazon-cloudwatch-agent/amazon-cloudwatch-agent.log",
+                           "log_stream_name": "{instance_id}/var/log/amazon/amazon-cloudwatch-agent/amazon-cloudwatch-agent.log",
+                           "timestamp_format": "%Y-%m-%dT%H:%M:%S"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/amazon/amazon-cloudwatch-agent/configuration-validation.log",
+                           "log_stream_name": "{instance_id}/var/log/amazon/amazon-cloudwatch-agent/configuration-validation.log",
+                           "timestamp_format": "%Y/%m/%d %H:%M:%S"
+                        }, {
+                          "log_group_name": "${Logs}",
+                          "file_path": "/var/log/amazon/ssm/amazon-ssm-agent.log",
+                          "log_stream_name": "{instance_id}/var/log/amazon/ssm/amazon-ssm-agent.log",
+                          "timestamp_format": "%Y-%m-%d %H:%M:%S"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/amazon/ssm/errors.log",
+                           "log_stream_name": "{instance_id}/var/log/amazon/ssm/errors.log",
+                           "timestamp_format": "%Y-%m-%d %H:%M:%S"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/audit/audit.log",
+                           "log_stream_name": "{instance_id}/var/log/audit/audit.log"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/boot.log",
+                           "log_stream_name": "{instance_id}/var/log/boot.log"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/cfn-hup.log",
+                           "log_stream_name": "{instance_id}/var/log/cfn-hup.log",
+                           "timestamp_format": "%Y-%m-%d %H:%M:%S"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/cfn-init-cmd.log",
+                           "log_stream_name": "{instance_id}/var/log/cfn-init-cmd.log",
+                           "timestamp_format": "%Y-%m-%d %H:%M:%S"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/cfn-init.log",
+                           "log_stream_name": "{instance_id}/var/log/cfn-init.log",
+                           "timestamp_format": "%Y-%m-%d %H:%M:%S"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/cfn-wire.log",
+                           "log_stream_name": "{instance_id}/var/log/cfn-wire.log",
+                           "timestamp_format": "%Y-%m-%d %H:%M:%S"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/cloud-init-output.log",
+                           "log_stream_name": "{instance_id}/var/log/cloud-init-output.log"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/cloud-init.log",
+                           "log_stream_name": "{instance_id}/var/log/cloud-init.log",
+                           "timestamp_format": "%b %d %H:%M:%S"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/cron",
+                           "log_stream_name": "{instance_id}/var/log/cron",
+                           "timestamp_format": "%b %d %H:%M:%S"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/dmesg",
+                           "log_stream_name": "{instance_id}/var/log/dmesg"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/grubby_prune_debug",
+                           "log_stream_name": "{instance_id}/var/log/grubby_prune_debug"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/maillog",
+                           "log_stream_name": "{instance_id}/var/log/maillog",
+                           "timestamp_format": "%b %d %H:%M:%S"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/messages",
+                           "log_stream_name": "{instance_id}/var/log/messages",
+                           "timestamp_format": "%b %d %H:%M:%S"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/secure",
+                           "log_stream_name": "{instance_id}/var/log/secure",
+                           "timestamp_format": "%b %d %H:%M:%S"
+                        }]
+                      }
+                    }
+                  },
+                  "metrics": {
+                    "namespace": "${AWS::StackName}",
+                    "append_dimensions": {
+                      "InstanceId": "${!aws:InstanceId}"
+                    },
+                    "metrics_collected": {
+                      "mem": {
+                        "measurement": [
+                          "mem_used_percent"
+                        ]
+                      },
+                      "swap": {
+                        "measurement": [
+                          "swap_used_percent"
+                        ]
+                      },
+                      "disk": {
+                        "resources": [
+                          "/"
+                        ],
+                        "measurement": [
+                          "used_percent"
+                        ],
+                        "drop_device": true
+                      }
+                    }
+                  }
+                }
               mode: '000644'
               owner: root
               group: root
-            '/etc/awslogs/awslogs.conf':
-              content: !Sub |
-                [general]
-                state_file = /var/lib/awslogs/agent-state
-                [/var/log/amazon/ssm/amazon-ssm-agent.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/amazon/ssm/amazon-ssm-agent.log
-                log_stream_name = {instance_id}/var/log/amazon/ssm/amazon-ssm-agent.log
-                log_group_name = ${Logs}
-                [/var/log/amazon/ssm/errors.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/amazon/ssm/errors.log
-                log_stream_name = {instance_id}/var/log/amazon/ssm/errors.log
-                log_group_name = ${Logs}
-                [/var/log/audit/audit.log]
-                file = /var/log/audit/audit.log
-                log_stream_name = {instance_id}/var/log/audit/audit.log
-                log_group_name = ${Logs}
-                [/var/log/awslogs.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/awslogs.log
-                log_stream_name = {instance_id}/var/log/awslogs.log
-                log_group_name = ${Logs}
-                [/var/log/boot.log]
-                file = /var/log/boot.log
-                log_stream_name = {instance_id}/var/log/boot.log
-                log_group_name = ${Logs}
-                [/var/log/cfn-hup.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-hup.log
-                log_stream_name = {instance_id}/var/log/cfn-hup.log
-                log_group_name = ${Logs}
-                [/var/log/cfn-init-cmd.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init-cmd.log
-                log_stream_name = {instance_id}/var/log/cfn-init-cmd.log
-                log_group_name = ${Logs}
-                [/var/log/cfn-init.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-init.log
-                log_stream_name = {instance_id}/var/log/cfn-init.log
-                log_group_name = ${Logs}
-                [/var/log/cfn-wire.log]
-                datetime_format = %Y-%m-%d %H:%M:%S
-                file = /var/log/cfn-wire.log
-                log_stream_name = {instance_id}/var/log/cfn-wire.log
-                log_group_name = ${Logs}
-                [/var/log/cloud-init-output.log]
-                file = /var/log/cloud-init-output.log
-                log_stream_name = {instance_id}/var/log/cloud-init-output.log
-                log_group_name = ${Logs}
-                [/var/log/cloud-init.log]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cloud-init.log
-                log_stream_name = {instance_id}/var/log/cloud-init.log
-                log_group_name = ${Logs}
-                [/var/log/cron]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/cron
-                log_stream_name = {instance_id}/var/log/cron
-                log_group_name = ${Logs}
-                [/var/log/dmesg]
-                file = /var/log/dmesg
-                log_stream_name = {instance_id}/var/log/dmesg
-                log_group_name = ${Logs}
-                [/var/log/grubby_prune_debug]
-                file = /var/log/grubby_prune_debug
-                log_stream_name = {instance_id}/var/log/grubby_prune_debug
-                log_group_name = ${Logs}
-                [/var/log/maillog]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/maillog
-                log_stream_name = {instance_id}/var/log/maillog
-                log_group_name = ${Logs}
-                [/var/log/messages]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/messages
-                log_stream_name = {instance_id}/var/log/messages
-                log_group_name = ${Logs}
-                [/var/log/secure]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/secure
-                log_stream_name = {instance_id}/var/log/secure
-                log_group_name = ${Logs}
-                [/var/log/yum.log]
-                datetime_format = %b %d %H:%M:%S
-                file = /var/log/yum.log
-                log_stream_name = {instance_id}/var/log/yum.log
-                log_group_name = ${Logs}
-              mode: '000644'
-              owner: root
-              group: root
-          services:
-            sysvinit:
-              awslogsd:
-                enabled: true
-                ensureRunning: true
-                packages:
-                  yum:
-                  - awslogs
-                files:
-                - '/etc/awslogs/awslogs.conf'
-                - '/etc/awslogs/awscli.conf'
+          commands:
+            a_stop_service:
+              command: '/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a stop'
+              test: '! /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a status | grep -q stopped'
+            b_start_service:
+              command: '/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s'
+              test: '! /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a status | grep -q started'
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':
@@ -578,13 +670,20 @@ Resources:
                 - '/etc/cfn/cfn-hup.conf'
                 - '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
               amazon-ssm-agent:
-                enabled: !If [HasSystemsManagerAccess, true, false]
-                ensureRunning: !If [HasSystemsManagerAccess, true, false]
+                enabled: true
+                ensureRunning: true
     Properties:
       IamInstanceProfile: !Ref InstanceProfile
-      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+      ImageId: !If [HasRestoreImageId, !Ref RestoreImageId, !FindInMap [!FindInMap [VersionMap, !Ref AmazonLinux2Version, Map], !Ref 'AWS::Region', AMI]]
       InstanceType: !Ref InstanceType
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+      BlockDeviceMappings:
+      - DeviceName: '/dev/xvda'
+        Ebs:
+          Encrypted: !If [HasKmsKey, true, !Ref 'AWS::NoValue']
+          KmsKeyId: !If [HasKmsKey, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}, !Ref 'AWS::NoValue']
+          VolumeSize: !Ref RootVolumeSize
+          VolumeType: gp2
       NetworkInterfaces:
       - DeviceIndex: '0'
         NetworkInterfaceId: !Ref NetworkInterface
@@ -635,10 +734,168 @@ Resources:
       Dimensions:
       - Name: InstanceId
         Value: !Ref VirtualMachine
+  MemoryTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average memory utilization over last 10 minutes higher than 80%'
+      Namespace: !Ref 'AWS::StackName'
+      MetricName: mem_used_percent
+      Statistic: Average
+      Period: 600
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: InstanceId
+        Value: !Ref VirtualMachine
+  DiskTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average disk utilization over last 10 minutes higher than 80%'
+      Namespace: !Ref 'AWS::StackName'
+      MetricName: disk_used_percent
+      Statistic: Average
+      Period: 600
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: InstanceId
+        Value: !Ref VirtualMachine
+      - Name: fstype
+        Value: xfs
+      - Name: path
+        Value: '/'
+  MaintenanceWindow:
+    Type: 'AWS::SSM::MaintenanceWindow'
+    Properties:
+      AllowUnassociatedTargets: false
+      Cutoff: 1
+      Duration: 2
+      Name: !Ref 'AWS::StackName'
+      Schedule: !Ref MaintenanceWindowSchedule
+      ScheduleTimezone: !Ref MaintenanceWindowScheduleTimezone
+  MaintenanceWindowTarget:
+    Type: 'AWS::SSM::MaintenanceWindowTarget'
+    Properties:
+      ResourceType: INSTANCE
+      Targets:
+      - Key: InstanceIds
+        Values: [!Ref VirtualMachine]
+      WindowId: !Ref MaintenanceWindow
+  MaintenanceWindowTask:
+    Type: 'AWS::SSM::MaintenanceWindowTask'
+    Properties:
+      MaxConcurrency: '1'
+      MaxErrors: '1'
+      Priority: 0
+      Targets:
+      - Key: WindowTargetIds
+        Values: [!Ref MaintenanceWindowTarget]
+      TaskArn: 'AWS-RunPatchBaseline'
+      TaskInvocationParameters:
+        MaintenanceWindowRunCommandParameters:
+          Parameters:
+            Operation: [Install]
+      TaskType: 'RUN_COMMAND'
+      WindowId: !Ref MaintenanceWindow
+  AssociationRunPatchBaselineScan:
+    Type: 'AWS::SSM::Association'
+    Properties:
+      Name: 'AWS-RunPatchBaseline'
+      Parameters:
+        Operation: [Scan]
+      ScheduleExpression: 'rate(1 hour)'
+      Targets:
+      - Key: InstanceIds
+        Values: [!Ref VirtualMachine]
+  BackupVault: # cannot be deleted with data
+    Condition: HasBackupRetentionPeriod
+    Type: 'AWS::Backup::BackupVault'
+    Properties:
+      BackupVaultName: !Ref 'AWS::StackName'
+      Notifications: !If [HasAlertTopic, {BackupVaultEvents: [BACKUP_JOB_STARTED, BACKUP_JOB_COMPLETED, RESTORE_JOB_STARTED, RESTORE_JOB_COMPLETED, RECOVERY_POINT_MODIFIED], SNSTopicArn: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}}, !Ref 'AWS::NoValue']
+  BackupPlan:
+    Condition: HasBackupRetentionPeriod
+    Type: 'AWS::Backup::BackupPlan'
+    Properties:
+      BackupPlan:
+        BackupPlanName: !Ref 'AWS::StackName'
+        BackupPlanRule:
+        - CompletionWindowMinutes: 1440
+          Lifecycle:
+            DeleteAfterDays: !Ref BackupRetentionPeriod
+          RuleName: !Ref 'AWS::StackName'
+          ScheduleExpression: !Ref BackupScheduleExpression
+          StartWindowMinutes: 60
+          TargetBackupVault: !Ref BackupVault
+  BackupRole:
+    Condition: HasBackupRetentionPeriod
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'backup.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      Policies:
+      - PolicyName: backup
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'ec2:CreateTags'
+            - 'ec2:DeleteSnapshot'
+            Resource: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}::snapshot/*'
+          - Effect: Allow
+            Action:
+            - 'ec2:CreateImage'
+            - 'ec2:DeregisterImage'
+            - 'ec2:DescribeSnapshots'
+            - 'ec2:DescribeTags'
+            - 'ec2:DescribeImages'
+            - 'ec2:DescribeInstances'
+            - 'ec2:DescribeInstanceAttribute'
+            - 'ec2:DescribeInstanceCreditSpecifications'
+            - 'ec2:DescribeNetworkInterfaces'
+            - 'ec2:DescribeElasticGpus'
+            - 'ec2:DescribeSpotInstanceRequests'
+            Resource: '*'
+          - Effect: Allow
+            Action: 'ec2:CreateTags'
+            Resource: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}::image/*'
+          - Effect: Allow
+            Action:
+            - 'ec2:CreateSnapshot'
+            - 'ec2:DeleteSnapshot'
+            - 'ec2:DescribeVolumes'
+            - 'ec2:DescribeSnapshots'
+            Resource:
+            - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}::snapshot/*'
+            - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:volume/*'
+  BackupSelection:
+    Condition: HasBackupRetentionPeriod
+    Type: 'AWS::Backup::BackupSelection'
+    Properties:
+      BackupPlanId: !Ref BackupPlan
+      BackupSelection:
+        IamRoleArn: !GetAtt 'BackupRole.Arn'
+        Resources:
+        - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${VirtualMachine}'
+        SelectionName: !Ref 'AWS::StackName'
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
-    Value: 'ec2/ec2-auto-recovery'
+    Value: 'ec2/al2-mutable-private'
   TemplateVersion:
     Description: 'cloudonaut.io template version.'
     Value: '__VERSION__'
@@ -650,11 +907,6 @@ Outputs:
     Value: !Ref VirtualMachine
     Export:
       Name: !Sub '${AWS::StackName}-InstanceId'
-  IPAddress:
-    Description: 'The public IP address of the EC2 instance.'
-    Value: !Ref ElasticIP
-    Export:
-      Name: !Sub '${AWS::StackName}-IPAddress'
   PrivateIPAddress:
     Description: 'The private IP address of the EC2 instance.'
     Value: !GetAtt 'NetworkInterface.PrimaryPrivateIpAddress'

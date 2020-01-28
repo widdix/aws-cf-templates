@@ -5,12 +5,12 @@ import com.amazonaws.services.ec2.model.KeyPair;
 import de.widdix.awscftemplates.ACloudFormationTest;
 import org.junit.Test;
 
-public class TestAL2Mutable extends ACloudFormationTest {
+public class TestAL2MutablePublic extends ACloudFormationTest {
 
     @Test
     public void test() {
         final String vpcStackName = "vpc-2azs-" + this.random8String();
-        final String stackName = "al2-mutable-" + this.random8String();
+        final String stackName = "al2-mutable-public-" + this.random8String();
         final String classB = "10";
         final String keyName = "key-" + this.random8String();
         try {
@@ -22,11 +22,11 @@ public class TestAL2Mutable extends ACloudFormationTest {
                 );
                 try {
                     this.createStack(stackName,
-                            "ec2/al2-mutable.yaml",
+                            "ec2/al2-mutable-public.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
                     );
-                    final String host = this.getStackOutputValue(stackName, "IPAddress");
+                    final String host = this.getStackOutputValue(stackName, "PublicIPAddress");
                     this.probeSSH(host, key);
                 } finally {
                     this.deleteStack(stackName);
@@ -42,7 +42,7 @@ public class TestAL2Mutable extends ACloudFormationTest {
     @Test
     public void testWithIAMUserSSHAccess() throws Exception {
         final String vpcStackName = "vpc-2azs-" + this.random8String();
-        final String stackName = "al2-mutable-" + this.random8String();
+        final String stackName = "al2-mutable-public-" + this.random8String();
         final String classB = "10";
         final String userName = "user-" + this.random8String();
         try {
@@ -54,11 +54,11 @@ public class TestAL2Mutable extends ACloudFormationTest {
                 );
                 try {
                     this.createStack(stackName,
-                            "ec2/al2-mutable.yaml",
+                            "ec2/al2-mutable-public.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("IAMUserSSHAccess").withParameterValue("true")
                     );
-                    final String host = this.getStackOutputValue(stackName, "IPAddress");
+                    final String host = this.getStackOutputValue(stackName, "PublicIPAddress");
                     this.probeSSH(host, user);
                 } finally {
                     this.deleteStack(stackName);
