@@ -5,12 +5,12 @@ import com.amazonaws.services.ec2.model.KeyPair;
 import de.widdix.awscftemplates.ACloudFormationTest;
 import org.junit.Test;
 
-public class TestAL2Managed extends ACloudFormationTest {
+public class TestAL2Mutable extends ACloudFormationTest {
 
     @Test
     public void test() {
         final String vpcStackName = "vpc-2azs-" + this.random8String();
-        final String stackName = "al2-managed-" + this.random8String();
+        final String stackName = "al2-mutable-" + this.random8String();
         final String classB = "10";
         final String keyName = "key-" + this.random8String();
         try {
@@ -22,7 +22,7 @@ public class TestAL2Managed extends ACloudFormationTest {
                 );
                 try {
                     this.createStack(stackName,
-                            "ec2/al2-managed.yaml",
+                            "ec2/al2-mutable.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
                     );
@@ -42,7 +42,7 @@ public class TestAL2Managed extends ACloudFormationTest {
     @Test
     public void testWithIAMUserSSHAccess() throws Exception {
         final String vpcStackName = "vpc-2azs-" + this.random8String();
-        final String stackName = "al2-managed-" + this.random8String();
+        final String stackName = "al2-mutable-" + this.random8String();
         final String classB = "10";
         final String userName = "user-" + this.random8String();
         try {
@@ -54,7 +54,7 @@ public class TestAL2Managed extends ACloudFormationTest {
                 );
                 try {
                     this.createStack(stackName,
-                            "ec2/al2-managed.yaml",
+                            "ec2/al2-mutable.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("IAMUserSSHAccess").withParameterValue("true")
                     );

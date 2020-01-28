@@ -12,15 +12,15 @@ The EC2 templates follow both approaches, choose them according to your needs.
 
 | Template ID             | Template Description     | Approach |
 | ----------------------- | ------------------------ | --------- |
-| `ec2/al2-managed`       | Amazon Linux 2 (managed) | mutable   |
+| `ec2/al2-mutable`       | Amazon Linux 2 (mutable) | mutable   |
 | `ec2/ec2-auto-recovery` | EC2 with auto-recovery   | immutable |
 
-# Amazon Linux 2 (managed)
+# Amazon Linux 2 (mutable)
 This template describes an EC2 instance running Amazon Linux 2. If the instance fails it will be replaced automatically. All data stored on EBS volumes will still be available. The public and private IP address won't change. Auto-recovery does only work inside of a single availability zone (AZ). Backups happen during a backup window. OS Updates during maintenance window (Instance might be restarted). We recommend to use AWS Systems Manager to configure the instance.
 
 ## Installation Guide
 1. This templates depends on one of our [`vpc-*azs.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
-1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/ec2/al2-managed.yaml&stackName=al2-managed&param_ParentVPCStack=vpc)
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/ec2/al2-mutable.yaml&stackName=al2-mutable&param_ParentVPCStack=vpc)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
 1. Click **Next** to proceed with the next step of the wizard.
