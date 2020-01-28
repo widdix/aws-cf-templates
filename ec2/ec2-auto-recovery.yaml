@@ -40,8 +40,11 @@ Metadata:
       - SubDomainNameWithDot
       - UserData
       - IngressTcpPort1
+      - IngressTcpParentClientStack1
       - IngressTcpPort2
+      - IngressTcpParentClientStack2
       - IngressTcpPort3
+      - IngressTcpParentClientStack3
       - ManagedPolicyArns
 Parameters:
   ParentVPCStack:
@@ -127,12 +130,24 @@ Parameters:
     Description: 'Optional port allowing ingress TCP traffic.'
     Type: String
     Default: ''
+  IngressTcpParentClientStack1:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml that is required to access IngressTcpPort1 (if you leave this blank, IngressTcpPort1 is open to the world 0.0.0.0/0).'
+    Type: String
+    Default: ''
   IngressTcpPort2:
     Description: 'Optional port allowing ingress TCP traffic.'
     Type: String
     Default: ''
+  IngressTcpParentClientStack2:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml that is required to access IngressTcpPort2 (if you leave this blank, IngressTcpPort2 is open to the world 0.0.0.0/0).'
+    Type: String
+    Default: ''
   IngressTcpPort3:
     Description: 'Optional port allowing ingress TCP traffic.'
+    Type: String
+    Default: ''
+  IngressTcpParentClientStack3:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml that is required to access IngressTcpPort3 (if you leave this blank, IngressTcpPort3 is open to the world 0.0.0.0/0).'
     Type: String
     Default: ''
   ManagedPolicyArns:
@@ -186,8 +201,11 @@ Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasIngressTcpPort1: !Not [!Equals [!Ref IngressTcpPort1, '']]
+  HasIngressTcpParentClientStack1: !Not [!Equals [!Ref IngressTcpParentClientStack1, '']]
   HasIngressTcpPort2: !Not [!Equals [!Ref IngressTcpPort2, '']]
+  HasIngressTcpParentClientStack2: !Not [!Equals [!Ref IngressTcpParentClientStack2, '']]
   HasIngressTcpPort3: !Not [!Equals [!Ref IngressTcpPort3, '']]
+  HasIngressTcpParentClientStack3: !Not [!Equals [!Ref IngressTcpParentClientStack3, '']]
   HasClientSecurityGroup1: !Not [!Equals [!Ref ParentClientStack1, '']]
   HasClientSecurityGroup2: !Not [!Equals [!Ref ParentClientStack2, '']]
   HasClientSecurityGroup3: !Not [!Equals [!Ref ParentClientStack3, '']]
@@ -259,7 +277,8 @@ Resources:
       IpProtocol: tcp
       FromPort: !Ref IngressTcpPort1
       ToPort: !Ref IngressTcpPort1
-      CidrIp: '0.0.0.0/0'
+      SourceSecurityGroupId: !If [HasIngressTcpParentClientStack1, {'Fn::ImportValue': !Sub '${IngressTcpParentClientStack1}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
+      CidrIp: !If [HasIngressTcpParentClientStack1, !Ref 'AWS::NoValue', '0.0.0.0/0']
   SecurityGroupIngressTcpPort2:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasIngressTcpPort2
@@ -268,7 +287,8 @@ Resources:
       IpProtocol: tcp
       FromPort: !Ref IngressTcpPort2
       ToPort: !Ref IngressTcpPort2
-      CidrIp: '0.0.0.0/0'
+      SourceSecurityGroupId: !If [HasIngressTcpParentClientStack2, {'Fn::ImportValue': !Sub '${IngressTcpParentClientStack2}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
+      CidrIp: !If [HasIngressTcpParentClientStack2, !Ref 'AWS::NoValue', '0.0.0.0/0']
   SecurityGroupIngressTcpPort3:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasIngressTcpPort3
@@ -277,7 +297,8 @@ Resources:
       IpProtocol: tcp
       FromPort: !Ref IngressTcpPort3
       ToPort: !Ref IngressTcpPort3
-      CidrIp: '0.0.0.0/0'
+      SourceSecurityGroupId: !If [HasIngressTcpParentClientStack3, {'Fn::ImportValue': !Sub '${IngressTcpParentClientStack3}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
+      CidrIp: !If [HasIngressTcpParentClientStack3, !Ref 'AWS::NoValue', '0.0.0.0/0']
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
