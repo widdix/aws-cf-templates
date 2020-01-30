@@ -38,6 +38,7 @@ Metadata:
       - SubDomainNameWithDot
       - PreferredBackupWindow
       - PreferredMaintenanceWindow
+      - EnableDataApi
     - Label:
         default: 'Serverless Parameters'
       Parameters:
@@ -103,6 +104,11 @@ Parameters:
     Description: 'IGNORED BECAUSE OF A BUG IN CLOUDFORMATION! VALUE WILL APPLY IN THE FUTURE! The weekly time range (in UTC) during which system maintenance can occur.' # TODO remove uppercase warning
     Type: String
     Default: 'sat:07:00-sat:07:30'
+  EnableDataApi:
+    Description: 'Enable the Data API (https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/data-api.html).'
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'false'
   AutoPause:
     Description: 'Enable automatic pause for a Serverless Aurora cluster. A cluster can be paused only when it has no connections. If a cluster is paused for more than seven days, the cluster might be backed up with a snapshot. In this case, the cluster is restored when there is a request to connect to it.'
     Type: String
@@ -200,6 +206,7 @@ Resources:
       DatabaseName: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBName]
       DBClusterParameterGroupName: !Ref DBClusterParameterGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
+      EnableHttpEndpoint: !Ref EnableDataApi
       Engine: aurora
       EngineMode: serverless
       EngineVersion: !Ref EngineVersion
