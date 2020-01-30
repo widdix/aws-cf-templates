@@ -217,7 +217,7 @@ Resources:
       EventCategories:
       - failover
       - failure
-      - notification
+      - maintenance
       SnsTopicArn: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       SourceIds: [!Ref DBCluster]
       SourceType: 'db-cluster'
