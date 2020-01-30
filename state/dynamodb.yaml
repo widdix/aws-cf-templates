@@ -21,6 +21,7 @@ Metadata:
         default: 'Parent Stacks'
       Parameters:
       - ParentAlertStack
+      - ParentKmsKeyStack
     - Label:
         default: 'DynamoDB Parameters'
       Parameters:
@@ -48,6 +49,10 @@ Metadata:
 Parameters:
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  ParentKmsKeyStack:
+    Description: 'Optional but recommended stack name of parent KMS key stack based on security/kms-key.yaml template.'
     Type: String
     Default: ''
   TableName:
@@ -144,7 +149,7 @@ Parameters:
     Type: Number
     Default: 80
   Encryption:
-    Description: 'Enable server side encryption using KMS (AWS managed) CMK.'
+    Description: 'Deprecated in v11, will be removed in v13, use ParentKmsKeyStack instead! Enable server side encryption using KMS (AWS managed) CMK.'
     Type: String
     Default: false
     AllowedValues: [aws, false]
@@ -174,6 +179,7 @@ Parameters:
     AllowedValues: [true, false]
 Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasSortKey: !Not [!Equals [!Ref SortKeyName, '']]
   HasIndex1: !Not [!Equals [!Ref Index1PartitionKeyName, '']]
   HasIndex1SortKey: !Not [!Equals [!Ref Index1SortKeyName, '']]
@@ -266,7 +272,9 @@ Resources:
         PointInTimeRecoveryEnabled: !Ref PointInTimeRecoveryEnabled
       ProvisionedThroughput: !If [HasBillingAndScalingModeProvisioned, {ReadCapacityUnits: !Ref MinReadCapacityUnits, WriteCapacityUnits: !Ref MinWriteCapacityUnits}, !Ref 'AWS::NoValue']
       SSESpecification:
-        SSEEnabled: !If [HasAwsManagedEncryption, true, false]
+        KMSMasterKeyId: !If [HasKmsKey, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}, !Ref 'AWS::NoValue']
+        SSEEnabled: !If [HasKmsKey, true, !If [HasAwsManagedEncryption, true, false]]
+        SSEType: !If [HasKmsKey, KMS, !If [HasAwsManagedEncryption, KMS, !Ref 'AWS::NoValue']]
       TimeToLiveSpecification: !If [HasTimeToLiveAttributeName, {AttributeName: !Ref TimeToLiveAttributeName, Enabled: true}, !Ref 'AWS::NoValue']
       StreamSpecification: !If [HasStream, {StreamViewType: !Ref StreamViewType}, !Ref 'AWS::NoValue']
   RoleScaling:
