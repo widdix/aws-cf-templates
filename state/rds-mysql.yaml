@@ -339,7 +339,7 @@ Resources:
       - failure
       - 'low storage'
       - maintenance
-      - notification
+      - 'read replica'
       - recovery
       SnsTopicArn: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       SourceIds: [!Ref DBInstance]

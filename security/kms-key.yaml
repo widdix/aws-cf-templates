@@ -63,6 +63,7 @@ Conditions:
 Resources:
   Key:
     DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Type: 'AWS::KMS::Key'
     Properties:
       KeyPolicy:
@@ -105,6 +106,7 @@ Resources:
           - !Ref 'AWS::NoValue'
   KeyAlias:
     DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Type: 'AWS::KMS::Alias'
     Properties:
       AliasName: !Sub 'alias/${AWS::StackName}'
