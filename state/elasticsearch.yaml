@@ -175,6 +175,8 @@ Resources:
         - - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'}
         - - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'}
           - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'}
+    UpdatePolicy:
+      EnableVersionUpgrade: true
   ClusterStatusYellowAlarm:
     Condition: HasAlertTopicAndNotSingleClusterInstance
     Type: 'AWS::CloudWatch::Alarm'
