@@ -36,6 +36,8 @@ Metadata:
       - SnapshotRetentionLimit
       - SnapshotName
       - SubDomainName
+      - NumShards
+      - NumReplicas
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -98,6 +100,18 @@ Parameters:
     Description: 'Name that is used to create the DNS entry §{SubDomainName}.§{HostedZoneName} (required when ParentZoneStack is set, otherwise not considered)'
     Type: String
     Default: redis
+  NumShards:
+    Description: 'Number of shards in the cluster.'
+    Type: 'Number'
+    Default: 1
+    MinValue: 1
+    MaxValue: 250
+  NumReplicas:
+    Description: 'Number of replicas per shard.'
+    Type: 'Number'
+    Default: 1
+    MinValue: 0
+    MaxValue: 5
 Mappings:
   EngineVersionMap:
     '3.2.6':
@@ -115,6 +129,7 @@ Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasAuthToken: !Not [!Equals [!Ref AuthToken, '']]
   HasSnapshotName: !Not [!Equals [!Ref SnapshotName, '']]
+  HasAutomaticFailoverEnabled: !Not [!Equals [!Ref NumReplicas, 0]]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -174,7 +189,7 @@ Resources:
       ReplicationGroupDescription: !Ref 'AWS::StackName'
       AtRestEncryptionEnabled: true
       AuthToken: !If [HasAuthToken, !Ref AuthToken, !Ref 'AWS::NoValue']
-      AutomaticFailoverEnabled: true
+      AutomaticFailoverEnabled: !If [HasAutomaticFailoverEnabled, true, false]
       CacheNodeType: !Ref CacheNodeType
       CacheParameterGroupName: !Ref CacheParameterGroup
       CacheSubnetGroupName: !Ref CacheSubnetGroupName
@@ -182,8 +197,8 @@ Resources:
       EngineVersion: !Ref EngineVersion
       KmsKeyId: !If [HasKmsKey, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}, !Ref 'AWS::NoValue']
       NotificationTopicArn: !If [HasAlertTopic, {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}, !Ref 'AWS::NoValue']
-      NumNodeGroups: 1
-      ReplicasPerNodeGroup: 1
+      NumNodeGroups: !Ref NumShards
+      ReplicasPerNodeGroup: !Ref NumReplicas
       PreferredMaintenanceWindow: 'sat:07:00-sat:08:00'
       SecurityGroupIds:
       - !Ref SecurityGroup
@@ -191,6 +206,8 @@ Resources:
       SnapshotRetentionLimit: !Ref SnapshotRetentionLimit
       SnapshotWindow: '00:00-03:00'
       TransitEncryptionEnabled: !Ref TransitEncryption
+    UpdatePolicy:
+      UseOnlineResharding: true
   Node1CPUUtilizationTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
