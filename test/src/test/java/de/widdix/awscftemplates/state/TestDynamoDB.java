@@ -21,6 +21,27 @@ public class TestDynamoDB extends ACloudFormationTest {
     }
 
     @Test
+    public void testEncryption() {
+        final String kmsKeyStackName = "key-" + this.random8String();
+        final String stackName = "dynamodb-" + this.random8String();
+        try {
+            this.createStack(kmsKeyStackName,"security/kms-key.yaml");
+            try {
+                this.createStack(stackName,
+                        "state/dynamodb.yaml",
+                        new Parameter().withParameterKey("ParentKmsKeyStack").withParameterValue(kmsKeyStackName),
+                        new Parameter().withParameterKey("PartitionKeyName").withParameterValue("id")
+                );
+                // TODO how can we check if this stack works?
+            } finally {
+                this.deleteStack(stackName);
+            }
+        } finally {
+            this.deleteStack(kmsKeyStackName);
+        }
+    }
+
+    @Test
     public void testGSI() {
         final String stackName = "dynamodb-" + this.random8String();
         try {

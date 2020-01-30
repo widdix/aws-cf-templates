@@ -34,7 +34,8 @@ public class TestRDSAuroraServerless extends ACloudFormationTest {
                         // TODO how can we check if this stack works? start a bastion host and try to connect?
                     } finally {
                         this.deleteStack(stackName);
-                    }} finally {
+                    }
+                } finally {
                     this.deleteStack(kmsKeyStackName);
                 }
             } finally {
