@@ -41,6 +41,7 @@ Metadata:
       - SubDomainNameWithDot
       - PreferredBackupWindow
       - PreferredMaintenanceWindow
+      - EnableIAMDatabaseAuthentication
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -119,6 +120,11 @@ Parameters:
     Type: String
     Default: '9.6.5'
     AllowedValues: ['11.2', '11.1', '10.7', '10.6', '10.5', '10.4', '10.3', '10.1', '9.6.12', '9.6.5', '9.5.16', '9.4.21', '9.3.25'] # aws rds describe-db-engine-versions --engine postgres --query "DBEngineVersions[].EngineVersion"
+  EnableIAMDatabaseAuthentication:
+    Description: 'Enable mapping of AWS Identity and Access Management (IAM) accounts to database accounts (https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/UsingWithRDS.IAMDBAuth.html).'
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'false'
 Conditions:
   HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
@@ -178,6 +184,7 @@ Resources:
       DBName: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBName]
       DBSnapshotIdentifier: !If [HasDBSnapshotIdentifier, !Ref DBSnapshotIdentifier, !Ref 'AWS::NoValue']
       DBSubnetGroupName: !Ref DBSubnetGroup
+      EnableIAMDatabaseAuthentication: !Ref EnableIAMDatabaseAuthentication
       Engine: postgres
       EngineVersion: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref EngineVersion]
       KmsKeyId: !If [HasKmsKeyAndNotDBSnapshotIdentifier, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}, !Ref 'AWS::NoValue']
