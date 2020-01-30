@@ -207,7 +207,7 @@ Resources:
       SnapshotWindow: '00:00-03:00'
       TransitEncryptionEnabled: !Ref TransitEncryption
     UpdatePolicy:
-      UseOnlineResharding: Boolean
+      UseOnlineResharding: true
   Node1CPUUtilizationTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
