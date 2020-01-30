@@ -59,7 +59,7 @@ Parameters:
     Type: String
     Default: ''
   SubDomainNameWithDot:
-    Description: 'Primary mame that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain.'
+    Description: 'Primary name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain.'
     Type: String
     Default: 'www.'
   ViewerRequestLambdaEdgeFunctionVersionARN: # max 5s timeout
