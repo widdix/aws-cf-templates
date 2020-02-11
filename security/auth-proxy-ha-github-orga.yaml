@@ -673,7 +673,7 @@ Resources:
           users:
             oauth2_proxy: {}
           sources:
-            /opt/oauth2_proxy: 'https://github.com/bitly/oauth2_proxy/releases/download/v2.2/oauth2_proxy-2.2.0.linux-amd64.go1.8.1.tar.gz'
+            /opt/oauth2_proxy: 'https://github.com/pusher/oauth2_proxy/releases/download/v5.0.0/oauth2_proxy-v5.0.0.linux-amd64.go1.13.6.tar.gz'
           packages:
             yum:
               nginx: []
@@ -691,7 +691,7 @@ Resources:
             '/etc/oauth2_proxy.cfg':
               content: !Sub |
                 ## OAuth2 Proxy Config File
-                ## https://github.com/bitly/oauth2_proxy
+                ## https://github.com/pusher/oauth2_proxy
                 http_address = "0.0.0.0:4180"
                 upstreams = [
                   "${Upstream}"
@@ -721,7 +721,7 @@ Resources:
                 # Short-Description: Start daemon at boot time
                 # Description:       Enable service provided by daemon.
                 ### END INIT INFO
-                dir="/opt/oauth2_proxy/oauth2_proxy-2.2.0.linux-amd64.go1.8.1"
+                dir="/opt/oauth2_proxy/oauth2_proxy-v5.0.0.linux-amd64.go1.13.6"
                 cmd="./oauth2_proxy -config=/etc/oauth2_proxy.cfg"
                 user="oauth2_proxy"
                 name=`basename $0`
