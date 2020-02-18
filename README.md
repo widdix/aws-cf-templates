@@ -17,6 +17,12 @@ Rapid CloudFormation: Modular, production ready, open source.
 
 Learn more: https://github.com/cfn-modules/docs
 
+## Sponsors
+
+![AWS Open Source](./docs/img/aws-open-source.png)
+
+AWS sponsors credits to run the weekly integration tests. With the help of AWS we are able to run the tests in multiple regions to increase the quality ofthe templates. [Read more](https://aws.amazon.com/blogs/opensource/aws-promotional-credits-open-source-projects/)
+
 ## License
 All templates are published under Apache License Version 2.0.
 
