@@ -90,7 +90,7 @@ The cool thing is that you can re-use the dependencies. E.g., you can use the sa
 
 ![AWS Open Source](./img/aws-open-source.png)
 
-AWS sponsors credits to run the weekly integration tests. With the help of AWS we are able to run the tests in multiple regions to increase the quality ofthe templates. [Read more](https://aws.amazon.com/blogs/opensource/aws-promotional-credits-open-source-projects/)
+AWS sponsors credits to run the weekly integration tests. With the help of AWS, we run tests in multiple regions to increase the quality of the templates. [Read more](https://aws.amazon.com/blogs/opensource/aws-promotional-credits-open-source-projects/)
 
 # License
 All templates are published under Apache License Version 2.0.
