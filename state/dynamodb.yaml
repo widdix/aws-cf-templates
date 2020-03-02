@@ -38,6 +38,27 @@ Metadata:
       - BackupScheduleExpression
       - PointInTimeRecoveryEnabled
     - Label:
+        default: 'DynamoDB Global Secondary Indexes (GSIs)'
+      Parameters:
+      - Index1PartitionKeyName
+      - Index1SortKeyName
+      - Index2PartitionKeyName
+      - Index2SortKeyName
+      - Index3PartitionKeyName
+      - Index3SortKeyName
+      - Attribute1Name
+      - Attribute1Type
+      - Attribute2Name
+      - Attribute2Type
+      - Attribute3Name
+      - Attribute3Type
+      - Attribute4Name
+      - Attribute4Type
+      - Attribute5Name
+      - Attribute5Type
+      - Attribute6Name
+      - Attribute6Type
+    - Label:
         default: 'DynamoDB PROVISIONED Mode Parameters'
       Parameters:
       - MaxWriteCapacityUnits
@@ -92,8 +113,16 @@ Parameters:
     Description: 'Optional name of the sort key for index 2, must match with one of the following: PartitionKeyName, SortKeyName, or Attribute*Name.'
     Type: String
     Default: ''
+  Index3PartitionKeyName:
+    Description: 'Optional name of the partition key for index 3, must match with one of the following: PartitionKeyName, SortKeyName, or Attribute*Name.'
+    Type: String
+    Default: ''
+  Index3SortKeyName:
+    Description: 'Optional name of the sort key for index 3, must match with one of the following: PartitionKeyName, SortKeyName, or Attribute*Name.'
+    Type: String
+    Default: ''
   Attribute1Name:
-    Description: 'Name of the attribute 1, not allowed to overlap with PartitionKeyName and SortKeyName.'
+    Description: 'Name of the attribute 1, not allowed to overlap with PartitionKeyNam, SortKeyName, or Attribute[2-6]Name.'
     Type: String
     Default: ''
   Attribute1Type:
@@ -102,7 +131,7 @@ Parameters:
     Default: S
     AllowedValues: [S, N, B]
   Attribute2Name:
-    Description: 'Name of the attribute 2, not allowed to overlap with PartitionKeyName and SortKeyName.'
+    Description: 'Name of the attribute 2, not allowed to overlap with PartitionKeyName, SortKeyName, or Attribute[1,3-6]Name.'
     Type: String
     Default: ''
   Attribute2Type:
@@ -111,11 +140,38 @@ Parameters:
     Default: S
     AllowedValues: [S, N, B]
   Attribute3Name:
-    Description: 'Name of the attribute 3, not allowed to overlap with PartitionKeyName and SortKeyName.'
+    Description: 'Name of the attribute 3, not allowed to overlap with PartitionKeyName, SortKeyName, or Attribute[1-2,4-6]Name.'
     Type: String
     Default: ''
   Attribute3Type:
     Description: 'Type of the attribute 3.'
+    Type: String
+    Default: S
+    AllowedValues: [S, N, B]
+  Attribute4Name:
+    Description: 'Name of the attribute 4, not allowed to overlap with PartitionKeyName, SortKeyName, or Attribute[1-3,5-6]Name.'
+    Type: String
+    Default: ''
+  Attribute4Type:
+    Description: 'Type of the attribute 4.'
+    Type: String
+    Default: S
+    AllowedValues: [S, N, B]
+  Attribute5Name:
+    Description: 'Name of the attribute 5, not allowed to overlap with PartitionKeyName, SortKeyName, or Attribute[1-4,6]Name.'
+    Type: String
+    Default: ''
+  Attribute5Type:
+    Description: 'Type of the attribute 5.'
+    Type: String
+    Default: S
+    AllowedValues: [S, N, B]
+  Attribute6Name:
+    Description: 'Name of the attribute 6, not allowed to overlap with PartitionKeyName, SortKeyName, or Attribute[1-5]Name.'
+    Type: String
+    Default: ''
+  Attribute6Type:
+    Description: 'Type of the attribute 6.'
     Type: String
     Default: S
     AllowedValues: [S, N, B]
@@ -185,9 +241,14 @@ Conditions:
   HasIndex1SortKey: !Not [!Equals [!Ref Index1SortKeyName, '']]
   HasIndex2: !Not [!Equals [!Ref Index2PartitionKeyName, '']]
   HasIndex2SortKey: !Not [!Equals [!Ref Index2SortKeyName, '']]
+  HasIndex3: !Not [!Equals [!Ref Index3PartitionKeyName, '']]
+  HasIndex3SortKey: !Not [!Equals [!Ref Index3SortKeyName, '']]
   HasAttribute1Definition: !Not [!Equals [!Ref Attribute1Name, '']]
   HasAttribute2Definition: !Not [!Equals [!Ref Attribute2Name, '']]
   HasAttribute3Definition: !Not [!Equals [!Ref Attribute3Name, '']]
+  HasAttribute4Definition: !Not [!Equals [!Ref Attribute4Name, '']]
+  HasAttribute5Definition: !Not [!Equals [!Ref Attribute5Name, '']]
+  HasAttribute6Definition: !Not [!Equals [!Ref Attribute6Name, '']]
   HasTableName: !Not [!Equals [!Ref TableName, '']]
   HasAwsManagedEncryption: !Equals [!Ref Encryption, aws]
   HasBillingAndScalingModeProvisioned: !Equals [!Ref BillingAndScalingMode, PROVISIONED]
@@ -222,6 +283,21 @@ Resources:
         - AttributeName: !Ref Attribute3Name
           AttributeType: !Ref Attribute3Type
         - !Ref 'AWS::NoValue'
+      - !If
+        - HasAttribute4Definition
+        - AttributeName: !Ref Attribute4Name
+          AttributeType: !Ref Attribute4Type
+        - !Ref 'AWS::NoValue'
+      - !If
+        - HasAttribute5Definition
+        - AttributeName: !Ref Attribute5Name
+          AttributeType: !Ref Attribute5Type
+        - !Ref 'AWS::NoValue'
+      - !If
+        - HasAttribute6Definition
+        - AttributeName: !Ref Attribute6Name
+          AttributeType: !Ref Attribute6Type
+        - !Ref 'AWS::NoValue'
       GlobalSecondaryIndexes:
       - !If
         - HasIndex1
@@ -253,6 +329,24 @@ Resources:
           - !If
             - HasIndex2SortKey
             - AttributeName: !Ref Index2SortKeyName
+              KeyType: RANGE
+            - !Ref 'AWS::NoValue'
+          Projection:
+            ProjectionType: 'ALL'
+          ProvisionedThroughput: !If [HasBillingAndScalingModeProvisioned, {ReadCapacityUnits: !Ref MinReadCapacityUnits, WriteCapacityUnits: !Ref MinWriteCapacityUnits}, !Ref 'AWS::NoValue']
+        - !Ref 'AWS::NoValue'
+      - !If
+        - HasIndex3
+        - IndexName: !If
+          - HasIndex3SortKey
+          - !Sub 'Index-${Index3PartitionKeyName}-${Index3SortKeyName}'
+          - !Sub 'Index-${Index3PartitionKeyName}'
+          KeySchema:
+          - AttributeName: !Ref Index3PartitionKeyName
+            KeyType: HASH
+          - !If
+            - HasIndex3SortKey
+            - AttributeName: !Ref Index3SortKeyName
               KeyType: RANGE
             - !Ref 'AWS::NoValue'
           Projection:
