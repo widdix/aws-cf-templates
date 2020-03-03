@@ -211,41 +211,41 @@ Parameters:
 Mappings:
   RegionMap:
     'eu-north-1':
-      AMI: 'ami-0662eb9b9b8685935'
+      AMI: 'ami-074a0e4318181e9d9'
     'ap-south-1':
-      AMI: 'ami-0217a85e28e625474'
+      AMI: 'ami-0d9462a653c34dab7'
     'eu-west-3':
-      AMI: 'ami-007fae589fdf6e955'
+      AMI: 'ami-0fd9bce3a3384b635'
     'eu-west-2':
-      AMI: 'ami-0089b31e09ac3fffc'
+      AMI: 'ami-0389b2a3c4948b1a0'
     'eu-west-1':
-      AMI: 'ami-0713f98de93617bb4'
+      AMI: 'ami-099a8245f5daa82bf'
     'ap-northeast-2':
-      AMI: 'ami-0bea7fd38fabe821a'
+      AMI: 'ami-0a93a08544874b3b7'
     'me-south-1':
-      AMI: 'ami-05f93aaf03b9bf20c'
+      AMI: 'ami-0e0e68bcf15b6f5cd'
     'ap-northeast-1':
-      AMI: 'ami-011facbea5ec0363b'
+      AMI: 'ami-0af1df87db7b650f4'
     'sa-east-1':
-      AMI: 'ami-09de7b4017733e2af'
+      AMI: 'ami-080a223be3de0c3b8'
     'ca-central-1':
-      AMI: 'ami-0a269ca7cc3e3beff'
+      AMI: 'ami-00db12b46ef5ebc36'
     'ap-east-1':
-      AMI: 'ami-db3d78aa'
+      AMI: 'ami-47e4a036'
     'ap-southeast-1':
-      AMI: 'ami-05c64f7b4062b0a21'
+      AMI: 'ami-0f02b24005e4aec36'
     'ap-southeast-2':
-      AMI: 'ami-0b8b10b5bf11f3a22'
+      AMI: 'ami-0f767afb799f45102'
     'eu-central-1':
-      AMI: 'ami-07cda0db070313c52'
+      AMI: 'ami-0df0e7600ad0913a9'
     'us-east-1':
-      AMI: 'ami-062f7200baf2fa504'
+      AMI: 'ami-0a887e401f7654935'
     'us-east-2':
-      AMI: 'ami-02ccb28830b645a41'
+      AMI: 'ami-0e38b48473ea57778'
     'us-west-1':
-      AMI: 'ami-03caa3f860895f82e'
+      AMI: 'ami-01c94064639c71719'
     'us-west-2':
-      AMI: 'ami-04590e7389a6e577c'
+      AMI: 'ami-0e8c04af2729ff1bb'
 Conditions:
   HasZeroAgents: !Equals [!Ref AgentMinSize, '0']
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
