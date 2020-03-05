@@ -959,10 +959,10 @@ Resources:
         PropagateAtLaunch: true
     CreationPolicy:
       ResourceSignal:
-        Timeout: PT15M
+        Timeout: PT30M
     UpdatePolicy:
       AutoScalingRollingUpdate:
-        PauseTime: PT15M
+        PauseTime: PT30M
         SuspendProcesses:
         - HealthCheck
         - ReplaceUnhealthy
