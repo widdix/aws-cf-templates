@@ -1163,7 +1163,7 @@ Resources:
       Code:
         ZipFile: |
           'use strict';
-          const response = require('./cfn-response');
+          const response = require('cfn-response');
           exports.handler = (event, context, cb) => {
             const throughput = parseInt(event.ResourceProperties.ThroughputInMibps, 10);
             const threshold = Math.round(throughput * 1048576 * 600 * 0.9);

@@ -241,7 +241,7 @@ Resources:
       Code:
         ZipFile: |
           'use strict';
-          const response = require('./cfn-response');
+          const response = require('cfn-response');
           exports.handler = (event, context, cb) => {
             const nodes = parseInt(event.ResourceProperties.NumCacheNodes, 10);
             const azs = event.ResourceProperties.AvailabilityZones.split(',');
