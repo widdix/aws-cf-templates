@@ -624,13 +624,15 @@ Resources:
               mode: '000644'
               owner: root
               group: root
-          commands:
-            a_stop_service:
-              command: '/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a stop'
-              test: '! /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a status | grep -q stopped'
-            b_start_service:
-              command: '/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s'
-              test: '! /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a status | grep -q started'
+          services:
+            sysvinit:
+              'amazon-cloudwatch-agent':
+                enabled: true
+                ensureRunning: true
+                files:
+                - '/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json'
+                packages:
+                - cloudwatch
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':
