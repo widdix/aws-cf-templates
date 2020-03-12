@@ -95,13 +95,13 @@ Resources:
       Dimensions:
       - Name: NatGatewayId
         Value: !Ref NatGateway
-  AlarmNatGatewayBahndwith:
+  AlarmNatGatewayBandwidth:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      AlarmDescription: !Sub 'NAT gateway ${SubnetZone} bandwith utilization is over 80%'
+      AlarmDescription: !Sub 'NAT gateway ${SubnetZone} bandwidth utilization is over 80%'
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       Metrics:
