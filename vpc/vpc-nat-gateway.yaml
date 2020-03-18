@@ -95,6 +95,74 @@ Resources:
       Dimensions:
       - Name: NatGatewayId
         Value: !Ref NatGateway
+  AlarmNatGatewayBandwidth:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      AlarmDescription: !Sub 'NAT gateway ${SubnetZone} bandwidth utilization is over 80%'
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Metrics:
+      - Id: 'in1'
+        Label: 'InFromDestination'
+        MetricStat:
+          Metric:
+            Namespace: 'AWS/NATGateway'
+            MetricName: BytesInFromDestination # bytes per minute
+            Dimensions:
+            - Name: NatGatewayId
+              Value: !Ref NatGateway
+          Period: 60
+          Stat: Sum
+          Unit: Bytes
+        ReturnData: false
+      - Id: 'in2'
+        Label: 'InFromSource'
+        MetricStat:
+          Metric:
+            Namespace: 'AWS/NATGateway'
+            MetricName: BytesInFromSource # bytes per minute
+            Dimensions:
+            - Name: NatGatewayId
+              Value: !Ref NatGateway
+          Period: 60
+          Stat: Sum
+          Unit: Bytes
+        ReturnData: false
+      - Id: 'out1'
+        Label: 'OutToDestination'
+        MetricStat:
+          Metric:
+            Namespace: 'AWS/NATGateway'
+            MetricName: BytesOutToDestination # bytes per minute
+            Dimensions:
+            - Name: NatGatewayId
+              Value: !Ref NatGateway
+          Period: 60
+          Stat: Sum
+          Unit: Bytes
+        ReturnData: false
+      - Id: 'out2'
+        Label: 'OutToSource'
+        MetricStat:
+          Metric:
+            Namespace: 'AWS/NATGateway'
+            MetricName: BytesOutToSource # bytes per minute
+            Dimensions:
+            - Name: NatGatewayId
+              Value: !Ref NatGateway
+          Period: 60
+          Stat: Sum
+          Unit: Bytes
+        ReturnData: false
+      - Expression: '(in1+in2+out1+out2)/2/60*8/1000/1000/1000' # to Gbit/s
+        Id: 'bandwidth'
+        Label: 'Bandwidth'
+        ReturnData: true
+      Threshold: 36 # hard limit is 45 Gbit/s
+      TreatMissingData: notBreaching
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
