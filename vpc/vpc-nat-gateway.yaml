@@ -114,8 +114,8 @@ Resources:
             Dimensions:
             - Name: NatGatewayId
               Value: !Ref NatGateway
-          Period: 600
-          Stat: Average
+          Period: 60
+          Stat: Sum
           Unit: Bytes
         ReturnData: false
       - Id: 'in2'
@@ -127,8 +127,8 @@ Resources:
             Dimensions:
             - Name: NatGatewayId
               Value: !Ref NatGateway
-          Period: 600
-          Stat: Average
+          Period: 60
+          Stat: Sum
           Unit: Bytes
         ReturnData: false
       - Id: 'out1'
@@ -140,8 +140,8 @@ Resources:
             Dimensions:
             - Name: NatGatewayId
               Value: !Ref NatGateway
-          Period: 600
-          Stat: Average
+          Period: 60
+          Stat: Sum
           Unit: Bytes
         ReturnData: false
       - Id: 'out2'
@@ -153,15 +153,15 @@ Resources:
             Dimensions:
             - Name: NatGatewayId
               Value: !Ref NatGateway
-          Period: 600
-          Stat: Average
+          Period: 60
+          Stat: Sum
           Unit: Bytes
         ReturnData: false
-      - Expression: '(in1+in2+out1+out2)/60*8/1000/1000/1000' # to Gbit/s
+      - Expression: '(in1+in2+out1+out2)/2/60*8/1000/1000/1000' # to Gbit/s
         Id: 'bandwidth'
         Label: 'Bandwidth'
         ReturnData: true
-      Threshold: 36 # hard limit 45 Gbit/s
+      Threshold: 36 # hard limit is 45 Gbit/s
       TreatMissingData: notBreaching
 Outputs:
   TemplateID:
