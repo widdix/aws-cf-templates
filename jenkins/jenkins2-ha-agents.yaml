@@ -1207,7 +1207,7 @@ Resources:
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'c_download_cli':
               command: 'curl -s -m 60 -o /opt/jenkins-cli.jar -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/jnlpJars/jenkins-cli.jar'
-              test: '[ ! -f /opt/jenkins-cli.jar ]'
+              test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'd_activate_slave_agent_port':
               command: 'sed -i -e "s@<slaveAgentPort>.*</slaveAgentPort>@<slaveAgentPort>49817</slaveAgentPort>@" /var/lib/jenkins/config.xml'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
