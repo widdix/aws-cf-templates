@@ -796,7 +796,7 @@ Resources:
         install:
           packages:
             rpm:
-              jenkins: 'https://pkg.jenkins.io/redhat-stable/jenkins-2.204.5-1.1.noarch.rpm'
+              jenkins: 'https://pkg.jenkins.io/redhat-stable/jenkins-2.222.1-1.1.noarch.rpm'
             yum:
               'java-1.8.0-amazon-corretto': []
           files:
@@ -858,36 +858,42 @@ Resources:
             'b_await_jenkins':
               command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'c_activate_slave_agent_port':
+            'c_download_cli':
+              command: 'curl -s -m 60 -o /opt/jenkins-cli.jar -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/jnlpJars/jenkins-cli.jar'
+              test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+            'd_activate_slave_agent_port':
               command: 'sed -i -e "s@<slaveAgentPort>.*</slaveAgentPort>@<slaveAgentPort>49817</slaveAgentPort>@" /var/lib/jenkins/config.xml'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'd_set_label':
+            'e_set_label':
               command: 'sed -i -e "s@<label>.*</label>@<label>master</label>@" /var/lib/jenkins/config.xml'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'e_restart_jenkins':
+            'f_restart_jenkins':
               command: 'service jenkins restart'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'f_await_jenkins':
+            'g_await_jenkins':
               command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'g_install_plugins':
-              command: 'java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" install-plugin $(cat /root/plugins.txt | tr "\n" " ")'
+            'h_install_plugins':
+              command: 'java -jar /opt/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" install-plugin $(cat /root/plugins.txt | tr "\n" " ")'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'h_restart_jenkins':
+            'i_restart_jenkins':
               command: 'service jenkins restart'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'i_await_jenkins':
+            'j_await_jenkins':
               command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'j_set_admin_password':
-              command: !Sub 'echo $''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", \''${MasterAdminPassword}\'')'' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" groovy ='
+            'k_set_admin_password':
+              command: !Sub 'echo $''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", \''${MasterAdminPassword}\'')'' | java -jar /opt/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" groovy ='
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'k_stop_jenkins':
+            'l_stop_jenkins':
               command: 'service jenkins stop'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'z_create_setup_done_file':
+            'x_create_setup_done_file':
               command: 'echo "Setup done. Don not delete this file." > /var/lib/jenkins/setup_done.txt'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+            'y_download_cli_fallback': # fallback for setups created with version <= 11.8.0
+              command: !Sub 'curl -s -m 60 -o /opt/jenkins-cli.jar -u "admin:${MasterAdminPassword}" http://localhost:8080/jnlpJars/jenkins-cli.jar'
+              test: '[ ! -f /opt/jenkins-cli.jar ]'
         custom:
           packages:
             yum:
