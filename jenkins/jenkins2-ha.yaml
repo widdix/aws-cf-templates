@@ -564,7 +564,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, extras, install, setup, custom, run], [awslogs, mount, extras, install, setup, custom, run]]
+          default: [awslogs, !If [HasIAMUserSSHAccess, ssh-access, !Ref 'AWS::NoValue'], mount, extras, install, setup, custom_before, run, custom_after]
         awslogs:
           packages:
             yum:
@@ -891,10 +891,7 @@ Resources:
             'x_create_setup_done_file':
               command: 'echo "Setup done. Don not delete this file." > /var/lib/jenkins/setup_done.txt'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'y_download_cli_fallback': # fallback for setups created with version <= 11.8.0
-              command: !Sub 'curl -s -m 60 -o /opt/jenkins-cli.jar -u "admin:${MasterAdminPassword}" http://localhost:8080/jnlpJars/jenkins-cli.jar'
-              test: '[ ! -f /opt/jenkins-cli.jar ]'
-        custom:
+        custom_before:
           packages:
             yum:
               git: []
@@ -919,6 +916,14 @@ Resources:
                 packages:
                   rpm:
                   - jenkins
+        custom_after:
+          commands:
+            'a_await_jenkins':
+              command: !Sub 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:${MasterAdminPassword}" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              test: '[ ! -f /opt/jenkins-cli.jar ]'
+            'b_download_cli':
+              command: !Sub 'curl -s -m 60 -o /opt/jenkins-cli.jar -u "admin:${MasterAdminPassword}" http://localhost:8080/jnlpJars/jenkins-cli.jar'
+              test: '[ ! -f /opt/jenkins-cli.jar ]'
     Properties:
       ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
       IamInstanceProfile: !Ref MasterIP
