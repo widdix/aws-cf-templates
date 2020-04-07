@@ -127,16 +127,27 @@ Resources:
             return values.join('\t');
           }
 
-          function transform(chunk, encoding, callback) {
-            const transformed = chunk
-              .toString('utf8')
-              .split('\n')
-              .map(transformLine)
-              .join('\n');
-            callback(null, Buffer.from(transformed, 'utf8'));
-          }
-
           async function process(record) {
+            let restOfLastChunk = Buffer.alloc(0);
+            const transform = (currentChunk, encoding, callback) => {
+              const chunk = Buffer.concat([restOfLastChunk, currentChunk]);
+              const lines = [];
+              let str = chunk.toString('utf8');
+              while(str.length > 0) {
+                const i = str.indexOf('\n');
+                if (i > 0) {
+                  lines.push(str.slice(0, i));
+                  str = str.slice(i+1);
+                } else {
+                  break;
+                }
+              }
+              restOfLastChunk = Buffer.from(str, 'utf8');
+              const transformed = lines
+                .map(transformLine)
+                .join('\n');
+              callback(null, Buffer.from(transformed, 'utf8'));
+            };
             const params = {
               Bucket: record.s3.bucket.name,
               Key: record.s3.object.key
@@ -155,6 +166,9 @@ Resources:
               Key: record.s3.object.key.slice(0, -2) + 'anonymized.gz',
               Body: body
             }).promise();
+            if (restOfLastChunk.length > 0) {
+              throw new Error('file was not read completly');
+            }
             return s3.deleteObject(params).promise();
           }
 
