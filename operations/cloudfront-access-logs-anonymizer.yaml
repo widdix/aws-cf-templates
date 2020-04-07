@@ -60,8 +60,10 @@ Resources:
           - Effect: Allow
             Action:
             - 's3:GetObject'
+            - 's3:GetObjectVersion'
             - 's3:PutObject'
             - 's3:DeleteObject'
+            - 's3:DeleteObjectVersion'
             Resource: !Sub
             - 'arn:${Partition}:s3:::${BucketName}/*'
             - Partition: !Ref 'AWS::Partition'
