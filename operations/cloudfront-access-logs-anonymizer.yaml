@@ -128,21 +128,20 @@ Resources:
           }
 
           async function process(record) {
-            let restOfLastChunk = Buffer.alloc(0);
+            let chunk = Buffer.alloc(0);
             const transform = (currentChunk, encoding, callback) => {
-              const chunk = Buffer.concat([restOfLastChunk, currentChunk]);
+              chunk = Buffer.concat([chunk, currentChunk]);
               const lines = [];
-              let str = chunk.toString('utf8');
-              while(str.length > 0) {
-                const i = str.indexOf('\n');
-                if (i > 0) {
-                  lines.push(str.slice(0, i));
-                  str = str.slice(i+1);
-                } else {
+              while(chunk.length > 0) {
+                const i = chunk.indexOf('\n', 'utf8');
+                if (i === -1) {
                   break;
+                } else {
+                  lines.push(chunk.slice(0, i).toString('utf8'));
+                  chunk = chunk.slice(i+1);
                 }
               }
-              restOfLastChunk = Buffer.from(str, 'utf8');
+              lines.push('');
               const transformed = lines
                 .map(transformLine)
                 .join('\n');
@@ -166,14 +165,14 @@ Resources:
               Key: record.s3.object.key.slice(0, -2) + 'anonymized.gz',
               Body: body
             }).promise();
-            if (restOfLastChunk.length > 0) {
+            if (chunk.length > 0) {
               throw new Error('file was not read completly');
             }
             return s3.deleteObject(params).promise();
           }
 
           exports.handler = async (event) => {
-            console.log(JSON.stringify(event)); // FIXME remove
+            console.log(JSON.stringify(event));
             for (let record of event.Records) {
               if (record.s3.object.key.endsWith('.anonymized.gz')) {
                 continue;
