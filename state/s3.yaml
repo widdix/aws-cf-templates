@@ -31,6 +31,13 @@ Metadata:
       - Versioning
       - NoncurrentVersionExpirationInDays
       - ExpirationInDays
+      - ExpirationPrefix
+    - Label:
+        default: 'Lambda Parameters'
+      Parameters:
+      - LambdaFunctionArn
+      - LambdaFunctionEvent
+      - LambdaFunctionFilterPrefix
 Parameters:
   ParentKmsKeyStack:
     Description: 'Optional Stack name of parent KMS key stack based on security/kms-key.yaml template.'
@@ -68,6 +75,38 @@ Parameters:
     Type: Number
     Default: 0
     MinValue: 0
+  ExpirationPrefix:
+    Description: 'Optional key prefix for expiring objects.'
+    Type: String
+    Default: ''
+  LambdaFunctionArn:
+    Description: 'Optional ARN of the AWS Lambda function that S3 invokes when the specified event type occurs.'
+    Type: 'String'
+    Default: ''
+  LambdaFunctionEvent:
+    Description: 'S3 bucket event for which to invoke the AWS Lambda function.'
+    Type: 'String'
+    Default: 's3:ObjectCreated:*'
+    AllowedValues:
+    - 's3:ObjectCreated:*'
+    - 's3:ObjectCreated:Put'
+    - 's3:ObjectCreated:Post'
+    - 's3:ObjectCreated:Copy'
+    - 's3:ObjectCreated:CompleteMultipartUpload'
+    - 's3:ObjectRemoved:*'
+    - 's3:ObjectRemoved:Delete'
+    - 's3:ObjectRemoved:DeleteMarkerCreated'
+    - 's3:ObjectRestore:Post'
+    - 's3:ObjectRestore:Completed'
+    - 's3:ReducedRedundancyLostObject'
+    - 's3:Replication:OperationFailedReplication'
+    - 's3:Replication:OperationMissedThreshold'
+    - 's3:Replication:OperationReplicatedAfterThreshold'
+    - 's3:Replication:OperationNotTracked'
+  LambdaFunctionFilterPrefix:
+    Description: 'Optional preifx filter for which to invoke the AWS Lambda function (leave empty for no filter).'
+    Type: String
+    Default: ''
 Conditions:
   HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasS3VirusScan: !Not [!Equals [!Ref ParentS3VirusScanStack, '']]
@@ -84,10 +123,13 @@ Conditions:
   HadVersioning: !Equals [!Ref Versioning, 'false-but-was-true']
   HasNoncurrentVersionExpirationInDays: !Not [!Equals [!Ref NoncurrentVersionExpirationInDays, 0]]
   HasExpirationInDays: !Not [!Equals [!Ref ExpirationInDays, 0]]
+  HasExpirationPrefix: !Not [!Equals [!Ref ExpirationPrefix, '']]
   HasPrivateAccessAndKmsKey: !And [!Condition HasPrivateAccess, !Condition HasKmsKey]
   HasPartitionPublic: !Equals [!Ref 'AWS::Partition', 'aws']
   HasPartitionChina: !Equals [!Ref 'AWS::Partition', 'aws-cn']
   HasPartitionUsGov: !Equals [!Ref 'AWS::Partition', 'aws-us-gov']
+  HasLambdaFunctionArn: !Not [!Equals [!Ref LambdaFunctionArn, '']]
+  HasLambdaFunctionFilterPrefix: !Not [!Equals [!Ref LambdaFunctionFilterPrefix, '']]
 Resources:
   Bucket: # cannot be deleted with data
     Type: 'AWS::S3::Bucket'
@@ -101,13 +143,13 @@ Resources:
         - NoncurrentVersionExpirationInDays: !If [HasNoncurrentVersionExpirationInDays, !Ref NoncurrentVersionExpirationInDays, 1]
           Status: !If [HasNoncurrentVersionExpirationInDays, Enabled, Disabled]
         - ExpirationInDays: !If [HasExpirationInDays, !Ref ExpirationInDays, 1]
+          Prefix: !If [HasExpirationPrefix, !Ref ExpirationPrefix, !Ref 'AWS::NoValue']
           Status: !If [HasExpirationInDays, Enabled, Disabled]
-      NotificationConfiguration: !If
-      - HasS3VirusScan
-      - QueueConfigurations:
-        - Event: 's3:ObjectCreated:*'
-          Queue: {'Fn::ImportValue': !Sub '${ParentS3VirusScanStack}-ScanQueueArn'}
-      - !Ref 'AWS::NoValue'
+      NotificationConfiguration:
+        LambdaConfigurations:
+        - !If [HasLambdaFunctionArn, {Event: !Ref LambdaFunctionEvent, Function: !Ref LambdaFunctionArn, Filter: !If [HasLambdaFunctionFilterPrefix, {S3Key: {Rules: [{Name: prefix, Value: !Ref LambdaFunctionFilterPrefix}]}}, !Ref 'AWS::NoValue']}, !Ref 'AWS::NoValue']
+        QueueConfigurations:
+        - !If [HasS3VirusScan, {Event: 's3:ObjectCreated:*', Queue: {'Fn::ImportValue': !Sub '${ParentS3VirusScanStack}-ScanQueueArn'}}, !Ref 'AWS::NoValue']
       VersioningConfiguration: !If [HasVersioning, {Status: Enabled}, !If [HadVersioning, {Status: Suspended}, !Ref 'AWS::NoValue']]
       BucketEncryption: !If [HasKmsKey, {ServerSideEncryptionConfiguration: [{ServerSideEncryptionByDefault: {KMSMasterKeyID: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}, SSEAlgorithm: 'aws:kms'}}]}, !Ref 'AWS::NoValue']
   BucketPolicyPrivate:
