@@ -132,41 +132,41 @@ Parameters:
 Mappings:
   RegionMap:
     'eu-north-1':
-      AMI: 'ami-0662eb9b9b8685935'
+      AMI: 'ami-0f630db6194a81ad0'
     'ap-south-1':
-      AMI: 'ami-0217a85e28e625474'
+      AMI: 'ami-03b5297d565ef30a6'
     'eu-west-3':
-      AMI: 'ami-007fae589fdf6e955'
+      AMI: 'ami-07eda9385feb1e969'
     'eu-west-2':
-      AMI: 'ami-0089b31e09ac3fffc'
+      AMI: 'ami-0cb790308f7591fa6'
     'eu-west-1':
-      AMI: 'ami-0713f98de93617bb4'
+      AMI: 'ami-04d5cc9b88f9d1d39'
     'ap-northeast-2':
-      AMI: 'ami-0bea7fd38fabe821a'
+      AMI: 'ami-0db78afd3d150fc18'
     'me-south-1':
-      AMI: 'ami-05f93aaf03b9bf20c'
+      AMI: 'ami-05613911cb72781b8'
     'ap-northeast-1':
-      AMI: 'ami-011facbea5ec0363b'
+      AMI: 'ami-052652af12b58691f'
     'sa-east-1':
-      AMI: 'ami-09de7b4017733e2af'
+      AMI: 'ami-0b032e878a66c3b68'
     'ca-central-1':
-      AMI: 'ami-0a269ca7cc3e3beff'
+      AMI: 'ami-0bf54ac1b628cf143'
     'ap-east-1':
-      AMI: 'ami-db3d78aa'
+      AMI: 'ami-33a7e042'
     'ap-southeast-1':
-      AMI: 'ami-05c64f7b4062b0a21'
+      AMI: 'ami-0cbc6aae997c6538a'
     'ap-southeast-2':
-      AMI: 'ami-0b8b10b5bf11f3a22'
+      AMI: 'ami-08fdde86b93accf1c'
     'eu-central-1':
-      AMI: 'ami-07cda0db070313c52'
+      AMI: 'ami-0ec1ba09723e5bfac'
     'us-east-1':
-      AMI: 'ami-062f7200baf2fa504'
+      AMI: 'ami-0fc61db8544a617ed'
     'us-east-2':
-      AMI: 'ami-02ccb28830b645a41'
+      AMI: 'ami-0e01ce4ee18447327'
     'us-west-1':
-      AMI: 'ami-03caa3f860895f82e'
+      AMI: 'ami-09a7fe78668f1e2c0'
     'us-west-2':
-      AMI: 'ami-04590e7389a6e577c'
+      AMI: 'ami-0ce21b51cb31a48b8'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
@@ -673,7 +673,7 @@ Resources:
           users:
             oauth2_proxy: {}
           sources:
-            /opt/oauth2_proxy: 'https://github.com/bitly/oauth2_proxy/releases/download/v2.2/oauth2_proxy-2.2.0.linux-amd64.go1.8.1.tar.gz'
+            /opt/oauth2_proxy: 'https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v5.1.0/oauth2_proxy-v5.1.0.linux-amd64.go1.14.tar.gz'
           packages:
             yum:
               nginx: []
@@ -691,7 +691,7 @@ Resources:
             '/etc/oauth2_proxy.cfg':
               content: !Sub |
                 ## OAuth2 Proxy Config File
-                ## https://github.com/bitly/oauth2_proxy
+                ## https://github.com/pusher/oauth2_proxy
                 http_address = "0.0.0.0:4180"
                 upstreams = [
                   "${Upstream}"
@@ -721,7 +721,7 @@ Resources:
                 # Short-Description: Start daemon at boot time
                 # Description:       Enable service provided by daemon.
                 ### END INIT INFO
-                dir="/opt/oauth2_proxy/oauth2_proxy-2.2.0.linux-amd64.go1.8.1"
+                dir="/opt/oauth2_proxy/oauth2_proxy-v5.1.0.linux-amd64.go1.14"
                 cmd="./oauth2_proxy -config=/etc/oauth2_proxy.cfg"
                 user="oauth2_proxy"
                 name=`basename $0`
