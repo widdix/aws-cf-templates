@@ -105,7 +105,7 @@ Resources:
           }
 
           function anonymizeIpAddress(str) {
-            if (str === '-') {
+            if (str === '-' || str === 'unknown') {
               return str;
             }
             if (str.includes('.')) {
