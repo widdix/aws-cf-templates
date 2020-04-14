@@ -118,6 +118,9 @@ Resources:
           }
 
           function transformLine(line) {
+            if (line.trim() === '') {
+              return line;
+            }
             const values = line.split(' ');
             values[3] = anonymizeIpAddress(values[3]);
             return values.join(' ');
