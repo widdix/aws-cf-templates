@@ -193,9 +193,17 @@ Resources:
         ToPort: 80
         CidrIp: '0.0.0.0/0'
       - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIpv6: '::/0'
+      - IpProtocol: tcp
         FromPort: 443
         ToPort: 443
         CidrIp: '0.0.0.0/0'
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIpv6: '::/0'
   HTTPCodeELB5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
@@ -281,9 +289,23 @@ Resources:
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
         HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       Type: A
+  RecordSetIPv6:
+    Condition: HasZone
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      AliasTarget:
+        HostedZoneId: !GetAtt 'LoadBalancer.CanonicalHostedZoneID'
+        DNSName: !GetAtt 'LoadBalancer.DNSName'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
+      Name: !Sub
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+      Type: AAAA
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
+      IpAddressType: dualstack
       LoadBalancerAttributes:
       - Key: 'idle_timeout.timeout_seconds'
         Value: !Ref LoadBalancerIdleTimeout
