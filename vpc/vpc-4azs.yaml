@@ -438,7 +438,7 @@ Resources:
       RuleAction: allow
       Egress: true
       Ipv6CidrBlock: '::/0'
-  NetworkAclEntryInPrivateAllowVPC:
+  NetworkAclEntryInPrivateAllowAll:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
       NetworkAclId: !Ref NetworkAclPrivate
@@ -447,7 +447,7 @@ Resources:
       RuleAction: allow
       Egress: false
       CidrBlock: '0.0.0.0/0'
-  NetworkAclEntryInPrivateAllowVPCIPv6:
+  NetworkAclEntryInPrivateAllowAllIPv6:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
       NetworkAclId: !Ref NetworkAclPrivate
@@ -456,7 +456,7 @@ Resources:
       RuleAction: allow
       Egress: false
       Ipv6CidrBlock: '::/0'
-  NetworkAclEntryOutPrivateAllowVPC:
+  NetworkAclEntryOutPrivateAllowAll:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
       NetworkAclId: !Ref NetworkAclPrivate
@@ -465,7 +465,7 @@ Resources:
       RuleAction: allow
       Egress: true
       CidrBlock: '0.0.0.0/0'
-  NetworkAclEntryOutPrivateAllowVPCIPv6:
+  NetworkAclEntryOutPrivateAllowAllIPv6:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
       NetworkAclId: !Ref NetworkAclPrivate
