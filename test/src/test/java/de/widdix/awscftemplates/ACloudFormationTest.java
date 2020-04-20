@@ -56,8 +56,33 @@ public abstract class ACloudFormationTest extends AAWSTest {
         this.waitForStack(stackName, FinalStatus.CREATE_COMPLETE);
     }
 
+    protected final void updateStack(final String stackName, final String template, final Parameter... parameters) {
+        UpdateStackRequest req = new UpdateStackRequest()
+                .withStackName(stackName)
+                .withParameters(parameters)
+                .withCapabilities(Capability.CAPABILITY_IAM);
+        if (Config.has(Config.Key.TEMPLATE_DIR)) {
+            final String dir = Config.get(Config.Key.TEMPLATE_DIR);
+            if (Config.has(Config.Key.BUCKET_NAME)) {
+                final String bucketName = Config.get(Config.Key.BUCKET_NAME);
+                final String bucketRegion = Config.get(Config.Key.BUCKET_REGION);
+                final AmazonS3 s3local = AmazonS3ClientBuilder.standard().withCredentials(this.credentialsProvider).withRegion(bucketRegion).build();
+                s3local.putObject(bucketName, stackName, new File(dir + template));
+                req = req.withTemplateURL("https://s3-" + bucketRegion + ".amazonaws.com/" + bucketName + "/" + stackName);
+            } else {
+                final String body = readFile(dir + template, Charset.forName("UTF-8"));
+                req = req.withTemplateBody(body);
+            }
+        } else {
+            req = req.withTemplateURL("https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates/" + template);
+        }
+        this.cf.updateStack(req);
+        this.waitForStack(stackName, FinalStatus.UPDATE_COMPLETE);
+    }
+
     protected enum FinalStatus {
         CREATE_COMPLETE(StackStatus.CREATE_COMPLETE, false, true, StackStatus.CREATE_IN_PROGRESS),
+        UPDATE_COMPLETE(StackStatus.UPDATE_COMPLETE, false, false, StackStatus.UPDATE_COMPLETE_CLEANUP_IN_PROGRESS, StackStatus.UPDATE_IN_PROGRESS),
         DELETE_COMPLETE(StackStatus.DELETE_COMPLETE, true, false, StackStatus.DELETE_IN_PROGRESS);
 
         private final StackStatus finalStatus;
