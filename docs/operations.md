@@ -42,9 +42,9 @@ I add links to AWS Management Console that are relevant to an incident. Contextu
 
 IPv4 addresses are anonymized to `XXX.YYY.ZZZ.0` and IPv6 addresses to `XXXX:YYYY::`.
 
-Access logs are stored in S3 buckets (e.g., created via [state/s3](../state/#s3)). The following order of creation is recommended:
+Access logs are stored in S3 buckets (created via [state/s3](./state/#s3)). The following order of creation is recommended:
 
-1. Create [S3 Bucket](../state/#s3) stack.
+1. Create [S3 Bucket](./state/#s3) stack.
 2. Create Access Logs Anonymizer stack.
 3. Update S3 Bucket stack and set the parameter **LambdaFunctionArn** to the **FunctionARN** output of the Access Logs Anonymizer stack.
 
