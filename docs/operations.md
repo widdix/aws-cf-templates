@@ -37,3 +37,51 @@ I add links to AWS Management Console that are relevant to an incident. Contextu
 1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
+# Access Logs Anonymizer
+
+IPv4 addresses are anonymized to `XXX.YYY.ZZZ.0` and IPv6 addresses to `XXXX:YYYY::`.
+
+Access logs are stored in S3 buckets (e.g., created via [state/s3](../state/#s3)). The following order of creation is recommended:
+
+1. Create [S3 Bucket](../state/#s3) stack.
+2. Create Access Logs Anonymizer stack.
+3. Update S3 Bucket stack and set the parameter **LambdaFunctionArn** to the **FunctionARN** output of the Access Logs Anonymizer stack.
+
+## CloudFront
+This template describes a Lambda function that can be used to anonymize IP addresses in CloudFront access logs. 
+
+## Installation Guide
+1. This template depends on our `state/s3.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/state/s3.yaml&stackName=access-logs&param_Access=CloudFrontAccessLogWrite)
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/cloudfront-access-logs-anonymizer.yaml&stackName=access-logs-anonymizer&param_ParentS3Stack=access-logs)
+1. Click **Next** to proceed with the next step of the wizard.
+1. Specify a name and all parameters for the stack.
+1. Click **Next** to proceed with the next step of the wizard.
+1. Click **Next** to skip the **Options** step of the wizard.
+1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
+1. Click **Create** to start the creation of the stack.
+1. Wait until the stack reaches the state **CREATE_COMPLETE**
+1. Update S3 Bucket stack and set the parameter **LambdaFunctionArn** to the **FunctionARN** output of the Access Logs Anonymizer stack.
+
+### Dependencies
+* `state/s3.yaml` (**required**)
+* `operations/alert.yaml` (recommended)
+
+## ALB
+This template describes a Lambda function that can be used to anonymize IP addresses in ALB access logs. 
+
+## Installation Guide
+1. This template depends on our `state/s3.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/state/s3.yaml&stackName=access-logs&param_Access=ElbAccessLogWrite)
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/alb-access-logs-anonymizer.yaml&stackName=access-logs-anonymizer&param_ParentS3Stack=access-logs)
+1. Click **Next** to proceed with the next step of the wizard.
+1. Specify a name and all parameters for the stack.
+1. Click **Next** to proceed with the next step of the wizard.
+1. Click **Next** to skip the **Options** step of the wizard.
+1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
+1. Click **Create** to start the creation of the stack.
+1. Wait until the stack reaches the state **CREATE_COMPLETE**
+1. Update S3 Bucket stack and set the parameter **LambdaFunctionArn** to the **FunctionARN** output of the Access Logs Anonymizer stack.
+
+### Dependencies
+* `state/s3.yaml` (**required**)
+* `operations/alert.yaml` (recommended)
