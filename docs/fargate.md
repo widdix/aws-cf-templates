@@ -14,7 +14,7 @@ We provide you templates for the Fargate cluster and the service. You need to pu
 This template describes a fault tolerant and scalable Fargate cluster on AWS.
 
 ## Installation Guide
-1. This templates depends on one of our [`vpc-*azs.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
+1. This template depends on one of our [`vpc-*azs.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/fargate/cluster.yaml&stackName=fargate-cluster&param_ParentVPCStack=vpc)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
@@ -48,8 +48,8 @@ We provide three service templates:
 This template describes a fault tolerant and scalable Fargate service that uses the cluster's load balancer and path and/or host based routing for incoming traffic.
 
 ### Installation Guide
-1. This templates depends on one of our [`vpc-*azs.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
-1. This templates depends on our `cluster.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/fargate/cluster.yaml&stackName=fargate-cluster&param_ParentVPCStack=vpc)
+1. This template depends on one of our [`vpc-*azs.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
+1. This template depends on our `cluster.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/fargate/cluster.yaml&stackName=fargate-cluster&param_ParentVPCStack=vpc)
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/fargate/service-cluster-alb.yaml&stackName=fargate-service&param_ParentVPCStack=vpc&param_ParentClusterStack=fargate-cluster)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
@@ -70,8 +70,8 @@ This template describes a fault tolerant and scalable Fargate service that uses 
 This template describes a fault tolerant and scalable Fargate service that uses a dedicated load balancer for incoming traffic.
 
 ### Installation Guide
-1. This templates depends on one of our [`vpc-*azs.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
-1. This templates depends on our `cluster.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/fargate/cluster.yaml&stackName=fargate-cluster&param_ParentVPCStack=vpc)
+1. This template depends on one of our [`vpc-*azs.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
+1. This template depends on our `cluster.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/fargate/cluster.yaml&stackName=fargate-cluster&param_ParentVPCStack=vpc)
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/fargate/service-dedicated-alb.yaml&stackName=fargate-service&param_ParentVPCStack=vpc&param_ParentClusterStack=fargate-cluster)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
@@ -95,10 +95,10 @@ This template describes a fault tolerant and scalable Fargate service that uses 
 This template describes a fault tolerant and scalable Fargate service that registers tasks at the service discovery registry (aka. Cloud Map). Allows inter-service communication without any load balancer in between.
 
 ### Installation Guide
-1. This templates depends on one of our [`vpc-*azs.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
-1. This templates depends on our `cluster.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/fargate/cluster.yaml&stackName=fargate-cluster&param_ParentVPCStack=vpc)
-1. This templates depends on our [`cloudmap-*.yaml`](./vpc/) template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/cloudmap-private.yaml&stackName=cloudmap&param_ParentVPCStack=vpc)
-1. This templates depends on our [`client-sg.yaml`](./state/) template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/state/client-sg.yaml&stackName=client-sg&param_ParentVPCStack=vpc)
+1. This template depends on one of our [`vpc-*azs.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
+1. This template depends on our `cluster.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/fargate/cluster.yaml&stackName=fargate-cluster&param_ParentVPCStack=vpc)
+1. This template depends on our [`cloudmap-*.yaml`](./vpc/) template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/cloudmap-private.yaml&stackName=cloudmap&param_ParentVPCStack=vpc)
+1. This template depends on our [`client-sg.yaml`](./state/) template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/state/client-sg.yaml&stackName=client-sg&param_ParentVPCStack=vpc)
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/fargate/service-cloudmap.yaml&stackName=fargate-service&param_ParentVPCStack=vpc&param_ParentClusterStack=fargate-cluster&param_ParentCloudMapStack=cloudmap&param_ParentClientStack=client-sg)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.
