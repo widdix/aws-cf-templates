@@ -1,0 +1,254 @@
+---
+# Copyright 2018 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ALB Access Logs Anonymizer'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentS3Stack
+      - ParentAlertStack
+    - Label:
+        default: 'Anonymizer Parameters'
+      Parameters:
+      - LogsRetentionInDays
+Parameters:
+  ParentS3Stack:
+    Description: 'Stack name of parent s3 stack based on state/s3.yaml template where access logs are stored.'
+    Type: String
+    Default: ''
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  LogsRetentionInDays:
+    Description: 'Specifies the number of days you want to retain log events.'
+    Type: Number
+    Default: 14
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+Conditions:
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+Resources:
+  Role:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'lambda.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      Policies:
+      - PolicyName: s3
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - 's3:GetObject'
+            - 's3:GetObjectVersion'
+            - 's3:PutObject'
+            - 's3:DeleteObject'
+            - 's3:DeleteObjectVersion'
+            Resource: !Sub
+            - 'arn:${Partition}:s3:::${BucketName}/*'
+            - Partition: !Ref 'AWS::Partition'
+              BucketName: {'Fn::ImportValue': !Sub '${ParentS3Stack}-BucketName'}
+  Policy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Roles:
+      - !Ref Role
+      PolicyName: logs
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action:
+          - 'logs:CreateLogStream'
+          - 'logs:PutLogEvents'
+          Resource: !GetAtt 'LogGroup.Arn'
+  Function:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        ZipFile: |
+          const fs = require('fs');
+          const zlib = require('zlib');
+          const stream = require('stream');
+          const AWS = require('aws-sdk');
+          const s3 = new AWS.S3({apiVersion: '2006-03-01'});
+
+          function anonymizeIPv4Address(str) {
+            const s = str.split('.');
+            s[3] = '0';
+            return s.join('.');
+          }
+
+          function anonymizeIPv6Address(str) {
+            const s = str.split(':').slice(0, 2);
+            s.push(':');
+            return s.join(':');
+          }
+
+          function anonymizeIpAddress(str) {
+            const s = str.split(':');
+            const address = s.slice(0, -1).join(':');
+            const port = s[s.length-1];
+            if (address.includes('.')) {
+              return anonymizeIPv4Address(address) + ':' + port;
+            } else if (address.includes(':')) {
+              return anonymizeIPv6Address(address) + ':' + port;
+            } else {
+              throw new Error('Neither IPv4 nor IPv6: ' + str);
+            }
+          }
+
+          function transformLine(line) {
+            if (line.trim() === '') {
+              return line;
+            }
+            const values = line.split(' ');
+            values[3] = anonymizeIpAddress(values[3]);
+            return values.join(' ');
+          }
+
+          async function process(record) {
+            let chunk = Buffer.alloc(0);
+            const transform = (currentChunk, encoding, callback) => {
+              chunk = Buffer.concat([chunk, currentChunk]);
+              const lines = [];
+              while(chunk.length > 0) {
+                const i = chunk.indexOf('\n', 'utf8');
+                if (i === -1) {
+                  break;
+                } else {
+                  lines.push(chunk.slice(0, i).toString('utf8'));
+                  chunk = chunk.slice(i+1);
+                }
+              }
+              lines.push('');
+              const transformed = lines
+                .map(transformLine)
+                .join('\n');
+              callback(null, Buffer.from(transformed, 'utf8'));
+            };
+            const params = {
+              Bucket: record.s3.bucket.name,
+              Key: record.s3.object.key
+            };
+            if ('versionId' in record.s3.object) {
+              params.VersionId = record.s3.object.versionId;
+            }
+            const body = s3.getObject(params).createReadStream()
+              .pipe(zlib.createGunzip())
+              .pipe(new stream.Transform({
+                transform
+              }))
+              .pipe(zlib.createGzip());
+            await s3.upload({
+              Bucket: record.s3.bucket.name,
+              Key: record.s3.object.key.slice(0, -2) + 'anonymized.gz',
+              Body: body
+            }).promise();
+            if (chunk.length > 0) {
+              throw new Error('file was not read completly');
+            }
+            return s3.deleteObject(params).promise();
+          }
+
+          exports.handler = async (event) => {
+            console.log(JSON.stringify(event));
+            for (let record of event.Records) {
+              if (record.s3.object.key.endsWith('.anonymized.gz')) {
+                continue;
+              } else if (record.s3.object.key.endsWith('.gz')) {
+                await process(record);
+              }
+            }
+          };
+      Handler: 'index.handler'
+      MemorySize: 1024
+      Role: !GetAtt 'Role.Arn'
+      Runtime: 'nodejs12.x'
+      Timeout: 300
+  ErrorsTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Invocations failed due to errors in the function'
+      Namespace: 'AWS/Lambda'
+      MetricName: Errors
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref Function
+      TreatMissingData: notBreaching
+  ThrottlesTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Invocation attempts that were throttled due to invocation rates exceeding the concurrent limits'
+      Namespace: 'AWS/Lambda'
+      MetricName: Throttles
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: FunctionName
+        Value: !Ref Function
+      TreatMissingData: notBreaching
+  LogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Function}'
+      RetentionInDays: !Ref LogsRetentionInDays
+  Permission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:invokeFunction'
+      FunctionName: !GetAtt 'Function.Arn'
+      Principal: 's3.amazonaws.com'
+      SourceAccount: !Ref 'AWS::AccountId'
+      SourceArn: !Sub
+      - 'arn:${Partition}:s3:::${BucketName}'
+      - Partition: !Ref 'AWS::Partition'
+        BucketName: {'Fn::ImportValue': !Sub '${ParentS3Stack}-BucketName'}
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'operations/alb-access-logs-anonymizer'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
+  FunctionARN:
+    Description: 'The ARN of the Lambda function.'
+    Value: !GetAtt 'Function.Arn'
+    Export:
+      Name: !Sub '${AWS::StackName}-FunctionARN'
