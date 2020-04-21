@@ -38,6 +38,8 @@ Metadata:
       - DBMasterUsername
       - DBMasterUserPassword
       - DBMultiAZ
+      - DBOptionGroupName
+      - DBParameterGroupName
       - SubDomainNameWithDot
       - PreferredBackupWindow
       - PreferredMaintenanceWindow
@@ -103,6 +105,10 @@ Parameters:
     Type: String
     Default: true
     AllowedValues: [true, false]
+  DBOptionGroupName:
+    Description: 'The name of an existing DB option group or a reference to an AWS::RDS::OptionGroup resource created in the template.'
+    Type: String
+    Default: ''
   DBParameterGroupName:
     Description: 'The name of an existing DB parameter group or a reference to an AWS::RDS::DBParameterGroup resource created in the template.'
     Type: String
@@ -135,6 +141,7 @@ Conditions:
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, '']]
+  HasDBOptionGroupName: !Not [!Equals [!Ref DBOptionGroupName, '']]
   HasDBParameterGroupName: !Not [!Equals [!Ref DBParameterGroupName, '']]
   HasKmsKeyAndNotDBSnapshotIdentifier: !And [!Condition HasKmsKey, !Not [!Condition HasDBSnapshotIdentifier]]
 Resources:
@@ -187,6 +194,7 @@ Resources:
       CopyTagsToSnapshot: true
       DBInstanceClass: !Ref DBInstanceClass
       DBName: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBName]
+      DBParameterGroupName: !If [HasDBParameterGroupName, !Ref DBParameterGroupName, !Ref 'AWS::NoValue']
       DBSnapshotIdentifier: !If [HasDBSnapshotIdentifier, !Ref DBSnapshotIdentifier, !Ref 'AWS::NoValue']
       DBSubnetGroupName: !Ref DBSubnetGroup
       EnableIAMDatabaseAuthentication: !Ref EnableIAMDatabaseAuthentication
@@ -196,7 +204,7 @@ Resources:
       MasterUsername: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUsername]
       MasterUserPassword: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUserPassword]
       MultiAZ: !Ref DBMultiAZ
-      DBParameterGroupName: !If [HasDBParameterGroupName, !Ref DBParameterGroupName, !Ref 'AWS::NoValue']
+      OptionGroupName: !If [HasDBOptionGroupName, !Ref DBOptionGroupName, !Ref 'AWS::NoValue']
       PreferredBackupWindow: !Ref PreferredBackupWindow
       PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
       StorageType: gp2
