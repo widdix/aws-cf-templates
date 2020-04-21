@@ -25,6 +25,7 @@ public class TestVPC4AZsLegacy extends AVPCTest {
                         new Parameter().withParameterKey("AZC").withParameterValue(vpcOutputs.get("AZC")),
                         new Parameter().withParameterKey("AZD").withParameterValue(vpcOutputs.get("AZD")),
                         new Parameter().withParameterKey("CidrBlock").withParameterValue(vpcOutputs.get("CidrBlock")),
+                        new Parameter().withParameterKey("CidrBlockIPv6").withParameterValue(vpcOutputs.get("CidrBlockIPv6")),
                         new Parameter().withParameterKey("VPC").withParameterValue(vpcOutputs.get("VPC")),
                         new Parameter().withParameterKey("InternetGateway").withParameterValue(vpcOutputs.get("InternetGateway")),
                         new Parameter().withParameterKey("SubnetAPublic").withParameterValue(vpcOutputs.get("SubnetAPublic")),

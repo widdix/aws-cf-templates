@@ -6,7 +6,12 @@
 
 ## *
 
-IPv6 support for subnets, public load balancers, and CloudFront. EC2 instances still use IPv4 only by default!
+IPv6 support for subnets, public load balancers, and CloudFront. EC2 instances still use IPv4 only by default! Nothing needs to be done!
+
+## vpc/vpc-[2-4]azs-legacy
+
+* Parameter `CidrBlockIPv6` was added: Add IPv6 support to your legacy VPC.
+* Parameter `InternetGateway` was added: Pass the IWG id of your legacy VPC.
 
 ## Deprecation warnings
 
