@@ -255,10 +255,12 @@ Conditions:
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
+  HasMasterELBSchemeInternetFacing: !Equals [!Ref MasterELBScheme, 'internet-facing']
   HasMasterELBSchemeInternal: !Equals [!Ref MasterELBScheme, 'internal']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+  HasZoneAndMasterELBSchemeInternetFacing: !And [!Condition HasZone, !Condition HasMasterELBSchemeInternetFacing]
   HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
   HasEFSProvisionedThroughput: !Not [!Condition HasNotEFSProvisionedThroughput]
   HasNotEFSProvisionedThroughput: !Equals [!Ref EFSProvisionedThroughputInMibps, '0']
@@ -364,6 +366,15 @@ Resources:
       FromPort: 80
       ToPort: 80
       CidrIp: '0.0.0.0/0'
+  MasterELBSGInWorldIPv6:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotAuthProxySecurityGroup
+    Properties:
+      GroupId: !Ref MasterELBSG
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      CidrIpv6: '::/0'
   MasterELBSGInAuthProxy:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasAuthProxySecurityGroup
@@ -458,9 +469,23 @@ Resources:
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
         HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       Type: A
+  RecordSetIPv6:
+    Condition: HasZoneAndMasterELBSchemeInternetFacing
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      AliasTarget:
+        HostedZoneId: !GetAtt 'MasterELB.CanonicalHostedZoneID'
+        DNSName: !GetAtt 'MasterELB.DNSName'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
+      Name: !Sub
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+      Type: AAAA
   MasterELB:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
+      IpAddressType: !If [HasMasterELBSchemeInternal, 'ipv4', 'dualstack']
       LoadBalancerAttributes:
       - Key: 'idle_timeout.timeout_seconds'
         Value: !Ref MasterLoadBalancerIdleTimeout

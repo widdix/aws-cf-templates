@@ -25,6 +25,7 @@ Metadata:
       - AZC
       - AZD
       - CidrBlock
+      - CidrBlockIPv6
       - VPC
       - InternetGateway
       - SubnetAPublic
@@ -59,6 +60,10 @@ Parameters:
   CidrBlock:
     Description: 'The set of IP addresses for the VPC (e.g., 10.0.0.0/16).'
     Type: String
+  CidrBlockIPv6:
+    Description: 'The set of IPv6 addresses for the VPC (e.g., 2600:1f18:277f:e700::/56; set to 2001:db8::/32 if your VPC does not support IPv6).'
+    Type: String
+    Default: '2001:db8::/32'
   VPC:
     Description: 'VPC'
     Type: 'AWS::EC2::VPC::Id'
@@ -157,6 +162,11 @@ Outputs:
     Value: !Ref CidrBlock
     Export:
       Name: !Sub '${AWS::StackName}-CidrBlock'
+  CidrBlockIPv6:
+    Description: 'The set of IPv6 addresses for the VPC.'
+    Value: !Ref CidrBlockIPv6
+    Export:
+      Name: !Sub '${AWS::StackName}-CidrBlockIPv6'
   VPC:
     Description: 'VPC.'
     Value: !Ref VPC

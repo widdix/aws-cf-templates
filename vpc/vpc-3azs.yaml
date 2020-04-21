@@ -40,22 +40,34 @@ Resources:
       Tags:
       - Key: Name
         Value: !Sub '10.${ClassB}.0.0/16'
+  VPCCidrBlock:
+    Type: 'AWS::EC2::VPCCidrBlock'
+    Properties:
+      AmazonProvidedIpv6CidrBlock: true
+      VpcId: !Ref VPC
   InternetGateway:
     Type: 'AWS::EC2::InternetGateway'
     Properties:
       Tags:
       - Key: Name
         Value: !Sub '10.${ClassB}.0.0/16'
+  EgressOnlyInternetGateway:
+    Type: 'AWS::EC2::EgressOnlyInternetGateway'
+    Properties:
+      VpcId: !Ref VPC
   VPCGatewayAttachment:
     Type: 'AWS::EC2::VPCGatewayAttachment'
     Properties:
       VpcId: !Ref VPC
       InternetGatewayId: !Ref InternetGateway
   SubnetAPublic:
+    DependsOn: VPCCidrBlock
     Type: 'AWS::EC2::Subnet'
     Properties:
+      #AssignIpv6AddressOnCreation: true # TODO can not be set if MapPublicIpOnLaunch is true as well
       AvailabilityZone: !Select [0, !GetAZs '']
       CidrBlock: !Sub '10.${ClassB}.0.0/20'
+      Ipv6CidrBlock: !Select [0, !Cidr [!Select [0, !GetAtt 'VPC.Ipv6CidrBlocks'], 6, 64]]
       MapPublicIpOnLaunch: true
       VpcId: !Ref VPC
       Tags:
@@ -64,10 +76,13 @@ Resources:
       - Key: Reach
         Value: public
   SubnetAPrivate:
+    DependsOn: VPCCidrBlock
     Type: 'AWS::EC2::Subnet'
     Properties:
+      AssignIpv6AddressOnCreation: false
       AvailabilityZone: !Select [0, !GetAZs '']
       CidrBlock: !Sub '10.${ClassB}.16.0/20'
+      Ipv6CidrBlock: !Select [1, !Cidr [!Select [0, !GetAtt 'VPC.Ipv6CidrBlocks'], 6, 64]]
       VpcId: !Ref VPC
       Tags:
       - Key: Name
@@ -75,10 +90,13 @@ Resources:
       - Key: Reach
         Value: private
   SubnetBPublic:
+    DependsOn: VPCCidrBlock
     Type: 'AWS::EC2::Subnet'
     Properties:
+      #AssignIpv6AddressOnCreation: true # TODO can not be set if MapPublicIpOnLaunch is true as well
       AvailabilityZone: !Select [1, !GetAZs '']
       CidrBlock: !Sub '10.${ClassB}.32.0/20'
+      Ipv6CidrBlock: !Select [2, !Cidr [!Select [0, !GetAtt 'VPC.Ipv6CidrBlocks'], 6, 64]]
       MapPublicIpOnLaunch: true
       VpcId: !Ref VPC
       Tags:
@@ -87,10 +105,13 @@ Resources:
       - Key: Reach
         Value: public
   SubnetBPrivate:
+    DependsOn: VPCCidrBlock
     Type: 'AWS::EC2::Subnet'
     Properties:
+      AssignIpv6AddressOnCreation: false
       AvailabilityZone: !Select [1, !GetAZs '']
       CidrBlock: !Sub '10.${ClassB}.48.0/20'
+      Ipv6CidrBlock: !Select [3, !Cidr [!Select [0, !GetAtt 'VPC.Ipv6CidrBlocks'], 6, 64]]
       VpcId: !Ref VPC
       Tags:
       - Key: Name
@@ -98,10 +119,13 @@ Resources:
       - Key: Reach
         Value: private
   SubnetCPublic:
+    DependsOn: VPCCidrBlock
     Type: 'AWS::EC2::Subnet'
     Properties:
+      #AssignIpv6AddressOnCreation: true # TODO can not be set if MapPublicIpOnLaunch is true as well
       AvailabilityZone: !Select [2, !GetAZs '']
       CidrBlock: !Sub '10.${ClassB}.64.0/20'
+      Ipv6CidrBlock: !Select [4, !Cidr [!Select [0, !GetAtt 'VPC.Ipv6CidrBlocks'], 6, 64]]
       MapPublicIpOnLaunch: true
       VpcId: !Ref VPC
       Tags:
@@ -110,10 +134,13 @@ Resources:
       - Key: Reach
         Value: public
   SubnetCPrivate:
+    DependsOn: VPCCidrBlock
     Type: 'AWS::EC2::Subnet'
     Properties:
+      AssignIpv6AddressOnCreation: false
       AvailabilityZone: !Select [2, !GetAZs '']
       CidrBlock: !Sub '10.${ClassB}.80.0/20'
+      Ipv6CidrBlock: !Select [5, !Cidr [!Select [0, !GetAtt 'VPC.Ipv6CidrBlocks'], 6, 64]]
       VpcId: !Ref VPC
       Tags:
       - Key: Name
@@ -199,6 +226,18 @@ Resources:
       RouteTableId: !Ref RouteTablePublic
       DestinationCidrBlock: '0.0.0.0/0'
       GatewayId: !Ref InternetGateway
+  RouteTablePublicAInternetRouteIPv6:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref RouteTablePublic
+      DestinationIpv6CidrBlock: '::/0'
+      GatewayId: !Ref InternetGateway
+  RouteTablePrivateAInternetRouteIPv6:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref RouteTablePrivate
+      DestinationIpv6CidrBlock: '::/0'
+      EgressOnlyInternetGatewayId: !Ref EgressOnlyInternetGateway
   RouteTablePublicBInternetRoute:
     Type: 'AWS::EC2::Route'
     DependsOn: VPCGatewayAttachment
@@ -206,6 +245,18 @@ Resources:
       RouteTableId: !Ref RouteTableBPublic
       DestinationCidrBlock: '0.0.0.0/0'
       GatewayId: !Ref InternetGateway
+  RouteTablePublicBInternetRouteIPv6:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref RouteTableBPublic
+      DestinationIpv6CidrBlock: '::/0'
+      GatewayId: !Ref InternetGateway
+  RouteTablePrivateBInternetRouteIPv6:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref RouteTableBPrivate
+      DestinationIpv6CidrBlock: '::/0'
+      EgressOnlyInternetGatewayId: !Ref EgressOnlyInternetGateway
   RouteTablePublicCInternetRoute:
     Type: 'AWS::EC2::Route'
     DependsOn: VPCGatewayAttachment
@@ -213,6 +264,18 @@ Resources:
       RouteTableId: !Ref RouteTableCPublic
       DestinationCidrBlock: '0.0.0.0/0'
       GatewayId: !Ref InternetGateway
+  RouteTablePublicCInternetRouteIPv6:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref RouteTableCPublic
+      DestinationIpv6CidrBlock: '::/0'
+      GatewayId: !Ref InternetGateway
+  RouteTablePrivateCInternetRouteIPv6:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref RouteTableCPrivate
+      DestinationIpv6CidrBlock: '::/0'
+      EgressOnlyInternetGatewayId: !Ref EgressOnlyInternetGateway
   NetworkAclPublic:
     Type: 'AWS::EC2::NetworkAcl'
     Properties:
@@ -266,6 +329,15 @@ Resources:
       RuleAction: allow
       Egress: false
       CidrBlock: '0.0.0.0/0'
+  NetworkAclEntryInPublicAllowAllIPv6:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAclPublic
+      RuleNumber: 98
+      Protocol: -1
+      RuleAction: allow
+      Egress: false
+      Ipv6CidrBlock: '::/0'
   NetworkAclEntryOutPublicAllowAll:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
@@ -275,7 +347,16 @@ Resources:
       RuleAction: allow
       Egress: true
       CidrBlock: '0.0.0.0/0'
-  NetworkAclEntryInPrivateAllowVPC:
+  NetworkAclEntryOutPublicAllowAllIPv6:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAclPublic
+      RuleNumber: 98
+      Protocol: -1
+      RuleAction: allow
+      Egress: true
+      Ipv6CidrBlock: '::/0'
+  NetworkAclEntryInPrivateAllowAll:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
       NetworkAclId: !Ref NetworkAclPrivate
@@ -284,7 +365,16 @@ Resources:
       RuleAction: allow
       Egress: false
       CidrBlock: '0.0.0.0/0'
-  NetworkAclEntryOutPrivateAllowVPC:
+  NetworkAclEntryInPrivateAllowAllIPv6:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAclPrivate
+      RuleNumber: 98
+      Protocol: -1
+      RuleAction: allow
+      Egress: false
+      Ipv6CidrBlock: '::/0'
+  NetworkAclEntryOutPrivateAllowAll:
     Type: 'AWS::EC2::NetworkAclEntry'
     Properties:
       NetworkAclId: !Ref NetworkAclPrivate
@@ -293,6 +383,15 @@ Resources:
       RuleAction: allow
       Egress: true
       CidrBlock: '0.0.0.0/0'
+  NetworkAclEntryOutPrivateAllowAllIPv6:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      NetworkAclId: !Ref NetworkAclPrivate
+      RuleNumber: 98
+      Protocol: -1
+      RuleAction: allow
+      Egress: true
+      Ipv6CidrBlock: '::/0'
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
@@ -328,6 +427,11 @@ Outputs:
     Value: !GetAtt 'VPC.CidrBlock'
     Export:
       Name: !Sub '${AWS::StackName}-CidrBlock'
+  CidrBlockIPv6:
+    Description: 'The set of IPv6 addresses for the VPC.'
+    Value: !Select [0, !GetAtt 'VPC.Ipv6CidrBlocks']
+    Export:
+      Name: !Sub '${AWS::StackName}-CidrBlockIPv6'
   VPC:
     Description: 'VPC.'
     Value: !Ref VPC

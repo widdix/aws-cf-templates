@@ -132,12 +132,14 @@ Parameters:
 Conditions:
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
+  HasLoadBalancerSchemeInternetFacing: !Equals [!Ref LoadBalancerScheme, 'internet-facing']
   HasLoadBalancerSchemeInternal: !Equals [!Ref LoadBalancerScheme, 'internal']
   HasLoadBalancerCertificateArn: !Not [!Equals [!Ref LoadBalancerCertificateArn, '']]
   HasAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
   HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasNotAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+  HasZoneAndLoadBalancerSchemeInternetFacing: !And [!Condition HasZone, !Condition HasLoadBalancerSchemeInternetFacing]
   HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
   HasAutoScaling: !Equals [!Ref AutoScaling, 'true']
 Resources:
@@ -174,6 +176,15 @@ Resources:
       FromPort: 80
       ToPort: 80
       CidrIp: '0.0.0.0/0'
+  ALBSecurityGroupInHttpWorldIPv6:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotAuthProxySecurityGroup
+    Properties:
+      GroupId: !Ref ALBSecurityGroup
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      CidrIpv6: '::/0'
   ALBSecurityGroupInHttpsWorld:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn
@@ -183,6 +194,15 @@ Resources:
       FromPort: 443
       ToPort: 443
       CidrIp: '0.0.0.0/0'
+  ALBSecurityGroupInHttpsWorldIPv6:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn
+    Properties:
+      GroupId: !Ref ALBSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      CidrIpv6: '::/0'
   ALBSecurityGroupInHttpAuthProxy:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasAuthProxySecurityGroup
@@ -311,9 +331,23 @@ Resources:
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
         HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       Type: A
+  RecordSetIPv6:
+    Condition: HasZoneAndLoadBalancerSchemeInternetFacing
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      AliasTarget:
+        HostedZoneId: !GetAtt 'LoadBalancer.CanonicalHostedZoneID'
+        DNSName: !GetAtt 'LoadBalancer.DNSName'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
+      Name: !Sub
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+      Type: AAAA
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
+      IpAddressType: !If [HasLoadBalancerSchemeInternal, 'ipv4', 'dualstack']
       LoadBalancerAttributes:
       - Key: 'idle_timeout.timeout_seconds'
         Value: !Ref LoadBalancerIdleTimeout
