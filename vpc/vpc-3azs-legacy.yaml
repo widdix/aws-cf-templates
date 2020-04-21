@@ -25,6 +25,7 @@ Metadata:
       - AZC
       - CidrBlock
       - VPC
+      - InternetGateway
       - SubnetAPublic
       - RouteTableAPublic
       - SubnetBPublic
@@ -53,6 +54,9 @@ Parameters:
   VPC:
     Description: 'VPC'
     Type: 'AWS::EC2::VPC::Id'
+  InternetGateway:
+    Description: 'Internet Gateway id.'
+    Type: String
   SubnetAPublic:
     Description: 'Subnet A public.'
     Type: 'AWS::EC2::Subnet::Id'
@@ -133,6 +137,11 @@ Outputs:
     Value: !Ref VPC
     Export:
       Name: !Sub '${AWS::StackName}-VPC'
+  InternetGateway:
+    Description: 'InternetGateway.'
+    Value: !Ref InternetGateway
+    Export:
+      Name: !Sub '${AWS::StackName}-InternetGateway'
   SubnetsPublic:
     Description: 'Subnets public.'
     Value: !Join [',', [!Ref SubnetAPublic, !Ref SubnetBPublic, !Ref SubnetCPublic]]
