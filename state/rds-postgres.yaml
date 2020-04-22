@@ -106,11 +106,11 @@ Parameters:
     Default: true
     AllowedValues: [true, false]
   DBOptionGroupName:
-    Description: 'The name of an existing DB option group or a reference to an AWS::RDS::OptionGroup resource created in the template.'
+    Description: 'Optional name of an existing DB option group.'
     Type: String
     Default: ''
   DBParameterGroupName:
-    Description: 'The name of an existing DB parameter group or a reference to an AWS::RDS::DBParameterGroup resource created in the template.'
+    Description: 'Optional name of an existing DB parameter group.'
     Type: String
     Default: ''
   SubDomainNameWithDot:
