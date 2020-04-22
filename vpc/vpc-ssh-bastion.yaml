@@ -82,6 +82,8 @@ Parameters:
     Default: ''
 Mappings:
   RegionMap:
+    'af-south-1':
+      AMI: 'ami-0b4a93eff849f20ca'
     'eu-north-1':
       AMI: 'ami-0b7a46b4bd694e8a6'
     'ap-south-1':
