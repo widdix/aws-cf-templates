@@ -90,6 +90,8 @@ Parameters:
     Default: ''
 Mappings:
   RegionMap: # TODO update to Amazon Linux 2 (don't forget to adjust awslogs config as well)
+    'af-south-1':
+      NATAMI: 'ami-0f7b1b7c2c50e3202'
     'ap-south-1':
       NATAMI: 'ami-00b3aa8a93dd09c13'
     'eu-west-3':

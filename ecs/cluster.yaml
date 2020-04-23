@@ -193,6 +193,8 @@ Parameters:
     ConstraintDescription: 'Must be >= 2'
 Mappings:
   RegionMap:
+    'af-south-1':
+      ECSAMI: 'ami-04402e3da3a7a5357'
     'eu-north-1':
       ECSAMI: 'ami-00ace2399b9d2b103'
     'ap-south-1':
