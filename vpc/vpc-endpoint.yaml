@@ -38,16 +38,32 @@ Parameters:
     Description: 'The name of the service.'
     Type: String
     AllowedValues: # generate list with aws --region us-east-1 ec2 describe-vpc-endpoint-services --query 'ServiceDetails[].ServiceName'
-    - notebook
+    - 'access-analyzer'
+    - 'acm-pca'
+    - 'application-autoscaling'
+    - 'appmesh-envoy-management'
+    - 'appstream.api'
+    - 'appstream.streaming'
+    - athena
+    - autoscaling
+    - 'autoscaling-plans'
+    - awsconnector
+    - cassandra
+    - clouddirectory
     - cloudformation
     - cloudtrail
+    - 'codeartifact.api'
+    - 'codeartifact.repositories'
     - codebuild
     - 'codebuild-fips'
     - codecommit
     - 'codecommit-fips'
     - codepipeline
     - config
+    - dataexchange
+    - datasync
     - dynamodb
+    - ebs
     - ec2
     - ec2messages
     - 'ecr.api'
@@ -56,28 +72,45 @@ Parameters:
     - 'ecs-agent'
     - 'ecs-telemetry'
     - 'elastic-inference.runtime'
+    - elasticbeanstalk
+    - 'elasticbeanstalk-health'
+    - elasticfilesystem
+    - 'elasticfilesystem-fips'
     - elasticloadbalancing
+    - elasticmapreduce
     - events
     - 'execute-api'
     - 'git-codecommit'
     - 'git-codecommit-fips'
+    - glue
     - 'kinesis-firehose'
     - 'kinesis-streams'
     - kms
     - logs
     - monitoring
+    - 'qldb.session'
+    - 'rds-data'
+    - rekognition
+    - 'rekognition-fips'
     - s3
     - 'sagemaker.api'
     - 'sagemaker.runtime'
     - 'sagemaker.runtime-fips'
     - secretsmanager
     - servicecatalog
+    - sms
+    - 'sms-fips'
     - sns
     - sqs
     - ssm
     - ssmmessages
+    - states
+    - storagegateway
+    - sts
+    - synthetics
     - transfer
     - 'transfer.server'
+    - workspaces
 Conditions:
   HasParentClientStack: !Not [!Equals [!Ref ParentClientStack, '']]
 Resources:
