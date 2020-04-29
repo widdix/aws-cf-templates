@@ -203,6 +203,8 @@ Mappings:
       ECSAMI: 'ami-02840369a939ae502'
     'eu-west-2':
       ECSAMI: 'ami-066f0ae194916c572'
+    'eu-south-1':
+      ECSAMI: 'ami-0150ade5ec13519e2'
     'eu-west-1':
       ECSAMI: 'ami-09266271a2521d06f'
     'ap-northeast-2':

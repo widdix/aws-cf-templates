@@ -166,6 +166,8 @@ Mappings:
       AMI: 'ami-00077e3fed5089981'
     'eu-west-2':
       AMI: 'ami-01a6e31ac994bbc09'
+    'eu-south-1':
+      AMI: 'ami-06db5ba0a09e927c8'
     'eu-west-1':
       AMI: 'ami-06ce3edf0cff21f07'
     'ap-northeast-2':
