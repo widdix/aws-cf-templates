@@ -91,39 +91,45 @@ Parameters:
 Mappings:
   RegionMap: # TODO update to Amazon Linux 2 (don't forget to adjust awslogs config as well)
     'af-south-1':
-      NATAMI: 'ami-0f7b1b7c2c50e3202'
-    'ap-south-1':
-      NATAMI: 'ami-00b3aa8a93dd09c13'
-    'eu-west-3':
-      NATAMI: 'ami-0641e4dfc1427f114'
+      NATAMI: 'ami-05b779cc5fa883d9d'
     'eu-north-1':
-      NATAMI: 'ami-28d15f56'
+      NATAMI: 'ami-0c9238069eac7d2d1'
+    'ap-south-1':
+      NATAMI: 'ami-0bb716e1c79b64738'
+    'eu-west-3':
+      NATAMI: 'ami-0f45483cbb9c292f8'
     'eu-west-2':
-      NATAMI: 'ami-0ca65a55561666293'
+      NATAMI: 'ami-08ffbdd05e6de7b8e'
+    'eu-south-1':
+      NATAMI: 'ami-0927e4c99e8f5c614'
     'eu-west-1':
-      NATAMI: 'ami-024107e3e3217a248'
+      NATAMI: 'ami-0c8309984d1c05985'
     'ap-northeast-2':
-      NATAMI: 'ami-0d98591cbf9ef1ffd'
+      NATAMI: 'ami-0bd719b7e72ed9780'
+    'me-south-1':
+      NATAMI: 'ami-0c3d3f564748790a4'
     'ap-northeast-1':
-      NATAMI: 'ami-00d29e4cb217ae06b'
+      NATAMI: 'ami-0b7aafcb5282e0179'
     'sa-east-1':
-      NATAMI: 'ami-057f5d52ff7ae75ae'
+      NATAMI: 'ami-0f4247eb890d9c55e'
     'ca-central-1':
-      NATAMI: 'ami-0b32354309da5bba5'
+      NATAMI: 'ami-06491b75edd4651b7'
+    'ap-east-1':
+      NATAMI: 'ami-3d63254c'
     'ap-southeast-1':
-      NATAMI: 'ami-01514bb1776d5c018'
+      NATAMI: 'ami-0003ce8d47722ef67'
     'ap-southeast-2':
-      NATAMI: 'ami-062c04ec46aecd204'
+      NATAMI: 'ami-04ed8c14e39a56efa'
     'eu-central-1':
-      NATAMI: 'ami-06a5303d47fbd8c60'
+      NATAMI: 'ami-0245c132f10471602'
     'us-east-1':
-      NATAMI: 'ami-00a9d4a05375b2763'
+      NATAMI: 'ami-02f55863fb09f62b1'
     'us-east-2':
-      NATAMI: 'ami-00d1f8201864cc10c'
+      NATAMI: 'ami-0bbaa641c011377fd'
     'us-west-1':
-      NATAMI: 'ami-097ad469381034fa2'
+      NATAMI: 'ami-0c40f21ac70fc0eff'
     'us-west-2':
-      NATAMI: 'ami-0b840e8a1ce4cdf15'
+      NATAMI: 'ami-049d2e94688cd3cb6'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
