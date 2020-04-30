@@ -62,7 +62,6 @@ Parameters:
     - config
     - dataexchange
     - datasync
-    - dynamodb
     - ebs
     - ec2
     - ec2messages
@@ -92,7 +91,6 @@ Parameters:
     - 'rds-data'
     - rekognition
     - 'rekognition-fips'
-    - s3
     - 'sagemaker.api'
     - 'sagemaker.runtime'
     - 'sagemaker.runtime-fips'
