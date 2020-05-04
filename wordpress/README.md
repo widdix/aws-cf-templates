@@ -14,7 +14,7 @@ $ for region in $regions; do ami=$(aws --region $region ec2 describe-images --fi
 
 ### Load Test
 
-[Install k6](https://k6.readme.io/docs).
+[Install k6](https://k6.io/docs/).
 
 Replace `BASE_URL` with the URL to your infrastructure.
 
