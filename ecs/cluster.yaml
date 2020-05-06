@@ -51,13 +51,6 @@ Metadata:
       - MinSize
       - DrainingTimeoutInSeconds
       - StopContainerTimeoutInSeconds
-    - Label:
-        default: 'Cluster Scaling Parameters'
-      Parameters:
-      - ContainerMaxCPU
-      - ContainerMaxMemory
-      - ContainerShortageThreshold
-      - ContainerExcessThreshold
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -171,26 +164,6 @@ Parameters:
     ConstraintDescription: 'Must be in the range [30-3600]'
     MinValue: 30
     MaxValue: 3600
-  ContainerMaxCPU:
-    Description: 'The maximum number of cpu reservation per container that you plan to run on this cluster. A container instance has 1,024 CPU units for every CPU core.'
-    Type: Number
-    Default: 128
-  ContainerMaxMemory:
-    Description: 'The maximum number of memory reservation (in MB)  per container that you plan to run on this cluster.'
-    Type: Number
-    Default: 128
-  ContainerShortageThreshold:
-    Description: 'Scale up if free cluster capacity <= containers (based on ContainerMaxCPU and ContainerMaxMemory settings)'
-    Type: Number
-    Default: 2
-    MinValue: 0
-    ConstraintDescription: 'Must be >= 0'
-  ContainerExcessThreshold:
-    Description: 'Scale down if free cluster capacity >= containers (based on ContainerMaxCPU and ContainerMaxMemory settings)'
-    Type: Number
-    Default: 10
-    MinValue: 2
-    ConstraintDescription: 'Must be >= 2'
 Mappings:
   RegionMap:
     'eu-north-1':
@@ -831,11 +804,15 @@ Resources:
       LaunchConfigurationName: !Ref LaunchConfiguration
       MinSize: !Ref MinSize
       MaxSize: !Ref MaxSize
-      Cooldown: '120'
+      Cooldown: '600'
       HealthCheckGracePeriod: 300
       HealthCheckType: ELB
       TargetGroupARNs:
       - !Ref DefaultTargetGroup
+      MetricsCollection:
+      - Granularity: '1Minute'
+        Metrics:
+        - 'GroupDesiredCapacity'
       NotificationConfigurations: !If
       - HasAlertTopic
       - - NotificationTypes:
@@ -961,52 +938,91 @@ Resources:
     Properties:
       AutoScalingGroupName: !Ref AutoScalingGroup
       PolicyType: StepScaling
-      AdjustmentType: PercentChangeInCapacity
-      MinAdjustmentMagnitude: 1
+      AdjustmentType: ChangeInCapacity
+      EstimatedInstanceWarmup: 10
       StepAdjustments:
       - MetricIntervalUpperBound: 0.0
-        ScalingAdjustment: 25
+        ScalingAdjustment: 1
   ScaleDownPolicy:
     Type: 'AWS::AutoScaling::ScalingPolicy'
     Properties:
       AutoScalingGroupName: !Ref AutoScalingGroup
       PolicyType: StepScaling
-      AdjustmentType: PercentChangeInCapacity
-      MinAdjustmentMagnitude: 1
+      AdjustmentType: ChangeInCapacity
+      EstimatedInstanceWarmup: 10
       StepAdjustments:
       - MetricIntervalLowerBound: 0.0
-        ScalingAdjustment: -25
-  ContainerInstancesShortageAlarm:
-    Type: 'AWS::CloudWatch::Alarm'
+        ScalingAdjustment: -1
+  NotEnoughClusterCapacityRule:
+    Type: 'AWS::Events::Rule'
     Properties:
-      AlarmDescription: 'Cluster is running out of container instances'
-      Namespace: !Ref 'AWS::StackName'
-      Dimensions:
-      - Name: ClusterName
-        Value: !Ref Cluster
-      MetricName: SchedulableContainers
-      ComparisonOperator: LessThanOrEqualToThreshold
-      Statistic: Minimum # special rule because we scale on reservations and not utilization
-      Period: 60
-      EvaluationPeriods: 1
-      Threshold: !Ref ContainerShortageThreshold
-      AlarmActions:
-      - !Ref ScaleUpPolicy
+      Description: 'Not enough resources to place service task. Scale up cluster.'
+      EventPattern:
+        source:
+        - 'aws.ecs'
+        'detail-type':
+        - 'ECS Service Action'
+        detail:
+          eventType:
+          - 'ERROR'
+          eventName:
+          - 'SERVICE_TASK_PLACEMENT_FAILURE'
+          clusterArn:
+          - !GetAtt 'Cluster.Arn'
+      State: ENABLED
+      Targets:
+      - Arn: !GetAtt 'ScaleUpLambda.Arn'
+        Id: lambda
   ContainerInstancesExcessAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'Cluster is wasting container instances'
-      Namespace: !Ref 'AWS::StackName'
-      Dimensions:
-      - Name: ClusterName
-        Value: !Ref Cluster
-      MetricName: SchedulableContainers
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      Statistic: Maximum # special rule because we scale on reservations and not utilization
-      Period: 60
-      EvaluationPeriods: 15
-      DatapointsToAlarm: 15
-      Threshold: !Ref ContainerExcessThreshold
+      Metrics:
+      - Id: 'overcapacity'
+        Label: 'overcapacity'
+        Expression: 'IF((100-cpu) >= capacity, 1, 0) AND IF ((100-memory) >= capacity, 1, 0)'
+        ReturnData: true
+      - Id: 'capacity'
+        Label: 'Percentual capacity per instance.'
+        Expression: '100/instances'
+        ReturnData: false
+      - Id: instances
+        MetricStat:
+          Metric:
+            Namespace: 'AWS/AutoScaling'
+            MetricName: GroupDesiredCapacity
+            Dimensions:
+            - Name: AutoScalingGroupName
+              Value: !Ref AutoScalingGroup
+          Stat: Minimum
+          Period: 60
+        ReturnData: false
+      - Id: cpu
+        MetricStat:
+          Metric:
+            Namespace: 'AWS/ECS'
+            MetricName: 'CPUReservation'
+            Dimensions:
+            - Name: ClusterName
+              Value: !Ref Cluster
+          Stat: Maximum
+          Period: 60
+        ReturnData: false
+      - Id: memory
+        MetricStat:
+          Metric:
+            Namespace: 'AWS/ECS'
+            MetricName: 'MemoryReservation'
+            Dimensions:
+            - Name: ClusterName
+              Value: !Ref Cluster
+          Stat: Maximum
+          Period: 60
+        ReturnData: false
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 5
+      DatapointsToAlarm: 5
+      Threshold: 0
       AlarmActions:
       - !Ref ScaleDownPolicy
   CPUReservationTooHighAlarm:
@@ -1021,8 +1037,8 @@ Resources:
       MetricName: CPUReservation
       ComparisonOperator: GreaterThanThreshold
       Statistic: Average # special rule because we scale on reservations and not utilization
-      Period: 600
-      EvaluationPeriods: 1
+      Period: 300
+      EvaluationPeriods: 3
       Threshold: 90
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
@@ -1077,36 +1093,7 @@ Resources:
       Threshold: 80
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-  # scaling based on SchedulableContainers is described in detail here: http://garbe.io/blog/2017/04/12/a-better-solution-to-ecs-autoscaling/
-  SchedulableContainersCron:
-    DependsOn:
-    - SchedulableContainersLambdaPolicy
-    Type: 'AWS::Events::Rule'
-    Properties:
-      ScheduleExpression: 'rate(1 minute)'
-      State: ENABLED
-      Targets:
-      - Arn: !GetAtt 'SchedulableContainersLambdaV2.Arn'
-        Id: lambda
-  SchedulableContainersCronFailedInvocationsTooHighAlarm:
-    Condition: HasAlertTopic
-    Type: 'AWS::CloudWatch::Alarm'
-    Properties:
-      AlarmDescription: 'Invocations failed permanently'
-      Namespace: 'AWS/Events'
-      MetricName: FailedInvocations
-      Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      AlarmActions:
-      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Dimensions:
-      - Name: RuleName
-        Value: !Ref SchedulableContainersCron
-      TreatMissingData: notBreaching
-  SchedulableContainersLambdaRole:
+  ScaleUpLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
       AssumeRolePolicyDocument:
@@ -1117,29 +1104,17 @@ Resources:
             Service: 'lambda.amazonaws.com'
           Action: 'sts:AssumeRole'
       Policies:
-      - PolicyName: ecs
+      - PolicyName: autoscaling
         PolicyDocument:
           Statement:
           - Effect: Allow
-            Action: 'ecs:ListContainerInstances'
-            Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}'
-          - Effect: Allow
-            Action: 'ecs:DescribeContainerInstances'
-            Resource: '*'
-            Condition:
-              ArnEquals:
-                'ecs:cluster': !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}'
-      - PolicyName: cloudwatch
-        PolicyDocument:
-          Statement:
-          - Effect: Allow
-            Action: 'cloudwatch:PutMetricData'
-            Resource: '*'
-  SchedulableContainersLambdaPolicy:
+            Action: 'autoscaling:ExecutePolicy'
+            Resource: '*' # TODO
+  ScaleUpLambdaPolicy:
     Type: 'AWS::IAM::Policy'
     Properties:
       Roles:
-      - !Ref SchedulableContainersLambdaRole
+      - !Ref ScaleUpLambdaRole
       PolicyName: lambda
       PolicyDocument:
         Statement:
@@ -1147,94 +1122,42 @@ Resources:
           Action:
           - 'logs:CreateLogStream'
           - 'logs:PutLogEvents'
-          Resource: !GetAtt 'SchedulableContainersLogGroup.Arn'
-  SchedulableContainersLambdaPermission2:
+          Resource: !GetAtt 'ScaleUpLogGroup.Arn'
+  ScaleUpLambdaPermission:
     Type: 'AWS::Lambda::Permission'
     Properties:
       Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref SchedulableContainersLambdaV2
+      FunctionName: !Ref ScaleUpLambda
       Principal: 'events.amazonaws.com'
-      SourceArn: !GetAtt 'SchedulableContainersCron.Arn'
-  SchedulableContainersLambdaV2:
+      SourceArn: !GetAtt 'NotEnoughClusterCapacityRule.Arn'
+  ScaleUpLambda:
     Type: 'AWS::Lambda::Function'
     Properties:
       Code:
-        ZipFile: !Sub |
+        ZipFile: |
           'use strict';
           const AWS = require('aws-sdk');
-          const ecs = new AWS.ECS({apiVersion: '2014-11-13'});
-          const cloudwatch = new AWS.CloudWatch({apiVersion: '2010-08-01'});
-          const CONTAINER_MAX_CPU = ${ContainerMaxCPU};
-          const CONTAINER_MAX_MEMORY = ${ContainerMaxMemory};
-          const CLUSTER = '${Cluster}';
-          const NAMESPACE = '${AWS::StackName}';
-          function list(nextToken) {
-            return ecs.listContainerInstances({
-              cluster: CLUSTER,
-              maxResults: 1,
-              nextToken: nextToken,
-              status: 'ACTIVE'
-            }).promise();
-          }
-          function describe(containerInstanceArns) {
-            return ecs.describeContainerInstances({
-              cluster: CLUSTER,
-              containerInstances: containerInstanceArns
-            }).promise();
-          }
-          function compute(totalSchedulableContainers, nextToken) {
-            return list(nextToken)
-              .then((list) => {
-                return describe(list.containerInstanceArns)
-                  .then((data) => {
-                    const localSchedulableContainers = data.containerInstances
-                      .map((instance) => ({
-                        cpu: instance.remainingResources.find((resource) => resource.name === 'CPU').integerValue,
-                        memory: instance.remainingResources.find((resource) => resource.name === 'MEMORY').integerValue
-                      }))
-                      .map((remaining) => Math.min(Math.floor(remaining.cpu/CONTAINER_MAX_CPU), Math.floor(remaining.memory/CONTAINER_MAX_MEMORY)))
-                      .reduce((acc, containers) => acc + containers, 0);
-                    console.log(`localSchedulableContainers ${!localSchedulableContainers}`);
-                    if (list.nextToken !== null && list.nextToken !== undefined) {
-                      return compute(localSchedulableContainers + totalSchedulableContainers, list.nextToken);
-                    } else {
-                      return localSchedulableContainers + totalSchedulableContainers;
-                    }
-                  });
-              });
-          }
-          exports.handler = (event, context, cb) => {
+          const autoscaling = new AWS.AutoScaling({apiVersion: '2011-01-01'});
+          const sp = process.env.SCALING_POLICY_NAME;
+          exports.handler = async function(event, context) {
             console.log(`Invoke: ${!JSON.stringify(event)}`);
-            compute(0, undefined)
-              .then((schedulableContainers) => {
-                console.log(`schedulableContainers: ${!schedulableContainers}`);
-                return cloudwatch.putMetricData({
-                  MetricData: [{
-                    MetricName: 'SchedulableContainers',
-                    Dimensions: [{
-                      Name: 'ClusterName',
-                      Value: CLUSTER
-                    }],
-                    Value: schedulableContainers,
-                    Unit: 'Count'
-                  }],
-                  Namespace: NAMESPACE
-                }).promise();
-              })
-              .then(() => cb())
-              .catch(cb);
-          };
+            const res = await autoscaling.executePolicy({PolicyName: sp, HonorCooldown: false, MetricValue: -1.0, BreachThreshold: -1.0}).promise();
+            console.log('Executed scaling policy', res);
+          }
       Handler: 'index.handler'
       MemorySize: 128
-      Role: !GetAtt 'SchedulableContainersLambdaRole.Arn'
+      Role: !GetAtt 'ScaleUpLambdaRole.Arn'
       Runtime: 'nodejs12.x'
       Timeout: 60
-  SchedulableContainersLogGroup:
+      Environment:
+        Variables:
+          SCALING_POLICY_NAME: !Ref ScaleUpPolicy
+  ScaleUpLogGroup:
     Type: 'AWS::Logs::LogGroup'
     Properties:
-      LogGroupName: !Sub '/aws/lambda/${SchedulableContainersLambdaV2}'
+      LogGroupName: !Sub '/aws/lambda/${ScaleUpLambda}'
       RetentionInDays: !Ref LogsRetentionInDays
-  SchedulableContainersLambdaErrorsTooHighAlarm:
+  ScaleUpLambdaErrorsTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -1250,9 +1173,9 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: FunctionName
-        Value: !Ref SchedulableContainersLambdaV2
+        Value: !Ref ScaleUpLambda
       TreatMissingData: notBreaching
-  SchedulableContainersLambdaThrottlesTooHighAlarm:
+  ScaleUpLambdaThrottlesTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
@@ -1268,7 +1191,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
       - Name: FunctionName
-        Value: !Ref SchedulableContainersLambdaV2
+        Value: !Ref ScaleUpLambda
       TreatMissingData: notBreaching
   DrainInstanceLambdaRole:
     Type: 'AWS::IAM::Role'
