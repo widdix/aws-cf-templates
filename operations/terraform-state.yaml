@@ -35,11 +35,14 @@ Parameters:
     Description: 'Globally unique identifier for your Terraform state.'
     Type: String
   TerraformStateUserARNs:
-    Description: 'A comma delimited list of IAM users or role ARNs that need to use the Terraform state (see https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html#specifying-notprincipal).'
+    Description: 'Optional comma delimited list of IAM users or role ARNs that need to use the Terraform state (see https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html#specifying-notprincipal).'
     Type: String
+    Default: ''
   TerraformStateAdminARNs:
     Description: 'A comma delimited list of IAM users or role ARNs that should be able to administer the Terraform state (see https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html#specifying-notprincipal).'
     Type: String
+Conditions:
+  HasTerraformStateUsers: !Not [!Equals [!Ref TerraformStateUserARNs, '']]
 Resources:
   StateBucket:
     Type: AWS::S3::Bucket
@@ -62,24 +65,32 @@ Resources:
     Properties:
       Bucket: !Ref StateBucket
       PolicyDocument:
-        Statement:
-        - Effect: 'Deny'
-          Action: 's3:*'
-          Resource:
-          - !Sub '${StateBucket.Arn}'
-          - !Sub '${StateBucket.Arn}/*'
-          NotPrincipal:
-            AWS: !Split [',', {"Fn::Sub": '${TerraformStateUserARNs},${TerraformStateAdminARNs}'}]
-        - Effect: 'Deny'
-          NotAction:
-          - 's3:ListBucket'
-          - 's3:GetObject'
-          - 's3:PutObject'
-          Resource:
-          - !Sub '${StateBucket.Arn}'
-          - !Sub '${StateBucket.Arn}/*'
-          Principal:
-            AWS: !Split [',', !Ref TerraformStateUserARNs]
+        Statement: !If
+        - HasTerraformStateUsers
+        - - Effect: 'Deny'
+            NotAction:
+            - 's3:ListBucket'
+            - 's3:GetObject'
+            - 's3:PutObject'
+            Resource:
+            - !Sub '${StateBucket.Arn}'
+            - !Sub '${StateBucket.Arn}/*'
+            Principal:
+              AWS: !Split [',', !Ref TerraformStateUserARNs]
+          - Effect: 'Deny'
+            Action: 's3:*'
+            Resource:
+            - !Sub '${StateBucket.Arn}'
+            - !Sub '${StateBucket.Arn}/*'
+            NotPrincipal:
+              AWS: !Split [',', {"Fn::Sub": '${TerraformStateUserARNs},${TerraformStateAdminARNs}'}]
+        - - Effect: 'Deny'
+            Action: 's3:*'
+            Resource:
+            - !Sub '${StateBucket.Arn}'
+            - !Sub '${StateBucket.Arn}/*'
+            NotPrincipal:
+              AWS: !Split [',', !Ref TerraformStateAdminARNs]
   StateTable:
     Type: AWS::DynamoDB::Table
     Properties:
