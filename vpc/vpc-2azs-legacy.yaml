@@ -23,7 +23,9 @@ Metadata:
       - AZA
       - AZB
       - CidrBlock
+      - CidrBlockIPv6
       - VPC
+      - InternetGateway
       - SubnetAPublic
       - RouteTableAPublic
       - SubnetBPublic
@@ -42,9 +44,15 @@ Parameters:
   CidrBlock:
     Description: 'The set of IP addresses for the VPC (e.g., 10.0.0.0/16).'
     Type: String
+  CidrBlockIPv6:
+    Description: 'The set of IPv6 addresses for the VPC (e.g., 2600:1f18:277f:e700::/56).'
+    Type: String
   VPC:
     Description: 'VPC'
     Type: 'AWS::EC2::VPC::Id'
+  InternetGateway:
+    Description: 'Internet Gateway id.'
+    Type: String
   SubnetAPublic:
     Description: 'Subnet A public.'
     Type: 'AWS::EC2::Subnet::Id'
@@ -103,11 +111,21 @@ Outputs:
     Value: !Ref CidrBlock
     Export:
       Name: !Sub '${AWS::StackName}-CidrBlock'
+  CidrBlockIPv6:
+    Description: 'The set of IPv6 addresses for the VPC.'
+    Value: !Ref CidrBlockIPv6
+    Export:
+      Name: !Sub '${AWS::StackName}-CidrBlockIPv6'
   VPC:
     Description: 'VPC.'
     Value: !Ref VPC
     Export:
       Name: !Sub '${AWS::StackName}-VPC'
+  InternetGateway:
+    Description: 'InternetGateway.'
+    Value: !Ref InternetGateway
+    Export:
+      Name: !Sub '${AWS::StackName}-InternetGateway'
   SubnetsPublic:
     Description: 'Subnets public.'
     Value: !Join [',', [!Ref SubnetAPublic, !Ref SubnetBPublic]]

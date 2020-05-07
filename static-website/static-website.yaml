@@ -245,6 +245,7 @@ Resources:
         DefaultRootObject: !If [HasDefaultRootObject, !Ref DefaultRootObject, !Ref 'AWS::NoValue']
         Enabled: true
         HttpVersion: http2
+        IPV6Enabled: true
         Logging: !If [HasS3Bucket, {Bucket: {'Fn::ImportValue': !Sub '${ParentS3StackAccessLog}-BucketDomainName'}, Prefix: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
         Origins:
         - DomainName: !GetAtt 'S3Bucket.DomainName'
@@ -270,6 +271,19 @@ Resources:
         AliasTarget:
           HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
           DNSName: !GetAtt 'CloudFrontDistribution.DomainName'
+  Route53RecordIPv6:
+    Type: 'AWS::Route53::RecordSetGroup'
+    Properties:
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
+      RecordSets:
+      - Name: !Sub
+        - '${SubDomainNameWithDot}${HostedZoneName}'
+        - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+          HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+        Type: AAAA
+        AliasTarget:
+          HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
+          DNSName: !GetAtt 'CloudFrontDistribution.DomainName'
   Route53RecordRedirectV2:
     Condition: HasRedirectDomainName
     Type: 'AWS::Route53::RecordSetGroup'
@@ -281,6 +295,20 @@ Resources:
         - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
           HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
         Type: A
+        AliasTarget:
+          HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
+          DNSName: !GetAtt 'CloudFrontDistribution.DomainName'
+  Route53RecordRedirectIPv6:
+    Condition: HasRedirectDomainName
+    Type: 'AWS::Route53::RecordSetGroup'
+    Properties:
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
+      RecordSets:
+      - Name: !Sub
+        - '${RedirectSubDomainNameWithDot}${HostedZoneName}'
+        - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
+          HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+        Type: AAAA
         AliasTarget:
           HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
           DNSName: !GetAtt 'CloudFrontDistribution.DomainName'
