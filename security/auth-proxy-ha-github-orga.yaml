@@ -731,7 +731,7 @@ Resources:
                 client_secret = "${GitHubClientSecret}"
                 cookie_secret = "${CookieSecret}"
                 provider = "github"
-                github-team = "${GitHubOrganization}"
+                github_org = "${GitHubOrganization}"
               mode: '000644'
               owner: root
               group: root
