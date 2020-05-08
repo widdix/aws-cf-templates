@@ -1109,7 +1109,7 @@ Resources:
           Statement:
           - Effect: Allow
             Action: 'autoscaling:ExecutePolicy'
-            Resource: !Sub 'arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${AutoScalingGroup}'
+            Resource: '*' # CloudFormation does not provide a way to access the ASG ID but ARN requires ASG ID.
   ScaleUpLambdaPolicy:
     Type: 'AWS::IAM::Policy'
     Properties:
