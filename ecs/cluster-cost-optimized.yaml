@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'ECS: cluster, a cloudonaut.io template'
+Description: 'ECS: cluster (cost optimized), a cloudonaut.io template'
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -1380,7 +1380,7 @@ Resources:
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
-    Value: 'ecs/cluster'
+    Value: 'ecs/cluster-cost-optimized'
   TemplateVersion:
     Description: 'cloudonaut.io template version.'
     Value: '__VERSION__'
