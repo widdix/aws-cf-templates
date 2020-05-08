@@ -18,7 +18,7 @@ public class TestECSCluster extends ACloudFormationTest {
     private final AmazonECS ecs = AmazonECSClientBuilder.standard().withCredentials(this.credentialsProvider).build();
 
     @Test
-    public void default() {
+    public void testDefault() {
         final String vpcStackName = "vpc-2azs-" + this.random8String();
         final String stackName = "ecs-cluster-" + this.random8String();
         final String classB = "10";
@@ -71,7 +71,7 @@ public class TestECSCluster extends ACloudFormationTest {
     }
 
     @Test
-    public void costOptimized() {
+    public void testCostOptimized() {
         final String vpcStackName = "vpc-2azs-" + this.random8String();
         final String stackName = "ecs-cluster-" + this.random8String();
         final String classB = "10";
