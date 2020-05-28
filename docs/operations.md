@@ -85,3 +85,20 @@ This template describes a Lambda function that can be used to anonymize IP addre
 ### Dependencies
 * `state/s3.yaml` (**required**)
 * `operations/alert.yaml` (recommended)
+
+# Terraform State
+
+Creates S3 bucket and DynamoDB table used to manage remote Terraform state.
+
+## Installation Guide
+1. This template depends on our `security/kms.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/security/kms-key.yaml&stackName=kms-key&param_Service=s3)
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/terraform-state.yaml&stackName=terraform-state&param_ParentKMSKeyStack=kms-key)
+1. Click **Next** to proceed with the next step of the wizard.
+1. Specify a name and all parameters for the stack.
+1. Click **Next** to proceed with the next step of the wizard.
+1. Click **Next** to skip the **Options** step of the wizard.
+1. Click **Create** to start the creation of the stack.
+1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
+### Dependencies
+* `security/kms-key.yaml` (**required**)
