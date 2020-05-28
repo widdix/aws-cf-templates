@@ -7,7 +7,7 @@ import org.junit.Test;
 public class TestTerraformState extends ACloudFormationTest {
 
     @Test
-    public void default() {
+    public void test() {
         final String kmsStackName = "kms-" + this.random8String();
         final String terraformStateStackName = "tf-state-" + this.random8String();
         try {
@@ -20,8 +20,8 @@ public class TestTerraformState extends ACloudFormationTest {
                         "operations/terraform-state.yaml",
                         new Parameter().withParameterKey("ParentKmsKeyStack").withParameterValue(kmsStackName),
                         new Parameter().withParameterKey("TerrformStateIdentifier").withParameterValue(terraformStateStackName),
-                        new Parameter().withParameterKey("TerraformStateUserARNs").withParameterValue('arn:aws:iam::' + this.getAccount + ':root,' + System.getenv('IAM_ROLE_ARN') + ',' + this.getCallerIdentityArn()),
-                        new Parameter().withParameterKey("TerraformStateAdminARNs").withParameterValue('arn:aws:iam::' + this.getAccount + ':root,' + System.getenv('IAM_ROLE_ARN') + ',' + this.getCallerIdentityArn())
+                        new Parameter().withParameterKey("TerraformStateUserARNs").withParameterValue("arn:aws:iam::" + this.getAccount() + ":root," + System.getenv("IAM_ROLE_ARN") + "," + this.getCallerIdentityArn()),
+                        new Parameter().withParameterKey("TerraformStateAdminARNs").withParameterValue("arn:aws:iam::" + this.getAccount() + ":root," + System.getenv("IAM_ROLE_ARN") + "," + this.getCallerIdentityArn())
                 );
             } finally {
                 this.deleteStack(terraformStateStackName);
