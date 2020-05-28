@@ -1,0 +1,122 @@
+---
+# Copyright 2020 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Terraform state (S3 and DynamoDB)'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentKmsKeyStack
+    - Label:
+        default: 'Terraform State Parameters'
+      Parameters:
+      - TerrformStateIdentifier
+      - TerraformStateUserARNs
+      - TerraformStateAdminARNs
+Parameters:
+  ParentKmsKeyStack:
+    Description: 'Stack name of parent KMS key stack based on security/kms-key.yaml template.'
+    Type: String
+  TerrformStateIdentifier:
+    Description: 'Globally unique identifier for your Terraform state.'
+    Type: String
+  TerraformStateUserARNs:
+    Description: 'Optional comma delimited list of IAM users or role ARNs that need to use the Terraform state (see https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html#specifying-notprincipal).'
+    Type: String
+    Default: ''
+  TerraformStateAdminARNs:
+    Description: 'A comma delimited list of IAM users or role ARNs that should be able to administer the Terraform state (see https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html#specifying-notprincipal).'
+    Type: String
+Conditions:
+  HasTerraformStateUsers: !Not [!Equals [!Ref TerraformStateUserARNs, '']]
+Resources:
+  StateBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            KMSMasterKeyID: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}
+            SSEAlgorithm: 'aws:kms'
+      BucketName: !Ref TerrformStateIdentifier
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: 'Enabled'
+  StateBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref StateBucket
+      PolicyDocument:
+        Statement: !If
+        - HasTerraformStateUsers
+        - - Effect: 'Deny'
+            NotAction:
+            - 's3:ListBucket'
+            - 's3:GetObject'
+            - 's3:PutObject'
+            Resource:
+            - !Sub '${StateBucket.Arn}'
+            - !Sub '${StateBucket.Arn}/*'
+            Principal:
+              AWS: !Split [',', !Ref TerraformStateUserARNs]
+          - Effect: 'Deny'
+            Action: 's3:*'
+            Resource:
+            - !Sub '${StateBucket.Arn}'
+            - !Sub '${StateBucket.Arn}/*'
+            NotPrincipal:
+              AWS: !Split [',', {"Fn::Sub": '${TerraformStateUserARNs},${TerraformStateAdminARNs}'}]
+        - - Effect: 'Deny'
+            Action: 's3:*'
+            Resource:
+            - !Sub '${StateBucket.Arn}'
+            - !Sub '${StateBucket.Arn}/*'
+            NotPrincipal:
+              AWS: !Split [',', !Ref TerraformStateAdminARNs]
+  StateTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: 'LockID'
+        AttributeType: 'S'
+      BillingMode: 'PAY_PER_REQUEST'
+      KeySchema:
+      - AttributeName: 'LockID'
+        KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: 'KMS'
+      TableName: !Ref TerrformStateIdentifier
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'operations/terraform-state'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
+  StateBucketName:
+    Description: 'The name of the Terraform state bucket.'
+    Value: !Ref StateBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-StateBucketName'
