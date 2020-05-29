@@ -75,8 +75,8 @@ Resources:
             Resource:
             - !Sub '${StateBucket.Arn}'
             - !Sub '${StateBucket.Arn}/*'
-            Principal:
-              AWS: !Split [',', !Ref TerraformStateUserARNs]
+            NotPrincipal:
+              AWS: !Split [',', !Ref TerraformStateAdminARNs]
           - Effect: 'Deny'
             Action: 's3:*'
             Resource:
