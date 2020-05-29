@@ -24,14 +24,14 @@ Metadata:
     - Label:
         default: 'Terraform State Parameters'
       Parameters:
-      - TerrformStateIdentifier
+      - TerraformStateIdentifier
       - TerraformStateUserARNs
       - TerraformStateAdminARNs
 Parameters:
   ParentKmsKeyStack:
     Description: 'Stack name of parent KMS key stack based on security/kms-key.yaml template.'
     Type: String
-  TerrformStateIdentifier:
+  TerraformStateIdentifier:
     Description: 'Globally unique identifier for your Terraform state.'
     Type: String
   TerraformStateUserARNs:
@@ -52,7 +52,7 @@ Resources:
         - ServerSideEncryptionByDefault:
             KMSMasterKeyID: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}
             SSEAlgorithm: 'aws:kms'
-      BucketName: !Ref TerrformStateIdentifier
+      BucketName: !Ref TerraformStateIdentifier
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -104,7 +104,7 @@ Resources:
       SSESpecification:
         SSEEnabled: true
         SSEType: 'KMS'
-      TableName: !Ref TerrformStateIdentifier
+      TableName: !Ref TerraformStateIdentifier
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
