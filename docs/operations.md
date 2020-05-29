@@ -100,5 +100,7 @@ Creates S3 bucket and DynamoDB table used to manage remote Terraform state.
 1. Click **Create** to start the creation of the stack.
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 
+> Be aware that the template creates a bucket policy using a `Deny` statement with a `NotPrincipal` element when defining the `TerraformStateUserARNs` and `TerraformStateAdminARNs` parameters. Therefore, both parameters should include the following inforamtion: account ARN (e.g., `arn:aws:iam::111111111111:root`), IAM user (e.g., `arn:aws:iam::111111111111:user/tfuser`), IAM role (e.g., `arn:aws:iam::111111111111:role/tfadmin`) and assumed-role user (e.g., `arn:aws:sts::111111111111:assumed-role/tfadmin/session`). Check out [NotPrincipal with Deny](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html#specifying-notprincipal-allow) to learn more.
+
 ### Dependencies
 * `security/kms-key.yaml` (**required**)
