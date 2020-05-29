@@ -20,7 +20,7 @@ public class TestTerraformState extends ACloudFormationTest {
                         "operations/terraform-state.yaml",
                         new Parameter().withParameterKey("ParentKmsKeyStack").withParameterValue(kmsStackName),
                         new Parameter().withParameterKey("TerraformStateIdentifier").withParameterValue(terraformStateStackName),
-                        new Parameter().withParameterKey("TerraformStateAdminARNs").withParameterValue(System.getenv("IAM_ROLE_ARN") + "," + this.getCallerIdentityArn())
+                        new Parameter().withParameterKey("TerraformStateAdminARNs").withParameterValue("arn:aws:iam::" + this.getAccount() + ":root," + System.getenv("IAM_ROLE_ARN") + "," + this.getCallerIdentityArn())
                 );
             } finally {
                 this.deleteStack(terraformStateStackName);
