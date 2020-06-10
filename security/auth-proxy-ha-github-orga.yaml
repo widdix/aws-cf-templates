@@ -699,7 +699,7 @@ Resources:
           users:
             oauth2_proxy: {}
           sources:
-            /opt/oauth2_proxy: 'https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v5.1.0/oauth2_proxy-v5.1.0.linux-amd64.go1.14.tar.gz'
+            /opt/oauth2_proxy: 'https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v5.1.1/oauth2_proxy-v5.1.1.linux-amd64.go1.14.2.tar.gz'
           packages:
             yum:
               nginx: []
@@ -747,7 +747,7 @@ Resources:
                 # Short-Description: Start daemon at boot time
                 # Description:       Enable service provided by daemon.
                 ### END INIT INFO
-                dir="/opt/oauth2_proxy/oauth2_proxy-v5.1.0.linux-amd64.go1.14"
+                dir="/opt/oauth2_proxy/oauth2_proxy-v5.1.1.linux-amd64.go1.14.2"
                 cmd="./oauth2_proxy -config=/etc/oauth2_proxy.cfg"
                 user="oauth2_proxy"
                 name=`basename $0`
