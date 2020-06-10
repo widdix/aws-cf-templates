@@ -85,3 +85,22 @@ This template describes a Lambda function that can be used to anonymize IP addre
 ### Dependencies
 * `state/s3.yaml` (**required**)
 * `operations/alert.yaml` (recommended)
+
+# Terraform State
+
+Creates S3 bucket and DynamoDB table used to manage remote Terraform state.
+
+## Installation Guide
+1. This template depends on our `security/kms.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/security/kms-key.yaml&stackName=kms-key&param_Service=s3)
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/terraform-state.yaml&stackName=terraform-state&param_ParentKMSKeyStack=kms-key)
+1. Click **Next** to proceed with the next step of the wizard.
+1. Specify a name and all parameters for the stack.
+1. Click **Next** to proceed with the next step of the wizard.
+1. Click **Next** to skip the **Options** step of the wizard.
+1. Click **Create** to start the creation of the stack.
+1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
+> Be aware that the template creates a bucket policy using a `Deny` statement with a `NotPrincipal` element when defining the `TerraformStateUserARNs` and `TerraformStateAdminARNs` parameters. Therefore, both parameters should include the following inforamtion: account ARN (e.g., `arn:aws:iam::111111111111:root`), IAM user (e.g., `arn:aws:iam::111111111111:user/tfuser`), IAM role (e.g., `arn:aws:iam::111111111111:role/tfadmin`) and assumed-role user (e.g., `arn:aws:sts::111111111111:assumed-role/tfadmin/session`). Check out [NotPrincipal with Deny](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html#specifying-notprincipal-allow) to learn more.
+
+### Dependencies
+* `security/kms-key.yaml` (**required**)

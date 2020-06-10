@@ -77,6 +77,7 @@ Parameters:
     - 'elasticfilesystem-fips'
     - elasticloadbalancing
     - elasticmapreduce
+    - email-smtp # https://docs.aws.amazon.com/ses/latest/DeveloperGuide/send-email-set-up-vpc-endpoints.html
     - events
     - 'execute-api'
     - 'git-codecommit'
@@ -111,23 +112,67 @@ Parameters:
     - workspaces
 Conditions:
   HasParentClientStack: !Not [!Equals [!Ref ParentClientStack, '']]
+  UseEmailSMTP: !Equals [!Ref ServiceName, 'email-smtp']
 Resources:
   SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: !Ref 'AWS::StackName'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
-      SecurityGroupIngress:
+      SecurityGroupIngress: !If
+      - HasParentClientStack
       - !If
-        - HasParentClientStack
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
+        - UseEmailSMTP
+        - - IpProtocol: tcp
+            FromPort: 25
+            ToPort: 25
+            SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+          - IpProtocol: tcp
+            FromPort: 465
+            ToPort: 465
+            SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+          - IpProtocol: tcp
+            FromPort: 587
+            ToPort: 587
+            SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+          - IpProtocol: tcp
+            FromPort: 2465
+            ToPort: 2465
+            SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+          - IpProtocol: tcp
+            FromPort: 2587
+            ToPort: 2587
+            SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+        - - IpProtocol: tcp
+            FromPort: 443
+            ToPort: 443
+            SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+      - !If
+        - UseEmailSMTP
+        - - IpProtocol: tcp
+            FromPort: 25
+            ToPort: 25
+            CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
+          - IpProtocol: tcp
+            FromPort: 465
+            ToPort: 465
+            CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
+          - IpProtocol: tcp
+            FromPort: 587
+            ToPort: 587
+            CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
+          - IpProtocol: tcp
+            FromPort: 2465
+            ToPort: 2465
+            CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
+          - IpProtocol: tcp
+            FromPort: 2587
+            ToPort: 2587
+            CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
+        - - IpProtocol: tcp
+            FromPort: 443
+            ToPort: 443
+            CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
   Endpoint:
     Type: 'AWS::EC2::VPCEndpoint'
     Properties:
