@@ -137,26 +137,17 @@ Resources:
           - '${SubDomainNameWithDot}${HostedZoneName}'
           - SubDomainNameWithDot: !Ref SubDomainNameWithDot
             HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
-          ValidationDomain: !Sub
-          - '${SubDomainNameWithDot}${HostedZoneName}'
-          - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-            HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+          HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
         - DomainName: !Sub
           - '${RedirectSubDomainNameWithDot}${HostedZoneName}'
           - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
             HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
-          ValidationDomain: !Sub
-          - '${SubDomainNameWithDot}${HostedZoneName}'
-          - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-            HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+          HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       - - DomainName: !Sub
           - '${SubDomainNameWithDot}${HostedZoneName}'
           - SubDomainNameWithDot: !Ref SubDomainNameWithDot
             HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
-          ValidationDomain: !Sub
-          - '${SubDomainNameWithDot}${HostedZoneName}'
-          - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-            HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+          HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       SubjectAlternativeNames: !If
       - HasRedirectDomainName
       - - !Sub
@@ -164,6 +155,7 @@ Resources:
           - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
             HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       - []
+      ValidationMethod: DNS
   S3Bucket:
     Type: 'AWS::S3::Bucket'
     Properties:
