@@ -98,7 +98,7 @@ Resources:
       FromPort: 27017
       ToPort: 27017
       SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentBastionStack}-SecurityGroup'}
-  Cluster:
+  Cluster: # FIXME add monitoring
     # TODO not yet supported by CloudFormation DeletionPolicy: Snapshot
     # TODO not yet supported by CloudFormation UpdateReplacePolicy: Snapshot
     Type: 'AWS::DocDB::DBCluster'
