@@ -210,7 +210,7 @@ Resources:
         HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
       - !GetAtt 'DBCluster.Endpoint.Address'
-      TTL: '60'
+      TTL: 60
       Type: CNAME
   ReadRecordSet:
     Condition: HasZone
@@ -223,7 +223,7 @@ Resources:
         HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
       - !GetAtt 'DBCluster.ReadEndpoint.Address'
-      TTL: '60'
+      TTL: 60
       Type: CNAME
   ClusterSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'

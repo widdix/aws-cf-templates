@@ -391,7 +391,7 @@ Resources:
         HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
       - !GetAtt 'NetworkInterface.PrimaryPrivateIpAddress'
-      TTL: '60'
+      TTL: 60
       Type: A
   NetworkInterface:
     Type: 'AWS::EC2::NetworkInterface'
