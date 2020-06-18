@@ -144,7 +144,7 @@ Resources:
           'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       ResourceRecords:
       - !GetAtt 'ReplicationGroup.PrimaryEndPoint.Address'
-      TTL: '60'
+      TTL: 60
       Type: CNAME
   CacheParameterGroup:
     Type: 'AWS::ElastiCache::ParameterGroup'

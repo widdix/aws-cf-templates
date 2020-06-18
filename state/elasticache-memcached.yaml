@@ -105,7 +105,7 @@ Resources:
         HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
       - !GetAtt 'CacheCluster.ConfigurationEndpoint.Address'
-      TTL: '60'
+      TTL: 60
       Type: CNAME
   CacheParameterGroupName:
     Type: 'AWS::ElastiCache::ParameterGroup'

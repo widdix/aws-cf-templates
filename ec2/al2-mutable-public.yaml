@@ -391,7 +391,7 @@ Resources:
         HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
       - !Ref ElasticIP
-      TTL: '60'
+      TTL: 60
       Type: A
   ElasticIP:
     Type: 'AWS::EC2::EIP'
