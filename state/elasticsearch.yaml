@@ -118,7 +118,7 @@ Resources:
         HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
       - !GetAtt 'ElasticsearchDomain.DomainEndpoint'
-      TTL: '60'
+      TTL: 60
       Type: CNAME
   SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
