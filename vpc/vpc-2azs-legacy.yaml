@@ -91,11 +91,16 @@ Outputs:
   StackName:
     Description: 'Stack name.'
     Value: !Sub '${AWS::StackName}'
-  AZs:
-    Description: 'AZs'
+  AZs: # Better name would be NumberOfAZs, but we keep the name for backward compatibility
+    Description: 'Number of AZs'
     Value: 2
     Export:
       Name: !Sub '${AWS::StackName}-AZs'
+  AZList:  # Better name would be AZs, but the name was already used
+    Description: 'List of AZs'
+    Value: !Join [',', [!Ref AZA, !Ref AZB]]
+    Export:
+      Name: !Sub '${AWS::StackName}-AZList'
   AZA:
     Description: 'AZ of A'
     Value: !Ref AZA
