@@ -99,7 +99,7 @@ Parameters:
   DBInstanceClass:
     Description: 'The compute and memory capacity of the instance.'
     Type: String
-    Default: 'db.r4.large'
+    Default: 'db.r5.large'
 Mappings:
   EngineVersionMap:
     '3.6.0':
