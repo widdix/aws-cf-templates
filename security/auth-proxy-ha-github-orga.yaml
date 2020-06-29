@@ -347,27 +347,6 @@ Resources:
       TargetGroupAttributes:
       - Key: 'deregistration_delay.timeout_seconds'
         Value: '30'
-  LoadBalancerTargetGroupHttpRedirect: # not monitored, but LoadBalancer is monitored!
-    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
-    Properties:
-      HealthCheckIntervalSeconds: 15
-      HealthCheckPath: '/'
-      HealthCheckPort: '80'
-      HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 10
-      HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 2
-      Matcher:
-        HttpCode: '200-299'
-      Port: 8080
-      Protocol: HTTP
-      Tags:
-      - Key: Name
-        Value: 'Auth proxy http redirect'
-      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
-      TargetGroupAttributes:
-      - Key: 'deregistration_delay.timeout_seconds'
-        Value: '30'
   LoadBalancerListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
@@ -383,8 +362,11 @@ Resources:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
       DefaultActions:
-      - TargetGroupArn: !Ref LoadBalancerTargetGroupHttpRedirect
-        Type: forward
+      - RedirectConfig:
+          Port: '443'
+          Protocol: HTTPS
+          StatusCode: 'HTTP_301'
+        Type: redirect
       LoadBalancerArn: !Ref LoadBalancer
       Port: 80
       Protocol: HTTP
@@ -491,7 +473,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, extras, config], [awslogs, extras, config]]
+          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, config], [awslogs, config]]
         awslogs:
           packages:
             yum:
@@ -598,20 +580,6 @@ Resources:
               mode: '000644'
               owner: root
               group: root
-            '/etc/awslogs/config/oauth2proxy.conf':
-              content: !Sub |
-                [/var/log/oauth2_proxy.log]
-                file = /var/log/oauth2_proxy.log
-                log_stream_name = {instance_id}/var/log/oauth2_proxy.log
-                log_group_name = ${Logs}
-                [/var/log/oauth2_proxy.err]
-                datetime_format = %Y/%m/%d %H:%M:%S
-                file = /var/log/oauth2_proxy.err
-                log_stream_name = {instance_id}/var/log/oauth2_proxy.err
-                log_group_name = ${Logs}
-              mode: '000644'
-              owner: root
-              group: root
           services:
             sysvinit:
               awslogsd:
@@ -623,7 +591,6 @@ Resources:
                 files:
                 - '/etc/awslogs/awslogs.conf'
                 - '/etc/awslogs/awscli.conf'
-                - '/etc/awslogs/config/oauth2proxy.conf'
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':
@@ -690,34 +657,16 @@ Resources:
                 commands:
                 - 'a_configure_sshd_command'
                 - 'b_configure_sshd_commanduser'
-        extras:
-          commands:
-            'a_enable_nginx':
-              command: 'amazon-linux-extras enable nginx1.12'
-              test: "! grep -Fxq '[amzn2extra-nginx1.12]' /etc/yum.repos.d/amzn2-extras.repo"
         config:
           users:
-            oauth2_proxy: {}
+            oauth2-proxy: {}
           sources:
-            /opt/oauth2_proxy: 'https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v5.1.1/oauth2_proxy-v5.1.1.linux-amd64.go1.14.2.tar.gz'
-          packages:
-            yum:
-              nginx: []
+            /opt/oauth2-proxy: 'https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v6.0.0/oauth2-proxy-v6.0.0.linux-amd64.go1.14.2.tar.gz'
           files:
-            '/etc/nginx/conf.d/http2https.conf':
-              content: |
-                server {
-                  listen 8080 default_server;
-                  server_name _;
-                  return 301 https://$host$request_uri;
-                }
-              mode: '000644'
-              owner: root
-              group: root
-            '/etc/oauth2_proxy.cfg':
+            '/etc/oauth2-proxy.cfg':
               content: !Sub |
                 ## OAuth2 Proxy Config File
-                ## https://github.com/pusher/oauth2_proxy
+                ## https://github.com/oauth2-proxy/oauth2-proxy
                 http_address = "0.0.0.0:4180"
                 upstreams = [
                   "${Upstream}"
@@ -735,99 +684,30 @@ Resources:
               mode: '000644'
               owner: root
               group: root
-            '/etc/init.d/oauth2_proxy':
+            '/etc/systemd/system/oauth2-proxy.service':
               content: |
-                #!/bin/sh
-                ### BEGIN INIT INFO
-                # Provides:
-                # Required-Start:    $remote_fs $syslog
-                # Required-Stop:     $remote_fs $syslog
-                # Default-Start:     2 3 4 5
-                # Default-Stop:      0 1 6
-                # Short-Description: Start daemon at boot time
-                # Description:       Enable service provided by daemon.
-                ### END INIT INFO
-                dir="/opt/oauth2_proxy/oauth2_proxy-v5.1.1.linux-amd64.go1.14.2"
-                cmd="./oauth2_proxy -config=/etc/oauth2_proxy.cfg"
-                user="oauth2_proxy"
-                name=`basename $0`
-                pid_file="/var/run/$name.pid"
-                stdout_log="/var/log/$name.log"
-                stderr_log="/var/log/$name.err"
-                get_pid() {
-                    cat "$pid_file"
-                }
-                is_running() {
-                    [ -f "$pid_file" ] && ps `get_pid` > /dev/null 2>&1
-                }
-                case "$1" in
-                    start)
-                    if is_running; then
-                        echo "Already started"
-                    else
-                        echo "Starting $name"
-                        cd "$dir"
-                        if [ -z "$user" ]; then
-                            sudo $cmd >> "$stdout_log" 2>> "$stderr_log" &
-                        else
-                            sudo -u "$user" $cmd >> "$stdout_log" 2>> "$stderr_log" &
-                        fi
-                        echo $! > "$pid_file"
-                        if ! is_running; then
-                            echo "Unable to start, see $stdout_log and $stderr_log"
-                            exit 1
-                        fi
-                    fi
-                    ;;
-                    stop)
-                    if is_running; then
-                        echo -n "Stopping $name.."
-                        kill `get_pid`
-                        for i in {1..10}
-                        do
-                            if ! is_running; then
-                                break
-                            fi
-                            echo -n "."
-                            sleep 1
-                        done
-                        echo
-                        if is_running; then
-                            echo "Not stopped; may still be shutting down or shutdown may have failed"
-                            exit 1
-                        else
-                            echo "Stopped"
-                            if [ -f "$pid_file" ]; then
-                                rm "$pid_file"
-                            fi
-                        fi
-                    else
-                        echo "Not running"
-                    fi
-                    ;;
-                    restart)
-                    $0 stop
-                    if is_running; then
-                        echo "Unable to stop, will not attempt to start"
-                        exit 1
-                    fi
-                    $0 start
-                    ;;
-                    status)
-                    if is_running; then
-                        echo "Running"
-                    else
-                        echo "Stopped"
-                        exit 1
-                    fi
-                    ;;
-                    *)
-                    echo "Usage: $0 {start|stop|restart|status}"
-                    exit 1
-                    ;;
-                esac
-                exit 0
-              mode: '000755'
+                # Systemd service file for oauth2-proxy daemon
+                #
+                # Date: Feb 9, 2016
+                # Author: Srdjan Grubor <sgnn7@sgnn7.org>
+
+                [Unit]
+                Description=oauth2-proxy daemon service
+                After=syslog.target network.target
+
+                [Service]
+                User=oauth2-proxy
+                Group=oauth2-proxy
+
+                ExecStart=/opt/oauth2-proxy/oauth2-proxy-v6.0.0.linux-amd64.go1.14.2/oauth2-proxy --config=/etc/oauth2-proxy.cfg
+                ExecReload=/bin/kill -HUP $MAINPID
+
+                KillMode=process
+                Restart=always
+
+                [Install]
+                WantedBy=multi-user.target
+              mode: '000644'
               owner: root
               group: root
             '/etc/cfn/cfn-hup.conf':
@@ -848,22 +728,14 @@ Resources:
                 runas=root
           services:
             sysvinit:
-              nginx:
-                enabled: true
-                ensureRunning: true
-                packages:
-                  yum:
-                  - nginx
-                files:
-                - '/etc/nginx/conf.d/http2https.conf'
-              oauth2_proxy:
+              oauth2-proxy:
                 enabled: true
                 ensureRunning: true
                 sources:
-                - '/opt/oauth2_proxy'
+                - '/opt/oauth2-proxy'
                 files:
-                - '/etc/oauth2_proxy.cfg'
-                - '/etc/init.d/oauth2_proxy'
+                - '/etc/oauth2-proxy.cfg'
+                - '/etc/systemd/system/oauth2-proxy.service'
               cfn-hup:
                 enabled: true
                 ensureRunning: true
@@ -901,7 +773,6 @@ Resources:
         PropagateAtLaunch: true
       TargetGroupARNs:
       - !Ref LoadBalancerTargetGroup
-      - !Ref LoadBalancerTargetGroupHttpRedirect
       NotificationConfigurations: !If
       - HasAlertTopic
       - - NotificationTypes:
