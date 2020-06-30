@@ -240,7 +240,7 @@ Resources:
         IPV6Enabled: true
         Logging: !If [HasS3Bucket, {Bucket: {'Fn::ImportValue': !Sub '${ParentS3StackAccessLog}-BucketDomainName'}, Prefix: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
         Origins:
-        - DomainName: !GetAtt 'S3Bucket.DomainName'
+        - DomainName: !GetAtt 'S3Bucket.RegionalDomainName'
           Id: s3origin
           S3OriginConfig:
             OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
