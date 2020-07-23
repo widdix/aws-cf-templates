@@ -59,6 +59,14 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
+            - 's3:ListBucket'
+            - 's3:ListBucketVersions'
+            Resource: !Sub
+            - 'arn:${Partition}:s3:::${BucketName}'
+            - Partition: !Ref 'AWS::Partition'
+              BucketName: {'Fn::ImportValue': !Sub '${ParentS3Stack}-BucketName'}
+          - Effect: Allow
+            Action:
             - 's3:GetObject'
             - 's3:GetObjectVersion'
             - 's3:PutObject'
@@ -127,6 +135,7 @@ Resources:
           }
 
           async function process(record) {
+            const anonymizedKey = record.s3.object.key.slice(0, -2) + 'anonymized.gz';
             let chunk = Buffer.alloc(0);
             const transform = (currentChunk, encoding, callback) => {
               chunk = Buffer.concat([chunk, currentChunk]);
@@ -153,21 +162,55 @@ Resources:
             if ('versionId' in record.s3.object) {
               params.VersionId = record.s3.object.versionId;
             }
-            const body = s3.getObject(params).createReadStream()
-              .pipe(zlib.createGunzip())
-              .pipe(new stream.Transform({
-                transform
-              }))
-              .pipe(zlib.createGzip());
-            await s3.upload({
-              Bucket: record.s3.bucket.name,
-              Key: record.s3.object.key.slice(0, -2) + 'anonymized.gz',
-              Body: body
-            }).promise();
-            if (chunk.length > 0) {
-              throw new Error('file was not read completly');
-            }
-            return s3.deleteObject(params).promise();
+            return new Promise((resolve, reject) => {
+              const body = stream.pipeline(
+                s3.getObject(params).createReadStream(),
+                zlib.createGunzip(),
+                new stream.Transform({
+                  transform
+                }),
+                zlib.createGzip(),
+                () => {}
+              );
+              s3.upload({
+                Bucket: record.s3.bucket.name,
+                Key: anonymizedKey,
+                Body: body
+              }, (err) => {
+                if (err) {
+                  if (err) {
+                    if (err.code === 'NoSuchKey') {
+                      console.log('original no longer exist, check for anonymized object.')
+                      s3.headObject({
+                        Bucket: record.s3.bucket.name,
+                        Key: anonymizedKey
+                      }, (err) => {
+                        if (err) {
+                          reject(err);
+                        } else {
+                          // original already processed
+                          resolve();
+                        }
+                      });
+                    } else {
+                      reject(err);
+                    }
+                  }
+                } else {
+                  if (chunk.length > 0) {
+                    reject(new Error('file was not read completly'));
+                  } else {
+                    s3.deleteObject(params, (err) => {
+                      if (err) {
+                        reject(err);
+                      } else {
+                        resolve();
+                      }
+                    });
+                  }
+                }
+              });
+            });
           }
 
           exports.handler = async (event) => {
