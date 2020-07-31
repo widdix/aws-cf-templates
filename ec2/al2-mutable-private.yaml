@@ -196,9 +196,11 @@ Parameters:
     Description: 'Version of Amazon Linux 2 to boot from the first time (ignored if RestoreImageId is set; select the latest version for new stacks; OS updates are enabled to patch the system).'
     Type: String
     Default: '20191217.0'
-    AllowedValues: ['20200520.1', '20200406.0', '20200304.0', '20200207.1', '20191217.0']
+    AllowedValues: ['20200722.0', '20200520.1', '20200406.0', '20200304.0', '20200207.1', '20191217.0']
 Mappings:
   VersionMap:
+    '20200722.0':
+      Map: RegionMap202007220
     '20200520.1':
       Map: RegionMap202005201
     '20200406.0':
@@ -209,6 +211,47 @@ Mappings:
       Map: RegionMap202002071
     '20191217.0':
       Map: RegionMap201912170
+  RegionMap202007220:
+    'af-south-1':
+      AMI: 'ami-08c9d9528020000ac'
+    'eu-north-1':
+      AMI: 'ami-039609244d2810a6b'
+    'ap-south-1':
+      AMI: 'ami-0ebc1ac48dfd14136'
+    'eu-west-3':
+      AMI: 'ami-093fa4c538885becf'
+    'eu-west-2':
+      AMI: 'ami-0a13d44dccf1f5cf6'
+    'eu-south-1':
+      AMI: 'ami-0533a9871112d2d51'
+    'eu-west-1':
+      AMI: 'ami-07d9160fa81ccffb5'
+    'ap-northeast-2':
+      AMI: 'ami-0bd7691bf6470fe9c'
+    'me-south-1':
+      AMI: 'ami-01f41d49c363da2ad'
+    'ap-northeast-1':
+      AMI: 'ami-0cc75a8978fbbc969'
+    'sa-east-1':
+      AMI: 'ami-018ccfb6b4745882a'
+    'ca-central-1':
+      AMI: 'ami-013d1df4bcea6ba95'
+    'ap-east-1':
+      AMI: 'ami-47317236'
+    'ap-southeast-1':
+      AMI: 'ami-0cd31be676780afa7'
+    'ap-southeast-2':
+      AMI: 'ami-0ded330691a314693'
+    'eu-central-1':
+      AMI: 'ami-0c115dbd34c69a004'
+    'us-east-1':
+      AMI: 'ami-02354e95b39ca8dec'
+    'us-east-2':
+      AMI: 'ami-07c8bc5c1ce9598c3'
+    'us-west-1':
+      AMI: 'ami-05655c267c89566dd'
+    'us-west-2':
+      AMI: 'ami-0873b46c45c11058d'
   RegionMap202005201:
     'af-south-1':
       AMI: 'ami-0ec47ddb564d75b64'

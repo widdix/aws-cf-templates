@@ -91,45 +91,45 @@ Parameters:
 Mappings:
   RegionMap: # TODO update to Amazon Linux 2 (don't forget to adjust awslogs config as well)
     'af-south-1':
-      NATAMI: 'ami-0d00f6c62c7390506'
+      NATAMI: 'ami-068bf79dfb2bc0474'
     'eu-north-1':
-      NATAMI: 'ami-0b757d5486b786f2c'
+      NATAMI: 'ami-04d58d9ed10c893b4'
     'ap-south-1':
-      NATAMI: 'ami-01c30c99d674913a6'
+      NATAMI: 'ami-0240522d3ed3ae5ec'
     'eu-west-3':
-      NATAMI: 'ami-099e6df42675353df'
+      NATAMI: 'ami-0966fbf8a2a71fa29'
     'eu-west-2':
-      NATAMI: 'ami-0270a936dc5f81ce1'
+      NATAMI: 'ami-0e430e165487ea925'
     'eu-south-1':
-      NATAMI: 'ami-02dc5e921e12ea8a1'
+      NATAMI: 'ami-06a4980f3677a1716'
     'eu-west-1':
-      NATAMI: 'ami-08b3d07493aa99e23'
+      NATAMI: 'ami-032df3592cc862884'
     'ap-northeast-2':
-      NATAMI: 'ami-03c996dd63a01a39d'
+      NATAMI: 'ami-07bed51507c769843'
     'me-south-1':
-      NATAMI: 'ami-042de4fad51e42c65'
+      NATAMI: 'ami-0ecaad98428393640'
     'ap-northeast-1':
-      NATAMI: 'ami-02d6b7c8e52e51c09'
+      NATAMI: 'ami-0481e994e8d29db03'
     'sa-east-1':
-      NATAMI: 'ami-01d6581b19291b36e'
+      NATAMI: 'ami-04cb968946195a4bc'
     'ca-central-1':
-      NATAMI: 'ami-02a1ff0e9b1a6d29c'
+      NATAMI: 'ami-062bcf715d048ae22'
     'ap-east-1':
-      NATAMI: 'ami-852f6ff4'
+      NATAMI: 'ami-851053f4'
     'ap-southeast-1':
-      NATAMI: 'ami-0b23d540c47ce8960'
+      NATAMI: 'ami-09a263088286e87d1'
     'ap-southeast-2':
-      NATAMI: 'ami-0a89e65344dd36759'
+      NATAMI: 'ami-083dc6c6eb8ac18a8'
     'eu-central-1':
-      NATAMI: 'ami-01cce56dd6e02ebf5'
+      NATAMI: 'ami-0a3d79918c0b64aac'
     'us-east-1':
-      NATAMI: 'ami-05b76e217ebb8b2c2'
+      NATAMI: 'ami-01ef31f9f39c5aaed'
     'us-east-2':
-      NATAMI: 'ami-07284cf6f64c447ee'
+      NATAMI: 'ami-06064740484d375de'
     'us-west-1':
-      NATAMI: 'ami-023fe09ce43d87de4'
+      NATAMI: 'ami-0e365eb5252ebe986'
     'us-west-2':
-      NATAMI: 'ami-0b7fea0bbdcbe0157'
+      NATAMI: 'ami-0fcc6101b7f2370b9'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
