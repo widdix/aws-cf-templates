@@ -18,6 +18,10 @@ Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
     - Label:
+        default: 'Permission Parameters'
+      Parameters:
+      - PermissionsBoundary
+    - Label:
         default: 'CloudTrail Parameters'
       Parameters:
       - ParentAlertStack
@@ -28,6 +32,10 @@ Metadata:
 Parameters:
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  PermissionsBoundary:
+    Description: 'Optional ARN for a policy that will be used as the permission boundary for all roles created by this template.'
     Type: String
     Default: ''
   CloudWatchLogsRetentionInDays:
@@ -52,6 +60,7 @@ Parameters:
     - 'false'
 Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   InternalBucket: !Equals [!Ref ExternalTrailBucket, '']
   ExternalBucket: !Not [!Equals [!Ref ExternalTrailBucket, '']]
   HasLogFilePrefix: !Not [!Equals [!Ref LogFilePrefix, '']]
@@ -99,6 +108,7 @@ Resources:
           Principal:
             Service: 'cloudtrail.amazonaws.com'
           Action: 'sts:AssumeRole'
+      PermissionsBoundary: !If [HasPermissionsBoundary, !Ref PermissionsBoundary, !Ref 'AWS::NoValue']
       Policies:
       - PolicyName: 'cloudtrail-policy'
         PolicyDocument:
