@@ -26,10 +26,6 @@ Metadata:
       - ParentSSHBastionStack
       - ParentAlertStack
     - Label:
-        default: 'Permission Parameters'
-      Parameters:
-      - PermissionsBoundary
-    - Label:
         default: 'ElastiCache Parameters'
       Parameters:
       - EngineVersion
@@ -40,6 +36,10 @@ Metadata:
         default: 'Operational Parameters'
       Parameters:
       - LogsRetentionInDays
+    - Label:
+        default: 'Permission Parameters'
+      Parameters:
+      - PermissionsBoundary
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'

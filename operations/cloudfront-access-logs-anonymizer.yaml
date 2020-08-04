@@ -23,13 +23,13 @@ Metadata:
       - ParentS3Stack
       - ParentAlertStack
     - Label:
-        default: 'Permission Parameters'
-      Parameters:
-      - PermissionsBoundary
-    - Label:
         default: 'Anonymizer Parameters'
       Parameters:
       - LogsRetentionInDays
+    - Label:
+        default: 'Permission Parameters'
+      Parameters:
+      - PermissionsBoundary
 Parameters:
   ParentS3Stack:
     Description: 'Stack name of parent s3 stack based on state/s3.yaml template where access logs are stored.'

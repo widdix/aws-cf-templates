@@ -23,10 +23,6 @@ Metadata:
       - ParentAlertStack
       - ParentKmsKeyStack
     - Label:
-        default: 'Permission Parameters'
-      Parameters:
-      - PermissionsBoundary
-    - Label:
         default: 'DynamoDB Parameters'
       Parameters:
       - TableName
@@ -71,6 +67,10 @@ Metadata:
       - MaxReadCapacityUnits
       - MinReadCapacityUnits
       - ReadCapacityUnitsUtilizationTarget
+    - Label:
+        default: 'Permission Parameters'
+      Parameters:
+      - PermissionsBoundary
 Parameters:
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'

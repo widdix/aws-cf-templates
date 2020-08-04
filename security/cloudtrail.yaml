@@ -18,10 +18,6 @@ Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
     - Label:
-        default: 'Permission Parameters'
-      Parameters:
-      - PermissionsBoundary
-    - Label:
         default: 'CloudTrail Parameters'
       Parameters:
       - ParentAlertStack
@@ -29,6 +25,10 @@ Metadata:
       - ExternalTrailBucket
       - LogFilePrefix
       - S3DataEvents
+    - Label:
+        default: 'Permission Parameters'
+      Parameters:
+      - PermissionsBoundary
 Parameters:
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'

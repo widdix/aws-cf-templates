@@ -22,14 +22,14 @@ Metadata:
       Parameters:
       - ParentVPCStack
     - Label:
-        default: 'Permission Parameters'
-      Parameters:
-      - PermissionsBoundary
-    - Label:
         default: 'Flow Logs Parameters'
       Parameters:
       - RetentionInDays
       - TrafficType
+    - Label:
+        default: 'Permission Parameters'
+      Parameters:
+      - PermissionsBoundary
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
 Parameters:

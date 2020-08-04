@@ -18,14 +18,14 @@ Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
     - Label:
-        default: 'Permission Parameters'
-      Parameters:
-      - PermissionsBoundary
-    - Label:
         default: 'Config Parameters'
       Parameters:
       - DeliveryFrequency
       - ExternalConfigBucket
+    - Label:
+        default: 'Permission Parameters'
+      Parameters:
+      - PermissionsBoundary
 Parameters:
   PermissionsBoundary:
     Description: 'Optional ARN for a policy that will be used as the permission boundary for all roles created by this template.'
