@@ -66,6 +66,7 @@ Resources:
     UpdateReplacePolicy: Retain
     Type: 'AWS::KMS::Key'
     Properties:
+      EnableKeyRotation: true
       KeyPolicy:
         Version: '2012-10-17'
         Statement:
