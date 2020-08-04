@@ -137,26 +137,17 @@ Resources:
           - '${SubDomainNameWithDot}${HostedZoneName}'
           - SubDomainNameWithDot: !Ref SubDomainNameWithDot
             HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
-          ValidationDomain: !Sub
-          - '${SubDomainNameWithDot}${HostedZoneName}'
-          - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-            HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+          HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
         - DomainName: !Sub
           - '${RedirectSubDomainNameWithDot}${HostedZoneName}'
           - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
             HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
-          ValidationDomain: !Sub
-          - '${SubDomainNameWithDot}${HostedZoneName}'
-          - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-            HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+          HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       - - DomainName: !Sub
           - '${SubDomainNameWithDot}${HostedZoneName}'
           - SubDomainNameWithDot: !Ref SubDomainNameWithDot
             HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
-          ValidationDomain: !Sub
-          - '${SubDomainNameWithDot}${HostedZoneName}'
-          - SubDomainNameWithDot: !Ref SubDomainNameWithDot
-            HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+          HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       SubjectAlternativeNames: !If
       - HasRedirectDomainName
       - - !Sub
@@ -164,6 +155,7 @@ Resources:
           - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
             HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       - []
+      ValidationMethod: DNS
   S3Bucket:
     Type: 'AWS::S3::Bucket'
     Properties:
@@ -245,9 +237,10 @@ Resources:
         DefaultRootObject: !If [HasDefaultRootObject, !Ref DefaultRootObject, !Ref 'AWS::NoValue']
         Enabled: true
         HttpVersion: http2
+        IPV6Enabled: true
         Logging: !If [HasS3Bucket, {Bucket: {'Fn::ImportValue': !Sub '${ParentS3StackAccessLog}-BucketDomainName'}, Prefix: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
         Origins:
-        - DomainName: !GetAtt 'S3Bucket.DomainName'
+        - DomainName: !GetAtt 'S3Bucket.RegionalDomainName'
           Id: s3origin
           S3OriginConfig:
             OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
@@ -270,6 +263,19 @@ Resources:
         AliasTarget:
           HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
           DNSName: !GetAtt 'CloudFrontDistribution.DomainName'
+  Route53RecordIPv6:
+    Type: 'AWS::Route53::RecordSetGroup'
+    Properties:
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
+      RecordSets:
+      - Name: !Sub
+        - '${SubDomainNameWithDot}${HostedZoneName}'
+        - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+          HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+        Type: AAAA
+        AliasTarget:
+          HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
+          DNSName: !GetAtt 'CloudFrontDistribution.DomainName'
   Route53RecordRedirectV2:
     Condition: HasRedirectDomainName
     Type: 'AWS::Route53::RecordSetGroup'
@@ -281,6 +287,20 @@ Resources:
         - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
           HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
         Type: A
+        AliasTarget:
+          HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
+          DNSName: !GetAtt 'CloudFrontDistribution.DomainName'
+  Route53RecordRedirectIPv6:
+    Condition: HasRedirectDomainName
+    Type: 'AWS::Route53::RecordSetGroup'
+    Properties:
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
+      RecordSets:
+      - Name: !Sub
+        - '${RedirectSubDomainNameWithDot}${HostedZoneName}'
+        - RedirectSubDomainNameWithDot: !Ref RedirectSubDomainNameWithDot
+          HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+        Type: AAAA
         AliasTarget:
           HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
           DNSName: !GetAtt 'CloudFrontDistribution.DomainName'

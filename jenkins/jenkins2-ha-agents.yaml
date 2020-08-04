@@ -210,42 +210,46 @@ Parameters:
     Default: 'cron(0 5 ? * * *)'
 Mappings:
   RegionMap:
+    'af-south-1':
+      AMI: 'ami-0ec47ddb564d75b64'
     'eu-north-1':
-      AMI: 'ami-0662eb9b9b8685935'
+      AMI: 'ami-04697c9bb5d6135a2'
     'ap-south-1':
-      AMI: 'ami-0217a85e28e625474'
+      AMI: 'ami-0447a12f28fddb066'
     'eu-west-3':
-      AMI: 'ami-007fae589fdf6e955'
+      AMI: 'ami-01c72e187b357583b'
     'eu-west-2':
-      AMI: 'ami-0089b31e09ac3fffc'
+      AMI: 'ami-032598fcc7e9d1c7a'
+    'eu-south-1':
+      AMI: 'ami-0f9b9a8cf93d838d0'
     'eu-west-1':
-      AMI: 'ami-0713f98de93617bb4'
+      AMI: 'ami-0ea3405d2d2522162'
     'ap-northeast-2':
-      AMI: 'ami-0bea7fd38fabe821a'
+      AMI: 'ami-01af223aa7f274198'
     'me-south-1':
-      AMI: 'ami-05f93aaf03b9bf20c'
+      AMI: 'ami-01b31491b74045c0c'
     'ap-northeast-1':
-      AMI: 'ami-011facbea5ec0363b'
+      AMI: 'ami-0a1c2ec61571737db'
     'sa-east-1':
-      AMI: 'ami-09de7b4017733e2af'
+      AMI: 'ami-0477a95397a9154b3'
     'ca-central-1':
-      AMI: 'ami-0a269ca7cc3e3beff'
+      AMI: 'ami-0f75c2980c6a5851d'
     'ap-east-1':
-      AMI: 'ami-db3d78aa'
+      AMI: 'ami-49bbfa38'
     'ap-southeast-1':
-      AMI: 'ami-05c64f7b4062b0a21'
+      AMI: 'ami-0615132a0f36d24f4'
     'ap-southeast-2':
-      AMI: 'ami-0b8b10b5bf11f3a22'
+      AMI: 'ami-088ff0e3bde7b3fdf'
     'eu-central-1':
-      AMI: 'ami-07cda0db070313c52'
+      AMI: 'ami-0a02ee601d742e89f'
     'us-east-1':
-      AMI: 'ami-062f7200baf2fa504'
+      AMI: 'ami-09d95fab7fff3776c'
     'us-east-2':
-      AMI: 'ami-02ccb28830b645a41'
+      AMI: 'ami-026dea5602e368e96'
     'us-west-1':
-      AMI: 'ami-03caa3f860895f82e'
+      AMI: 'ami-04e59c05167ea7bd5'
     'us-west-2':
-      AMI: 'ami-04590e7389a6e577c'
+      AMI: 'ami-0e34e7b9ca0ace12d'
 Conditions:
   HasZeroAgents: !Equals [!Ref AgentMinSize, '0']
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
@@ -255,10 +259,12 @@ Conditions:
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
   HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
+  HasMasterELBSchemeInternetFacing: !Equals [!Ref MasterELBScheme, 'internet-facing']
   HasMasterELBSchemeInternal: !Equals [!Ref MasterELBScheme, 'internal']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+  HasZoneAndMasterELBSchemeInternetFacing: !And [!Condition HasZone, !Condition HasMasterELBSchemeInternetFacing]
   HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
   HasEFSProvisionedThroughput: !Not [!Condition HasNotEFSProvisionedThroughput]
   HasNotEFSProvisionedThroughput: !Equals [!Ref EFSProvisionedThroughputInMibps, '0']
@@ -364,6 +370,15 @@ Resources:
       FromPort: 80
       ToPort: 80
       CidrIp: '0.0.0.0/0'
+  MasterELBSGInWorldIPv6:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotAuthProxySecurityGroup
+    Properties:
+      GroupId: !Ref MasterELBSG
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      CidrIpv6: '::/0'
   MasterELBSGInAuthProxy:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasAuthProxySecurityGroup
@@ -458,9 +473,23 @@ Resources:
       - SubDomainNameWithDot: !Ref SubDomainNameWithDot
         HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       Type: A
+  RecordSetIPv6:
+    Condition: HasZoneAndMasterELBSchemeInternetFacing
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      AliasTarget:
+        HostedZoneId: !GetAtt 'MasterELB.CanonicalHostedZoneID'
+        DNSName: !GetAtt 'MasterELB.DNSName'
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
+      Name: !Sub
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+      Type: AAAA
   MasterELB:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
+      IpAddressType: !If [HasMasterELBSchemeInternal, 'ipv4', 'dualstack']
       LoadBalancerAttributes:
       - Key: 'idle_timeout.timeout_seconds'
         Value: !Ref MasterLoadBalancerIdleTimeout
@@ -653,7 +682,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, mount, extras, install, setup, custom, run], [awslogs, mount, extras, install, setup, custom, run]]
+          default: [awslogs, !If [HasIAMUserSSHAccess, ssh-access, !Ref 'AWS::NoValue'], mount, extras, install, setup, custom_before, run, custom_after]
         awslogs:
           packages:
             yum:
@@ -885,7 +914,7 @@ Resources:
         install:
           packages:
             rpm:
-              jenkins: 'https://pkg.jenkins.io/redhat-stable/jenkins-2.204.2-1.1.noarch.rpm'
+              jenkins: 'https://pkg.jenkins.io/redhat-stable/jenkins-2.235.3-1.1.noarch.rpm'
             yum:
               'java-1.8.0-amazon-corretto': []
               'ruby': []
@@ -971,7 +1000,7 @@ Resources:
                 $log.info 'poller started'
                 def takeAgentTemporarilyOffline(agent)
                   # sterr is forwarded to sdout to get the information in ruby
-                  out=`java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s http://localhost:8080 -auth 'admin:#{$conf['masterAdminPassword']}' offline-node #{agent} -m 'scale down' 2>&1`
+                  out=`java -jar /opt/jenkins-cli.jar -s http://localhost:8080 -auth 'admin:#{$conf['masterAdminPassword']}' offline-node #{agent} -m 'scale down' 2>&1`
                   if $?.exitstatus == 0
                     $log.info "agent #{agent} is marked as offline"
                     return true
@@ -987,7 +1016,7 @@ Resources:
                 end
                 def deleteAgent(agent)
                   # sterr is forwarded to sdout to get the information in ruby
-                  out=`java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s http://localhost:8080 -auth 'admin:#{$conf['masterAdminPassword']}' delete-node #{agent} 2>&1`
+                  out=`java -jar /opt/jenkins-cli.jar -s http://localhost:8080 -auth 'admin:#{$conf['masterAdminPassword']}' delete-node #{agent} 2>&1`
                   if $?.exitstatus == 0
                     $log.info "agent #{agent} is deleted"
                     return true
@@ -1094,7 +1123,7 @@ Resources:
                   $log.error "file #{file} is not available, but wait time elapsed"
                   return false
                 end
-                awaitFile('/var/cache/jenkins/war/WEB-INF/jenkins-cli.jar')
+                awaitFile('/opt/jenkins-cli.jar')
                 pollSQS
               mode: '000500'
               owner: root
@@ -1205,40 +1234,43 @@ Resources:
             'b_await_jenkins':
               command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'c_activate_slave_agent_port':
+            'c_download_cli':
+              command: 'curl -s -m 60 -o /opt/jenkins-cli.jar -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/jnlpJars/jenkins-cli.jar'
+              test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+            'd_activate_slave_agent_port':
               command: 'sed -i -e "s@<slaveAgentPort>.*</slaveAgentPort>@<slaveAgentPort>49817</slaveAgentPort>@" /var/lib/jenkins/config.xml'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'd_disable_master_executors':
+            'e_disable_master_executors':
               command: 'sed -i -e "s@<numExecutors>.*</numExecutors>@<numExecutors>0</numExecutors>@" /var/lib/jenkins/config.xml'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'e_set_label':
+            'f_set_label':
               command: 'sed -i -e "s@<label>.*</label>@<label>master</label>@" /var/lib/jenkins/config.xml'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'f_restart_jenkins':
+            'g_restart_jenkins':
               command: 'service jenkins restart'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'g_await_jenkins':
+            'h_await_jenkins':
               command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'h_install_plugins':
-              command: 'java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" install-plugin $(cat /root/plugins.txt | tr "\n" " ")'
+            'i_install_plugins':
+              command: 'java -jar /opt/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" install-plugin $(cat /root/plugins.txt | tr "\n" " ")'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'i_restart_jenkins':
+            'j_restart_jenkins':
               command: 'service jenkins restart'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'j_await_jenkins':
+            'k_await_jenkins':
               command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'k_set_admin_password':
-              command: !Sub 'echo $''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", \''${MasterAdminPassword}\'')'' | java -jar /var/cache/jenkins/war/WEB-INF/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" groovy ='
+            'l_set_admin_password':
+              command: !Sub 'echo $''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", \''${MasterAdminPassword}\'')'' | java -jar /opt/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" groovy ='
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'l_stop_jenkins':
+            'm_stop_jenkins':
               command: 'service jenkins stop'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'z_create_setup_done_file':
+            'x_create_setup_done_file':
               command: 'echo "Setup done. Don not delete this file." > /var/lib/jenkins/setup_done.txt'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-        custom:
+        custom_before:
           packages:
             yum:
               git: []
@@ -1263,6 +1295,14 @@ Resources:
                 packages:
                   rpm:
                   - jenkins
+        custom_after:
+          commands:
+            'a_await_jenkins':
+              command: !Sub 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:${MasterAdminPassword}" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              test: '[ ! -f /opt/jenkins-cli.jar ]'
+            'b_download_cli':
+              command: !Sub 'curl -s -m 60 -o /opt/jenkins-cli.jar -u "admin:${MasterAdminPassword}" http://localhost:8080/jnlpJars/jenkins-cli.jar'
+              test: '[ ! -f /opt/jenkins-cli.jar ]'
     Properties:
       ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
       IamInstanceProfile: !Ref MasterIP
@@ -1309,10 +1349,10 @@ Resources:
         PropagateAtLaunch: true
     CreationPolicy:
       ResourceSignal:
-        Timeout: PT15M
+        Timeout: PT30M
     UpdatePolicy:
       AutoScalingRollingUpdate:
-        PauseTime: PT15M
+        PauseTime: PT30M
         SuspendProcesses:
         - HealthCheck
         - ReplaceUnhealthy
@@ -2018,11 +2058,11 @@ Resources:
         PropagateAtLaunch: true
     CreationPolicy:
       ResourceSignal:
-        Timeout: PT10M
+        Timeout: PT15M
         Count: !If [HasZeroAgents, 0, 1]
     UpdatePolicy:
       AutoScalingRollingUpdate:
-        PauseTime: PT10M
+        PauseTime: PT15M
         SuspendProcesses:
         - HealthCheck
         - ReplaceUnhealthy
@@ -2198,7 +2238,7 @@ Resources:
       Code:
         ZipFile: |
           'use strict';
-          const response = require('./cfn-response');
+          const response = require('cfn-response');
           exports.handler = (event, context, cb) => {
             const throughput = parseInt(event.ResourceProperties.ThroughputInMibps, 10);
             const threshold = Math.round(throughput * 1048576 * 600 * 0.9);
@@ -2207,7 +2247,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'LambdaRole.Arn'
-      Runtime: 'nodejs10.x'
+      Runtime: 'nodejs12.x'
       Timeout: 60
   LambdaLogGroup:
     Condition: HasEFSProvisionedThroughput

@@ -1,0 +1,291 @@
+---
+# Copyright 2020 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'State: DocumentDB cluster, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+      - ParentClientStack
+      - ParentAlertStack
+      - ParentBastionStack
+      - ParentKmsKeyStack
+    - Label:
+        default: 'DocumentDB Parameters'
+      Parameters:
+      - MasterUsername
+      - MasterUserPassword
+      - DBInstanceClass
+      - EngineVersion
+      - DBClusterParameterGroupName
+      - SnapshotIdentifier
+      - PreferredBackupWindow
+      - BackupRetentionPeriod
+      - PreferredMaintenanceWindow
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+  ParentClientStack:
+    Description: 'Stack name of parent client stack based on state/client-sg.yaml template.'
+    Type: String
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  ParentBastionStack:
+    Description: 'Optional but recommended stack name of parent bastion host/instance stack based on vpc/vpc-*-bastion.yaml template.'
+    Type: String
+    Default: ''
+  ParentKmsKeyStack:
+    Description: 'Optional Stack name of parent KMS key stack based on security/kms-key.yaml template (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
+    Type: String
+    Default: ''
+  BackupRetentionPeriod:
+    Description: 'The number of days for which automated backups are retained.'
+    Type: Number
+    MinValue: 1
+    MaxValue: 35
+    Default: 30
+  DBClusterParameterGroupName:
+    Description: 'Optional name of an existing DB parameter group.'
+    Type: String
+    Default: ''
+  EngineVersion:
+    Description: 'The version number of the database engine to use.'
+    Type: String
+    AllowedValues:
+    - '3.6.0'
+    Default: '3.6.0'
+  MasterUsername:
+    Description: 'The name of the master user for the cluster.'
+    Type: String
+    MinLength: 1
+    MaxLength: 63
+    Default: master
+  MasterUserPassword:
+    Description: 'The password for the master database user. This password can contain any printable ASCII character except forward slash (/), double quote ("), or the "at" symbol (@).'
+    Type: String
+    MinLength: 8
+    MaxLength: 100
+    NoEcho: true
+  PreferredBackupWindow:
+    Description: 'The daily time range (in UTC) during which automated backups are created.'
+    Type: String
+    Default: '09:54-10:24'
+  PreferredMaintenanceWindow:
+    Description: 'The weekly time range (in UTC) during which system maintenance can occur (must not conflict with the backup window).'
+    Type: String
+    Default: 'sat:07:00-sat:07:30'
+  SnapshotIdentifier:
+    Description: 'Optional identifier for cluster snapshot (ARN) to restore from.'
+    Type: String
+    Default: ''
+  DBInstanceClass:
+    Description: 'The compute and memory capacity of the instance.'
+    Type: String
+    Default: 'db.r5.large'
+Mappings:
+  EngineVersionMap:
+    '3.6.0':
+      ParameterGroupFamily: 'docdb3.6'
+Conditions:
+  HasParentKmsKeyStack: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
+  HasParentAlertStack: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasParentBastionStack: !Not [!Equals [!Ref ParentBastionStack, '']]
+  HasDBClusterParameterGroupName: !Not [!Equals [!Ref DBClusterParameterGroupName, '']]
+  HasNotDBClusterParameterGroupName: !Not [!Condition HasDBClusterParameterGroupName]
+  HasSnapshotIdentifier: !Not [!Equals [!Ref SnapshotIdentifier, '']]
+Resources:
+  DBSubnetGroup:
+    Type: 'AWS::DocDB::DBSubnetGroup'
+    Properties:
+      DBSubnetGroupDescription: !Ref 'AWS::StackName'
+      SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
+  SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Ref 'AWS::StackName'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 27017
+        ToPort: 27017
+        SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+  SecurityGroupInBastion:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasParentBastionStack
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: 27017
+      ToPort: 27017
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentBastionStack}-SecurityGroup'}
+  ParameterGroup:
+    Condition: HasNotDBClusterParameterGroupName
+    Type: 'AWS::DocDB::DBClusterParameterGroup'
+    Properties:
+      Description: !Ref 'AWS::StackName'
+      Family: !FindInMap [EngineVersionMap, !Ref EngineVersion, ParameterGroupFamily]
+      Parameters:
+        audit_logs: enabled
+  Cluster:
+    # TODO not yet supported by CloudFormation DeletionPolicy: Snapshot
+    # TODO not yet supported by CloudFormation UpdateReplacePolicy: Snapshot
+    Type: 'AWS::DocDB::DBCluster'
+    Properties:
+      AvailabilityZones: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-AZList'}]
+      BackupRetentionPeriod: !Ref BackupRetentionPeriod
+      DBClusterParameterGroupName: !If [HasDBClusterParameterGroupName, !Ref DBClusterParameterGroupName, !Ref ParameterGroup]
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      EnableCloudwatchLogsExports:
+      - audit
+      EngineVersion: !Ref EngineVersion
+      KmsKeyId: !If [HasParentKmsKeyStack, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}, !Ref 'AWS::NoValue']
+      MasterUsername: !Ref MasterUsername
+      MasterUserPassword: !Ref MasterUserPassword
+      Port: 27017
+      PreferredBackupWindow: !Ref PreferredBackupWindow
+      PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
+      SnapshotIdentifier: !If [HasSnapshotIdentifier, !Ref SnapshotIdentifier, !Ref 'AWS::NoValue']
+      StorageEncrypted: !If [HasParentKmsKeyStack, true, false]
+      VpcSecurityGroupIds:
+      - !Ref SecurityGroup
+  InstanceA:
+    Type: 'AWS::DocDB::DBInstance'
+    Properties:
+      AvailabilityZone: {'Fn::ImportValue': !Sub '${ParentVPCStack}-AZA'}
+      DBClusterIdentifier: !Ref Cluster
+      DBInstanceClass: !Ref DBInstanceClass
+  InstanceB:
+    Type: 'AWS::DocDB::DBInstance'
+    Properties:
+      AvailabilityZone: {'Fn::ImportValue': !Sub '${ParentVPCStack}-AZB'}
+      DBClusterIdentifier: !Ref Cluster
+      DBInstanceClass: !Ref DBInstanceClass
+  ClusterCPUUtilizationTooHighAlarm:
+    Condition: HasParentAlertStack
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      AlarmDescription: 'Average database CPU utilization over last 10 minutes too high.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: DBClusterIdentifier
+        Value: !Ref Cluster
+      EvaluationPeriods: 1
+      MetricName: CPUUtilization
+      Namespace: 'AWS/DocDB'
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Period: 600
+      Statistic: Average
+      Threshold: 80
+  ClusterFreeableMemoryTooLowAlarm:
+    Condition: HasParentAlertStack
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      AlarmDescription: 'Average database freeable memory over last 10 minutes too low, performance may suffer.'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: DBClusterIdentifier
+        Value: !Ref Cluster
+      EvaluationPeriods: 1
+      MetricName: FreeableMemory
+      Namespace: 'AWS/DocDB'
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Period: 600
+      Statistic: Average
+      Threshold: 64000000 # 64 Megabyte in Byte
+  ClusterSwapUsageTooHighAlarm:
+    Condition: HasParentAlertStack
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      AlarmDescription: 'Average database swap usage over last 10 minutes too high, performance may suffer.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: DBClusterIdentifier
+        Value: !Ref Cluster
+      EvaluationPeriods: 1
+      MetricName: SwapUsage
+      Namespace: 'AWS/DocDB'
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Period: 600
+      Statistic: Average
+      Threshold: 256000000 # 256 Megabyte in Byte
+  DatabaseFreeLocalStorageTooLowAlarm:
+    Condition: HasParentAlertStack
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      AlarmDescription: 'Average database free local storage space over last 10 minutes too low.'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: DBClusterIdentifier
+        Value: !Ref Cluster
+      EvaluationPeriods: 1
+      MetricName: FreeLocalStorage
+      Namespace: 'AWS/DocDB'
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Period: 600
+      Statistic: Average
+      Threshold: 2000000000 # 2 Gigabyte in Byte
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'state/documentdb'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
+  ClusterIdentifier:
+    Description: 'The identifier of the cluster.'
+    Value: !Ref Cluster
+    Export:
+      Name: !Sub '${AWS::StackName}-ClusterIdentifier'
+  ClusterResourceId:
+    Description: 'The resource id for the cluster.'
+    Value: !GetAtt 'Cluster.ClusterResourceId'
+    Export:
+      Name: !Sub '${AWS::StackName}-ClusterResourceId'
+  Endpoint:
+    Description: 'The connection endpoint for the cluster.'
+    Value: !GetAtt 'Cluster.Endpoint'
+    Export:
+      Name: !Sub '${AWS::StackName}-Endpoint'
+  Port:
+    Description: 'The port number on which the cluster accepts connections.'
+    Value: !GetAtt 'Cluster.Port'
+    Export:
+      Name: !Sub '${AWS::StackName}-Port'
+  ReadEndpoint:
+    Description: 'The reader endpoint for the cluster.'
+    Value: !GetAtt 'Cluster.ReadEndpoint'
+    Export:
+      Name: !Sub '${AWS::StackName}-ReadEndpoint'

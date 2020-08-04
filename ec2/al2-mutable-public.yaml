@@ -196,11 +196,175 @@ Parameters:
     Description: 'Version of Amazon Linux 2 to boot from the first time (ignored if RestoreImageId is set; select the latest version for new stacks; OS updates are enabled to patch the system).'
     Type: String
     Default: '20191217.0'
-    AllowedValues: ['20191217.0']
+    AllowedValues: ['20200520.1', '20200406.0', '20200304.0', '20200207.1', '20191217.0']
 Mappings:
   VersionMap:
+    '20200520.1':
+      Map: RegionMap202005201
+    '20200406.0':
+      Map: RegionMap202004060
+    '20200304.0':
+      Map: RegionMap202003040
+    '20200207.1':
+      Map: RegionMap202002071
     '20191217.0':
       Map: RegionMap201912170
+  RegionMap202005201:
+    'af-south-1':
+      AMI: 'ami-0ec47ddb564d75b64'
+    'eu-north-1':
+      AMI: 'ami-04697c9bb5d6135a2'
+    'ap-south-1':
+      AMI: 'ami-0447a12f28fddb066'
+    'eu-west-3':
+      AMI: 'ami-01c72e187b357583b'
+    'eu-west-2':
+      AMI: 'ami-032598fcc7e9d1c7a'
+    'eu-south-1':
+      AMI: 'ami-0f9b9a8cf93d838d0'
+    'eu-west-1':
+      AMI: 'ami-0ea3405d2d2522162'
+    'ap-northeast-2':
+      AMI: 'ami-01af223aa7f274198'
+    'me-south-1':
+      AMI: 'ami-01b31491b74045c0c'
+    'ap-northeast-1':
+      AMI: 'ami-0a1c2ec61571737db'
+    'sa-east-1':
+      AMI: 'ami-0477a95397a9154b3'
+    'ca-central-1':
+      AMI: 'ami-0f75c2980c6a5851d'
+    'ap-east-1':
+      AMI: 'ami-49bbfa38'
+    'ap-southeast-1':
+      AMI: 'ami-0615132a0f36d24f4'
+    'ap-southeast-2':
+      AMI: 'ami-088ff0e3bde7b3fdf'
+    'eu-central-1':
+      AMI: 'ami-0a02ee601d742e89f'
+    'us-east-1':
+      AMI: 'ami-09d95fab7fff3776c'
+    'us-east-2':
+      AMI: 'ami-026dea5602e368e96'
+    'us-west-1':
+      AMI: 'ami-04e59c05167ea7bd5'
+    'us-west-2':
+      AMI: 'ami-0e34e7b9ca0ace12d'
+  RegionMap202004060:
+    'af-south-1':
+      AMI: 'ami-0b4a93eff849f20ca'
+    'eu-north-1':
+      AMI: 'ami-0b7a46b4bd694e8a6'
+    'ap-south-1':
+      AMI: 'ami-0470e33cd681b2476'
+    'eu-west-3':
+      AMI: 'ami-00077e3fed5089981'
+    'eu-west-2':
+      AMI: 'ami-01a6e31ac994bbc09'
+    'eu-south-1':
+      AMI: 'ami-06db5ba0a09e927c8'
+    'eu-west-1':
+      AMI: 'ami-06ce3edf0cff21f07'
+    'ap-northeast-2':
+      AMI: 'ami-01288945bd24ed49a'
+    'me-south-1':
+      AMI: 'ami-0fde637e0db57a2ab'
+    'ap-northeast-1':
+      AMI: 'ami-0f310fced6141e627'
+    'sa-east-1':
+      AMI: 'ami-003449ffb2605a74c'
+    'ca-central-1':
+      AMI: 'ami-054362537f5132ce2'
+    'ap-east-1':
+      AMI: 'ami-dd7731ac'
+    'ap-southeast-1':
+      AMI: 'ami-0ec225b5e01ccb706'
+    'ap-southeast-2':
+      AMI: 'ami-0970010f37c4f9c8d'
+    'eu-central-1':
+      AMI: 'ami-076431be05aaf8080'
+    'us-east-1':
+      AMI: 'ami-0323c3dd2da7fb37d'
+    'us-east-2':
+      AMI: 'ami-0f7919c33c90f5b58'
+    'us-west-1':
+      AMI: 'ami-06fcc1f0bc2c8943f'
+    'us-west-2':
+      AMI: 'ami-0d6621c01e8c2de2c'
+  RegionMap202003040:
+    'eu-north-1':
+      AMI: 'ami-0f630db6194a81ad0'
+    'ap-south-1':
+      AMI: 'ami-03b5297d565ef30a6'
+    'eu-west-3':
+      AMI: 'ami-07eda9385feb1e969'
+    'eu-west-2':
+      AMI: 'ami-0cb790308f7591fa6'
+    'eu-west-1':
+      AMI: 'ami-04d5cc9b88f9d1d39'
+    'ap-northeast-2':
+      AMI: 'ami-0db78afd3d150fc18'
+    'me-south-1':
+      AMI: 'ami-05613911cb72781b8'
+    'ap-northeast-1':
+      AMI: 'ami-052652af12b58691f'
+    'sa-east-1':
+      AMI: 'ami-0b032e878a66c3b68'
+    'ca-central-1':
+      AMI: 'ami-0bf54ac1b628cf143'
+    'ap-east-1':
+      AMI: 'ami-33a7e042'
+    'ap-southeast-1':
+      AMI: 'ami-0cbc6aae997c6538a'
+    'ap-southeast-2':
+      AMI: 'ami-08fdde86b93accf1c'
+    'eu-central-1':
+      AMI: 'ami-0ec1ba09723e5bfac'
+    'us-east-1':
+      AMI: 'ami-0fc61db8544a617ed'
+    'us-east-2':
+      AMI: 'ami-0e01ce4ee18447327'
+    'us-west-1':
+      AMI: 'ami-09a7fe78668f1e2c0'
+    'us-west-2':
+      AMI: 'ami-0ce21b51cb31a48b8'
+  RegionMap202002071:
+    'eu-north-1':
+      AMI: 'ami-074a0e4318181e9d9'
+    'ap-south-1':
+      AMI: 'ami-0d9462a653c34dab7'
+    'eu-west-3':
+      AMI: 'ami-0fd9bce3a3384b635'
+    'eu-west-2':
+      AMI: 'ami-0389b2a3c4948b1a0'
+    'eu-west-1':
+      AMI: 'ami-099a8245f5daa82bf'
+    'ap-northeast-2':
+      AMI: 'ami-0a93a08544874b3b7'
+    'me-south-1':
+      AMI: 'ami-0e0e68bcf15b6f5cd'
+    'ap-northeast-1':
+      AMI: 'ami-0af1df87db7b650f4'
+    'sa-east-1':
+      AMI: 'ami-080a223be3de0c3b8'
+    'ca-central-1':
+      AMI: 'ami-00db12b46ef5ebc36'
+    'ap-east-1':
+      AMI: 'ami-47e4a036'
+    'ap-southeast-1':
+      AMI: 'ami-0f02b24005e4aec36'
+    'ap-southeast-2':
+      AMI: 'ami-0f767afb799f45102'
+    'eu-central-1':
+      AMI: 'ami-0df0e7600ad0913a9'
+    'us-east-1':
+      AMI: 'ami-0a887e401f7654935'
+    'us-east-2':
+      AMI: 'ami-0e38b48473ea57778'
+    'us-west-1':
+      AMI: 'ami-01c94064639c71719'
+    'us-west-2':
+      AMI: 'ami-0e8c04af2729ff1bb'
   RegionMap201912170:
     'eu-north-1':
       AMI: 'ami-0662eb9b9b8685935'
@@ -270,7 +434,7 @@ Resources:
         HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
       ResourceRecords:
       - !Ref ElasticIP
-      TTL: '60'
+      TTL: 60
       Type: A
   ElasticIP:
     Type: 'AWS::EC2::EIP'
@@ -448,7 +612,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [cloudwatch, ssh-access, config], [cloudwatch, config]]
+          default: [cloudwatch, !If [HasIAMUserSSHAccess, ssh-access, !Ref 'AWS::NoValue'], config]
         cloudwatch:
           packages:
             rpm:
@@ -521,7 +685,7 @@ Resources:
                            "log_group_name": "${Logs}",
                            "file_path": "/var/log/cron",
                            "log_stream_name": "{instance_id}/var/log/cron",
-                           "timestamp_format": "%b %d %H:%M:%S"
+                           "timestamp_format": "%b %-d %H:%M:%S"
                         }, {
                            "log_group_name": "${Logs}",
                            "file_path": "/var/log/dmesg",
@@ -534,16 +698,21 @@ Resources:
                            "log_group_name": "${Logs}",
                            "file_path": "/var/log/maillog",
                            "log_stream_name": "{instance_id}/var/log/maillog",
-                           "timestamp_format": "%b %d %H:%M:%S"
+                           "timestamp_format": "%b %-d %H:%M:%S"
                         }, {
                            "log_group_name": "${Logs}",
                            "file_path": "/var/log/messages",
                            "log_stream_name": "{instance_id}/var/log/messages",
-                           "timestamp_format": "%b %d %H:%M:%S"
+                           "timestamp_format": "%b %-d %H:%M:%S"
                         }, {
                            "log_group_name": "${Logs}",
                            "file_path": "/var/log/secure",
                            "log_stream_name": "{instance_id}/var/log/secure",
+                           "timestamp_format": "%b %-d %H:%M:%S"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/yum.log",
+                           "log_stream_name": "{instance_id}/var/log/yum.log",
                            "timestamp_format": "%b %d %H:%M:%S"
                         }]
                       }
@@ -580,13 +749,15 @@ Resources:
               mode: '000644'
               owner: root
               group: root
-          commands:
-            a_stop_service:
-              command: '/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a stop'
-              test: '! /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a status | grep -q stopped'
-            b_start_service:
-              command: '/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s'
-              test: '! /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a status | grep -q started'
+          services:
+            sysvinit:
+              'amazon-cloudwatch-agent':
+                enabled: true
+                ensureRunning: true
+                files:
+                - '/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json'
+                packages:
+                - cloudwatch
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':

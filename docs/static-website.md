@@ -1,6 +1,6 @@
 <iframe src="https://ghbtns.com/github-btn.html?user=widdix&repo=aws-cf-templates&type=star&count=true&size=large" frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
 
-> **New**: Manage Free Templates for AWS CloudFormation with the [widdix CLI](./cli/)
+> **New**: [Become a sponsor](https://github.com/sponsors/widdix) via GitHub Sponsors!
 
 # Static website with CDN
 This template describes the infrastructure for hosting a static website over HTTPS behind a CDN.
@@ -56,7 +56,7 @@ To improve the default CloudFront behavior, we developed a Lambda@Edge solution 
 1. Wait until the stack reaches the state **CREATE_COMPLETE**
 1. Copy the `ViewerRequestLambdaEdgeFunctionVersionARN` output of the stack.
 1. Switch to the region where you want to S3 bucket with static files to be created in (we recommend the use the us-east-1 (N. Virginia) region if possible).
-1. This templates depends on one of our [`zone-*.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/zone-public.yaml&stackName=zone)
+1. This template depends on one of our [`zone-*.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/zone-public.yaml&stackName=zone)
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/static-website/static-website.yaml&stackName=static-website&param_ParentZoneStack=zone)
 1. Click **Next** to proceed with the next step of the wizard.
 1. Specify a name and all parameters for the stack.

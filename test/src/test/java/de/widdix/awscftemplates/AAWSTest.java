@@ -160,6 +160,10 @@ public abstract class AAWSTest extends ATest {
         return this.sts.getCallerIdentity(new GetCallerIdentityRequest()).getAccount();
     }
 
+    protected final String getCallerIdentityArn() {
+        return this.sts.getCallerIdentity(new GetCallerIdentityRequest()).getArn();
+    }
+
     protected final String random8String() {
         final String uuid = UUID.randomUUID().toString().replace("-", "").toLowerCase();
         final int beginIndex = (int) (Math.random() * (uuid.length() - 7));

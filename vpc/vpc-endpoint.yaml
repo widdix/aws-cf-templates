@@ -38,16 +38,31 @@ Parameters:
     Description: 'The name of the service.'
     Type: String
     AllowedValues: # generate list with aws --region us-east-1 ec2 describe-vpc-endpoint-services --query 'ServiceDetails[].ServiceName'
-    - notebook
+    - 'access-analyzer'
+    - 'acm-pca'
+    - 'application-autoscaling'
+    - 'appmesh-envoy-management'
+    - 'appstream.api'
+    - 'appstream.streaming'
+    - athena
+    - autoscaling
+    - 'autoscaling-plans'
+    - awsconnector
+    - cassandra
+    - clouddirectory
     - cloudformation
     - cloudtrail
+    - 'codeartifact.api'
+    - 'codeartifact.repositories'
     - codebuild
     - 'codebuild-fips'
     - codecommit
     - 'codecommit-fips'
     - codepipeline
     - config
-    - dynamodb
+    - dataexchange
+    - datasync
+    - ebs
     - ec2
     - ec2messages
     - 'ecr.api'
@@ -56,47 +71,108 @@ Parameters:
     - 'ecs-agent'
     - 'ecs-telemetry'
     - 'elastic-inference.runtime'
+    - elasticbeanstalk
+    - 'elasticbeanstalk-health'
+    - elasticfilesystem
+    - 'elasticfilesystem-fips'
     - elasticloadbalancing
+    - elasticmapreduce
+    - email-smtp # https://docs.aws.amazon.com/ses/latest/DeveloperGuide/send-email-set-up-vpc-endpoints.html
     - events
     - 'execute-api'
     - 'git-codecommit'
     - 'git-codecommit-fips'
+    - glue
     - 'kinesis-firehose'
     - 'kinesis-streams'
     - kms
     - logs
     - monitoring
-    - s3
+    - 'qldb.session'
+    - 'rds-data'
+    - rekognition
+    - 'rekognition-fips'
     - 'sagemaker.api'
     - 'sagemaker.runtime'
     - 'sagemaker.runtime-fips'
     - secretsmanager
     - servicecatalog
+    - sms
+    - 'sms-fips'
     - sns
     - sqs
     - ssm
     - ssmmessages
+    - states
+    - storagegateway
+    - sts
+    - synthetics
     - transfer
     - 'transfer.server'
+    - workspaces
 Conditions:
   HasParentClientStack: !Not [!Equals [!Ref ParentClientStack, '']]
+  UseEmailSMTP: !Equals [!Ref ServiceName, 'email-smtp']
 Resources:
   SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: !Ref 'AWS::StackName'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
-      SecurityGroupIngress:
+      SecurityGroupIngress: !If
+      - HasParentClientStack
       - !If
-        - HasParentClientStack
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
+        - UseEmailSMTP
+        - - IpProtocol: tcp
+            FromPort: 25
+            ToPort: 25
+            SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+          - IpProtocol: tcp
+            FromPort: 465
+            ToPort: 465
+            SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+          - IpProtocol: tcp
+            FromPort: 587
+            ToPort: 587
+            SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+          - IpProtocol: tcp
+            FromPort: 2465
+            ToPort: 2465
+            SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+          - IpProtocol: tcp
+            FromPort: 2587
+            ToPort: 2587
+            SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+        - - IpProtocol: tcp
+            FromPort: 443
+            ToPort: 443
+            SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+      - !If
+        - UseEmailSMTP
+        - - IpProtocol: tcp
+            FromPort: 25
+            ToPort: 25
+            CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
+          - IpProtocol: tcp
+            FromPort: 465
+            ToPort: 465
+            CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
+          - IpProtocol: tcp
+            FromPort: 587
+            ToPort: 587
+            CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
+          - IpProtocol: tcp
+            FromPort: 2465
+            ToPort: 2465
+            CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
+          - IpProtocol: tcp
+            FromPort: 2587
+            ToPort: 2587
+            CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
+        - - IpProtocol: tcp
+            FromPort: 443
+            ToPort: 443
+            CidrIp: {'Fn::ImportValue': !Sub '${ParentVPCStack}-CidrBlock'}
   Endpoint:
     Type: 'AWS::EC2::VPCEndpoint'
     Properties:
