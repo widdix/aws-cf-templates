@@ -166,42 +166,46 @@ Parameters:
     MaxValue: 3600
 Mappings:
   RegionMap:
+    'af-south-1':
+      ECSAMI: 'ami-0f91be324f8d88adb'
     'eu-north-1':
-      ECSAMI: 'ami-0639f978e5b88a840'
+      ECSAMI: 'ami-04acfa2afd4604b14'
     'ap-south-1':
-      ECSAMI: 'ami-0a03968949ee4e012'
+      ECSAMI: 'ami-05d6edad5808a4739'
     'eu-west-3':
-      ECSAMI: 'ami-0b700aef0f223def9'
+      ECSAMI: 'ami-05560d522ac23788b'
     'eu-west-2':
-      ECSAMI: 'ami-03ec263c71e44528d'
+      ECSAMI: 'ami-02254c861b8371869'
+    'eu-south-1':
+      ECSAMI: 'ami-0c53a68c1ed9e0ec7'
     'eu-west-1':
-      ECSAMI: 'ami-09cec0d91e6d220ea'
+      ECSAMI: 'ami-0bb01c7d2705a4800'
     'ap-northeast-2':
-      ECSAMI: 'ami-0750fd52026129ec6'
+      ECSAMI: 'ami-029df54b84ab8240f'
     'me-south-1':
-      ECSAMI: 'ami-0d2020f7eaca12fa0'
+      ECSAMI: 'ami-06d4ebd232978cc42'
     'ap-northeast-1':
-      ECSAMI: 'ami-00e177b8d879d5d3f'
+      ECSAMI: 'ami-0763fff45988661c8'
     'sa-east-1':
-      ECSAMI: 'ami-05b1add1a0c31be07'
+      ECSAMI: 'ami-0474a590e95647451'
     'ca-central-1':
-      ECSAMI: 'ami-00f6d6e2711b7adbe'
+      ECSAMI: 'ami-092262e997a1ab27b'
     'ap-east-1':
-      ECSAMI: 'ami-0a75552e697a7b2aa'
+      ECSAMI: 'ami-0bba587b67ceaddea'
     'ap-southeast-1':
-      ECSAMI: 'ami-0689726e1a700ed66'
+      ECSAMI: 'ami-0bd1daf5da8a9a903'
     'ap-southeast-2':
-      ECSAMI: 'ami-0e6b68880cc94cf09'
+      ECSAMI: 'ami-0a7c4f7f17d3eecbc'
     'eu-central-1':
-      ECSAMI: 'ami-0fe4cfe8d04ec091e'
+      ECSAMI: 'ami-01b521fb7540d9996'
     'us-east-1':
-      ECSAMI: 'ami-00f69adbdc780866c'
+      ECSAMI: 'ami-007cd1678c6286a05'
     'us-east-2':
-      ECSAMI: 'ami-044bf85e844eddde5'
+      ECSAMI: 'ami-06e05a843071324d1'
     'us-west-1':
-      ECSAMI: 'ami-014ee82610857fa9a'
+      ECSAMI: 'ami-00271233a1ebb9161'
     'us-west-2':
-      ECSAMI: 'ami-088dbc54f17f8a1a2'
+      ECSAMI: 'ami-01e1d12a048e67ed2'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']

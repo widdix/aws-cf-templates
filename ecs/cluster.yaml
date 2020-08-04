@@ -194,45 +194,45 @@ Parameters:
 Mappings:
   RegionMap:
     'af-south-1':
-      ECSAMI: 'ami-0f46c3b6657359999'
+      ECSAMI: 'ami-0f91be324f8d88adb'
     'eu-north-1':
-      ECSAMI: 'ami-08163d891cc05881a'
+      ECSAMI: 'ami-04acfa2afd4604b14'
     'ap-south-1':
-      ECSAMI: 'ami-0c20a67db6e1c7258'
+      ECSAMI: 'ami-05d6edad5808a4739'
     'eu-west-3':
-      ECSAMI: 'ami-00a12748018f55f56'
+      ECSAMI: 'ami-05560d522ac23788b'
     'eu-west-2':
-      ECSAMI: 'ami-038863f4c20d2d63d'
+      ECSAMI: 'ami-02254c861b8371869'
     'eu-south-1':
-      ECSAMI: 'ami-077d25730f36e8a2f'
+      ECSAMI: 'ami-0c53a68c1ed9e0ec7'
     'eu-west-1':
-      ECSAMI: 'ami-0cf112c4c967e0437'
+      ECSAMI: 'ami-0bb01c7d2705a4800'
     'ap-northeast-2':
-      ECSAMI: 'ami-0a42b1e2c5f22035c'
+      ECSAMI: 'ami-029df54b84ab8240f'
     'me-south-1':
-      ECSAMI: 'ami-0c96102b13194fa66'
+      ECSAMI: 'ami-06d4ebd232978cc42'
     'ap-northeast-1':
-      ECSAMI: 'ami-0471ea40c46b4325d'
+      ECSAMI: 'ami-0763fff45988661c8'
     'sa-east-1':
-      ECSAMI: 'ami-0e720f8542a11d10b'
+      ECSAMI: 'ami-0474a590e95647451'
     'ca-central-1':
-      ECSAMI: 'ami-01a7c134a00678ad6'
+      ECSAMI: 'ami-092262e997a1ab27b'
     'ap-east-1':
-      ECSAMI: 'ami-096f6010959d0d538'
+      ECSAMI: 'ami-0bba587b67ceaddea'
     'ap-southeast-1':
-      ECSAMI: 'ami-00100469ca2a34fa3'
+      ECSAMI: 'ami-0bd1daf5da8a9a903'
     'ap-southeast-2':
-      ECSAMI: 'ami-02446908683d78c79'
+      ECSAMI: 'ami-0a7c4f7f17d3eecbc'
     'eu-central-1':
-      ECSAMI: 'ami-08c4be469fbdca0fa'
+      ECSAMI: 'ami-01b521fb7540d9996'
     'us-east-1':
-      ECSAMI: 'ami-0b22c910bce7178b6'
+      ECSAMI: 'ami-007cd1678c6286a05'
     'us-east-2':
-      ECSAMI: 'ami-0b29e28ad09b4e536'
+      ECSAMI: 'ami-06e05a843071324d1'
     'us-west-1':
-      ECSAMI: 'ami-0560993025898e8e8'
+      ECSAMI: 'ami-00271233a1ebb9161'
     'us-west-2':
-      ECSAMI: 'ami-0633e2a3c7135c18a'
+      ECSAMI: 'ami-01e1d12a048e67ed2'
 Conditions:
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
