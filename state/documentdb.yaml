@@ -289,3 +289,8 @@ Outputs:
     Value: !GetAtt 'Cluster.ReadEndpoint'
     Export:
       Name: !Sub '${AWS::StackName}-ReadEndpoint'
+  SecurityGroupId:
+    Description: 'The security group used to manage access to Document DB.'
+    Value: !Ref SecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-SecurityGroupId'
