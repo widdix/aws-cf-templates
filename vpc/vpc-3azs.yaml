@@ -228,6 +228,7 @@ Resources:
       GatewayId: !Ref InternetGateway
   RouteTablePublicAInternetRouteIPv6:
     Type: 'AWS::EC2::Route'
+    DependsOn: VPCGatewayAttachment
     Properties:
       RouteTableId: !Ref RouteTablePublic
       DestinationIpv6CidrBlock: '::/0'
@@ -247,6 +248,7 @@ Resources:
       GatewayId: !Ref InternetGateway
   RouteTablePublicBInternetRouteIPv6:
     Type: 'AWS::EC2::Route'
+    DependsOn: VPCGatewayAttachment
     Properties:
       RouteTableId: !Ref RouteTableBPublic
       DestinationIpv6CidrBlock: '::/0'
@@ -266,6 +268,7 @@ Resources:
       GatewayId: !Ref InternetGateway
   RouteTablePublicCInternetRouteIPv6:
     Type: 'AWS::EC2::Route'
+    DependsOn: VPCGatewayAttachment
     Properties:
       RouteTableId: !Ref RouteTableCPublic
       DestinationIpv6CidrBlock: '::/0'
