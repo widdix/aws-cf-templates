@@ -31,7 +31,7 @@ public class TestJenkins extends ACloudFormationTest {
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName),
                             new Parameter().withParameterKey("MasterAdminPassword").withParameterValue(masterAdminPassword),
-                            new Parameter().withParameterKey("BackupRetentionPeriod").withParameterValue("0")
+                            new Parameter().withParameterKey("EFSBackupRetentionPeriod").withParameterValue("0")
                     );
                     final String url = this.getStackOutputValue(stackName, "URL");
                     final Callable<String> callable = () -> {
@@ -76,7 +76,7 @@ public class TestJenkins extends ACloudFormationTest {
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName),
                             new Parameter().withParameterKey("MasterAdminPassword").withParameterValue(masterAdminPassword),
-                            new Parameter().withParameterKey("BackupRetentionPeriod").withParameterValue("0")
+                            new Parameter().withParameterKey("EFSBackupRetentionPeriod").withParameterValue("0")
                     );
                     final String url = this.getStackOutputValue(stackName, "URL");
                     final Callable<String> callable = () -> {
