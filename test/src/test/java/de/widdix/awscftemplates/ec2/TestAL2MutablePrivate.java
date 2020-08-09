@@ -25,7 +25,8 @@ public class TestAL2MutablePrivate extends ACloudFormationTest {
                 try {
                     this.createStack(stackName,
                             "ec2/al2-mutable-private.yaml",
-                            new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName)
+                            new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
+                            new Parameter().withParameterKey("BackupRetentionPeriod").withParameterValue("0")
                     );
                     // TODO how can we check if this stack works?
                 } finally {

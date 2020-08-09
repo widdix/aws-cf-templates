@@ -31,7 +31,8 @@ public class TestVPCVpnBastion extends ACloudFormationTest {
                             new Parameter().withParameterKey("VPNPSK").withParameterValue(vpnPSK),
                             new Parameter().withParameterKey("VPNUserName").withParameterValue("test"),
                             new Parameter().withParameterKey("VPNUserPassword").withParameterValue(vpnUserPassword),
-                            new Parameter().withParameterKey("VPNAdminPassword").withParameterValue(vpnAdminPassword)
+                            new Parameter().withParameterKey("VPNAdminPassword").withParameterValue(vpnAdminPassword),
+                            new Parameter().withParameterKey("BackupRetentionPeriod").withParameterValue("0")
                     );
                     // TODO how can we check if this stack works?
                 } finally {

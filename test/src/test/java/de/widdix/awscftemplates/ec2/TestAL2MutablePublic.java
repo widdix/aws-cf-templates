@@ -24,7 +24,8 @@ public class TestAL2MutablePublic extends ACloudFormationTest {
                     this.createStack(stackName,
                             "ec2/al2-mutable-public.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
-                            new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
+                            new Parameter().withParameterKey("KeyName").withParameterValue(keyName),
+                            new Parameter().withParameterKey("BackupRetentionPeriod").withParameterValue("0")
                     );
                     final String host = this.getStackOutputValue(stackName, "PublicIPAddress");
                     this.probeSSH(host, key);
