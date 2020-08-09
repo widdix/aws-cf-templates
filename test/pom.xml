@@ -95,6 +95,10 @@
                 <configuration>
                     <parallel>classes</parallel>
                     <threadCount>4</threadCount>
+                    <systemPropertyVariables>
+                        <networkaddress.cache.ttl>0</networkaddress.cache.ttl>
+                        <networkaddress.cache.negative.ttl>0</networkaddress.cache.negative.ttl>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>
