@@ -58,7 +58,7 @@ public abstract class ATest {
             session.disconnect();
             return true;
         };
-        Assert.assertTrue(this.retry(callable));
+        Assert.assertTrue("successful SSH connection", this.retry(callable));
     }
 
     protected final void probeSSH(final String host, final KeyPair key) {
@@ -71,7 +71,7 @@ public abstract class ATest {
             session.disconnect();
             return true;
         };
-        Assert.assertTrue(this.retry(callable));
+        Assert.assertTrue("successful SSH connection", this.retry(callable));
     }
 
     protected final Session tunnelSSH(final String host, final KeyPair key, final Integer localPort, final String remoteHost, final Integer remotePort) throws JSchException {

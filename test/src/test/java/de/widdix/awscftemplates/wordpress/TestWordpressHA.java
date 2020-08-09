@@ -61,7 +61,7 @@ public class TestWordpressHA extends ACloudFormationTest {
                         };
                         final String response = this.retry(callable);
                         // check if blog title appears in HTML
-                        Assert.assertTrue(response.contains(blogTitle));
+                        Assert.assertTrue("http response body contains \"" + blogTitle + "\"", response.contains(blogTitle));
                     } finally {
                         this.deleteStackAndRetryOnFailure(stackName);
                     }
@@ -126,7 +126,7 @@ public class TestWordpressHA extends ACloudFormationTest {
                         };
                         final String response = this.retry(callable);
                         // check if blog title appears in HTML
-                        Assert.assertTrue(response.contains(blogTitle));
+                        Assert.assertTrue("http response body contains \"" + blogTitle + "\"", response.contains(blogTitle));
                     } finally {
                         this.deleteStackAndRetryOnFailure(stackName);
                     }
@@ -190,7 +190,7 @@ public class TestWordpressHA extends ACloudFormationTest {
                         };
                         final String response = this.retry(callable);
                         // check if blog title appears in HTML
-                        Assert.assertTrue(response.contains(blogTitle));
+                        Assert.assertTrue("http response body contains \"" + blogTitle + "\"", response.contains(blogTitle));
                     } finally {
                         this.deleteStackAndRetryOnFailure(stackName);
                     }
@@ -255,7 +255,7 @@ public class TestWordpressHA extends ACloudFormationTest {
                         };
                         final String response = this.retry(callable);
                         // check if blog title appears in HTML
-                        Assert.assertTrue(response.contains(blogTitle));
+                        Assert.assertTrue("http response body contains \"" + blogTitle + "\"", response.contains(blogTitle));
                     } finally {
                         this.deleteStackAndRetryOnFailure(stackName);
                     }
