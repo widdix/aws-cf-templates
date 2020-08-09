@@ -51,17 +51,18 @@ public class TestWordpressHA extends ACloudFormationTest {
                                 new Parameter().withParameterKey("EFSBackupRetentionPeriod").withParameterValue("0")
                         );
                         final String url = "https://" + subDomainName + "." + Config.get(Config.Key.DOMAIN_SUFFIX);
-                        final Callable<String> callable = () -> {
+                        final Callable<Boolean> callable = () -> {
                             final HttpResponse response = WS.url(url).timeout(10000).get();
                             // check HTTP response code
                             if (WS.getStatus(response) != 200) {
                                 throw new RuntimeException("200 expected, but saw " + WS.getStatus(response));
                             }
-                            return WS.getResponseAsString(response);
+                            if (!WS.getResponseAsString(response).contains(blogTitle)) {
+                                throw new RuntimeException("http response body contains \"" + blogTitle + "\"");
+                            }
+                            return true;
                         };
-                        final String response = this.retry(callable);
-                        // check if blog title appears in HTML
-                        Assert.assertTrue("http response body contains \"" + blogTitle + "\"", response.contains(blogTitle));
+                        Assert.assertTrue("WordPress ready", this.retry(callable));
                     } finally {
                         this.deleteStackAndRetryOnFailure(stackName);
                     }
@@ -116,17 +117,18 @@ public class TestWordpressHA extends ACloudFormationTest {
                                 new Parameter().withParameterKey("EFSBackupRetentionPeriod").withParameterValue("0")
                         );
                         final String url = "https://" + subDomainName + "." + Config.get(Config.Key.DOMAIN_SUFFIX);
-                        final Callable<String> callable = () -> {
+                        final Callable<Boolean> callable = () -> {
                             final HttpResponse response = WS.url(url).timeout(10000).get();
                             // check HTTP response code
                             if (WS.getStatus(response) != 200) {
                                 throw new RuntimeException("200 expected, but saw " + WS.getStatus(response));
                             }
-                            return WS.getResponseAsString(response);
+                            if (!WS.getResponseAsString(response).contains(blogTitle)) {
+                                throw new RuntimeException("http response body contains \"" + blogTitle + "\"");
+                            }
+                            return true;
                         };
-                        final String response = this.retry(callable);
-                        // check if blog title appears in HTML
-                        Assert.assertTrue("http response body contains \"" + blogTitle + "\"", response.contains(blogTitle));
+                        Assert.assertTrue("WordPress ready", this.retry(callable));
                     } finally {
                         this.deleteStackAndRetryOnFailure(stackName);
                     }
@@ -180,17 +182,18 @@ public class TestWordpressHA extends ACloudFormationTest {
                                 new Parameter().withParameterKey("EFSBackupRetentionPeriod").withParameterValue("0")
                         );
                         final String url = "https://" + subDomainName + "." + Config.get(Config.Key.DOMAIN_SUFFIX);
-                        final Callable<String> callable = () -> {
+                        final Callable<Boolean> callable = () -> {
                             final HttpResponse response = WS.url(url).timeout(10000).get();
                             // check HTTP response code
                             if (WS.getStatus(response) != 200) {
                                 throw new RuntimeException("200 expected, but saw " + WS.getStatus(response));
                             }
-                            return WS.getResponseAsString(response);
+                            if (!WS.getResponseAsString(response).contains(blogTitle)) {
+                                throw new RuntimeException("http response body contains \"" + blogTitle + "\"");
+                            }
+                            return true;
                         };
-                        final String response = this.retry(callable);
-                        // check if blog title appears in HTML
-                        Assert.assertTrue("http response body contains \"" + blogTitle + "\"", response.contains(blogTitle));
+                        Assert.assertTrue("WordPress ready", this.retry(callable));
                     } finally {
                         this.deleteStackAndRetryOnFailure(stackName);
                     }
@@ -245,17 +248,18 @@ public class TestWordpressHA extends ACloudFormationTest {
                                 new Parameter().withParameterKey("EFSBackupRetentionPeriod").withParameterValue("0")
                         );
                         final String url = "https://" + subDomainName + "." + Config.get(Config.Key.DOMAIN_SUFFIX);
-                        final Callable<String> callable = () -> {
+                        final Callable<Boolean> callable = () -> {
                             final HttpResponse response = WS.url(url).timeout(10000).get();
                             // check HTTP response code
                             if (WS.getStatus(response) != 200) {
                                 throw new RuntimeException("200 expected, but saw " + WS.getStatus(response));
                             }
-                            return WS.getResponseAsString(response);
+                            if (!WS.getResponseAsString(response).contains(blogTitle)) {
+                                throw new RuntimeException("http response body contains \"" + blogTitle + "\"");
+                            }
+                            return true;
                         };
-                        final String response = this.retry(callable);
-                        // check if blog title appears in HTML
-                        Assert.assertTrue("http response body contains \"" + blogTitle + "\"", response.contains(blogTitle));
+                        Assert.assertTrue("WordPress ready", this.retry(callable));
                     } finally {
                         this.deleteStackAndRetryOnFailure(stackName);
                     }

@@ -15,13 +15,14 @@ import java.util.concurrent.Callable;
 
 public abstract class ATest {
 
-    protected final <T> T retry(Callable<T> callable) {
+    protected final <T> T retry(final Callable<T> callable) {
         final Callable<T> wrapper = () -> {
             try {
                 return callable.call();
             } catch (final Exception e) {
                 System.out.println("retry[] exception: " + e.getMessage());
-                e.printStackTrace();
+                e.printStackTrace(System.out);
+                System.out.println();
                 throw e;
             }
         };
