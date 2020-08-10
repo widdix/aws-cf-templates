@@ -8,6 +8,7 @@ import com.amazonaws.services.ecs.model.DescribeContainerInstancesResult;
 import com.amazonaws.services.ecs.model.ListContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.ListContainerInstancesResult;
 import de.widdix.awscftemplates.ACloudFormationTest;
+import de.widdix.awscftemplates.Context;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -19,6 +20,7 @@ public class TestECSCluster extends ACloudFormationTest {
 
     @Test
     public void testDefault() {
+        final Context context = new Context();
         final String vpcStackName = "vpc-2azs-" + this.random8String();
         final String stackName = "ecs-cluster-" + this.random8String();
         final String classB = "10";
@@ -26,12 +28,12 @@ public class TestECSCluster extends ACloudFormationTest {
         try {
             this.createKey(keyName);
             try {
-                this.createStack(vpcStackName,
+                this.createStack(context, vpcStackName,
                         "vpc/vpc-2azs.yaml",
                         new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                 );
                 try {
-                    this.createStack(stackName,
+                    this.createStack(context, stackName,
                             "ecs/cluster.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
@@ -60,18 +62,19 @@ public class TestECSCluster extends ACloudFormationTest {
                     };
                     Assert.assertTrue("Container instances ready", this.retry(callable));
                 } finally {
-                    this.deleteStack(stackName);
+                    this.deleteStack(context, stackName);
                 }
             } finally {
-                this.deleteStack(vpcStackName);
+                this.deleteStack(context, vpcStackName);
             }
         } finally {
-            this.deleteKey(keyName);
+            this.deleteKey(context, keyName);
         }
     }
 
     @Test
     public void testCostOptimized() {
+        final Context context = new Context();
         final String vpcStackName = "vpc-2azs-" + this.random8String();
         final String stackName = "ecs-cluster-" + this.random8String();
         final String classB = "10";
@@ -79,12 +82,12 @@ public class TestECSCluster extends ACloudFormationTest {
         try {
             this.createKey(keyName);
             try {
-                this.createStack(vpcStackName,
+                this.createStack(context, vpcStackName,
                         "vpc/vpc-2azs.yaml",
                         new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                 );
                 try {
-                    this.createStack(stackName,
+                    this.createStack(context, stackName,
                             "ecs/cluster-cost-optimized.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
@@ -113,13 +116,13 @@ public class TestECSCluster extends ACloudFormationTest {
                     };
                     Assert.assertTrue("Container instances ready", this.retry(callable));
                 } finally {
-                    this.deleteStack(stackName);
+                    this.deleteStack(context, stackName);
                 }
             } finally {
-                this.deleteStack(vpcStackName);
+                this.deleteStack(context, vpcStackName);
             }
         } finally {
-            this.deleteKey(keyName);
+            this.deleteKey(context, keyName);
         }
     }
 

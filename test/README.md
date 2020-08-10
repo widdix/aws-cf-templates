@@ -25,6 +25,7 @@ To run this tests you need:
 * `BUCKET_NAME` Some templates are to big to be passed as a string from local disk, therefore you need to supply the name of the bucket that is used to upload templates.
 * `BUCKET_REGION` **required if BUCKET_NAME is set** Region of the bucket
 * `DELETION_POLICY` (default `delete`, allowed values [`delete`, `retain`]) should resources be deleted?
+* `FAILURE_POLICY` (default `rollback`, allowed values [`rollback`, `retain`]) what happens if a stack fails?
 
 ## Usage
 

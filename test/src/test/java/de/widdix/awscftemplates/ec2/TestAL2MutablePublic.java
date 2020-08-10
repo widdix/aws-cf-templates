@@ -3,12 +3,14 @@ package de.widdix.awscftemplates.ec2;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.ec2.model.KeyPair;
 import de.widdix.awscftemplates.ACloudFormationTest;
+import de.widdix.awscftemplates.Context;
 import org.junit.Test;
 
 public class TestAL2MutablePublic extends ACloudFormationTest {
 
     @Test
     public void test() {
+        final Context context = new Context();
         final String vpcStackName = "vpc-2azs-" + this.random8String();
         final String stackName = "al2-mutable-public-" + this.random8String();
         final String classB = "10";
@@ -16,12 +18,12 @@ public class TestAL2MutablePublic extends ACloudFormationTest {
         try {
             final KeyPair key = this.createKey(keyName);
             try {
-                this.createStack(vpcStackName,
+                this.createStack(context, vpcStackName,
                         "vpc/vpc-2azs.yaml",
                         new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                 );
                 try {
-                    this.createStack(stackName,
+                    this.createStack(context, stackName,
                             "ec2/al2-mutable-public.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName),
@@ -30,18 +32,19 @@ public class TestAL2MutablePublic extends ACloudFormationTest {
                     final String host = this.getStackOutputValue(stackName, "PublicIPAddress");
                     this.probeSSH(host, key);
                 } finally {
-                    this.deleteStack(stackName);
+                    this.deleteStack(context, stackName);
                 }
             } finally {
-                this.deleteStack(vpcStackName);
+                this.deleteStack(context, vpcStackName);
             }
         } finally {
-            this.deleteKey(keyName);
+            this.deleteKey(context, keyName);
         }
     }
 
     @Test
     public void testWithIAMUserSSHAccess() throws Exception {
+        final Context context = new Context();
         final String vpcStackName = "vpc-2azs-" + this.random8String();
         final String stackName = "al2-mutable-public-" + this.random8String();
         final String classB = "10";
@@ -49,12 +52,12 @@ public class TestAL2MutablePublic extends ACloudFormationTest {
         try {
             final User user = this.createUser(userName);
             try {
-                this.createStack(vpcStackName,
+                this.createStack(context, vpcStackName,
                         "vpc/vpc-2azs.yaml",
                         new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                 );
                 try {
-                    this.createStack(stackName,
+                    this.createStack(context, stackName,
                             "ec2/al2-mutable-public.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("IAMUserSSHAccess").withParameterValue("true")
@@ -62,13 +65,13 @@ public class TestAL2MutablePublic extends ACloudFormationTest {
                     final String host = this.getStackOutputValue(stackName, "PublicIPAddress");
                     this.probeSSH(host, user);
                 } finally {
-                    this.deleteStack(stackName);
+                    this.deleteStack(context, stackName);
                 }
             } finally {
-                this.deleteStack(vpcStackName);
+                this.deleteStack(context, vpcStackName);
             }
         } finally {
-            this.deleteUser(userName);
+            this.deleteUser(context, userName);
         }
     }
 }

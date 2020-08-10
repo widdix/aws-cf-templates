@@ -4,6 +4,7 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 import de.taimos.httputils.WS;
 import de.widdix.awscftemplates.ACloudFormationTest;
 import de.widdix.awscftemplates.Config;
+import de.widdix.awscftemplates.Context;
 import org.apache.http.HttpResponse;
 import org.junit.Assert;
 import org.junit.Test;
@@ -14,6 +15,7 @@ public class TestSecurityAuthProxy extends ACloudFormationTest {
 
     @Test
     public void testHAGitHubOrga() {
+        final Context context = new Context();
         final String zoneStackName = "zone-" + this.random8String();
         final String vpcStackName = "vpc-2azs-" + this.random8String();
         final String stackName = "auth-proxy-ha-github-orga-" + this.random8String();
@@ -23,18 +25,18 @@ public class TestSecurityAuthProxy extends ACloudFormationTest {
         try {
             this.createKey(keyName);
             try {
-                this.createStack(zoneStackName,
+                this.createStack(context, zoneStackName,
                         "vpc/zone-legacy.yaml",
                         new Parameter().withParameterKey("HostedZoneName").withParameterValue(Config.get(Config.Key.DOMAIN_SUFFIX)),
                         new Parameter().withParameterKey("HostedZoneId").withParameterValue(Config.get(Config.Key.HOSTED_ZONE_ID))
                 );
                 try {
-                    this.createStack(vpcStackName,
+                    this.createStack(context, vpcStackName,
                             "vpc/vpc-2azs.yaml",
                             new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                     );
                     try {
-                        this.createStack(stackName,
+                        this.createStack(context, stackName,
                                 "security/auth-proxy-ha-github-orga.yaml",
                                 new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                                 new Parameter().withParameterKey("ParentZoneStack").withParameterValue(zoneStackName),
@@ -60,16 +62,16 @@ public class TestSecurityAuthProxy extends ACloudFormationTest {
                         // check if OAuth2 Proxy appears in HTML
                         Assert.assertTrue("http response body contains \"OAuth2 Proxy\"", response.contains("OAuth2 Proxy"));
                     } finally {
-                        this.deleteStack(stackName);
+                        this.deleteStack(context, stackName);
                     }
                 } finally {
-                    this.deleteStack(vpcStackName);
+                    this.deleteStack(context, vpcStackName);
                 }
             } finally {
-                this.deleteStack(zoneStackName);
+                this.deleteStack(context, zoneStackName);
             }
         } finally {
-            this.deleteKey(keyName);
+            this.deleteKey(context, keyName);
         }
     }
 

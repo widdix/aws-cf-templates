@@ -67,11 +67,15 @@ public abstract class AAWSTest extends ATest {
         return new User(userName, sshPrivateKeyBlob, res.getSSHPublicKey().getSSHPublicKeyId());
     }
 
-    protected final void deleteUser(final String userName) {
+    protected final void deleteUser(final Context context, final String userName) {
         if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
-            final ListSSHPublicKeysResult res = this.iam.listSSHPublicKeys(new ListSSHPublicKeysRequest().withUserName(userName));
-             this.iam.deleteSSHPublicKey(new DeleteSSHPublicKeyRequest().withUserName(userName).withSSHPublicKeyId(res.getSSHPublicKeys().get(0).getSSHPublicKeyId()));
-            this.iam.deleteUser(new DeleteUserRequest().withUserName(userName));
+            if (Config.get(Config.Key.FAILURE_POLICY).equals("retain") && context.hasStackFailure()) {
+                System.out.println("Skip user deletion because of stack failure in context and FAILURE_POLICY := retain");
+            } else {
+                final ListSSHPublicKeysResult res = this.iam.listSSHPublicKeys(new ListSSHPublicKeysRequest().withUserName(userName));
+                this.iam.deleteSSHPublicKey(new DeleteSSHPublicKeyRequest().withUserName(userName).withSSHPublicKeyId(res.getSSHPublicKeys().get(0).getSSHPublicKeyId()));
+                this.iam.deleteUser(new DeleteUserRequest().withUserName(userName));
+            }
         }
     }
 
@@ -81,10 +85,14 @@ public abstract class AAWSTest extends ATest {
         return res.getKeyPair();
     }
 
-    protected final void deleteKey(final String keyName) {
+    protected final void deleteKey(final Context context, final String keyName) {
         if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
-            this.ec2.deleteKeyPair(new DeleteKeyPairRequest().withKeyName(keyName));
-            System.out.println("keypair[" + keyName + "] deleted");
+            if (Config.get(Config.Key.FAILURE_POLICY).equals("retain") && context.hasStackFailure()) {
+                System.out.println("Skip key deletion because of stack failure in context and FAILURE_POLICY := retain");
+            } else {
+                this.ec2.deleteKeyPair(new DeleteKeyPairRequest().withKeyName(keyName));
+                System.out.println("keypair[" + keyName + "] deleted");
+            }
         }
     }
 
@@ -97,39 +105,51 @@ public abstract class AAWSTest extends ATest {
         this.s3.putObject(bucketName, key, body);
     }
 
-    protected final void deleteObject(final String bucketName, final String key) {
+    protected final void deleteObject(final Context context, final String bucketName, final String key) {
         if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
-            this.s3.deleteObject(bucketName, key);
-        }
-    }
-
-    protected final void emptyBucket(final String name) {
-        if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
-            ObjectListing objectListing = s3.listObjects(name);
-            while (true) {
-                objectListing.getObjectSummaries().forEach((summary) -> s3.deleteObject(name, summary.getKey()));
-                if (objectListing.isTruncated()) {
-                    objectListing = s3.listNextBatchOfObjects(objectListing);
-                } else {
-                    break;
-                }
-            }
-            VersionListing versionListing = s3.listVersions(new ListVersionsRequest().withBucketName(name));
-            while (true) {
-                versionListing.getVersionSummaries().forEach((vs) -> s3.deleteVersion(name, vs.getKey(), vs.getVersionId()));
-                if (versionListing.isTruncated()) {
-                    versionListing = s3.listNextBatchOfVersions(versionListing);
-                } else {
-                    break;
-                }
+            if (Config.get(Config.Key.FAILURE_POLICY).equals("retain") && context.hasStackFailure()) {
+                System.out.println("Skip object deletion because of stack failure in context and FAILURE_POLICY := retain");
+            } else {
+                this.s3.deleteObject(bucketName, key);
             }
         }
     }
 
-    protected final void deleteBucket(final String name) {
+    protected final void emptyBucket(final Context context, final String name) {
         if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
-            this.emptyBucket(name);
-            this.s3.deleteBucket(new DeleteBucketRequest(name));
+            if (Config.get(Config.Key.FAILURE_POLICY).equals("retain") && context.hasStackFailure()) {
+                System.out.println("Skip bucket empty because of stack failure in context and FAILURE_POLICY := retain");
+            } else {
+                ObjectListing objectListing = s3.listObjects(name);
+                while (true) {
+                    objectListing.getObjectSummaries().forEach((summary) -> s3.deleteObject(name, summary.getKey()));
+                    if (objectListing.isTruncated()) {
+                        objectListing = s3.listNextBatchOfObjects(objectListing);
+                    } else {
+                        break;
+                    }
+                }
+                VersionListing versionListing = s3.listVersions(new ListVersionsRequest().withBucketName(name));
+                while (true) {
+                    versionListing.getVersionSummaries().forEach((vs) -> s3.deleteVersion(name, vs.getKey(), vs.getVersionId()));
+                    if (versionListing.isTruncated()) {
+                        versionListing = s3.listNextBatchOfVersions(versionListing);
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    protected final void deleteBucket(final Context context, final String name) {
+        if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
+            if (Config.get(Config.Key.FAILURE_POLICY).equals("retain") && context.hasStackFailure()) {
+                System.out.println("Skip bucket deletion because of stack failure in context and FAILURE_POLICY := retain");
+            } else {
+                this.emptyBucket(context, name);
+                this.s3.deleteBucket(new DeleteBucketRequest(name));
+            }
         }
     }
 

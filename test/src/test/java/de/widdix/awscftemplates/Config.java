@@ -11,7 +11,8 @@ public final class Config {
         DOMAIN_SUFFIX("DOMAIN_SUFFIX"),
         ACM_CERTIFICATE_ARN("ACM_CERTIFICATE_ARN"),
         CLOUDFRONT_ACM_CERTIFICATE_ARN("CLOUDFRONT_ACM_CERTIFICATE_ARN"),
-        DELETION_POLICY("DELETION_POLICY", "delete");
+        DELETION_POLICY("DELETION_POLICY", "delete"),
+        FAILURE_POLICY("FAILURE_POLICY", "rollback");
 
         private final String name;
         private final String defaultValue;

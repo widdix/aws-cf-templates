@@ -3,6 +3,7 @@ package de.widdix.awscftemplates.jenkins;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import de.taimos.httputils.WS;
 import de.widdix.awscftemplates.ACloudFormationTest;
+import de.widdix.awscftemplates.Context;
 import org.apache.http.HttpResponse;
 import org.junit.Assert;
 import org.junit.Test;
@@ -13,6 +14,7 @@ public class TestJenkins extends ACloudFormationTest {
 
     @Test
     public void testHA() {
+        final Context context = new Context();
         final String vpcStackName = "vpc-2azs-" + this.random8String();
         final String stackName = "jenkins-ha-" + this.random8String();
         final String classB = "10";
@@ -21,12 +23,12 @@ public class TestJenkins extends ACloudFormationTest {
         try {
             this.createKey(keyName);
             try {
-                this.createStack(vpcStackName,
+                this.createStack(context, vpcStackName,
                         "vpc/vpc-2azs.yaml",
                         new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                 );
                 try {
-                    this.createStack(stackName,
+                    this.createStack(context, stackName,
                             "jenkins/jenkins2-ha.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName),
@@ -46,18 +48,19 @@ public class TestJenkins extends ACloudFormationTest {
                     // check if Jenkins appears in HTML
                     Assert.assertTrue("http response body contains \"Jenkins\"", response.contains("Jenkins"));
                 } finally {
-                    this.deleteStack(stackName);
+                    this.deleteStack(context, stackName);
                 }
             } finally {
-                this.deleteStack(vpcStackName);
+                this.deleteStack(context, vpcStackName);
             }
         } finally {
-            this.deleteKey(keyName);
+            this.deleteKey(context, keyName);
         }
     }
 
     @Test
     public void testHAAgents() {
+        final Context context = new Context();
         final String vpcStackName = "vpc-2azs-" + this.random8String();
         final String stackName = "jenkins-ha-agents-" + this.random8String();
         final String classB = "10";
@@ -66,12 +69,12 @@ public class TestJenkins extends ACloudFormationTest {
         try {
             this.createKey(keyName);
             try {
-                this.createStack(vpcStackName,
+                this.createStack(context, vpcStackName,
                         "vpc/vpc-2azs.yaml",
                         new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                 );
                 try {
-                    this.createStack(stackName,
+                    this.createStack(context, stackName,
                             "jenkins/jenkins2-ha-agents.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName),
@@ -91,13 +94,13 @@ public class TestJenkins extends ACloudFormationTest {
                     // check if Jenkins appears in HTML
                     Assert.assertTrue("http response body contains \"Jenkins\"", response.contains("Jenkins"));
                 } finally {
-                    this.deleteStack(stackName);
+                    this.deleteStack(context, stackName);
                 }
             } finally {
-                this.deleteStack(vpcStackName);
+                this.deleteStack(context, vpcStackName);
             }
         } finally {
-            this.deleteKey(keyName);
+            this.deleteKey(context, keyName);
         }
     }
 

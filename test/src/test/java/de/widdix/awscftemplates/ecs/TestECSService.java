@@ -4,6 +4,7 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 import de.taimos.httputils.WS;
 import de.widdix.awscftemplates.ACloudFormationTest;
 import de.widdix.awscftemplates.Config;
+import de.widdix.awscftemplates.Context;
 import org.apache.http.HttpResponse;
 import org.junit.Assert;
 import org.junit.Test;
@@ -14,6 +15,7 @@ public class TestECSService extends ACloudFormationTest {
 
     @Test
     public void testClusterAlbHostPattern() {
+        final Context context = new Context();
         final String zoneStackName = "zone-" + this.random8String();
         final String vpcStackName = "vpc-2azs-" + this.random8String();
         final String clusterStackName = "ecs-cluster-" + this.random8String();
@@ -24,25 +26,25 @@ public class TestECSService extends ACloudFormationTest {
         try {
             this.createKey(keyName);
             try {
-                this.createStack(zoneStackName,
+                this.createStack(context, zoneStackName,
                         "vpc/zone-legacy.yaml",
                         new Parameter().withParameterKey("HostedZoneName").withParameterValue(Config.get(Config.Key.DOMAIN_SUFFIX)),
                         new Parameter().withParameterKey("HostedZoneId").withParameterValue(Config.get(Config.Key.HOSTED_ZONE_ID))
                 );
                 try {
-                    this.createStack(vpcStackName,
+                    this.createStack(context, vpcStackName,
                             "vpc/vpc-2azs.yaml",
                             new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                     );
                     try {
-                        this.createStack(clusterStackName,
+                        this.createStack(context, clusterStackName,
                                 "ecs/cluster.yaml",
                                 new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                                 new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
                         );
                         try {
                             final String domain = subDomainName + "." + Config.get(Config.Key.DOMAIN_SUFFIX);
-                            this.createStack(stackName,
+                            this.createStack(context, stackName,
                                     "ecs/service-cluster-alb.yaml",
                                     new Parameter().withParameterKey("ParentClusterStack").withParameterValue(clusterStackName),
                                     new Parameter().withParameterKey("ParentZoneStack").withParameterValue(zoneStackName),
@@ -64,24 +66,25 @@ public class TestECSService extends ACloudFormationTest {
                             // check if nginx page appears
                             Assert.assertTrue("http response body contains \"Welcome to nginx!\"", response.contains("Welcome to nginx!"));
                         } finally {
-                            this.deleteStack(stackName);
+                            this.deleteStack(context, stackName);
                         }
                     } finally {
-                        this.deleteStack(clusterStackName);
+                        this.deleteStack(context, clusterStackName);
                     }
                 } finally {
-                    this.deleteStack(vpcStackName);
+                    this.deleteStack(context, vpcStackName);
                 }
             } finally {
-                this.deleteStack(zoneStackName);
+                this.deleteStack(context, zoneStackName);
             }
         } finally {
-            this.deleteKey(keyName);
+            this.deleteKey(context, keyName);
         }
     }
 
     @Test
     public void testClusterAlbPathPattern() {
+        final Context context = new Context();
         final String vpcStackName = "vpc-2azs-" + this.random8String();
         final String clusterStackName = "ecs-cluster-" + this.random8String();
         final String stackName = "ecs-service-" + this.random8String();
@@ -90,19 +93,19 @@ public class TestECSService extends ACloudFormationTest {
         try {
             this.createKey(keyName);
             try {
-                this.createStack(vpcStackName,
+                this.createStack(context, vpcStackName,
                         "vpc/vpc-2azs.yaml",
                         new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                 );
                 try {
-                    this.createStack(clusterStackName,
+                    this.createStack(context, clusterStackName,
                             "ecs/cluster.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
                     );
                     final String cluster = this.getStackOutputValue(clusterStackName, "Cluster");
                     try {
-                        this.createStack(stackName,
+                        this.createStack(context, stackName,
                                 "ecs/service-cluster-alb.yaml",
                                 new Parameter().withParameterKey("ParentClusterStack").withParameterValue(clusterStackName),
                                 new Parameter().withParameterKey("Image").withParameterValue("nginx:1.11.5")
@@ -118,22 +121,23 @@ public class TestECSService extends ACloudFormationTest {
                         };
                         Assert.assertTrue("http response code is 404", this.retry(callable));
                     } finally {
-                        this.deleteStack(stackName);
+                        this.deleteStack(context, stackName);
                     }
                 } finally {
-                    this.deleteStack(clusterStackName);
+                    this.deleteStack(context, clusterStackName);
                 }
             } finally {
-                this.deleteStack(vpcStackName);
+                this.deleteStack(context, vpcStackName);
             }
         } finally {
-            this.deleteKey(keyName);
+            this.deleteKey(context, keyName);
         }
     }
 
 
     @Test
     public void testDedicatedAlb() {
+        final Context context = new Context();
         final String vpcStackName = "vpc-2azs-" + this.random8String();
         final String clusterStackName = "ecs-cluster-" + this.random8String();
         final String stackName = "ecs-service-" + this.random8String();
@@ -142,18 +146,18 @@ public class TestECSService extends ACloudFormationTest {
         try {
             this.createKey(keyName);
             try {
-                this.createStack(vpcStackName,
+                this.createStack(context, vpcStackName,
                         "vpc/vpc-2azs.yaml",
                         new Parameter().withParameterKey("ClassB").withParameterValue(classB)
                 );
                 try {
-                    this.createStack(clusterStackName,
+                    this.createStack(context, clusterStackName,
                             "ecs/cluster.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
                     );
                     try {
-                        this.createStack(stackName,
+                        this.createStack(context, stackName,
                                 "ecs/service-dedicated-alb.yaml",
                                 new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                                 new Parameter().withParameterKey("ParentClusterStack").withParameterValue(clusterStackName),
@@ -172,16 +176,16 @@ public class TestECSService extends ACloudFormationTest {
                         // check if nginx page appears
                         Assert.assertTrue("http response body contains \"Welcome to nginx!\"", response.contains("Welcome to nginx!"));
                     } finally {
-                        this.deleteStack(stackName);
+                        this.deleteStack(context, stackName);
                     }
                 } finally {
-                    this.deleteStack(clusterStackName);
+                    this.deleteStack(context, clusterStackName);
                 }
             } finally {
-                this.deleteStack(vpcStackName);
+                this.deleteStack(context, vpcStackName);
             }
         } finally {
-            this.deleteKey(keyName);
+            this.deleteKey(context, keyName);
         }
     }
 
