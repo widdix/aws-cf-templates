@@ -2,12 +2,14 @@ package de.widdix.awscftemplates.security;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 import de.widdix.awscftemplates.ACloudFormationTest;
+import de.widdix.awscftemplates.Context;
 import org.junit.Test;
 
 public class TestCloudtrail extends ACloudFormationTest {
 
     @Test
     public void test() {
+        final Context context = new Context();
         final String stackName = "cloudtrail-" + this.random8String();
         final String bucketName = "cloudtrail-" + this.random8String();
         final String bucketPolicy = "{\n" +
@@ -40,16 +42,16 @@ public class TestCloudtrail extends ACloudFormationTest {
         try {
             this.createBucket(bucketName, bucketPolicy);
             try {
-                this.createStack(stackName,
+                this.createStack(context, stackName,
                         "security/cloudtrail.yaml",
                         new Parameter().withParameterKey("ExternalTrailBucket").withParameterValue(bucketName)
                 );
                 // TODO how can we check if this stack works?
             } finally {
-                this.deleteStack(stackName);
+                this.deleteStack(context, stackName);
             }
         } finally {
-            this.deleteBucket(bucketName);
+            this.deleteBucket(context, bucketName);
         }
     }
 

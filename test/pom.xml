@@ -70,7 +70,7 @@
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-bom</artifactId>
-                <version>1.11.133</version>
+                <version>1.11.837</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -94,7 +94,11 @@
                 <version>2.20</version>
                 <configuration>
                     <parallel>classes</parallel>
-                    <threadCount>8</threadCount>
+                    <threadCount>4</threadCount>
+                    <systemPropertyVariables>
+                        <networkaddress.cache.ttl>0</networkaddress.cache.ttl>
+                        <networkaddress.cache.negative.ttl>0</networkaddress.cache.negative.ttl>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>

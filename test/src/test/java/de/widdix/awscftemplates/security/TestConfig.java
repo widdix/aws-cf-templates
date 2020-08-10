@@ -2,6 +2,7 @@ package de.widdix.awscftemplates.security;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 import de.widdix.awscftemplates.ACloudFormationTest;
+import de.widdix.awscftemplates.Context;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -11,6 +12,7 @@ public class TestConfig extends ACloudFormationTest {
     // this test is disabled because only one ConfigurationRecorder is allowed and config is already active in all our AWS accounts
     @Test
     public void test() {
+        final Context context = new Context();
         final String stackName = "config-" + this.random8String();
         final String bucketName = "config-" + this.random8String();
         final String bucketPolicy = "{\n" +
@@ -50,16 +52,16 @@ public class TestConfig extends ACloudFormationTest {
         try {
             this.createBucket(bucketName, bucketPolicy);
             try {
-                this.createStack(stackName,
+                this.createStack(context, stackName,
                         "security/config.yaml",
                         new Parameter().withParameterKey("ExternalConfigBucket").withParameterValue(bucketName)
                 );
                 // TODO how can we check if this stack works?
             } finally {
-                this.deleteStack(stackName);
+                this.deleteStack(context, stackName);
             }
         } finally {
-            this.deleteBucket(bucketName);
+            this.deleteBucket(context, bucketName);
         }
     }
 

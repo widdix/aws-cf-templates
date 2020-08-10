@@ -15,13 +15,14 @@ import java.util.concurrent.Callable;
 
 public abstract class ATest {
 
-    protected final <T> T retry(Callable<T> callable) {
+    protected final <T> T retry(final Callable<T> callable) {
         final Callable<T> wrapper = () -> {
             try {
                 return callable.call();
             } catch (final Exception e) {
                 System.out.println("retry[] exception: " + e.getMessage());
-                e.printStackTrace();
+                e.printStackTrace(System.out);
+                System.out.println();
                 throw e;
             }
         };
@@ -58,7 +59,7 @@ public abstract class ATest {
             session.disconnect();
             return true;
         };
-        Assert.assertTrue(this.retry(callable));
+        Assert.assertTrue("successful SSH connection", this.retry(callable));
     }
 
     protected final void probeSSH(final String host, final KeyPair key) {
@@ -71,7 +72,7 @@ public abstract class ATest {
             session.disconnect();
             return true;
         };
-        Assert.assertTrue(this.retry(callable));
+        Assert.assertTrue("successful SSH connection", this.retry(callable));
     }
 
     protected final Session tunnelSSH(final String host, final KeyPair key, final Integer localPort, final String remoteHost, final Integer remotePort) throws JSchException {
