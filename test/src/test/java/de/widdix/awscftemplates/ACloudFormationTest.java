@@ -207,12 +207,12 @@ public abstract class ACloudFormationTest extends AAWSTest {
                 System.out.println("Skip stack deletion because of stack failure in context and FAILURE_POLICY := retain");
             } else {
                 this.cf.deleteStack(new DeleteStackRequest().withStackName(stackName));
+                if (Config.has(Config.Key.BUCKET_NAME)) {
+                    final AmazonS3 s3local = AmazonS3ClientBuilder.standard().withCredentials(this.credentialsProvider).withRegion(Config.get(Config.Key.BUCKET_REGION)).build();
+                    s3local.deleteObject(Config.get(Config.Key.BUCKET_NAME), stackName);
+                }
+                this.waitForStack(context, stackName, FinalStatus.DELETE_COMPLETE);
             }
-            if (Config.has(Config.Key.BUCKET_NAME)) {
-                final AmazonS3 s3local = AmazonS3ClientBuilder.standard().withCredentials(this.credentialsProvider).withRegion(Config.get(Config.Key.BUCKET_REGION)).build();
-                s3local.deleteObject(Config.get(Config.Key.BUCKET_NAME), stackName);
-            }
-            this.waitForStack(context, stackName, FinalStatus.DELETE_COMPLETE);
         }
     }
 

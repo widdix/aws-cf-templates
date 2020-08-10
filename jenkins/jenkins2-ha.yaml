@@ -979,7 +979,7 @@ Resources:
       LaunchConfigurationName: !Ref MasterLC
       MinSize: '1'
       MaxSize: '1'
-      HealthCheckGracePeriod: 900
+      HealthCheckGracePeriod: 1800 # needs to be in sync with CreationPolicy/UpdatePolicy timeout
       HealthCheckType: ELB
       NotificationConfigurations: !If
       - HasAlertTopic

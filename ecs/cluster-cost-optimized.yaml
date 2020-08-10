@@ -809,7 +809,7 @@ Resources:
       MinSize: !Ref MinSize
       MaxSize: !Ref MaxSize
       Cooldown: '600'
-      HealthCheckGracePeriod: 300
+      HealthCheckGracePeriod: 900 # needs to be in sync with CreationPolicy/UpdatePolicy timeout
       HealthCheckType: ELB
       TargetGroupARNs:
       - !Ref DefaultTargetGroup

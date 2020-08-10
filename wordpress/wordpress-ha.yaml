@@ -967,7 +967,7 @@ Resources:
       MinSize: '2'
       MaxSize: '4'
       Cooldown: '60'
-      HealthCheckGracePeriod: 300
+      HealthCheckGracePeriod: 600 # needs to be in sync with CreationPolicy/UpdatePolicy timeout
       HealthCheckType: ELB
       NotificationConfigurations: !If
       - HasAlertTopic
