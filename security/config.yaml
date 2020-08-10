@@ -22,7 +22,15 @@ Metadata:
       Parameters:
       - DeliveryFrequency
       - ExternalConfigBucket
+    - Label:
+        default: 'Permission Parameters'
+      Parameters:
+      - PermissionsBoundary
 Parameters:
+  PermissionsBoundary:
+    Description: 'Optional ARN for a policy that will be used as the permission boundary for all roles created by this template.'
+    Type: String
+    Default: ''
   DeliveryFrequency:
     Description: 'The frequency with which AWS Config delivers configuration snapshots.'
     Type: String
@@ -38,6 +46,7 @@ Parameters:
     Type: String
     Default: ''
 Conditions:
+  HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   InternalBucket: !Equals [!Ref ExternalConfigBucket, '']
   ExternalBucket: !Not [!Equals [!Ref ExternalConfigBucket, '']]
 Resources:
@@ -69,6 +78,7 @@ Resources:
           Principal:
             Service: 'config.amazonaws.com'
           Action: 'sts:AssumeRole'
+      PermissionsBoundary: !If [HasPermissionsBoundary, !Ref PermissionsBoundary, !Ref 'AWS::NoValue']
       Policies:
       - PolicyName: 's3-policy'
         PolicyDocument:
@@ -104,6 +114,7 @@ Resources:
           Principal:
             Service: 'config.amazonaws.com'
           Action: 'sts:AssumeRole'
+      PermissionsBoundary: !If [HasPermissionsBoundary, !Ref PermissionsBoundary, !Ref 'AWS::NoValue']
   ConfigurationRecorder:
     Type: 'AWS::Config::ConfigurationRecorder'
     Properties:
