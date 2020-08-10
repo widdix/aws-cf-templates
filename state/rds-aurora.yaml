@@ -465,7 +465,7 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-ReadDNSName'
   SecurityGroupId:
-    Description: 'The security group used to manage access to Elasticache Redis.'
+    Description: 'The security group used to manage access to RDS Aurora.'
     Value: !Ref ClusterSecurityGroup
     Export:
       Name: !Sub '${AWS::StackName}-SecurityGroupId'
