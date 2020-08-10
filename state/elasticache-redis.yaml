@@ -252,7 +252,7 @@ Resources:
     Condition: HasCPUUtilizationThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average CPU utilization over last 10 minutes too high'
+      AlarmDescription: !Sub 'Average CPU utilization over last 10 minutes higher than ${CPUUtilizationThreshold}%'
       Namespace: 'AWS/ElastiCache'
       MetricName: CPUUtilization
       Statistic: Average
@@ -269,7 +269,7 @@ Resources:
     Condition: HasCPUUtilizationThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
+      AlarmDescription: !Sub 'Average CPU utilization over last 10 minutes higher than ${CPUUtilizationThreshold}%'
       Namespace: 'AWS/ElastiCache'
       MetricName: CPUUtilization
       Statistic: Average
@@ -286,7 +286,7 @@ Resources:
     Condition: HasCPUUtilizationThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average engine CPU utilization over last 10 minutes too high'
+      AlarmDescription: !Sub 'Average engine CPU utilization over last 10 minutes higher than ${CPUUtilizationThreshold}%'
       Namespace: 'AWS/ElastiCache'
       MetricName: EngineCPUUtilization
       Statistic: Average
@@ -303,7 +303,7 @@ Resources:
     Condition: HasCPUUtilizationThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average engine CPU utilization over last 10 minutes too high'
+      AlarmDescription: !Sub 'Average engine CPU utilization over last 10 minutes higher than ${CPUUtilizationThreshold}%'
       Namespace: 'AWS/ElastiCache'
       MetricName: EngineCPUUtilization
       Statistic: Average
@@ -320,7 +320,7 @@ Resources:
     Condition: HasDatabaseMemoryUsagePercentageThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average memory usage over last 10 minutes too high, performance may suffer'
+      AlarmDescription: !Sub 'Average memory usage over last 10 minutes higher than ${DatabaseMemoryUsagePercentageThreshold}, performance may suffer'
       Namespace: 'AWS/ElastiCache'
       MetricName: DatabaseMemoryUsagePercentage
       Statistic: Average
@@ -337,7 +337,7 @@ Resources:
     Condition: HasDatabaseMemoryUsagePercentageThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average memory usage over last 10 minutes too high, performance may suffer'
+      AlarmDescription: !Sub 'Average memory usage over last 10 minutes higher than ${DatabaseMemoryUsagePercentageThreshold}, performance may suffer'
       Namespace: 'AWS/ElastiCache'
       MetricName: DatabaseMemoryUsagePercentage
       Statistic: Average
@@ -354,7 +354,7 @@ Resources:
     Condition: HasSwapUsageThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average swap usage over last 10 minutes too high, performance may suffer'
+      AlarmDescription: !Sub 'Average swap usage over last 10 minutes higher than ${SwapUsageThreshold} bytes, performance may suffer'
       Namespace: 'AWS/ElastiCache'
       MetricName: SwapUsage
       Statistic: Average
@@ -371,7 +371,7 @@ Resources:
     Condition: HasSwapUsageThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average swap usage over last 10 minutes too high, performance may suffer'
+      AlarmDescription: !Sub 'Average swap usage over last 10 minutes higher than ${SwapUsageThreshold} bytes, performance may suffer'
       Namespace: 'AWS/ElastiCache'
       MetricName: SwapUsage
       Statistic: Average
@@ -388,7 +388,7 @@ Resources:
     Condition: HasEvictionsThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average evictions over last 10 minutes too high, may enough memory for all keys'
+      AlarmDescription: !Sub 'Average evictions over last 10 minutes higher than ${EvictionsThreshold}, cache hit ratio may suffer'
       Namespace: 'AWS/ElastiCache'
       MetricName: Evictions
       Statistic: Average
@@ -405,7 +405,7 @@ Resources:
     Condition: HasEvictionsThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average evictions over last 10 minutes too high, may enough memory for all keys'
+      AlarmDescription: !Sub 'Average evictions over last 10 minutes higher than ${EvictionsThreshold}, cache hit ratio may suffer'
       Namespace: 'AWS/ElastiCache'
       MetricName: Evictions
       Statistic: Average
@@ -422,7 +422,7 @@ Resources:
     Condition: HasReplicationLagThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average replication lag over last 10 minutes too high'
+      AlarmDescription: !Sub 'Average replication lag over last 10 minutes higher than ${ReplicationLagThreshold} seconds'
       Namespace: 'AWS/ElastiCache'
       MetricName: ReplicationLag
       Statistic: Average
@@ -439,7 +439,7 @@ Resources:
     Condition: HasReplicationLagThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Average replication lag over last 10 minutes too high'
+      AlarmDescription: !Sub 'Average replication lag over last 10 minutes higher than ${ReplicationLagThreshold} seconds'
       Namespace: 'AWS/ElastiCache'
       MetricName: ReplicationLag
       Statistic: Average
