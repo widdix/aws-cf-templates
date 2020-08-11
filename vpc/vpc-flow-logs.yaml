@@ -26,10 +26,20 @@ Metadata:
       Parameters:
       - RetentionInDays
       - TrafficType
+    - Label:
+        default: 'Permission Parameters'
+      Parameters:
+      - PermissionsBoundary
+Conditions:
+  HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
+  PermissionsBoundary:
+    Description: 'Optional ARN for a policy that will be used as the permission boundary for all roles created by this template.'
+    Type: String
+    Default: ''
   RetentionInDays:
     Description: 'Specifies the number of days you want to retain log events.'
     Type: Number
@@ -54,6 +64,7 @@ Resources:
           Principal:
             Service: 'vpc-flow-logs.amazonaws.com'
           Action: 'sts:AssumeRole'
+      PermissionsBoundary: !If [HasPermissionsBoundary, !Ref PermissionsBoundary, !Ref 'AWS::NoValue']
       Policies:
       - PolicyName: 'flowlogs-policy'
         PolicyDocument:

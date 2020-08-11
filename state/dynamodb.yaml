@@ -67,6 +67,10 @@ Metadata:
       - MaxReadCapacityUnits
       - MinReadCapacityUnits
       - ReadCapacityUnitsUtilizationTarget
+    - Label:
+        default: 'Permission Parameters'
+      Parameters:
+      - PermissionsBoundary
 Parameters:
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
@@ -74,6 +78,10 @@ Parameters:
     Default: ''
   ParentKmsKeyStack:
     Description: 'Optional but recommended stack name of parent KMS key stack based on security/kms-key.yaml template.'
+    Type: String
+    Default: ''
+  PermissionsBoundary:
+    Description: 'Optional ARN for a policy that will be used as the permission boundary for all roles created by this template.'
     Type: String
     Default: ''
   TableName:
@@ -234,6 +242,7 @@ Parameters:
     Default: true
     AllowedValues: [true, false]
 Conditions:
+  HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasSortKey: !Not [!Equals [!Ref SortKeyName, '']]
@@ -382,6 +391,7 @@ Resources:
           Principal:
             Service: 'application-autoscaling.amazonaws.com'
           Action: 'sts:AssumeRole'
+      PermissionsBoundary: !If [HasPermissionsBoundary, !Ref PermissionsBoundary, !Ref 'AWS::NoValue']
       Policies:
       - PolicyName: scaling
         PolicyDocument:
@@ -574,6 +584,7 @@ Resources:
           Principal:
             Service: 'backup.amazonaws.com'
           Action: 'sts:AssumeRole'
+      PermissionsBoundary: !If [HasPermissionsBoundary, !Ref PermissionsBoundary, !Ref 'AWS::NoValue']
       Policies:
       - PolicyName: backup
         PolicyDocument:
