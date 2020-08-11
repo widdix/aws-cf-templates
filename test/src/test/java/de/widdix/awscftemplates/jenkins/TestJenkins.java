@@ -31,6 +31,7 @@ public class TestJenkins extends ACloudFormationTest {
                     this.createStack(context, stackName,
                             "jenkins/jenkins2-ha.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
+                            new Parameter().withParameterKey("MasterInstanceType").withParameterValue("t3a.small"),
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName),
                             new Parameter().withParameterKey("MasterAdminPassword").withParameterValue(masterAdminPassword),
                             new Parameter().withParameterKey("EFSBackupRetentionPeriod").withParameterValue("0")
@@ -77,6 +78,7 @@ public class TestJenkins extends ACloudFormationTest {
                     this.createStack(context, stackName,
                             "jenkins/jenkins2-ha-agents.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
+                            new Parameter().withParameterKey("MasterInstanceType").withParameterValue("t3a.small"),
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName),
                             new Parameter().withParameterKey("MasterAdminPassword").withParameterValue(masterAdminPassword),
                             new Parameter().withParameterKey("EFSBackupRetentionPeriod").withParameterValue("0")
