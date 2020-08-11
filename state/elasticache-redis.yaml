@@ -477,3 +477,8 @@ Outputs:
     Value: !GetAtt 'ReplicationGroup.PrimaryEndPoint.Port'
     Export:
       Name: !Sub '${AWS::StackName}-PrimaryEndPointPort'
+  SecurityGroupId:
+    Description: 'The security group used to manage access to Elasticache Redis.'
+    Value: !Ref SecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-SecurityGroupId'

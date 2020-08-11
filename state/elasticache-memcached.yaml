@@ -300,3 +300,8 @@ Outputs:
     Value: !GetAtt 'CacheCluster.ConfigurationEndpoint.Address'
     Export:
       Name: !Sub '${AWS::StackName}-DNSName'
+  SecurityGroupId:
+    Description: 'The security group used to manage access to Elasticache Memcached.'
+    Value: !Ref SecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-SecurityGroupId'
