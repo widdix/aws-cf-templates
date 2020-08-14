@@ -60,6 +60,11 @@ Metadata:
       - AgentMinSize
       - AgentMaxBuildWaitTimeInSeconds
       - AgentLogsRetentionInDays
+    - Label:
+        default: 'Security'
+      Parameters:
+      - HttpIngressCidrAllowed
+      - SshIngressCidrAllowed
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -208,6 +213,14 @@ Parameters:
     Description: 'A CRON expression specifying when AWS Backup initiates a backup job.'
     Type: String
     Default: 'cron(0 5 ? * * *)'
+  HttpIngressCidrAllowed:
+    Description: 'A CIDR range to allow access to Jenkins via HTTP (used if the auth proxy is unspecified)'
+    Type: String
+    Default: '0.0.0.0/0'
+  SshIngressCidrAllowed:
+    Description: 'A CIDR range to allow access to Jenkins via SSH (used if the auth proxy is unspecified)'
+    Type: String
+    Default: '0.0.0.0/0'
 Mappings:
   RegionMap:
     'eu-north-1':
@@ -363,7 +376,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 80
       ToPort: 80
-      CidrIp: '0.0.0.0/0'
+      CidrIp: !Ref HttpIngressCidrAllowed
   MasterELBSGInAuthProxy:
     Type: 'AWS::EC2::SecurityGroupIngress'
     Condition: HasAuthProxySecurityGroup
@@ -643,7 +656,7 @@ Resources:
       IpProtocol: tcp
       FromPort: 22
       ToPort: 22
-      CidrIp: '0.0.0.0/0'
+      CidrIp: !Ref SshIngressCidrAllowed
   MasterLogs:
     Type: 'AWS::Logs::LogGroup'
     Properties:
