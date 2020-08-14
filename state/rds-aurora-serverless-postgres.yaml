@@ -117,12 +117,12 @@ Parameters:
   MaxCapacity:
     Description: 'The maximum capacity units for a Serverless Aurora cluster.'
     Type: String
-    AllowedValues: [1, 2, 4, 8, 16, 32, 64, 128, 256]
+    AllowedValues: [2, 4, 8, 16, 32, 64, 192, 384]
     Default: 2
   MinCapacity:
     Description: 'The minimum capacity units for a Serverless Aurora cluster.'
     Type: String
-    AllowedValues: [1, 2, 4, 8, 16, 32, 64, 128, 256]
+    AllowedValues: [2, 4, 8, 16, 32, 64, 192, 384]
     Default: 2
   SecondsUntilAutoPause:
     Description: 'The time, in seconds, before a Serverless Aurora cluster is paused.'
