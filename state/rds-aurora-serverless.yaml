@@ -134,11 +134,13 @@ Parameters:
     Description: 'Aurora Serverless MySQL version.'
     Type: String
     Default: '5.6.10a'
-    AllowedValues: ['5.6.10a'] # aws rds describe-db-engine-versions --engine aurora --query 'DBEngineVersions[?contains(SupportedEngineModes,`serverless`)]'
+    AllowedValues: ['5.6.10a', '5.7.mysql_aurora.2.07.1'] # aws rds describe-db-engine-versions --query 'DBEngineVersions[?contains(`["aurora", "aurora-mysql"]`, Engine) && contains(SupportedEngineModes,`serverless`)]'
 Mappings:
   EngineVersionMap:
     '5.6.10a':
       ClusterParameterGroupFamily: 'aurora5.6'
+    '5.7.mysql_aurora.2.07.1':
+      ClusterParameterGroupFamily: 'aurora-mysql5.7'
 Conditions:
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
