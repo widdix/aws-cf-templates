@@ -193,7 +193,7 @@ Parameters:
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
   AgentAMI:
-    Description: 'Specifies the number of days you want to retain log events in the specified log group.'
+    Description: 'Specifies the AMI of the agent.'
     Type: AWS::EC2::Image::Id
     Default: 'ami-06ab714a858dd8b2b'
   SubDomainNameWithDot:
