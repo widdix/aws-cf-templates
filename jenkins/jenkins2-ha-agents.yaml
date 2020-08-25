@@ -553,6 +553,7 @@ Resources:
               - 'ssmmessages:*' # SSM Agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
               - 'ssm:UpdateInstanceInformation' # SSM agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
               - 'ec2messages:*' # SSM Session Manager by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ssm:ListInstanceAssociations'
               Resource: '*'
         - !Ref 'AWS::NoValue'
       - PolicyName: cloudwatch
@@ -569,7 +570,10 @@ Resources:
           Statement:
           - Sid: write
             Effect: Allow
-            Action: 'autoscaling:CompleteLifecycleAction'
+            Action:
+            - 'autoscaling:CompleteLifecycleAction'
+            - 'autoscaling:DescribeAutoScalingGroups'
+            - 'autoscaling:UpdateAutoScalingGroup'
             Resource: '*'
       - PolicyName: sqs
         PolicyDocument:
@@ -599,6 +603,19 @@ Resources:
           Statement:
           - Effect: Allow
             Action: 'sts:AssumeRole'
+            Resource: '*'
+      - PolicyName: ec2
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'ec2:CreateTags'
+            - 'ec2:DescribeInstances'
+            - 'ec2:DescribeSpotFleetInstances'
+            - 'ec2:DescribeSpotFleetRequests'
+            - 'ec2:ModifySpotFleetRequest'
+            - 'ec2:TerminateInstances'
             Resource: '*'
   MasterIAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
@@ -1693,7 +1710,7 @@ Resources:
                   SaveUserName=${SaveUserName//"@"/".at."}
                   if [ "${#SaveUserName}" -le "32" ]; then
                     if ! id -u "$SaveUserName" >/dev/null 2>&1; then
-                      #sudo will read each file in /etc/sudoers.d, skipping file names that end in ‘~’ or contain a ‘.’ character to avoid causing problems with package manager or editor temporary/backup files.
+                      #sudo will read each file in /etc/sudoers.d, skipping file names that end in ?~? or contain a ?.? character to avoid causing problems with package manager or editor temporary/backup files.
                       SaveUserFileName=$(echo "$SaveUserName" | tr "." " ")
                       /usr/sbin/useradd "$SaveUserName"
                       echo "$SaveUserName ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$SaveUserFileName"
