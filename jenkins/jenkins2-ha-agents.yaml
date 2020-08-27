@@ -621,6 +621,7 @@ Resources:
             - 'ec2:DescribeSpotFleetRequests'
             - 'ec2:ModifySpotFleetRequest'
             - 'ec2:TerminateInstances'
+            - 'ec2:UpdateAutoScalingGroup'
             Resource: '*'
   MasterIAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
