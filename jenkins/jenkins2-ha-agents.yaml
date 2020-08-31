@@ -617,11 +617,23 @@ Resources:
             Action:
             - 'ec2:CreateTags'
             - 'ec2:DescribeInstances'
+            - 'ec2:DescribeInstanceStatus'
+            - 'ec2:DescribeRegions'
             - 'ec2:DescribeSpotFleetInstances'
             - 'ec2:DescribeSpotFleetRequests'
             - 'ec2:ModifySpotFleetRequest'
             - 'ec2:TerminateInstances'
             - 'ec2:UpdateAutoScalingGroup'
+            Resource: '*'
+      - PolicyName: iam
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'iam:ListInstanceProfiles'
+            - 'iam:ListRoles'
+            - 'iam:PassRole'
             Resource: '*'
   MasterIAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
