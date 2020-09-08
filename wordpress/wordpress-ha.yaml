@@ -468,6 +468,8 @@ Resources:
       DBSubnetGroupName: !Ref DBSubnetGroup
       MultiAZ: true
       StorageType: gp2
+      EnablePerformanceInsights: true
+      PerformanceInsightsRetentionPeriod: 7
   DatabaseBurstBalanceTooLowAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
