@@ -1512,6 +1512,26 @@ Resources:
           - Effect: Allow
             Action: 'sts:AssumeRole'
             Resource: '*'
+      # TODO: Make this better: https://docs.aws.amazon.com/AmazonECR/latest/userguide/security_iam_id-based-policy-examples.html#security_iam_id-based-policy-examples-access-one-bucket
+      - PolicyName: ecr
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'ecr:BatchCheckLayerAvailability'
+            - 'ecr:BatchGetImage'
+            - 'ecr:DescribeImages'
+            - 'ecr:DescribeImageScanFindings'
+            - 'ecr:DescribeRepositories'
+            - 'ecr:GetAuthorizationToken'
+            - 'ecr:GetDownloadUrlForLayer'
+            - 'ecr:GetLifecyclePolicy'
+            - 'ecr:GetLifecyclePolicyPreview'
+            - 'ecr:GetRepositoryPolicy'
+            - 'ecr:ListImages'
+            - 'ecr:ListTagsForResource'
+            Resource: '*'
   AgentIAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
     Condition: HasIAMUserSSHAccess
@@ -2324,6 +2344,28 @@ Resources:
         Resources:
         - !Sub 'arn:${AWS::Partition}:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:file-system/${MasterStorage}'
         SelectionName: !Ref 'AWS::StackName'
+  FrontendDockerRegistry:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: springleaf/frontend
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Sid: AllowPushPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !GetAtt 'AgentIAMRole.Arn'
+            Action:
+              - 'ecr:BatchCheckLayerAvailability'
+              - 'ecr:BatchGetImage'
+              - 'ecr:CompleteLayerUpload'
+              - 'ecr:GetDownloadUrlForLayer'
+              - 'ecr:InitiateLayerUpload'
+              - 'ecr:PutImage'
+              - 'ecr:UploadLayerPart'
+
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
@@ -2359,3 +2401,8 @@ Outputs:
     Value: !GetAtt 'AgentIAMRole.Arn'
     Export:
       Name: !Sub '${AWS::StackName}-AgentIAMRole'
+  FrontendDockerRegistryName:
+    Description: ''
+    Value: !Ref 'FrontendDockerRegistry'
+    Export:
+      Name: !Sub '${AWS::StackName}-FrontendDockerRegistry'
