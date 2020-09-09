@@ -529,7 +529,7 @@ Resources:
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 25
       HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 2
+      UnhealthyThresholdCount: 10
       Matcher:
         HttpCode: '200-299'
       Port: 8080
@@ -929,9 +929,9 @@ Resources:
               'java-1.8.0-amazon-corretto': []
               'ruby': []
             rubygems:
-              'aws-sdk-autoscaling': ['1.13.0']
-              'aws-sdk-sqs': ['1.10.0']
-              daemons: ['1.2.6']
+              'aws-sdk-autoscaling': ['1.45.0']
+              'aws-sdk-sqs': ['1.32.0']
+              daemons: ['1.3.1']
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -958,16 +958,16 @@ Resources:
                 case ARGV.first
                   when 'start'
                     puts "Starting #{APP_NAME}..."
-                    system(APP_PATH, 'start')
+                    system({"HOME" => "/root"}, APP_PATH, 'start')
                     exit($?.exitstatus)
                   when 'stop'
-                    system(APP_PATH, 'stop')
+                    system({"HOME" => "/root"}, APP_PATH, 'stop')
                     exit($?.exitstatus)
                   when 'restart'
-                    system(APP_PATH, 'restart')
+                    system({"HOME" => "/root"}, APP_PATH, 'restart')
                     exit($?.exitstatus)
                   when 'status'
-                    system(APP_PATH, 'status')
+                    system({"HOME" => "/root"}, APP_PATH, 'status')
                     exit($?.exitstatus)
                 end
                 unless %w{start stop restart status}.include? ARGV.first
@@ -1212,7 +1212,6 @@ Resources:
                 SHELL=/bin/bash
                 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin
                 MAILTO=root
-                HOME=/
                 * * * * * root /opt/cloudwatch-build-active.sh
               mode: '000600'
               owner: root
@@ -1222,7 +1221,6 @@ Resources:
                 SHELL=/bin/bash
                 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin
                 MAILTO=root
-                HOME=/
                 * * * * * root /opt/cloudwatch-build-queue.sh
               mode: '000600'
               owner: root
@@ -1232,7 +1230,6 @@ Resources:
                 SHELL=/bin/bash
                 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/opt/aws/bin
                 MAILTO=root
-                HOME=/
                 * * * * * root /opt/cloudwatch-build-active-queue.sh
               mode: '000600'
               owner: root
@@ -1396,7 +1393,7 @@ Resources:
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 25
       HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 2
+      UnhealthyThresholdCount: 5
       Matcher:
         HttpCode: '200-299'
       Port: 8080
@@ -1822,9 +1819,9 @@ Resources:
             yum:
               'ruby': []
             rubygems:
-              'aws-sdk-autoscaling': ['1.13.0']
-              'aws-sdk-ec2': ['1.62.0']
-              daemons: ['1.2.6']
+              'aws-sdk-autoscaling': ['1.45.0']
+              'aws-sdk-ec2': ['1.193.0']
+              daemons: ['1.3.1']
           files:
             '/root/agent.xml':
               content: |
@@ -1890,16 +1887,16 @@ Resources:
                 case ARGV.first
                   when 'start'
                     puts "Starting #{APP_NAME}..."
-                    system(APP_PATH, 'start')
+                    system({"HOME" => "/root"}, APP_PATH, 'start')
                     exit($?.exitstatus)
                   when 'stop'
-                    system(APP_PATH, 'stop')
+                    system({"HOME" => "/root"}, APP_PATH, 'stop')
                     exit($?.exitstatus)
                   when 'restart'
-                    system(APP_PATH, 'restart')
+                    system({"HOME" => "/root"}, APP_PATH, 'restart')
                     exit($?.exitstatus)
                   when 'status'
-                    system(APP_PATH, 'status')
+                    system({"HOME" => "/root"}, APP_PATH, 'status')
                     exit($?.exitstatus)
                 end
                 unless %w{start stop restart status}.include? ARGV.first
