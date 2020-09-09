@@ -105,6 +105,7 @@ Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasSingleClusterInstance: !Equals [!Ref ClusterInstanceCount, '1']
   HasDedicatedMasterNodes: !Not [!Equals [!Ref DedicatedMasterCount, 0]]
+  HasEBSEnabled: !Equals [!Ref EBSEnabled, 'true']
   HasAlertTopicAndNotSingleClusterInstance: !And [!Condition HasAlertTopic, !Not [!Condition HasSingleClusterInstance]]
 Resources:
   RecordSet:
@@ -152,10 +153,12 @@ Resources:
           - 'es:ESHttp*'
           Resource: !Sub 'arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${DomainName}/*'
       DomainName: !Ref 'DomainName'
-      EBSOptions:
-        EBSEnabled: !Ref EBSEnabled
+      EBSOptions: !If
+      - HasEBSEnabled
+      - EBSEnabled: true
         VolumeSize: !Ref EBSVolumeSize
         VolumeType: gp2
+      - EBSEnabled: false
       ElasticsearchClusterConfig:
         DedicatedMasterCount: !If [HasDedicatedMasterNodes, !Ref DedicatedMasterCount, !Ref 'AWS::NoValue']
         DedicatedMasterEnabled: !If [HasDedicatedMasterNodes, true, false]
