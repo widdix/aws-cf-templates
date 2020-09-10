@@ -60,6 +60,7 @@ Metadata:
       - AgentMinSize
       - AgentMaxBuildWaitTimeInSeconds
       - AgentLogsRetentionInDays
+      - AgentAMI
     - Label:
         default: 'Security'
       Parameters:
@@ -191,6 +192,10 @@ Parameters:
     Type: Number
     Default: 14
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  AgentAMI:
+    Description: 'Specifies the AMI of the agent.'
+    Type: AWS::EC2::Image::Id
+    Default: 'ami-06ab714a858dd8b2b'
   SubDomainNameWithDot:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
@@ -553,6 +558,7 @@ Resources:
               - 'ssmmessages:*' # SSM Agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
               - 'ssm:UpdateInstanceInformation' # SSM agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
               - 'ec2messages:*' # SSM Session Manager by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+              - 'ssm:ListInstanceAssociations'
               Resource: '*'
         - !Ref 'AWS::NoValue'
       - PolicyName: cloudwatch
@@ -569,7 +575,10 @@ Resources:
           Statement:
           - Sid: write
             Effect: Allow
-            Action: 'autoscaling:CompleteLifecycleAction'
+            Action:
+            - 'autoscaling:CompleteLifecycleAction'
+            - 'autoscaling:DescribeAutoScalingGroups'
+            - 'autoscaling:UpdateAutoScalingGroup'
             Resource: '*'
       - PolicyName: sqs
         PolicyDocument:
@@ -599,6 +608,32 @@ Resources:
           Statement:
           - Effect: Allow
             Action: 'sts:AssumeRole'
+            Resource: '*'
+      - PolicyName: ec2
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'ec2:CreateTags'
+            - 'ec2:DescribeInstances'
+            - 'ec2:DescribeInstanceStatus'
+            - 'ec2:DescribeRegions'
+            - 'ec2:DescribeSpotFleetInstances'
+            - 'ec2:DescribeSpotFleetRequests'
+            - 'ec2:ModifySpotFleetRequest'
+            - 'ec2:TerminateInstances'
+            - 'ec2:UpdateAutoScalingGroup'
+            Resource: '*'
+      - PolicyName: iam
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'iam:ListInstanceProfiles'
+            - 'iam:ListRoles'
+            - 'iam:PassRole'
             Resource: '*'
   MasterIAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
@@ -1477,6 +1512,26 @@ Resources:
           - Effect: Allow
             Action: 'sts:AssumeRole'
             Resource: '*'
+      # TODO: Make this better: https://docs.aws.amazon.com/AmazonECR/latest/userguide/security_iam_id-based-policy-examples.html#security_iam_id-based-policy-examples-access-one-bucket
+      - PolicyName: ecr
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'ecr:BatchCheckLayerAvailability'
+            - 'ecr:BatchGetImage'
+            - 'ecr:DescribeImages'
+            - 'ecr:DescribeImageScanFindings'
+            - 'ecr:DescribeRepositories'
+            - 'ecr:GetAuthorizationToken'
+            - 'ecr:GetDownloadUrlForLayer'
+            - 'ecr:GetLifecyclePolicy'
+            - 'ecr:GetLifecyclePolicyPreview'
+            - 'ecr:GetRepositoryPolicy'
+            - 'ecr:ListImages'
+            - 'ecr:ListTagsForResource'
+            Resource: '*'
   AgentIAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
     Condition: HasIAMUserSSHAccess
@@ -1693,7 +1748,7 @@ Resources:
                   SaveUserName=${SaveUserName//"@"/".at."}
                   if [ "${#SaveUserName}" -le "32" ]; then
                     if ! id -u "$SaveUserName" >/dev/null 2>&1; then
-                      #sudo will read each file in /etc/sudoers.d, skipping file names that end in ‘~’ or contain a ‘.’ character to avoid causing problems with package manager or editor temporary/backup files.
+                      #sudo will read each file in /etc/sudoers.d, skipping file names that end in ?~? or contain a ?.? character to avoid causing problems with package manager or editor temporary/backup files.
                       SaveUserFileName=$(echo "$SaveUserName" | tr "." " ")
                       /usr/sbin/useradd "$SaveUserName"
                       echo "$SaveUserName ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$SaveUserFileName"
@@ -1738,9 +1793,6 @@ Resources:
               command: 'amazon-linux-extras enable corretto8'
               test: "! grep -Fxq '[amzn2extra-corretto8]' /etc/yum.repos.d/amzn2-extras.repo"
         install:
-          packages:
-            yum:
-              'java-1.8.0-amazon-corretto': []
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -1781,6 +1833,7 @@ Resources:
                 ensureRunning: !If [HasSystemsManagerAccess, true, false]
         setup:
           packages:
+            # TODO: We should be baking Ruby and the gems below into the agent AMI to shorten agent boot up time.
             yum:
               'ruby': []
             rubygems:
@@ -1956,10 +2009,6 @@ Resources:
               cwd: '/var/lib/jenkins'
               test: 'if /root/check-agent.sh; then exit 1; else exit 0; fi'
         custom:
-          packages:
-            yum:
-              git: []
-              docker: []
           commands:
             'a_add_to_docker_group':
               command: 'usermod -a -G docker jenkins'
@@ -1988,7 +2037,7 @@ Resources:
                 - '/opt/agent-healthcheck/daemon.rb'
                 - '/opt/agent-healthcheck/server.rb'
     Properties:
-      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+      ImageId: !Ref AgentAMI
       IamInstanceProfile: !Ref AgentIP
       InstanceType: !Ref AgentInstanceType
       SecurityGroups:
@@ -2289,6 +2338,28 @@ Resources:
         Resources:
         - !Sub 'arn:${AWS::Partition}:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:file-system/${MasterStorage}'
         SelectionName: !Ref 'AWS::StackName'
+  FrontendDockerRegistry:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: springleaf/frontend
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Sid: AllowPushPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !GetAtt 'AgentIAMRole.Arn'
+            Action:
+              - 'ecr:BatchCheckLayerAvailability'
+              - 'ecr:BatchGetImage'
+              - 'ecr:CompleteLayerUpload'
+              - 'ecr:GetDownloadUrlForLayer'
+              - 'ecr:InitiateLayerUpload'
+              - 'ecr:PutImage'
+              - 'ecr:UploadLayerPart'
+
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
@@ -2324,3 +2395,8 @@ Outputs:
     Value: !GetAtt 'AgentIAMRole.Arn'
     Export:
       Name: !Sub '${AWS::StackName}-AgentIAMRole'
+  FrontendDockerRegistryName:
+    Description: ''
+    Value: !Ref 'FrontendDockerRegistry'
+    Export:
+      Name: !Sub '${AWS::StackName}-FrontendDockerRegistry'
