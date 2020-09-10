@@ -1738,6 +1738,9 @@ Resources:
               command: 'amazon-linux-extras enable corretto8'
               test: "! grep -Fxq '[amzn2extra-corretto8]' /etc/yum.repos.d/amzn2-extras.repo"
         install:
+          packages:
+            yum:
+              'java-1.8.0-amazon-corretto': []
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -1778,7 +1781,6 @@ Resources:
                 ensureRunning: !If [HasSystemsManagerAccess, true, false]
         setup:
           packages:
-            # TODO: We should be baking Ruby and the gems below into the agent AMI to shorten agent boot up time.
             yum:
               'ruby': []
             rubygems:
@@ -1954,6 +1956,10 @@ Resources:
               cwd: '/var/lib/jenkins'
               test: 'if /root/check-agent.sh; then exit 1; else exit 0; fi'
         custom:
+          packages:
+            yum:
+              git: []
+              docker: []
           commands:
             'a_add_to_docker_group':
               command: 'usermod -a -G docker jenkins'
