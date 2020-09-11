@@ -137,14 +137,13 @@ Parameters:
     Default: 'false'
   PerformanceInsights:
     Type: String
-    AllowedValues:
-      - true
-      - false
+    Description: 'Enable Performance Insights in rds (https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PerfInsights.html).'
+    AllowedValues: [true, false]
     Default: true
   PerformanceInsightsRetentionPeriod:
     Type: Number
     Default: 7
-    Description: "In number of days. 0 disables retention. Allowed: 0 - 35."
+    Description: "In number of days. 0 disables retention. Allowed: 0 - 731."
     MinValue: 0
     MaxValue: 731
 Conditions:
