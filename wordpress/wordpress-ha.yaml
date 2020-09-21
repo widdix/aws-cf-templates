@@ -267,7 +267,7 @@ Mappings:
       AMI: 'ami-05655c267c89566dd'
     'us-west-2':
       AMI: 'ami-0873b46c45c11058d'
-  DBServerInstanceType:
+  DBServerInstanceTypeMap:
     'db.t3.micro':
       PerformanceInsights: false
     'db.t3.small':
@@ -397,7 +397,7 @@ Conditions:
   HasAlertTopicAndNotEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasNotEFSProvisionedThroughput]
   HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
   HasEFSBackupRetentionPeriod: !Not [!Equals [!Ref EFSBackupRetentionPeriod, 0]]
-  HasRDSPerformanceInsights: !Equals [!FindInMap [!Ref DBServerInstanceTypem, 'PerformanceInsights'], true]
+  HasRDSPerformanceInsights: !Equals [!FindInMap [DBServerInstanceTypeMap, PerformanceInsights, !Ref DBServerInstanceType], true]
 Resources:
   WebServerLogs:
     Type: 'AWS::Logs::LogGroup'
