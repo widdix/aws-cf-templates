@@ -139,7 +139,7 @@ Parameters:
   WebServerInstanceType:
     Description: 'The instance type of web servers (e.g. t2.micro).'
     Type: String
-    Default: 't2.micro'
+    Default: 't3.micro'
   WebServerLogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain log events.'
     Type: Number
@@ -164,9 +164,46 @@ Parameters:
     Type: String
     Default: 'cron(0 5 ? * * *)'
   DBServerInstanceType:
-    Description: 'The instance type of database server (e.g. db.t2.micro).'
+    Description: 'The instance type of database server (e.g. db.t3.micro).'
     Type: String
-    Default: 'db.t2.micro'
+    Default: 'db.t3.micro'
+    AllowedValues:
+    - 'db.t3.micro'
+    - 'db.t3.small'
+    - 'db.t3.medium'
+    - 'db.t3.large'
+    - 'db.t3.xlarge'
+    - 'db.t3.2xlarge'
+    - 'db.m6g.large'
+    - 'db.m6g.xlarge'
+    - 'db.m6g.2xlarge'
+    - 'db.m6g.4xlarge'
+    - 'db.m6g.8xlarge'
+    - 'db.m6g.12xlarge'
+    - 'db.m6g.16xlarge'
+    - 'db.m5.large'
+    - 'db.m5.xlarge'
+    - 'db.m5.2xlarge'
+    - 'db.m5.4xlarge'
+    - 'db.m5.8xlarge'
+    - 'db.m5.12xlarge'
+    - 'db.m5.16xlarge'
+    - 'db.m5.24xlarge'
+    - 'db.r6g.large'
+    - 'db.r6g.xlarge'
+    - 'db.r6g.2xlarge'
+    - 'db.r6g.4xlarge'
+    - 'db.r6g.8xlarge'
+    - 'db.r6g.12xlarge'
+    - 'db.r6g.16xlarge'
+    - 'db.r5.large'
+    - 'db.r5.xlarge'
+    - 'db.r5.2xlarge'
+    - 'db.r5.4xlarge'
+    - 'db.r5.8xlarge'
+    - 'db.r5.12xlarge'
+    - 'db.r5.16xlarge'
+    - 'db.r5.24xlarge'
   DBBackupRetentionPeriod:
     Description: 'The number of days to keep snapshots of the database.'
     Type: Number
@@ -230,6 +267,119 @@ Mappings:
       AMI: 'ami-05655c267c89566dd'
     'us-west-2':
       AMI: 'ami-0873b46c45c11058d'
+  DBServerInstanceTypeMap:
+    'db.t3.micro':
+      PerformanceInsights: false
+    'db.t3.small':
+      PerformanceInsights: false
+    'db.t3.medium':
+      PerformanceInsights: true
+    'db.t3.large':
+      PerformanceInsights: true
+    'db.t3.xlarge':
+      PerformanceInsights: true
+    'db.t3.2xlarge':
+      PerformanceInsights: true
+    'db.m6g.large':
+      PerformanceInsights: false
+    'db.m6g.xlarge':
+      PerformanceInsights: false
+    'db.m6g.2xlarge':
+      PerformanceInsights: false
+    'db.m6g.4xlarge':
+      PerformanceInsights: false
+    'db.m6g.8xlarge':
+      PerformanceInsights: false
+    'db.m6g.12xlarge':
+      PerformanceInsights: false
+    'db.m6g.16xlarge':
+      PerformanceInsights: false
+    'db.m5.large':
+      PerformanceInsights: true
+    'db.m5.xlarge':
+      PerformanceInsights: true
+    'db.m5.2xlarge':
+      PerformanceInsights: true
+    'db.m5.4xlarge':
+      PerformanceInsights: true
+    'db.m5.8xlarge':
+      PerformanceInsights: true
+    'db.m5.12xlarge':
+      PerformanceInsights: true
+    'db.m5.16xlarge':
+      PerformanceInsights: true
+    'db.m5.24xlarge':
+      PerformanceInsights: true
+    'db.r6g.large':
+      PerformanceInsights: false
+    'db.r6g.xlarge':
+      PerformanceInsights: false
+    'db.r6g.2xlarge':
+      PerformanceInsights: false
+    'db.r6g.4xlarge':
+      PerformanceInsights: false
+    'db.r6g.8xlarge':
+      PerformanceInsights: false
+    'db.r6g.12xlarge':
+      PerformanceInsights: false
+    'db.r6g.16xlarge':
+      PerformanceInsights: false
+    'db.r5.large':
+      PerformanceInsights: true
+    'db.r5.xlarge':
+      PerformanceInsights: true
+    'db.r5.2xlarge':
+      PerformanceInsights: true
+    'db.r5.4xlarge':
+      PerformanceInsights: true
+    'db.r5.8xlarge':
+      PerformanceInsights: true
+    'db.r5.12xlarge':
+      PerformanceInsights: true
+    'db.r5.16xlarge':
+      PerformanceInsights: true
+    'db.r5.24xlarge':
+      PerformanceInsights: true
+    'db.t2.micro':
+      PerformanceInsights: false
+    'db.t2.small':
+      PerformanceInsights: false
+    'db.t2.medium':
+      PerformanceInsights: true
+    'db.t2.large':
+      PerformanceInsights: true
+    'db.t2.xlarge':
+      PerformanceInsights: true
+    'db.t2.2xlarge':
+      PerformanceInsights: true
+    'db.m4.large':
+      PerformanceInsights: true
+    'db.m4.xlarge':
+      PerformanceInsights: true
+    'db.m4.2xlarge':
+      PerformanceInsights: true
+    'db.m4.4xlarge':
+      PerformanceInsights: true
+    'db.m4.10xlarge':
+      PerformanceInsights: true
+    'db.m4.16xlarge':
+      PerformanceInsights: true
+    'db.m3.medium':
+      PerformanceInsights: true
+    'db.m3.large':
+      PerformanceInsights: true
+    'db.m3.xlarge':
+      PerformanceInsights: true
+    'db.m3.2xlarge':
+      PerformanceInsights: true
+    'db.m1.small':
+      PerformanceInsights: true
+    'db.m1.medium':
+      PerformanceInsights: true
+    'db.m1.large':
+      PerformanceInsights: true
+    'db.m1.xlarge':
+      PerformanceInsights: true
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasKeyName: !Not [!Equals [!Ref WebServerKeyName, '']]
@@ -247,6 +397,7 @@ Conditions:
   HasAlertTopicAndNotEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasNotEFSProvisionedThroughput]
   HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
   HasEFSBackupRetentionPeriod: !Not [!Equals [!Ref EFSBackupRetentionPeriod, 0]]
+  HasRDSPerformanceInsights: !Equals [!FindInMap [DBServerInstanceTypeMap, !Ref DBServerInstanceType, PerformanceInsights], true]
 Resources:
   WebServerLogs:
     Type: 'AWS::Logs::LogGroup'
@@ -468,8 +619,8 @@ Resources:
       DBSubnetGroupName: !Ref DBSubnetGroup
       MultiAZ: true
       StorageType: gp2
-      EnablePerformanceInsights: true
-      PerformanceInsightsRetentionPeriod: 7
+      EnablePerformanceInsights: !If [HasRDSPerformanceInsights, true, false]
+      PerformanceInsightsRetentionPeriod: !If [HasRDSPerformanceInsights, 7, !Ref 'AWS::NoValue']
   DatabaseBurstBalanceTooLowAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
