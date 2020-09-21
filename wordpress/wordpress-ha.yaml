@@ -397,7 +397,7 @@ Conditions:
   HasAlertTopicAndNotEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasNotEFSProvisionedThroughput]
   HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
   HasEFSBackupRetentionPeriod: !Not [!Equals [!Ref EFSBackupRetentionPeriod, 0]]
-  HasRDSPerformanceInsights: !Equals [!FindInMap [DBServerInstanceTypeMap, PerformanceInsights, !Ref DBServerInstanceType], true]
+  HasRDSPerformanceInsights: !Equals [!FindInMap [DBServerInstanceTypeMap, !Ref DBServerInstanceType, PerformanceInsights], true]
 Resources:
   WebServerLogs:
     Type: 'AWS::Logs::LogGroup'
