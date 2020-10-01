@@ -434,6 +434,7 @@ Resources:
       Protocol: HTTPS
       Certificates:
       - CertificateArn: !Ref ElbAcmCertificate
+      SslPolicy: 'ELBSecurityPolicy-FS-1-2-Res-2019-08'
   LoadBalancerTargetGroup: # not monitored, but LoadBalancer is monitored!
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
