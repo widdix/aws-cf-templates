@@ -537,7 +537,7 @@ Resources:
         ContainerPort: !If [HasProxyImage, !Ref ProxyPort, !Ref AppPort]
         RegistryArn: !GetAtt 'ServiceDiscovery.Arn'
       NetworkConfiguration:
-        AwsvpcConfiguration:
+        AwsVpcConfiguration:
           AssignPublicIp: !If [HasSubnetsReachPublic, ENABLED, DISABLED]
           SecurityGroups:
           - !Ref ServiceSecurityGroup
