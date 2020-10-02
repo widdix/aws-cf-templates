@@ -367,6 +367,7 @@ Resources:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 443
       Protocol: HTTPS
+      SslPolicy: 'ELBSecurityPolicy-FS-1-2-Res-2019-08'
   LoadBalancerListenerHttpRedirect:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
