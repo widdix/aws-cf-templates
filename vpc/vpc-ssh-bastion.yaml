@@ -242,8 +242,8 @@ Resources:
           - 'iam:GetSSHPublicKey'
           Resource:
           - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
-  LaunchConfiguration:
-    Type: 'AWS::AutoScaling::LaunchConfiguration'
+  LaunchTemplate:
+    Type: 'AWS::EC2::LaunchTemplate'
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
@@ -447,8 +447,8 @@ Resources:
               content: !Sub |
                 [cfn-auto-reloader-hook]
                 triggers=post.update
-                path=Resources.LaunchConfiguration.Metadata.AWS::CloudFormation::Init
-                action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=LaunchConfiguration
+                path=Resources.LaunchTemplate.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=LaunchTemplate
                 runas=root
           services:
             sysvinit:
@@ -462,26 +462,34 @@ Resources:
                 enabled: !If [HasSystemsManagerAccess, true, false]
                 ensureRunning: !If [HasSystemsManagerAccess, true, false]
     Properties:
-      AssociatePublicIpAddress: true
-      EbsOptimized: false
-      IamInstanceProfile: !Ref InstanceProfile
-      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
-      InstanceType: !Ref InstanceType
-      SecurityGroups:
-      - !Ref SecurityGroup
-      KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
-      UserData:
-        'Fn::Base64': !Sub |
-          #!/bin/bash -ex
-          trap '/opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}' ERR
-          INSTANCEID=$(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
-          aws --region ${AWS::Region} ec2 associate-address --instance-id $INSTANCEID --allocation-id ${EIP.AllocationId}
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
-          /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+      LaunchTemplateData:
+        IamInstanceProfile:
+          Name: !Ref InstanceProfile
+        ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+        InstanceType: !Ref InstanceType
+        KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+        MetadataOptions:
+          HttpTokens: required
+        NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          Groups:
+          - !Ref SecurityGroup
+        UserData:
+          'Fn::Base64': !Sub |
+            #!/bin/bash -ex
+            trap '/opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}' ERR
+            TOKEN=$(curl --silent --max-time 60 -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 30")
+            INSTANCEID=$(curl --silent --max-time 60 -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+            aws --region ${AWS::Region} ec2 associate-address --instance-id $INSTANCEID --allocation-id ${EIP.AllocationId}
+            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchTemplate --region ${AWS::Region}
+            /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
-      LaunchConfigurationName: !Ref LaunchConfiguration
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt 'LaunchTemplate.LatestVersionNumber'
       MaxSize: '1'
       MinSize: '1'
       Tags:
