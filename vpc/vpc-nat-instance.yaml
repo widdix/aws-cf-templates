@@ -99,45 +99,45 @@ Parameters:
 Mappings:
   RegionMap: # TODO update to Amazon Linux 2 (don't forget to adjust awslogs config as well)
     'af-south-1':
-      NATAMI: 'ami-068bf79dfb2bc0474'
+      NATAMI: 'ami-00b2589b3a597efda'
     'eu-north-1':
-      NATAMI: 'ami-04d58d9ed10c893b4'
+      NATAMI: 'ami-07c7e832506fccff3'
     'ap-south-1':
-      NATAMI: 'ami-0240522d3ed3ae5ec'
+      NATAMI: 'ami-00999044593c895de'
     'eu-west-3':
-      NATAMI: 'ami-0966fbf8a2a71fa29'
+      NATAMI: 'ami-0c91611c0eda570b1'
     'eu-west-2':
-      NATAMI: 'ami-0e430e165487ea925'
+      NATAMI: 'ami-0b591cead6116fc3d'
     'eu-south-1':
-      NATAMI: 'ami-06a4980f3677a1716'
+      NATAMI: 'ami-0e99be22e6f77a68e'
     'eu-west-1':
-      NATAMI: 'ami-032df3592cc862884'
+      NATAMI: 'ami-01ae0e01e7fffd105'
     'ap-northeast-2':
-      NATAMI: 'ami-07bed51507c769843'
+      NATAMI: 'ami-0ded5b0f6eeead568'
     'me-south-1':
-      NATAMI: 'ami-0ecaad98428393640'
+      NATAMI: 'ami-08f7c4beae3e83c61'
     'ap-northeast-1':
-      NATAMI: 'ami-0481e994e8d29db03'
+      NATAMI: 'ami-03a25ad0215eba6a0'
     'sa-east-1':
-      NATAMI: 'ami-04cb968946195a4bc'
+      NATAMI: 'ami-09daad74353510fb1'
     'ca-central-1':
-      NATAMI: 'ami-062bcf715d048ae22'
+      NATAMI: 'ami-041b520d98ac275aa'
     'ap-east-1':
-      NATAMI: 'ami-851053f4'
+      NATAMI: 'ami-fd57158c'
     'ap-southeast-1':
-      NATAMI: 'ami-09a263088286e87d1'
+      NATAMI: 'ami-057b90a68b985aba3'
     'ap-southeast-2':
-      NATAMI: 'ami-083dc6c6eb8ac18a8'
+      NATAMI: 'ami-0a9440ece633784bc'
     'eu-central-1':
-      NATAMI: 'ami-0a3d79918c0b64aac'
+      NATAMI: 'ami-0e7d350caf8ca5e8d'
     'us-east-1':
-      NATAMI: 'ami-01ef31f9f39c5aaed'
+      NATAMI: 'ami-0f498e123a72a0a36'
     'us-east-2':
-      NATAMI: 'ami-06064740484d375de'
+      NATAMI: 'ami-00b34bbb100d6cfa1'
     'us-west-1':
-      NATAMI: 'ami-0e365eb5252ebe986'
+      NATAMI: 'ami-0567fb64a58cd3a34'
     'us-west-2':
-      NATAMI: 'ami-0fcc6101b7f2370b9'
+      NATAMI: 'ami-041799070f9192726'
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
