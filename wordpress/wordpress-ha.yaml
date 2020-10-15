@@ -1105,7 +1105,7 @@ Resources:
                 enabled: !If [HasSystemsManagerAccess, true, false]
                 ensureRunning: !If [HasSystemsManagerAccess, true, false]
     Properties:
-       LaunchTemplateData:
+      LaunchTemplateData:
         IamInstanceProfile:
           Name: !Ref WebServerInstanceProfile
         ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
