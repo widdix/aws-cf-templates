@@ -1318,7 +1318,7 @@ Resources:
             VolumeSize: !Ref MasterVolumeSize
             VolumeType: gp2
         IamInstanceProfile:
-          Name: !Ref InstanceProfile
+          Name: !Ref MasterIP
         ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
         InstanceType: !Ref MasterInstanceType
         KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
