@@ -35,6 +35,7 @@ Metadata:
       Parameters:
       - DefaultRootObject
       - DefaultErrorPagePath
+      - DefaultErrorResponseCode
     - Label:
         default: 'DNS Parameters'
       Parameters:
@@ -86,6 +87,11 @@ Parameters:
     Description: 'Optional path of the error page for the website (e.g. /error.html).'
     Type: String
     Default: ''
+  DefaultErrorResponseCode:
+    Description: 'The HTTP status code that you want to return along with the error page (requires DefaultErrorPagePath).'
+    Type: String
+    Default: '404'
+    AllowedValues: ['200', '404']
   EnableRedirectSubDomainName:
     Description: 'Sometimes, you want one (sub)domain to redirect to the primary name. E.g., if your primary website is www.widdix.net, you want widdix.net to redirect to www.widdix.net.'
     Type: String
@@ -206,8 +212,8 @@ Resources:
           HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
         CustomErrorResponses: !If
         - HasDefaultErrorPagePath
-        - - ErrorCode: 403 # not found
-            ResponseCode: 404
+        - - ErrorCode: 403 # 403 from S3 indicates that the file does not exists
+            ResponseCode: !Ref DefaultErrorResponseCode
             ResponsePagePath: !Ref DefaultErrorPagePath
         - []
         DefaultCacheBehavior:
