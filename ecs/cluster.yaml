@@ -848,6 +848,7 @@ Resources:
         InstanceType: !Ref InstanceType
         KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
         MetadataOptions:
+          HttpPutResponseHopLimit: 2 # support Docker containers
           HttpTokens: required
         SecurityGroupIds:
         - !Ref SecurityGroup
