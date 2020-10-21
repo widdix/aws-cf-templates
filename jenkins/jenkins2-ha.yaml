@@ -976,6 +976,7 @@ Resources:
         InstanceType: !Ref MasterInstanceType
         KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
         MetadataOptions:
+          HttpPutResponseHopLimit: 2 # allow the build to run inside Docker
           HttpTokens: required
         SecurityGroupIds:
         - !Ref MasterSG

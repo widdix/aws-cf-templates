@@ -1323,6 +1323,7 @@ Resources:
         InstanceType: !Ref MasterInstanceType
         KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
         MetadataOptions:
+          HttpPutResponseHopLimit: 2 # allow the build to run inside Docker
           HttpTokens: required
         SecurityGroupIds:
         - !Ref MasterSG
@@ -1947,7 +1948,7 @@ Resources:
                 Aws.config.update(region: $conf['region'])
                 $log.info 'server started'
                 $token = `curl --silent --max-time 60 -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 30"`
-                $instanceId = `curl --silent --max-time 60 -H "X-aws-ec2-metadata-token: #{token}" http://169.254.169.254/latest/meta-data/instance-id`
+                $instanceId = `curl --silent --max-time 60 -H "X-aws-ec2-metadata-token: #{$token}" http://169.254.169.254/latest/meta-data/instance-id`
                 def isHealthy(agent)
                   autoscaling = Aws::AutoScaling::Client.new()
                   ec2 = Aws::EC2::Client.new()
@@ -2047,6 +2048,7 @@ Resources:
         InstanceType: !Ref AgentInstanceType
         KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
         MetadataOptions:
+          HttpPutResponseHopLimit: 2 # allow the build to run inside Docker
           HttpTokens: required
         SecurityGroupIds:
         - !Ref AgentSG
