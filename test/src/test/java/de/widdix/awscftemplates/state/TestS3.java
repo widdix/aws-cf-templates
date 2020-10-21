@@ -1,22 +1,21 @@
 package de.widdix.awscftemplates.state;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
-import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import de.widdix.awscftemplates.ACloudFormationTest;
 import de.widdix.awscftemplates.Context;
 import org.junit.Test;
 
-public class TestS3 {
+public class TestS3 extends ACloudFormationTest {
 
     @Test
     public void test() {
-        final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
-        System.out.println("reservations " + ec2.describeInstances().getReservations().size());
+        final Context context = new Context();
+        final String stackName = "s3-" + this.random8String();
+        try {
+            this.createStack(context, stackName, "state/s3.yaml");
+            // TODO how can we check if this stack works?
+        } finally {
+            this.deleteStack(context, stackName);
+        }
     }
 
 }
