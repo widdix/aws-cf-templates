@@ -65,7 +65,7 @@ public class TestFargateService extends ACloudFormationTest {
                                 }
                                 return WS.getResponseAsString(response);
                             };
-                            final String response = this.retry(callable);
+                            final String response = this.retry(context, callable);
                             // check if nginx page appears
                             Assert.assertTrue("http response body contains \"Welcome to nginx!\"", response.contains("Welcome to nginx!"));
                         } finally {
@@ -121,7 +121,7 @@ public class TestFargateService extends ACloudFormationTest {
                             }
                             return WS.getResponseAsString(response);
                         };
-                        final String response = this.retry(callable);
+                        final String response = this.retry(context, callable);
                         // check if nginx page appears
                         Assert.assertTrue("http response body contains \"Welcome to nginx!\"", response.contains("Welcome to nginx!"));
                     } finally {
@@ -171,7 +171,7 @@ public class TestFargateService extends ACloudFormationTest {
                         }
                         return WS.getResponseAsString(response);
                     };
-                    final String response = this.retry(callable);
+                    final String response = this.retry(context, callable);
                     // check if nginx page appears
                     Assert.assertTrue("http response body contains \"Welcome to nginx!\"", response.contains("Welcome to nginx!"));
                 } finally {
@@ -246,7 +246,7 @@ public class TestFargateService extends ACloudFormationTest {
                                         }
                                         return WS.getResponseAsString(response);
                                     };
-                                    final String response = this.retry(callable);
+                                    final String response = this.retry(context, callable);
                                     // check if nginx page appears
                                     Assert.assertTrue("http response body contains \"Welcome to nginx!\"", response.contains("Welcome to nginx!"));
                                     session.disconnect();

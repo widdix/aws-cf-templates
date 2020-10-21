@@ -60,7 +60,7 @@ public class TestECSCluster extends ACloudFormationTest {
                         }
                         return true;
                     };
-                    Assert.assertTrue("Container instances ready", this.retry(callable));
+                    Assert.assertTrue("Container instances ready", this.retry(context, callable));
                 } finally {
                     this.deleteStack(context, stackName);
                 }
@@ -114,7 +114,7 @@ public class TestECSCluster extends ACloudFormationTest {
                         }
                         return true;
                     };
-                    Assert.assertTrue("Container instances ready", this.retry(callable));
+                    Assert.assertTrue("Container instances ready", this.retry(context, callable));
                 } finally {
                     this.deleteStack(context, stackName);
                 }

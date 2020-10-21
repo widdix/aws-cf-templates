@@ -58,7 +58,7 @@ public class TestSecurityAuthProxy extends ACloudFormationTest {
                             }
                             return WS.getResponseAsString(response);
                         };
-                        final String response = this.retry(callable);
+                        final String response = this.retry(context, callable);
                         // check if OAuth2 Proxy appears in HTML
                         Assert.assertTrue("http response body contains \"OAuth2 Proxy\"", response.contains("OAuth2 Proxy"));
                     } finally {

@@ -76,9 +76,9 @@ public class TestStaticWebsite extends ACloudFormationTest {
                             }
                             return response;
                         };
-                        this.retry(callable1);
-                        this.retry(callable2);
-                        this.retry(callable3);
+                        this.retry(context, callable1);
+                        this.retry(context, callable2);
+                        this.retry(context, callable3);
                     } finally {
                         this.deleteObject(context, domainName, "folder/index.html");
                         this.deleteObject(context, domainName, "index.html");
@@ -140,8 +140,8 @@ public class TestStaticWebsite extends ACloudFormationTest {
                         }
                         return response;
                     };
-                    this.retry(callable1);
-                    this.retry(callable2);
+                    this.retry(context, callable1);
+                    this.retry(context, callable2);
                 } finally {
                     this.deleteObject(context, domainName, "index.html");
                 }

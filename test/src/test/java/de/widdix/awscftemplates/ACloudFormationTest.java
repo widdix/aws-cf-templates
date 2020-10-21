@@ -198,12 +198,12 @@ public abstract class ACloudFormationTest extends AAWSTest {
             this.deleteStack(context, stackName);
             return true;
         };
-        this.retry(callable);
+        this.retry(context, callable);
     }
 
     protected final void deleteStack(final Context context, final String stackName) {
         if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
-            if (Config.get(Config.Key.FAILURE_POLICY).equals("retain") && context.hasStackFailure()) {
+            if (Config.get(Config.Key.FAILURE_POLICY).equals("retain") && context.hasFailure()) {
                 System.out.println("Skip stack deletion because of stack failure in context and FAILURE_POLICY := retain");
             } else {
                 this.cf.deleteStack(new DeleteStackRequest().withStackName(stackName));

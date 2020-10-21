@@ -45,7 +45,7 @@ public class TestJenkins extends ACloudFormationTest {
                         }
                         return WS.getResponseAsString(response);
                     };
-                    final String response = this.retry(callable);
+                    final String response = this.retry(context, callable);
                     // check if Jenkins appears in HTML
                     Assert.assertTrue("http response body contains \"Jenkins\"", response.contains("Jenkins"));
                 } finally {
@@ -92,7 +92,7 @@ public class TestJenkins extends ACloudFormationTest {
                         }
                         return WS.getResponseAsString(response);
                     };
-                    final String response = this.retry(callable);
+                    final String response = this.retry(context, callable);
                     // check if Jenkins appears in HTML
                     Assert.assertTrue("http response body contains \"Jenkins\"", response.contains("Jenkins"));
                 } finally {
