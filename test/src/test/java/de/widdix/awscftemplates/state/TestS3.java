@@ -14,8 +14,7 @@ public class TestS3 {
 
     @Test
     public void test() {
-       final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
-       final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withCredentials(credentialsProvider).build();
+       final AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
        System.out.println("buckets" + s3.listBuckets().size());
     }
 
