@@ -36,6 +36,8 @@ Metadata:
       - DBBackupRetentionPeriod
       - DBMasterUsername
       - DBMasterUserPassword
+      - UseSecretsManager
+      - SecretName
       - SubDomainNameWithDot
       - ReadSubDomainNameWithDot
       - PreferredBackupWindow
@@ -102,9 +104,20 @@ Parameters:
     Type: 'String'
     Default: master
   DBMasterUserPassword:
-    Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
+    Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set, value used from snapshot. Also ignored when UseSecretsManager is set to true).'
     Type: String
     NoEcho: true
+    Default: ''
+  UseSecretsManager:
+    Description: Set to true if you want to use Secrets Manager to handle the database credential handling
+    Type: String
+    Default: false
+    AllowedValues:
+    - true
+    - false
+  SecretName:
+    Description: Name of the Secret to use. Must be set if UseSecretsManager is set to true
+    Type: String
     Default: ''
   SubDomainNameWithDot:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
@@ -198,7 +211,25 @@ Conditions:
   HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, '']]
   HasKmsKeyAndNotDBSnapshotIdentifier: !And [!Condition HasKmsKey, !Not [!Condition HasDBSnapshotIdentifier]]
   HasEngineMySQL: !Or [!Equals [!FindInMap [EngineMap, !Ref Engine, Engine], 'aurora'], !Equals [!FindInMap [EngineMap, !Ref Engine, Engine], 'aurora-mysql']]
+  HasSecretsManager: !Equals [!Ref UseSecretsManager, true]
 Resources:
+  Secret:
+    Condition: HasSecretsManager
+    Type: 'AWS::SecretsManager::Secret'
+    Properties:
+      Name: !Ref SecretName
+      GenerateSecretString:
+        SecretStringTemplate: !Sub '{"username": "${DBMasterUsername}"}'
+        GenerateStringKey: "password"
+        PasswordLength: 30
+        ExcludeCharacters: '"@/\'
+  SecretTargetAttachment:
+    Condition: HasSecretsManager
+    Type: "AWS::SecretsManager::SecretTargetAttachment"
+    Properties:
+      SecretId: !Ref Secret
+      TargetId: !Ref DBCluster
+      TargetType: AWS::RDS::DBCluster
   RecordSet:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
@@ -279,7 +310,13 @@ Resources:
       EngineVersion: !FindInMap [EngineMap, !Ref Engine, EngineVersion]
       KmsKeyId: !If [HasKmsKeyAndNotDBSnapshotIdentifier, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}, !Ref 'AWS::NoValue']
       MasterUsername: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUsername]
-      MasterUserPassword: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUserPassword]
+      MasterUserPassword: !If
+      - HasDBSnapshotIdentifier
+      - !Ref 'AWS::NoValue'
+      - !If
+        - HasSecretsManager
+        - {"Fn::Join": ["", ["{{resolve:secretsmanager:", {"Ref": "Secret"}, ":SecretString:password}}"]]}
+        - !Ref DBMasterUserPassword
       Port: !FindInMap [EngineMap, !Ref Engine, Port]
       PreferredBackupWindow: !Ref PreferredBackupWindow
       PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
