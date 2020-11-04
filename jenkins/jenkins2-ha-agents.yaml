@@ -50,6 +50,7 @@ Metadata:
       - MasterLogsRetentionInDays
       - MasterVolumeSize
       - MasterLoadBalancerIdleTimeout
+      - MasterELBCertificate
     - Label:
         default: 'Agent Parameters'
       Parameters:
@@ -150,6 +151,9 @@ Parameters:
     Default: 60
     MinValue: 1
     MaxValue: 4000
+  MasterELBCertificate:
+    Description: The certificate ARN for the ELB.
+    Type: String
   AgentSubnetsReach:
     Description: 'Should the agents have direct access to the Internet or do you prefer private subnets with NAT?'
     Type: String
@@ -530,6 +534,18 @@ Resources:
       LoadBalancerArn: !Ref MasterELB
       Port: 80
       Protocol: HTTP
+  MasterELBListenerHTTPS:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+      - TargetGroupArn: !Ref MasterELBTargetGroup
+        Type: forward
+      LoadBalancerArn: !Ref MasterELB
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-2016-08
+      Certificates:
+       - CertificateArn: !Ref MasterELBCertificate
   MasterIP:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
