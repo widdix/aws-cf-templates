@@ -379,8 +379,8 @@ Resources:
     Properties:
       GroupId: !Ref MasterELBSG
       IpProtocol: tcp
-      FromPort: 80
-      ToPort: 80
+      FromPort: 443
+      ToPort: 443
       CidrIp: !Ref HttpIngressCidrAllowed
   MasterELBSGInAuthProxy:
     Type: 'AWS::EC2::SecurityGroupIngress'
@@ -388,8 +388,8 @@ Resources:
     Properties:
       GroupId: !Ref MasterELBSG
       IpProtocol: tcp
-      FromPort: 80
-      ToPort: 80
+      FromPort: 443
+      ToPort: 443
       SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
   MasterHTTPCodeELB5XXTooHighAlarm:
     Condition: HasAlertTopic
