@@ -29,7 +29,7 @@ public class TestVPCSshBastion extends ACloudFormationTest {
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
                     );
                     final String host = this.getStackOutputValue(bastionStackName, "IPAddress");
-                    this.probeSSH(host, key);
+                    this.probeSSH(context, host, key);
                 } finally {
                     this.deleteStack(context, bastionStackName);
                 }

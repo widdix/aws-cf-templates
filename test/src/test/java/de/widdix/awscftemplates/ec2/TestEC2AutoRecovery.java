@@ -29,7 +29,7 @@ public class TestEC2AutoRecovery extends ACloudFormationTest {
                             new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
                     );
                     final String host = this.getStackOutputValue(stackName, "IPAddress");
-                    this.probeSSH(host, key);
+                    this.probeSSH(context, host, key);
                 } finally {
                     this.deleteStack(context, stackName);
                 }
@@ -62,7 +62,7 @@ public class TestEC2AutoRecovery extends ACloudFormationTest {
                             new Parameter().withParameterKey("IAMUserSSHAccess").withParameterValue("true")
                     );
                     final String host = this.getStackOutputValue(stackName, "IPAddress");
-                    this.probeSSH(host, user);
+                    this.probeSSH(context, host, user);
                 } finally {
                     this.deleteStack(context, stackName);
                 }

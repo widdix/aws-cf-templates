@@ -30,7 +30,7 @@ public class TestAL2MutablePublic extends ACloudFormationTest {
                             new Parameter().withParameterKey("BackupRetentionPeriod").withParameterValue("0")
                     );
                     final String host = this.getStackOutputValue(stackName, "PublicIPAddress");
-                    this.probeSSH(host, key);
+                    this.probeSSH(context, host, key);
                 } finally {
                     this.deleteStack(context, stackName);
                 }
@@ -63,7 +63,7 @@ public class TestAL2MutablePublic extends ACloudFormationTest {
                             new Parameter().withParameterKey("IAMUserSSHAccess").withParameterValue("true")
                     );
                     final String host = this.getStackOutputValue(stackName, "PublicIPAddress");
-                    this.probeSSH(host, user);
+                    this.probeSSH(context, host, user);
                 } finally {
                     this.deleteStack(context, stackName);
                 }

@@ -18,7 +18,11 @@ public class Context {
         this.failure = true;
     }
 
-    public boolean hasStackFailure() {
+    public void reportFailure() {
+        this.failure = true;
+    }
+
+    public boolean hasFailure() {
         return this.failure;
     }
 }

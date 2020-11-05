@@ -62,7 +62,7 @@ public class TestECSService extends ACloudFormationTest {
                                 }
                                 return WS.getResponseAsString(response);
                             };
-                            final String response = this.retry(callable);
+                            final String response = this.retry(context, callable);
                             // check if nginx page appears
                             Assert.assertTrue("http response body contains \"Welcome to nginx!\"", response.contains("Welcome to nginx!"));
                         } finally {
@@ -119,7 +119,7 @@ public class TestECSService extends ACloudFormationTest {
                             }
                             return true;
                         };
-                        Assert.assertTrue("http response code is 404", this.retry(callable));
+                        Assert.assertTrue("http response code is 404", this.retry(context, callable));
                     } finally {
                         this.deleteStack(context, stackName);
                     }
@@ -172,7 +172,7 @@ public class TestECSService extends ACloudFormationTest {
                             }
                             return WS.getResponseAsString(response);
                         };
-                        final String response = this.retry(callable);
+                        final String response = this.retry(context, callable);
                         // check if nginx page appears
                         Assert.assertTrue("http response body contains \"Welcome to nginx!\"", response.contains("Welcome to nginx!"));
                     } finally {

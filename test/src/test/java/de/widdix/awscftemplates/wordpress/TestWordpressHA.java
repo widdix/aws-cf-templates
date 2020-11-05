@@ -64,7 +64,7 @@ public class TestWordpressHA extends ACloudFormationTest {
                             }
                             return true;
                         };
-                        Assert.assertTrue("WordPress ready", this.retry(callable));
+                        Assert.assertTrue("WordPress ready", this.retry(context, callable));
                     } finally {
                         this.deleteStackAndRetryOnFailure(context, stackName);
                     }
@@ -131,7 +131,7 @@ public class TestWordpressHA extends ACloudFormationTest {
                             }
                             return true;
                         };
-                        Assert.assertTrue("WordPress ready", this.retry(callable));
+                        Assert.assertTrue("WordPress ready", this.retry(context, callable));
                     } finally {
                         this.deleteStackAndRetryOnFailure(context, stackName);
                     }
@@ -197,7 +197,7 @@ public class TestWordpressHA extends ACloudFormationTest {
                             }
                             return true;
                         };
-                        Assert.assertTrue("WordPress ready", this.retry(callable));
+                        Assert.assertTrue("WordPress ready", this.retry(context, callable));
                     } finally {
                         this.deleteStackAndRetryOnFailure(context, stackName);
                     }
@@ -264,7 +264,7 @@ public class TestWordpressHA extends ACloudFormationTest {
                             }
                             return true;
                         };
-                        Assert.assertTrue("WordPress ready", this.retry(callable));
+                        Assert.assertTrue("WordPress ready", this.retry(context, callable));
                     } finally {
                         this.deleteStackAndRetryOnFailure(context, stackName);
                     }

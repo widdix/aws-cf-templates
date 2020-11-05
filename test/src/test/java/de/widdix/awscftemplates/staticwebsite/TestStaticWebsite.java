@@ -76,9 +76,9 @@ public class TestStaticWebsite extends ACloudFormationTest {
                             }
                             return response;
                         };
-                        this.retry(callable1);
-                        this.retry(callable2);
-                        this.retry(callable3);
+                        this.retry(context, callable1);
+                        this.retry(context, callable2);
+                        this.retry(context, callable3);
                     } finally {
                         this.deleteObject(context, domainName, "folder/index.html");
                         this.deleteObject(context, domainName, "index.html");
@@ -135,13 +135,13 @@ public class TestStaticWebsite extends ACloudFormationTest {
                     final Callable<HttpResponse> callable2 = () -> {
                         final HttpResponse response = WS.url(url2).timeout(10000).followRedirect(false).get();
                         // check HTTP response code
-                        if (WS.getStatus(response) != 301) {
-                            throw new RuntimeException("301 expected, but saw " + WS.getStatus(response));
+                        if (WS.getStatus(response) != 200) {
+                            throw new RuntimeException("200 expected, but saw " + WS.getStatus(response));
                         }
                         return response;
                     };
-                    this.retry(callable1);
-                    this.retry(callable2);
+                    this.retry(context, callable1);
+                    this.retry(context, callable2);
                 } finally {
                     this.deleteObject(context, domainName, "index.html");
                 }

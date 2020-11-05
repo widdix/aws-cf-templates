@@ -69,7 +69,7 @@ public abstract class AAWSTest extends ATest {
 
     protected final void deleteUser(final Context context, final String userName) {
         if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
-            if (Config.get(Config.Key.FAILURE_POLICY).equals("retain") && context.hasStackFailure()) {
+            if (Config.get(Config.Key.FAILURE_POLICY).equals("retain") && context.hasFailure()) {
                 System.out.println("Skip user deletion because of stack failure in context and FAILURE_POLICY := retain");
             } else {
                 final ListSSHPublicKeysResult res = this.iam.listSSHPublicKeys(new ListSSHPublicKeysRequest().withUserName(userName));
@@ -87,7 +87,7 @@ public abstract class AAWSTest extends ATest {
 
     protected final void deleteKey(final Context context, final String keyName) {
         if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
-            if (Config.get(Config.Key.FAILURE_POLICY).equals("retain") && context.hasStackFailure()) {
+            if (Config.get(Config.Key.FAILURE_POLICY).equals("retain") && context.hasFailure()) {
                 System.out.println("Skip key deletion because of stack failure in context and FAILURE_POLICY := retain");
             } else {
                 this.ec2.deleteKeyPair(new DeleteKeyPairRequest().withKeyName(keyName));
@@ -107,7 +107,7 @@ public abstract class AAWSTest extends ATest {
 
     protected final void deleteObject(final Context context, final String bucketName, final String key) {
         if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
-            if (Config.get(Config.Key.FAILURE_POLICY).equals("retain") && context.hasStackFailure()) {
+            if (Config.get(Config.Key.FAILURE_POLICY).equals("retain") && context.hasFailure()) {
                 System.out.println("Skip object deletion because of stack failure in context and FAILURE_POLICY := retain");
             } else {
                 this.s3.deleteObject(bucketName, key);
@@ -117,7 +117,7 @@ public abstract class AAWSTest extends ATest {
 
     protected final void emptyBucket(final Context context, final String name) {
         if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
-            if (Config.get(Config.Key.FAILURE_POLICY).equals("retain") && context.hasStackFailure()) {
+            if (Config.get(Config.Key.FAILURE_POLICY).equals("retain") && context.hasFailure()) {
                 System.out.println("Skip bucket empty because of stack failure in context and FAILURE_POLICY := retain");
             } else {
                 ObjectListing objectListing = s3.listObjects(name);
@@ -144,7 +144,7 @@ public abstract class AAWSTest extends ATest {
 
     protected final void deleteBucket(final Context context, final String name) {
         if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
-            if (Config.get(Config.Key.FAILURE_POLICY).equals("retain") && context.hasStackFailure()) {
+            if (Config.get(Config.Key.FAILURE_POLICY).equals("retain") && context.hasFailure()) {
                 System.out.println("Skip bucket deletion because of stack failure in context and FAILURE_POLICY := retain");
             } else {
                 this.emptyBucket(context, name);
