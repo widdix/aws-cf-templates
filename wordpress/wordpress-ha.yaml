@@ -136,6 +136,11 @@ Parameters:
     AllowedValues:
     - true
     - false
+  WebServerCpuArch:
+    Description: 'Choose the CPU architecture make sure the instance type fits the archticture.'
+    Type: String
+    Default: 'AMIX8664'
+    AllowedValues: ['AMIX8664', 'AMIARM64']
   WebServerInstanceType:
     Description: 'The instance type of web servers (e.g. t2.micro).'
     Type: String
@@ -227,46 +232,54 @@ Parameters:
     MaxValue: 4000
 Mappings:
   RegionMap:
-    'af-south-1':
-      AMI: 'ami-08c9d9528020000ac'
     'eu-north-1':
-      AMI: 'ami-039609244d2810a6b'
+      AMIX8664: 'ami-039609244d2810a6b'
+      AMIARM64: 'None'
     'ap-south-1':
-      AMI: 'ami-0ebc1ac48dfd14136'
+      AMIX8664: 'ami-0ebc1ac48dfd14136'
+      AMIARM64: 'ami-0d17d97232c08403e'
     'eu-west-3':
-      AMI: 'ami-093fa4c538885becf'
+      AMIX8664: 'ami-093fa4c538885becf'
+      AMIARM64: 'None'
     'eu-west-2':
-      AMI: 'ami-0a13d44dccf1f5cf6'
-    'eu-south-1':
-      AMI: 'ami-0533a9871112d2d51'
+      AMIX8664: 'ami-0a13d44dccf1f5cf6'
+      AMIARM64: 'None'
     'eu-west-1':
-      AMI: 'ami-07d9160fa81ccffb5'
+      AMIX8664: 'ami-07d9160fa81ccffb5'
+      AMIARM64: 'ami-08f51d843bf37ded6'
     'ap-northeast-2':
-      AMI: 'ami-0bd7691bf6470fe9c'
-    'me-south-1':
-      AMI: 'ami-01f41d49c363da2ad'
+      AMIX8664: 'ami-0bd7691bf6470fe9c'
+      AMIARM64: 'None'
     'ap-northeast-1':
-      AMI: 'ami-0cc75a8978fbbc969'
+      AMIX8664: 'ami-0cc75a8978fbbc969'
+      AMIARM64: 'ami-03bbf9057affc0643'
     'sa-east-1':
-      AMI: 'ami-018ccfb6b4745882a'
+      AMIX8664: 'ami-018ccfb6b4745882a'
+      AMIARM64: 'None'
     'ca-central-1':
-      AMI: 'ami-013d1df4bcea6ba95'
-    'ap-east-1':
-      AMI: 'ami-47317236'
+      AMIX8664: 'ami-013d1df4bcea6ba95'
+      AMIARM64: 'None'
     'ap-southeast-1':
-      AMI: 'ami-0cd31be676780afa7'
+      AMIX8664: 'ami-0cd31be676780afa7'
+      AMIARM64: 'ami-02f3b237d55fc8691'
     'ap-southeast-2':
-      AMI: 'ami-0ded330691a314693'
+      AMIX8664: 'ami-0ded330691a314693'
+      AMIARM64: 'ami-0c3a4ad3dbe082a72'
     'eu-central-1':
-      AMI: 'ami-0c115dbd34c69a004'
+      AMIX8664: 'ami-0c115dbd34c69a004'
+      AMIARM64: 'ami-096c1922a7e55b3b0'
     'us-east-1':
-      AMI: 'ami-02354e95b39ca8dec'
+      AMIX8664: 'ami-02354e95b39ca8dec'
+      AMIARM64: 'ami-0c5bf07e510b75b11'
     'us-east-2':
-      AMI: 'ami-07c8bc5c1ce9598c3'
+      AMIX8664: 'ami-07c8bc5c1ce9598c3'
+      AMIARM64: 'ami-09a67037138f86e67'
     'us-west-1':
-      AMI: 'ami-05655c267c89566dd'
+      AMIX8664: 'ami-05655c267c89566dd'
+      AMIARM64: 'None'
     'us-west-2':
-      AMI: 'ami-0873b46c45c11058d'
+      AMIX8664: 'ami-0873b46c45c11058d'
+      AMIARM64: 'ami-091a6d6d0ed7b35fd'
   DBServerInstanceTypeMap:
     'db.t3.micro':
       PerformanceInsights: false
@@ -1107,7 +1120,7 @@ Resources:
     Properties:
       AssociatePublicIpAddress: true
       IamInstanceProfile: !Ref WebServerInstanceProfile
-      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', !Ref WebServerCpuArch]
       InstanceType: !Ref WebServerInstanceType
       SecurityGroups:
       - !Ref WebServerSecurityGroup
