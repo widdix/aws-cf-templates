@@ -169,47 +169,51 @@ public class TestStaticWebsite extends ACloudFormationTest {
                     new Parameter().withParameterKey("HostedZoneName").withParameterValue(Config.get(Config.Key.DOMAIN_SUFFIX)),
                     new Parameter().withParameterKey("HostedZoneId").withParameterValue(Config.get(Config.Key.HOSTED_ZONE_ID))
             );
-            this.createStack(context, zoneStackName,
-                    "security/waf.yaml",
-                    new Parameter().withParameterKey("Scope").withParameterValue("CLOUDFRONT")
-            );
             try {
-                this.createStack(context, stackName,
-                        "static-website/static-website.yaml",
-                        new Parameter().withParameterKey("ParentZoneStack").withParameterValue(zoneStackName),
-                        new Parameter().withParameterKey("ParentWAFStack").withParameterValue(wafStackName),
-                        new Parameter().withParameterKey("SubDomainNameWithDot").withParameterValue(subDomainName + "."),
-                        new Parameter().withParameterKey("EnableRedirectSubDomainName").withParameterValue("true"),
-                        new Parameter().withParameterKey("RedirectSubDomainNameWithDot").withParameterValue(redirectSubDomainName + "."),
-                        new Parameter().withParameterKey("CertificateType").withParameterValue("CreateAcmCertificate")
-                );
-                final String url1 = "https://" + domainName + "/";
-                final String url2 = "https://" + redirectDomainName + "/";
-                try {
-                    this.createObject(domainName, "index.html", "hello");
-                    final Callable<HttpResponse> callable1 = () -> {
-                        final HttpResponse response = WS.url(url1).timeout(10000).get();
-                        // check HTTP response code
-                        if (WS.getStatus(response) != 200) {
-                            throw new RuntimeException("200 expected, but saw " + WS.getStatus(response));
+                    this.createStack(context, zoneStackName,
+                            "security/waf.yaml",
+                            new Parameter().withParameterKey("Scope").withParameterValue("CLOUDFRONT")
+                    );
+                    try {
+                        this.createStack(context, stackName,
+                                "static-website/static-website.yaml",
+                                new Parameter().withParameterKey("ParentZoneStack").withParameterValue(zoneStackName),
+                                new Parameter().withParameterKey("ParentWAFStack").withParameterValue(wafStackName),
+                                new Parameter().withParameterKey("SubDomainNameWithDot").withParameterValue(subDomainName + "."),
+                                new Parameter().withParameterKey("EnableRedirectSubDomainName").withParameterValue("true"),
+                                new Parameter().withParameterKey("RedirectSubDomainNameWithDot").withParameterValue(redirectSubDomainName + "."),
+                                new Parameter().withParameterKey("CertificateType").withParameterValue("CreateAcmCertificate")
+                        );
+                        final String url1 = "https://" + domainName + "/";
+                        final String url2 = "https://" + redirectDomainName + "/";
+                        try {
+                            this.createObject(domainName, "index.html", "hello");
+                            final Callable<HttpResponse> callable1 = () -> {
+                                final HttpResponse response = WS.url(url1).timeout(10000).get();
+                                // check HTTP response code
+                                if (WS.getStatus(response) != 200) {
+                                    throw new RuntimeException("200 expected, but saw " + WS.getStatus(response));
+                                }
+                                return response;
+                            };
+                            final Callable<HttpResponse> callable2 = () -> {
+                                final HttpResponse response = WS.url(url2).timeout(10000).followRedirect(false).get();
+                                // check HTTP response code
+                                if (WS.getStatus(response) != 200) {
+                                    throw new RuntimeException("200 expected, but saw " + WS.getStatus(response));
+                                }
+                                return response;
+                            };
+                            this.retry(context, callable1);
+                            this.retry(context, callable2);
+                        } finally {
+                            this.deleteObject(context, domainName, "index.html");
                         }
-                        return response;
-                    };
-                    final Callable<HttpResponse> callable2 = () -> {
-                        final HttpResponse response = WS.url(url2).timeout(10000).followRedirect(false).get();
-                        // check HTTP response code
-                        if (WS.getStatus(response) != 200) {
-                            throw new RuntimeException("200 expected, but saw " + WS.getStatus(response));
-                        }
-                        return response;
-                    };
-                    this.retry(context, callable1);
-                    this.retry(context, callable2);
-                } finally {
-                    this.deleteObject(context, domainName, "index.html");
-                }
+                    } finally {
+                        this.deleteStackAndRetryOnFailure(context, stackName);
+                    }
             } finally {
-                this.deleteStackAndRetryOnFailure(context, stackName);
+                this.deleteStackAndRetryOnFailure(context, wafStackName);
             }
         } finally {
             this.deleteStack(context, zoneStackName);
