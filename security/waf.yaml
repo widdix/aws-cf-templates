@@ -22,6 +22,7 @@ Metadata:
       Parameters:
       - Scope
       - RateLimit
+      - RuleAction
 Parameters:
   Scope:
     Description: 'Specify wether WAF shall be used with CloudFront or regional (ALB, API Gateway, and AppSync).'
@@ -34,6 +35,15 @@ Parameters:
     Description: 'The maximum number of requests from a single IP address that are allowed in a five-minute period.'
     Type: Number
     Default: 100
+  RuleAction:
+    Description: 'Block or count rate requests exceeding the rate limit.'
+    Type: String
+    Default: 'Block'
+    AllowedValues:
+    - 'Block'
+    - 'Count'
+Conditions:
+  BlockRequest: !Equals [!Ref RuleAction, 'Block']
 Resources:
   WebACL:
     Type: AWS::WAFv2::WebACL
@@ -49,8 +59,10 @@ Resources:
           RateBasedStatement:
             Limit: !Ref RateLimit
             AggregateKeyType: IP
-        Action:
-          Block: {}
+        Action: !If
+          - BlockRequest
+          - Block: {}
+          - Count: {}
         VisibilityConfig:
           SampledRequestsEnabled: true
           CloudWatchMetricsEnabled: true
