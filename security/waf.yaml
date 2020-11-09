@@ -60,9 +60,9 @@ Resources:
             Limit: !Ref RateLimit
             AggregateKeyType: IP
         Action: !If
-          - BlockRequest
-          - Block: {}
-          - Count: {}
+        - BlockRequest
+        - Block: {}
+        - Count: {}
         VisibilityConfig:
           SampledRequestsEnabled: true
           CloudWatchMetricsEnabled: true
