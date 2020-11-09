@@ -35,6 +35,8 @@ Parameters:
     Description: 'The maximum number of requests from a single IP address that are allowed in a five-minute period.'
     Type: Number
     Default: 100
+    MinValue: 100
+    MaxValue: 20000000
   RuleAction:
     Description: 'Block or count rate requests exceeding the rate limit.'
     Type: String

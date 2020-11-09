@@ -262,12 +262,10 @@ Resources:
           IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue']
           MinimumProtocolVersion: 'TLSv1.1_2016'
           SslSupportMethod: 'sni-only'
-  WebACLAssociation:
-    Condition: HasWAF
-    Type: AWS::WAFv2::WebACLAssociation
-    Properties:
-      ResourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
-      WebACLArn: {'Fn::ImportValue': !Sub '${ParentWAFStack}-WebACL'}
+        WebACLId: !If
+        - HasWAF
+        - {'Fn::ImportValue': !Sub '${ParentWAFStack}-WebACL'}
+        - !Ref 'AWS::NoValue'
   Route53RecordV2:
     Type: 'AWS::Route53::RecordSetGroup'
     Properties:
