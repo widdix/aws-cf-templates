@@ -170,7 +170,7 @@ public class TestStaticWebsite extends ACloudFormationTest {
                     new Parameter().withParameterKey("HostedZoneId").withParameterValue(Config.get(Config.Key.HOSTED_ZONE_ID))
             );
             try {
-                    this.createStack(context, zoneStackName,
+                    this.createStack(context, wafStackName,
                             "security/waf.yaml",
                             new Parameter().withParameterKey("Scope").withParameterValue("CLOUDFRONT")
                     );
