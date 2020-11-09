@@ -37,12 +37,12 @@ Parameters:
 Resources:
   WebACL:
     Type: AWS::WAFv2::WebACL
-    Properties: 
-      DefaultAction: 
+    Properties:
+      DefaultAction:
         Allow: {}
       Description: !Sub 'A collection of rules for ${AWS::StackName}.'
       Name: !Ref 'AWS::StackName'
-      Rules: 
+      Rules:
       - Name: ratelimit
         Priority: 0
         Statement:
@@ -56,7 +56,7 @@ Resources:
           CloudWatchMetricsEnabled: true
           MetricName: ratelimit
       Scope: !Ref Scope
-      VisibilityConfig: 
+      VisibilityConfig:
         CloudWatchMetricsEnabled: true
         MetricName: !Ref 'AWS::StackName'
         SampledRequestsEnabled: true

@@ -604,7 +604,7 @@ Resources:
   WebACLAssociation:
     Condition: HasWAF
     Type: AWS::WAFv2::WebACLAssociation
-    Properties: 
+    Properties:
       ResourceArn: !Ref LoadBalancer
       WebACLArn: {'Fn::ImportValue': !Sub '${ParentWAFStack}-WebACL'}
   DBSubnetGroup:

@@ -569,7 +569,7 @@ Resources:
   WebACLAssociation:
     Condition: HasWAF
     Type: AWS::WAFv2::WebACLAssociation
-    Properties: 
+    Properties:
       ResourceArn: !Ref LoadBalancer
       WebACLArn: {'Fn::ImportValue': !Sub '${ParentWAFStack}-WebACL'}
   DefaultTargetGroup: # this is used as the fall-back target group and is used to health checking the ECS agent. Services use their own ListenerRules to accept traffic based on path prefixes.

@@ -265,7 +265,7 @@ Resources:
   WebACLAssociation:
     Condition: HasWAF
     Type: AWS::WAFv2::WebACLAssociation
-    Properties: 
+    Properties:
       ResourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
       WebACLArn: {'Fn::ImportValue': !Sub '${ParentWAFStack}-WebACL'}
   Route53RecordV2:
