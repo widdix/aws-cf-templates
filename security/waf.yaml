@@ -1,0 +1,77 @@
+---
+# Copyright 2018 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Security: WAF (Web Application Firewall), a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'WAF Parameters'
+      Parameters:
+      - Scope
+      - RateLimit
+Parameters:
+  Scope:
+    Description: 'Specify wether WAF shall be used with CloudFront or regional (ALB, API Gateway, and AppSync).'
+    Type: String
+    Default: 'REGIONAL'
+    AllowedValues:
+    - 'REGIONAL'
+    - 'CLOUDFRONT'
+  RateLimit:
+    Description: 'The maximum number of requests from a single IP address that are allowed in a five-minute period.'
+    Type: Number
+    Default: 100
+Resources:
+  WebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties: 
+      DefaultAction: 
+        Allow: {}
+      Description: !Sub 'A collection of rules for ${AWS::StackName}.'
+      Name: !Ref 'AWS::StackName'
+      Rules: 
+      - Name: ratelimit
+        Priority: 0
+        Statement:
+          RateBasedStatement:
+            Limit: !Ref RateLimit
+            AggregateKeyType: IP
+        Action:
+          Block: {}
+        VisibilityConfig:
+          SampledRequestsEnabled: true
+          CloudWatchMetricsEnabled: true
+          MetricName: ratelimit
+      Scope: !Ref Scope
+      VisibilityConfig: 
+        CloudWatchMetricsEnabled: true
+        MetricName: !Ref 'AWS::StackName'
+        SampledRequestsEnabled: true
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'security/waf'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
+  WebACL:
+    Description: 'The ARN of the Web ACL.'
+    Value: !GetAtt 'WebACL.Arn'
+    Export:
+      Name: !Sub '${AWS::StackName}-WebACL'
