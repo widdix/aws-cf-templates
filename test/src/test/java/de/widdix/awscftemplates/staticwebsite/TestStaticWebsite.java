@@ -152,4 +152,71 @@ public class TestStaticWebsite extends ACloudFormationTest {
             this.deleteStack(context, zoneStackName);
         }
     }
+
+    @Test
+    public void testWAF() {
+        final Context context = new Context();
+        final String zoneStackName = "zone-" + this.random8String();
+        final String wafStackName = "waf-" + this.random8String();
+        final String stackName = "static-website-" + this.random8String();
+        final String subDomainName = stackName;
+        final String redirectSubDomainName = "www-" + stackName;
+        final String domainName = subDomainName + "." + Config.get(Config.Key.DOMAIN_SUFFIX);
+        final String redirectDomainName = redirectSubDomainName + "." + Config.get(Config.Key.DOMAIN_SUFFIX);
+        try {
+            this.createStack(context, zoneStackName,
+                    "vpc/zone-legacy.yaml",
+                    new Parameter().withParameterKey("HostedZoneName").withParameterValue(Config.get(Config.Key.DOMAIN_SUFFIX)),
+                    new Parameter().withParameterKey("HostedZoneId").withParameterValue(Config.get(Config.Key.HOSTED_ZONE_ID))
+            );
+            try {
+                    this.createStack(context, wafStackName,
+                            "security/waf.yaml",
+                            new Parameter().withParameterKey("Scope").withParameterValue("CLOUDFRONT")
+                    );
+                    try {
+                        this.createStack(context, stackName,
+                                "static-website/static-website.yaml",
+                                new Parameter().withParameterKey("ParentZoneStack").withParameterValue(zoneStackName),
+                                new Parameter().withParameterKey("ParentWAFStack").withParameterValue(wafStackName),
+                                new Parameter().withParameterKey("SubDomainNameWithDot").withParameterValue(subDomainName + "."),
+                                new Parameter().withParameterKey("EnableRedirectSubDomainName").withParameterValue("true"),
+                                new Parameter().withParameterKey("RedirectSubDomainNameWithDot").withParameterValue(redirectSubDomainName + "."),
+                                new Parameter().withParameterKey("CertificateType").withParameterValue("CreateAcmCertificate")
+                        );
+                        final String url1 = "https://" + domainName + "/";
+                        final String url2 = "https://" + redirectDomainName + "/";
+                        try {
+                            this.createObject(domainName, "index.html", "hello");
+                            final Callable<HttpResponse> callable1 = () -> {
+                                final HttpResponse response = WS.url(url1).timeout(10000).get();
+                                // check HTTP response code
+                                if (WS.getStatus(response) != 200) {
+                                    throw new RuntimeException("200 expected, but saw " + WS.getStatus(response));
+                                }
+                                return response;
+                            };
+                            final Callable<HttpResponse> callable2 = () -> {
+                                final HttpResponse response = WS.url(url2).timeout(10000).followRedirect(false).get();
+                                // check HTTP response code
+                                if (WS.getStatus(response) != 200) {
+                                    throw new RuntimeException("200 expected, but saw " + WS.getStatus(response));
+                                }
+                                return response;
+                            };
+                            this.retry(context, callable1);
+                            this.retry(context, callable2);
+                        } finally {
+                            this.deleteObject(context, domainName, "index.html");
+                        }
+                    } finally {
+                        this.deleteStackAndRetryOnFailure(context, stackName);
+                    }
+            } finally {
+                this.deleteStackAndRetryOnFailure(context, wafStackName);
+            }
+        } finally {
+            this.deleteStack(context, zoneStackName);
+        }
+    }
 }

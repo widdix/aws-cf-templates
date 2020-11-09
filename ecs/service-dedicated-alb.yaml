@@ -26,6 +26,7 @@ Metadata:
       - ParentAlertStack
       - ParentZoneStack
       - ParentS3StackAccessLog
+      - ParentWAFStack
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
@@ -71,6 +72,10 @@ Parameters:
     Default: ''
   ParentS3StackAccessLog:
     Description: 'Optional stack name of parent s3 stack based on state/s3.yaml template (with Access set to ElbAccessLogWrite) to store access logs.'
+    Type: String
+    Default: ''
+  ParentWAFStack:
+    Description: 'Optional stack name of parent WAF stack based on the security/waf.yaml template.'
     Type: String
     Default: ''
   PermissionsBoundary:
@@ -151,6 +156,7 @@ Conditions:
   HasZoneAndLoadBalancerSchemeInternetFacing: !And [!Condition HasZone, !Condition HasLoadBalancerSchemeInternetFacing]
   HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
   HasAutoScaling: !Equals [!Ref AutoScaling, 'true']
+  HasWAF: !Not [!Equals [!Ref ParentWAFStack, '']]
 Resources:
   TaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
@@ -373,6 +379,12 @@ Resources:
       - HasLoadBalancerSchemeInternal
       - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
       - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPublic'}]
+  WebACLAssociation:
+    Condition: HasWAF
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn: !Ref LoadBalancer
+      WebACLArn: {'Fn::ImportValue': !Sub '${ParentWAFStack}-WebACL'}
   HttpListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:

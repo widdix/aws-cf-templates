@@ -1,0 +1,124 @@
+---
+# Copyright 2018 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Security: WAF (Web Application Firewall), a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'WAF Parameters'
+      Parameters:
+      - Scope
+      - RateLimit
+      - RateLimitEffect
+      - ReputationListEffect
+Parameters:
+  Scope:
+    Description: 'Specify wether WAF shall be used with CloudFront or regional (ALB, API Gateway, and AppSync).'
+    Type: String
+    Default: 'REGIONAL'
+    AllowedValues:
+    - 'REGIONAL'
+    - 'CLOUDFRONT'
+  RateLimit:
+    Description: 'The maximum number of requests from a single IP address that are allowed in a five-minute period.'
+    Type: Number
+    Default: 100
+    MinValue: 100
+    MaxValue: 20000000
+  RateLimitEffect:
+    Description: 'Block or count requests that exceed the rate limit. Alterantively, disable rate limiting at all.'
+    Type: String
+    Default: 'Block'
+    AllowedValues:
+    - 'Disable'
+    - 'Block'
+    - 'Count'
+  ReputationListEffect:
+    Description: 'Block or count requests with bad reputation. Alterantively, disable reputation list at all.'
+    Type: String
+    Default: 'Disable'
+    AllowedValues:
+    - 'Disable'
+    - 'Block'
+    - 'Count'
+Conditions:
+  EnableRateLimit: !Not [!Equals [!Ref RateLimitEffect, 'Disable']]
+  BlockRateLimit: !Equals [!Ref RateLimitEffect, 'Block']
+  EnableReputationList: !Not [!Equals [!Ref ReputationListEffect, 'Disable']]
+  BlockReputationList: !Equals [!Ref ReputationListEffect, 'Block']
+Resources:
+  WebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      DefaultAction:
+        Allow: {}
+      Description: !Sub 'A collection of rules for ${AWS::StackName}.'
+      Name: !Ref 'AWS::StackName'
+      Rules:
+      - !If
+        - EnableReputationList
+        - Name: AWSReputationList
+          Priority: 1
+          OverrideAction: !If
+          - BlockReputationList
+          - None: {}
+          - Count: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: AWSReputationList
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesAmazonIpReputationList
+        - !Ref 'AWS::NoValue'
+      - !If
+        - EnableRateLimit
+        - Name: RateLimit
+          Priority: 2
+          Statement:
+            RateBasedStatement:
+              Limit: !Ref RateLimit
+              AggregateKeyType: IP
+          Action: !If
+          - BlockRateLimit
+          - Block: {}
+          - Count: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: RateLimit
+        - !Ref 'AWS::NoValue'
+      Scope: !Ref Scope
+      VisibilityConfig:
+        CloudWatchMetricsEnabled: true
+        MetricName: !Ref 'AWS::StackName'
+        SampledRequestsEnabled: true
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'security/waf'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
+  WebACL:
+    Description: 'The ARN of the Web ACL.'
+    Value: !GetAtt 'WebACL.Arn'
+    Export:
+      Name: !Sub '${AWS::StackName}-WebACL'
