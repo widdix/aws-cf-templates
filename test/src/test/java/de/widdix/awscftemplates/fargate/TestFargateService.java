@@ -211,7 +211,7 @@ public class TestFargateService extends ACloudFormationTest {
                                 "fargate/service-dedicated-alb.yaml",
                                 new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                                 new Parameter().withParameterKey("ParentClusterStack").withParameterValue(clusterStackName),
-                                new Parameter().withParameterKey("ParentWAFStack").withParameterValue(wafStackName)
+                                new Parameter().withParameterKey("ParentWAFStack").withParameterValue(wafStackName),
                                 new Parameter().withParameterKey("AppImage").withParameterValue("nginx:1.11.5")
                         );
                         final String url = this.getStackOutputValue(stackName, "URL");
