@@ -22,7 +22,8 @@ Metadata:
       Parameters:
       - Scope
       - RateLimit
-      - RuleAction
+      - RateLimitEffect
+      - ReputationListEffect
 Parameters:
   Scope:
     Description: 'Specify wether WAF shall be used with CloudFront or regional (ALB, API Gateway, and AppSync).'
@@ -37,15 +38,27 @@ Parameters:
     Default: 100
     MinValue: 100
     MaxValue: 20000000
-  RuleAction:
-    Description: 'Block or count rate requests exceeding the rate limit.'
+  RateLimitEffect:
+    Description: 'Block or count requests that exceed the rate limit. Alterantively, disable rate limiting at all.'
     Type: String
     Default: 'Block'
     AllowedValues:
+    - 'Disable'
+    - 'Block'
+    - 'Count'
+  ReputationListEffect:
+    Description: 'Block or count requests with bad reputation. Alterantively, disable reputation list at all.'
+    Type: String
+    Default: 'Disable'
+    AllowedValues:
+    - 'Disable'
     - 'Block'
     - 'Count'
 Conditions:
-  BlockRequest: !Equals [!Ref RuleAction, 'Block']
+  EnableRateLimit: !Not [!Equals [!Ref RateLimitEffect, 'Disable']]
+  BlockRateLimit: !Equals [!Ref RateLimitEffect, 'Block']
+  EnableReputationList: !Not [!Equals [!Ref ReputationListEffect, 'Disable']]
+  BlockReputationList: !Equals [!Ref ReputationListEffect, 'Block']
 Resources:
   WebACL:
     Type: AWS::WAFv2::WebACL
@@ -55,20 +68,40 @@ Resources:
       Description: !Sub 'A collection of rules for ${AWS::StackName}.'
       Name: !Ref 'AWS::StackName'
       Rules:
-      - Name: ratelimit
-        Priority: 0
-        Statement:
-          RateBasedStatement:
-            Limit: !Ref RateLimit
-            AggregateKeyType: IP
-        Action: !If
-        - BlockRequest
-        - Block: {}
-        - Count: {}
-        VisibilityConfig:
-          SampledRequestsEnabled: true
-          CloudWatchMetricsEnabled: true
-          MetricName: ratelimit
+      - !If
+        - EnableReputationList
+        - Name: AWSReputationList
+          Priority: 1
+          OverrideAction: !If
+          - BlockReputationList
+          - None: {}
+          - Count: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: AWSReputationList
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesAmazonIpReputationList
+        - !Ref 'AWS::NoValue'
+      - !If
+        - EnableRateLimit
+        - Name: RateLimit
+          Priority: 2
+          Statement:
+            RateBasedStatement:
+              Limit: !Ref RateLimit
+              AggregateKeyType: IP
+          Action: !If
+          - BlockRateLimit
+          - Block: {}
+          - Count: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: RateLimit
+        - !Ref 'AWS::NoValue'
       Scope: !Ref Scope
       VisibilityConfig:
         CloudWatchMetricsEnabled: true
