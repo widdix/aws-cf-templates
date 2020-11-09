@@ -25,6 +25,7 @@ Metadata:
       - ParentAlertStack
       - ParentZoneStack
       - ParentS3StackAccessLog
+      - ParentWAFStack
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
@@ -50,6 +51,10 @@ Parameters:
     Default: ''
   ParentS3StackAccessLog:
     Description: 'Optional stack name of parent s3 stack based on state/s3.yaml template (with Access set to ElbAccessLogWrite) to store access logs.'
+    Type: String
+    Default: ''
+  ParentWAFStack:
+    Description: 'Optional stack name of parent WAF stack based on the security/waf.yaml template.'
     Type: String
     Default: ''
   LoadBalancerScheme:
@@ -85,6 +90,7 @@ Conditions:
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasZoneAndLoadBalancerSchemeInternetFacing: !And [!Condition HasZone, !Condition HasLoadBalancerSchemeInternetFacing]
   HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
+  HasWAF: !Not [!Equals [!Ref ParentWAFStack, '']]
 Resources:
   Cluster:
     Type: 'AWS::ECS::Cluster'
@@ -195,6 +201,12 @@ Resources:
       - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
       - !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPublic'}]
       Type: application
+  WebACLAssociation:
+    Condition: HasWAF
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn: !Ref LoadBalancer
+      WebACLArn: {'Fn::ImportValue': !Sub '${ParentWAFStack}-WebACL'}
   HTTPCodeELB5XXTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
