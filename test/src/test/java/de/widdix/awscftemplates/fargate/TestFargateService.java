@@ -186,6 +186,61 @@ public class TestFargateService extends ACloudFormationTest {
     }
 
     @Test
+    public void testWaf() {
+        final Context context = new Context();
+        final String vpcStackName = "vpc-2azs-" + this.random8String();
+        final String wafStackName = "waf-" + this.random8String();
+        final String clusterStackName = "fargate-cluster-" + this.random8String();
+        final String stackName = "fargate-service-" + this.random8String();
+        final String classB = "10";
+        try {
+            this.createStack(context, vpcStackName,
+                    "vpc/vpc-2azs.yaml",
+                    new Parameter().withParameterKey("ClassB").withParameterValue(classB)
+            );
+            try {
+                this.createStack(context, wafStackName, "security/waf.yaml");
+                try {
+                    this.createStack(context, clusterStackName,
+                            "fargate/cluster.yaml",
+                            new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
+                            new Parameter().withParameterKey("ParentWAFStack").withParameterValue(wafStackName)
+                    );
+                    try {
+                        this.createStack(context, stackName,
+                                "fargate/service-dedicated-alb.yaml",
+                                new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
+                                new Parameter().withParameterKey("ParentClusterStack").withParameterValue(clusterStackName),
+                                new Parameter().withParameterKey("ParentWAFStack").withParameterValue(wafStackName),
+                                new Parameter().withParameterKey("AppImage").withParameterValue("nginx:1.11.5")
+                        );
+                        final String url = this.getStackOutputValue(stackName, "URL");
+                        final Callable<String> callable = () -> {
+                            final HttpResponse response = WS.url(url).timeout(10000).get();
+                            // check HTTP response code
+                            if (WS.getStatus(response) != 200) {
+                                throw new RuntimeException("200 expected, but saw " + WS.getStatus(response));
+                            }
+                            return WS.getResponseAsString(response);
+                        };
+                        final String response = this.retry(context, callable);
+                        // check if nginx page appears
+                        Assert.assertTrue("http response body contains \"Welcome to nginx!\"", response.contains("Welcome to nginx!"));
+                    } finally {
+                        this.deleteStack(context, stackName);
+                    }
+                } finally {
+                    this.deleteStack(context, clusterStackName);
+                }
+            } finally {
+                this.deleteStack(context, wafStackName);
+            }
+        } finally {
+            this.deleteStack(context, vpcStackName);
+        }
+    }
+
+    @Test
     public void testCloudMap() throws JSchException {
         final Context context = new Context();
         final String vpcStackName = "vpc-2azs-" + this.random8String();

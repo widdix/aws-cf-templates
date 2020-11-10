@@ -23,6 +23,7 @@ Metadata:
       - ParentZoneStack
       - ParentAlertStack
       - ParentS3StackAccessLog
+      - ParentWAFStack
     - Label:
         default: 'Lambda@Edge Parameters'
       Parameters:
@@ -57,6 +58,10 @@ Parameters:
     Default: ''
   ParentS3StackAccessLog:
     Description: 'Optional stack name of parent s3 stack based on state/s3.yaml template (with Access set to ElbAccessLogWrite) to store access logs.'
+    Type: String
+    Default: ''
+  ParentWAFStack:
+    Description: 'Optional stack name of parent WAF stack based on the security/waf.yaml template.'
     Type: String
     Default: ''
   SubDomainNameWithDot:
@@ -115,6 +120,7 @@ Parameters:
     Default: ''
 Conditions:
   HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
+  HasWAF: !Not [!Equals [!Ref ParentWAFStack, '']]
   HasRedirectDomainName: !Equals [!Ref EnableRedirectSubDomainName, 'true']
   HasAcmCertificateArn: !Equals [!Ref CertificateType, 'AcmCertificateArn']
   HasIamCertificateId: !Equals [!Ref CertificateType, 'IamCertificateId']
@@ -256,6 +262,10 @@ Resources:
           IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue']
           MinimumProtocolVersion: 'TLSv1.1_2016'
           SslSupportMethod: 'sni-only'
+        WebACLId: !If
+        - HasWAF
+        - {'Fn::ImportValue': !Sub '${ParentWAFStack}-WebACL'}
+        - !Ref 'AWS::NoValue'
   Route53RecordV2:
     Type: 'AWS::Route53::RecordSetGroup'
     Properties:
