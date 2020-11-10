@@ -31,7 +31,6 @@ Metadata:
       - SortKeyName
       - SortKeyType
       - BillingAndScalingMode
-      - Encryption
       - TimeToLiveAttributeName
       - StreamViewType
       - BackupRetentionPeriod
@@ -212,11 +211,6 @@ Parameters:
     Description: 'Target read capacity utilization (in percent) that auto scaling tries to achieve (if you have spiky reads, a lower number is better; ignored when BillingAndScalingMode := ONDEMAND).'
     Type: Number
     Default: 80
-  Encryption:
-    Description: 'Deprecated in v11, will be removed in v13, use ParentKmsKeyStack instead! Enable server side encryption using KMS (AWS managed) CMK.'
-    Type: String
-    Default: false
-    AllowedValues: [aws, false]
   TimeToLiveAttributeName:
     Description: 'Optional name of the Time to Live attribute used to store the expiration time (unix timestamp in seconds)'
     Type: String
@@ -259,7 +253,6 @@ Conditions:
   HasAttribute5Definition: !Not [!Equals [!Ref Attribute5Name, '']]
   HasAttribute6Definition: !Not [!Equals [!Ref Attribute6Name, '']]
   HasTableName: !Not [!Equals [!Ref TableName, '']]
-  HasAwsManagedEncryption: !Equals [!Ref Encryption, aws]
   HasBillingAndScalingModeProvisioned: !Equals [!Ref BillingAndScalingMode, PROVISIONED]
   HasTimeToLiveAttributeName: !Not [!Equals [!Ref TimeToLiveAttributeName, '']]
   HasStream: !Not [!Equals [!Ref StreamViewType, 'DISABLED']]
@@ -376,8 +369,8 @@ Resources:
       ProvisionedThroughput: !If [HasBillingAndScalingModeProvisioned, {ReadCapacityUnits: !Ref MinReadCapacityUnits, WriteCapacityUnits: !Ref MinWriteCapacityUnits}, !Ref 'AWS::NoValue']
       SSESpecification:
         KMSMasterKeyId: !If [HasKmsKey, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}, !Ref 'AWS::NoValue']
-        SSEEnabled: !If [HasKmsKey, true, !If [HasAwsManagedEncryption, true, false]]
-        SSEType: !If [HasKmsKey, KMS, !If [HasAwsManagedEncryption, KMS, !Ref 'AWS::NoValue']]
+        SSEEnabled: !If [HasKmsKey, true, false]
+        SSEType: !If [HasKmsKey, KMS, !Ref 'AWS::NoValue']
       TimeToLiveSpecification: !If [HasTimeToLiveAttributeName, {AttributeName: !Ref TimeToLiveAttributeName, Enabled: true}, !Ref 'AWS::NoValue']
       StreamSpecification: !If [HasStream, {StreamViewType: !Ref StreamViewType}, !Ref 'AWS::NoValue']
   RoleScaling:
