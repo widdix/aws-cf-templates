@@ -175,45 +175,45 @@ Parameters:
 Mappings:
   RegionMap:
     'af-south-1':
-      ECSAMI: 'ami-014cd30fc155402d8'
+      ECSAMI: 'ami-07df2589b665edaeb'
     'eu-north-1':
-      ECSAMI: 'ami-015b157d082fd4e0d'
+      ECSAMI: 'ami-0e297ba48ee0d8420'
     'ap-south-1':
-      ECSAMI: 'ami-078902ae8103daac8'
+      ECSAMI: 'ami-0382cce5fd7023271'
     'eu-west-3':
-      ECSAMI: 'ami-0182381900083ba64'
+      ECSAMI: 'ami-0591b048d04681f04'
     'eu-west-2':
-      ECSAMI: 'ami-037dd70536680c11f'
+      ECSAMI: 'ami-07d7061189d56c1eb'
     'eu-south-1':
-      ECSAMI: 'ami-0d8d6b2f35b76a858'
+      ECSAMI: 'ami-0cef1ce13a147aa10'
     'eu-west-1':
-      ECSAMI: 'ami-0489c3efb4fe85f5d'
+      ECSAMI: 'ami-02e8b3843287bc013'
     'ap-northeast-2':
-      ECSAMI: 'ami-0cfc5eb79eceeeec9'
+      ECSAMI: 'ami-0cc0a1657e6978861'
     'me-south-1':
-      ECSAMI: 'ami-09ce7408677f51598'
+      ECSAMI: 'ami-045f5b6a34d6b9ea1'
     'ap-northeast-1':
-      ECSAMI: 'ami-06ee72c3360fd7fad'
+      ECSAMI: 'ami-0fa2ad3f51711653a'
     'sa-east-1':
-      ECSAMI: 'ami-05313c3a9e9148109'
+      ECSAMI: 'ami-04625c1460c9a9d32'
     'ca-central-1':
-      ECSAMI: 'ami-0a06b44c462364156'
+      ECSAMI: 'ami-0b30ea7d35c930001'
     'ap-east-1':
-      ECSAMI: 'ami-04eb26ad59fec6a8b'
+      ECSAMI: 'ami-0fe4ccc06609fdf97'
     'ap-southeast-1':
-      ECSAMI: 'ami-09dd721a797640468'
+      ECSAMI: 'ami-01308997d4554a2f3'
     'ap-southeast-2':
-      ECSAMI: 'ami-040bd2e2325535b3d'
+      ECSAMI: 'ami-091469e4fdf00e0ab'
     'eu-central-1':
-      ECSAMI: 'ami-09509e8f8dea8ab83'
+      ECSAMI: 'ami-08c1d0b4f39f110d4'
     'us-east-1':
-      ECSAMI: 'ami-0c1f575380708aa63'
+      ECSAMI: 'ami-0669eafef622afea1'
     'us-east-2':
-      ECSAMI: 'ami-015a2afe7e1a8af56'
+      ECSAMI: 'ami-09e6907b7bcde92d5'
     'us-west-1':
-      ECSAMI: 'ami-032a827d612b78a50'
+      ECSAMI: 'ami-08683f0adcda2044b'
     'us-west-2':
-      ECSAMI: 'ami-05edb14e89a5b98f3'
+      ECSAMI: 'ami-05d33de432484ef34'
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
@@ -519,7 +519,7 @@ Resources:
     Properties:
       HealthCheckIntervalSeconds: 15
       HealthCheckPort: '51678'
-      HealthCheckPath: '/'
+      HealthCheckPath: '/v1/metadata'
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 10
       HealthyThresholdCount: 2
@@ -809,7 +809,8 @@ Resources:
           #!/bin/bash -ex
           trap '/opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}' ERR
           echo "ECS_CLUSTER=${Cluster}" >> /etc/ecs/ecs.config
-           echo "ECS_CONTAINER_STOP_TIMEOUT=${StopContainerTimeoutInSeconds}s" >> /etc/ecs/ecs.config
+          echo "ECS_CONTAINER_STOP_TIMEOUT=${StopContainerTimeoutInSeconds}s" >> /etc/ecs/ecs.config
+          echo "ECS_ALLOW_OFFHOST_INTROSPECTION_ACCESS=true" >> /etc/ecs/ecs.config
           yum install -y aws-cfn-bootstrap
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
           /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}

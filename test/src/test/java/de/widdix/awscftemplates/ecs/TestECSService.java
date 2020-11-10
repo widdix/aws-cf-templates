@@ -189,4 +189,66 @@ public class TestECSService extends ACloudFormationTest {
         }
     }
 
+    @Test
+    public void testWaf() {
+        final Context context = new Context();
+        final String vpcStackName = "vpc-2azs-" + this.random8String();
+        final String wafStackName = "waf-" + this.random8String();
+        final String clusterStackName = "ecs-cluster-" + this.random8String();
+        final String stackName = "ecs-service-" + this.random8String();
+        final String classB = "10";
+        final String keyName = "key-" + this.random8String();
+        try {
+            this.createKey(keyName);
+            try {
+                this.createStack(context, vpcStackName,
+                        "vpc/vpc-2azs.yaml",
+                        new Parameter().withParameterKey("ClassB").withParameterValue(classB)
+                );
+                try {
+                    this.createStack(context, wafStackName, "security/waf.yaml");
+                    try {
+                        this.createStack(context, clusterStackName,
+                                "ecs/cluster.yaml",
+                                new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
+                                new Parameter().withParameterKey("ParentWAFStack").withParameterValue(wafStackName),
+                                new Parameter().withParameterKey("KeyName").withParameterValue(keyName)
+                        );
+                        try {
+                            this.createStack(context, stackName,
+                                    "ecs/service-dedicated-alb.yaml",
+                                    new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
+                                    new Parameter().withParameterKey("ParentWAFStack").withParameterValue(wafStackName),
+                                    new Parameter().withParameterKey("ParentClusterStack").withParameterValue(clusterStackName),
+                                    new Parameter().withParameterKey("Image").withParameterValue("nginx:1.11.5")
+                            );
+                            final String url = this.getStackOutputValue(stackName, "URL");
+                            final Callable<String> callable = () -> {
+                                final HttpResponse response = WS.url(url).timeout(10000).get();
+                                // check HTTP response code
+                                if (WS.getStatus(response) != 200) {
+                                    throw new RuntimeException("200 expected, but saw " + WS.getStatus(response));
+                                }
+                                return WS.getResponseAsString(response);
+                            };
+                            final String response = this.retry(context, callable);
+                            // check if nginx page appears
+                            Assert.assertTrue("http response body contains \"Welcome to nginx!\"", response.contains("Welcome to nginx!"));
+                        } finally {
+                            this.deleteStack(context, stackName);
+                        }
+                    } finally {
+                        this.deleteStack(context, clusterStackName);
+                    }
+                } finally {
+                    this.deleteStack(context, wafStackName);
+                }
+            } finally {
+                this.deleteStack(context, vpcStackName);
+            }
+        } finally {
+            this.deleteKey(context, keyName);
+        }
+    }
+
 }
