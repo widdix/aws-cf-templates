@@ -131,7 +131,7 @@ Resources:
             } else if (str.includes(':')) {
               return anonymizeIPv6Address(str);
             } else {
-              throw new Error('Neither IPv4 nor IPv6: ' + str);
+              return str;
             }
           }
 
