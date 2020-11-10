@@ -813,6 +813,7 @@ Resources:
           - !If [HasClientSecurityGroup2, {'Fn::ImportValue': !Sub '${ParentClientStack2}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
           - !If [HasClientSecurityGroup3, {'Fn::ImportValue': !Sub '${ParentClientStack3}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
           Subnets: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-Subnets${SubnetsReach}'}]
+      PlatformVersion: '1.4.0'
       TaskDefinition: !Ref TaskDefinition
   CPUUtilizationTooHighAlarm:
     Condition: HasAlertTopic
