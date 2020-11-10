@@ -98,12 +98,12 @@ Parameters:
     Default: '404'
     AllowedValues: ['200', '404']
   EnableRedirectSubDomainName:
-    Description: 'Deprecated since v12. Will be removed in v14. Sometimes, you want one (sub)domain to redirect to the primary name. E.g., if your primary website is www.widdix.net, you want widdix.net to redirect to www.widdix.net.'
+    Description: 'Deprecated since v12. Will be removed in v14. Use static-website/lambdaedge-index-document instead.'
     Type: String
     Default: 'false'
     AllowedValues: ['true', 'false']
   RedirectSubDomainNameWithDot:
-    Description: 'Deprecated since v12. Will be removed in v14. Optional name that is used to create the DNS entry with trailing dot, e.g. §{RedirectSubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain.'
+    Description: 'Deprecated since v12. Will be removed in v14. Use static-website/lambdaedge-index-document instead.'
     Type: String
     Default: ''
   CertificateType:
