@@ -690,7 +690,7 @@ Resources:
           - 'iam:GetSSHPublicKey'
           Resource:
           - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
-  VirtualMachine:
+  VirtualMachine: # TODO make IMDSv2 required (waits for https://github.com/aws-cloudformation/aws-cloudformation-coverage-roadmap/issues/655)
     Type: 'AWS::EC2::Instance'
     Metadata:
       'AWS::CloudFormation::Init':

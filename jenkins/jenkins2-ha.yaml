@@ -598,8 +598,8 @@ Resources:
     Type: 'AWS::Logs::LogGroup'
     Properties:
       RetentionInDays: !Ref MasterLogsRetentionInDays
-  MasterLC:
-    Type: 'AWS::AutoScaling::LaunchConfiguration'
+  MasterLaunchTemplate:
+    Type: 'AWS::EC2::LaunchTemplate'
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
@@ -852,8 +852,8 @@ Resources:
               content: !Sub |
                 [cfn-auto-reloader-hook]
                 triggers=post.update
-                path=Resources.MasterLC.Metadata.AWS::CloudFormation::Init
-                action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=MasterLC
+                path=Resources.MasterLaunchTemplate.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=MasterLaunchTemplate
                 runas=root
           services:
             sysvinit:
@@ -895,10 +895,10 @@ Resources:
               command: 'service jenkins start'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'b_await_jenkins':
-              command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              command: 'until $(curl --silent --max-time 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'c_download_cli':
-              command: 'curl -s -m 60 -o /opt/jenkins-cli.jar -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/jnlpJars/jenkins-cli.jar'
+              command: 'curl --silent --max-time 60 -o /opt/jenkins-cli.jar -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/jnlpJars/jenkins-cli.jar'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'd_activate_slave_agent_port':
               command: 'sed -i -e "s@<slaveAgentPort>.*</slaveAgentPort>@<slaveAgentPort>49817</slaveAgentPort>@" /var/lib/jenkins/config.xml'
@@ -910,7 +910,7 @@ Resources:
               command: 'service jenkins restart'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'g_await_jenkins':
-              command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              command: 'until $(curl --silent --max-time 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'h_install_plugins':
               command: 'java -jar /opt/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" install-plugin $(cat /root/plugins.txt | tr "\n" " ")'
@@ -919,7 +919,7 @@ Resources:
               command: 'service jenkins restart'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'j_await_jenkins':
-              command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              command: 'until $(curl --silent --max-time 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'k_set_admin_password':
               command: !Sub 'echo $''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", \''${MasterAdminPassword}\'')'' | java -jar /opt/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" groovy ='
@@ -958,35 +958,42 @@ Resources:
         custom_after:
           commands:
             'a_await_jenkins':
-              command: !Sub 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:${MasterAdminPassword}" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              command: !Sub 'until $(curl --silent --max-time 60 -o /dev/null -I -f -u "admin:${MasterAdminPassword}" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /opt/jenkins-cli.jar ]'
             'b_download_cli':
-              command: !Sub 'curl -s -m 60 -o /opt/jenkins-cli.jar -u "admin:${MasterAdminPassword}" http://localhost:8080/jnlpJars/jenkins-cli.jar'
+              command: !Sub 'curl --silent --max-time 60 -o /opt/jenkins-cli.jar -u "admin:${MasterAdminPassword}" http://localhost:8080/jnlpJars/jenkins-cli.jar'
               test: '[ ! -f /opt/jenkins-cli.jar ]'
     Properties:
-      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
-      IamInstanceProfile: !Ref MasterIP
-      InstanceType: !Ref MasterInstanceType
-      SecurityGroups:
-      - !Ref MasterSG
-      KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
-      BlockDeviceMappings:
-      - DeviceName: '/dev/xvda'
-        Ebs:
-          VolumeSize: !Ref MasterVolumeSize
-          VolumeType: gp2
-      UserData:
-        'Fn::Base64': !Sub |
-          #!/bin/bash -x
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource MasterLC --region ${AWS::Region}
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource MasterASG --region ${AWS::Region}
+      LaunchTemplateData:
+        BlockDeviceMappings:
+        - DeviceName: '/dev/xvda'
+          Ebs:
+            VolumeSize: !Ref MasterVolumeSize
+            VolumeType: gp2
+        IamInstanceProfile:
+          Name: !Ref MasterIP
+        ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+        InstanceType: !Ref MasterInstanceType
+        KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+        MetadataOptions:
+          HttpPutResponseHopLimit: 2 # allow the build to run inside Docker
+          HttpTokens: required
+        SecurityGroupIds:
+        - !Ref MasterSG
+        UserData:
+          'Fn::Base64': !Sub |
+            #!/bin/bash -x
+            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource MasterLaunchTemplate --region ${AWS::Region}
+            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource MasterASG --region ${AWS::Region}
   MasterASG:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     DependsOn:
     - MasterStorageMountTargetA
     - MasterStorageMountTargetB
     Properties:
-      LaunchConfigurationName: !Ref MasterLC
+      LaunchTemplate:
+        LaunchTemplateId: !Ref MasterLaunchTemplate
+        Version: !GetAtt 'MasterLaunchTemplate.LatestVersionNumber'
       MinSize: '1'
       MaxSize: '1'
       HealthCheckGracePeriod: 1800 # needs to be in sync with CreationPolicy/UpdatePolicy timeout

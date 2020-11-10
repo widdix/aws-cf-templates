@@ -687,8 +687,8 @@ Resources:
     Type: 'AWS::Logs::LogGroup'
     Properties:
       RetentionInDays: !Ref MasterLogsRetentionInDays
-  MasterLC:
-    Type: 'AWS::AutoScaling::LaunchConfiguration'
+  MasterLaunchTemplate:
+    Type: 'AWS::EC2::LaunchTemplate'
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
@@ -929,8 +929,8 @@ Resources:
               'java-1.8.0-amazon-corretto': []
               'ruby': []
             rubygems:
-              'aws-sdk-autoscaling': ['1.45.0']
-              'aws-sdk-sqs': ['1.32.0']
+              'aws-sdk-autoscaling': ['1.47.0']
+              'aws-sdk-sqs': ['1.34.0']
               daemons: ['1.3.1']
           files:
             '/etc/cfn/cfn-hup.conf':
@@ -946,8 +946,8 @@ Resources:
               content: !Sub |
                 [cfn-auto-reloader-hook]
                 triggers=post.update
-                path=Resources.MasterLC.Metadata.AWS::CloudFormation::Init
-                action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=MasterLC
+                path=Resources.MasterLaunchTemplate.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=MasterLaunchTemplate
                 runas=root
             '/etc/init.d/lifecycle-poller':
               content: |
@@ -1184,7 +1184,7 @@ Resources:
             '/opt/cloudwatch-build-active.sh':
               content: !Sub |
                 #!/bin/bash
-                VALUE="$(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/computer/api/xml?xpath=*/busyExecutors' | sed -r 's/<[/a-zA-Z]*>//g')"
+                VALUE="$(curl --silent --max-time 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/computer/api/xml?xpath=*/busyExecutors' | sed -r 's/<[/a-zA-Z]*>//g')"
                 aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildActive --value ${!VALUE} --unit Count
               mode: '000700'
               owner: root
@@ -1192,7 +1192,7 @@ Resources:
             '/opt/cloudwatch-build-queue.sh':
               content: !Sub |
                 #!/bin/bash
-                VALUE="$(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/jqs-monitoring/api/xml?xpath=/JQSMonitoring/buildQueue/numberOfJobs' | sed -r 's/<[/a-zA-Z]*>//g')"
+                VALUE="$(curl --silent --max-time 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/jqs-monitoring/api/xml?xpath=/JQSMonitoring/buildQueue/numberOfJobs' | sed -r 's/<[/a-zA-Z]*>//g')"
                 aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildQueue --value ${!VALUE} --unit Count
               mode: '000700'
               owner: root
@@ -1200,8 +1200,8 @@ Resources:
             '/opt/cloudwatch-build-active-queue.sh':
               content: !Sub |
                 #!/bin/bash
-                VALUE1="$(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/computer/api/xml?xpath=*/busyExecutors' | sed -r 's/<[/a-zA-Z]*>//g')"
-                VALUE2="$(curl -s -m 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/jqs-monitoring/api/xml?xpath=/JQSMonitoring/buildQueue/numberOfJobs' | sed -r 's/<[/a-zA-Z]*>//g')"
+                VALUE1="$(curl --silent --max-time 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/computer/api/xml?xpath=*/busyExecutors' | sed -r 's/<[/a-zA-Z]*>//g')"
+                VALUE2="$(curl --silent --max-time 60 -u 'admin:${MasterAdminPassword}' 'http://localhost:8080/jqs-monitoring/api/xml?xpath=/JQSMonitoring/buildQueue/numberOfJobs' | sed -r 's/<[/a-zA-Z]*>//g')"
                 VALUE=$(( $VALUE1 + $VALUE2 ))
                 aws --region ${AWS::Region} cloudwatch put-metric-data --namespace ${AWS::StackName} --metric-name BuildActiveQueue --value ${!VALUE} --unit Count
               mode: '000700'
@@ -1239,10 +1239,10 @@ Resources:
               command: 'service jenkins start'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'b_await_jenkins':
-              command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              command: 'until $(curl --silent --max-time 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'c_download_cli':
-              command: 'curl -s -m 60 -o /opt/jenkins-cli.jar -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/jnlpJars/jenkins-cli.jar'
+              command: 'curl --silent --max-time 60 -o /opt/jenkins-cli.jar -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/jnlpJars/jenkins-cli.jar'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'd_activate_slave_agent_port':
               command: 'sed -i -e "s@<slaveAgentPort>.*</slaveAgentPort>@<slaveAgentPort>49817</slaveAgentPort>@" /var/lib/jenkins/config.xml'
@@ -1257,7 +1257,7 @@ Resources:
               command: 'service jenkins restart'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'h_await_jenkins':
-              command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              command: 'until $(curl --silent --max-time 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'i_install_plugins':
               command: 'java -jar /opt/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" install-plugin $(cat /root/plugins.txt | tr "\n" " ")'
@@ -1266,7 +1266,7 @@ Resources:
               command: 'service jenkins restart'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'k_await_jenkins':
-              command: 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              command: 'until $(curl --silent --max-time 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'l_set_admin_password':
               command: !Sub 'echo $''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", \''${MasterAdminPassword}\'')'' | java -jar /opt/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" groovy ='
@@ -1305,35 +1305,42 @@ Resources:
         custom_after:
           commands:
             'a_await_jenkins':
-              command: !Sub 'until $(curl -s -m 60 -o /dev/null -I -f -u "admin:${MasterAdminPassword}" http://localhost:8080/cli/); do printf "."; sleep 1; done'
+              command: !Sub 'until $(curl --silent --max-time 60 -o /dev/null -I -f -u "admin:${MasterAdminPassword}" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /opt/jenkins-cli.jar ]'
             'b_download_cli':
-              command: !Sub 'curl -s -m 60 -o /opt/jenkins-cli.jar -u "admin:${MasterAdminPassword}" http://localhost:8080/jnlpJars/jenkins-cli.jar'
+              command: !Sub 'curl --silent --max-time 60 -o /opt/jenkins-cli.jar -u "admin:${MasterAdminPassword}" http://localhost:8080/jnlpJars/jenkins-cli.jar'
               test: '[ ! -f /opt/jenkins-cli.jar ]'
     Properties:
-      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
-      IamInstanceProfile: !Ref MasterIP
-      InstanceType: !Ref MasterInstanceType
-      SecurityGroups:
-      - !Ref MasterSG
-      KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
-      BlockDeviceMappings:
-      - DeviceName: '/dev/xvda'
-        Ebs:
-          VolumeSize: !Ref MasterVolumeSize
-          VolumeType: gp2
-      UserData:
-        'Fn::Base64': !Sub |
-          #!/bin/bash -x
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource MasterLC --region ${AWS::Region}
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource MasterASG --region ${AWS::Region}
+      LaunchTemplateData:
+        BlockDeviceMappings:
+        - DeviceName: '/dev/xvda'
+          Ebs:
+            VolumeSize: !Ref MasterVolumeSize
+            VolumeType: gp2
+        IamInstanceProfile:
+          Name: !Ref MasterIP
+        ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+        InstanceType: !Ref MasterInstanceType
+        KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+        MetadataOptions:
+          HttpPutResponseHopLimit: 2 # allow the build to run inside Docker
+          HttpTokens: required
+        SecurityGroupIds:
+        - !Ref MasterSG
+        UserData:
+          'Fn::Base64': !Sub |
+            #!/bin/bash -x
+            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource MasterLaunchTemplate --region ${AWS::Region}
+            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource MasterASG --region ${AWS::Region}
   MasterASG:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     DependsOn:
     - MasterStorageMountTargetA
     - MasterStorageMountTargetB
     Properties:
-      LaunchConfigurationName: !Ref MasterLC
+      LaunchTemplate:
+        LaunchTemplateId: !Ref MasterLaunchTemplate
+        Version: !GetAtt 'MasterLaunchTemplate.LatestVersionNumber'
       MinSize: '1'
       MaxSize: '1'
       HealthCheckGracePeriod: 1800 # needs to be in sync with CreationPolicy/UpdatePolicy timeout
@@ -1565,8 +1572,8 @@ Resources:
     Type: 'AWS::Logs::LogGroup'
     Properties:
       RetentionInDays: !Ref AgentLogsRetentionInDays
-  AgentLC:
-    Type: 'AWS::AutoScaling::LaunchConfiguration'
+  AgentLaunchTemplate:
+    Type: 'AWS::EC2::LaunchTemplate'
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
@@ -1790,8 +1797,8 @@ Resources:
               content: !Sub |
                 [cfn-auto-reloader-hook]
                 triggers=post.update
-                path=Resources.AgentLC.Metadata.AWS::CloudFormation::Init
-                action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=AgentLC
+                path=Resources.AgentLaunchTemplate.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=AgentLaunchTemplate
                 runas=root
           commands:
             'a_groupadd':
@@ -1819,8 +1826,8 @@ Resources:
             yum:
               'ruby': []
             rubygems:
-              'aws-sdk-autoscaling': ['1.45.0']
-              'aws-sdk-ec2': ['1.193.0']
+              'aws-sdk-autoscaling': ['1.47.0']
+              'aws-sdk-ec2': ['1.200.0']
               daemons: ['1.3.1']
           files:
             '/root/agent.xml':
@@ -1844,7 +1851,9 @@ Resources:
                 #!/bin/bash -ex
                 masterInstanceId=$(aws --region ${AWS::Region} autoscaling describe-auto-scaling-groups --auto-scaling-group-names ${MasterASG} --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)
                 masterIP=$(aws --region ${AWS::Region} ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
-                java -jar jenkins-cli.jar -s http://$masterIP:8080 -auth 'admin:${MasterAdminPassword}' get-node $(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
+                token=$(curl --silent --max-time 60 -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 30")
+                instanceId=$(curl --silent --max-time 60 -H "X-aws-ec2-metadata-token: $token" http://169.254.169.254/latest/meta-data/instance-id)
+                java -jar jenkins-cli.jar -s http://$masterIP:8080 -auth 'admin:${MasterAdminPassword}' get-node $instanceId
               mode: '000500'
               owner: root
               group: root
@@ -1853,17 +1862,20 @@ Resources:
                 #!/bin/bash -ex
                 masterInstanceId=$(aws --region ${AWS::Region} autoscaling describe-auto-scaling-groups --auto-scaling-group-names ${MasterASG} --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)
                 masterIP=$(aws --region ${AWS::Region} ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
-                cat /root/agent.xml | java -jar jenkins-cli.jar -s http://$masterIP:8080 -auth 'admin:${MasterAdminPassword}' create-node $(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
+                token=$(curl --silent --max-time 60 -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 30")
+                instanceId=$(curl --silent --max-time 60 -H "X-aws-ec2-metadata-token: $token" http://169.254.169.254/latest/meta-data/instance-id)
+                cat /root/agent.xml | java -jar jenkins-cli.jar -s http://$masterIP:8080 -auth 'admin:${MasterAdminPassword}' create-node $instanceId
               mode: '000500'
               owner: root
               group: root
             '/var/lib/jenkins/start-agent.sh':
               content: !Sub |
                 #!/bin/bash -ex
-                instanceId=$(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
+                token=$(curl --silent --max-time 60 -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 30")
+                instanceId=$(curl --silent --max-time 60 -H "X-aws-ec2-metadata-token: $token" http://169.254.169.254/latest/meta-data/instance-id)
                 masterInstanceId=$(aws --region ${AWS::Region} autoscaling describe-auto-scaling-groups --auto-scaling-group-names ${MasterASG} --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)
                 masterIP=$(aws --region ${AWS::Region} ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
-                secret=$(curl -s -m 60 -u 'admin:${MasterAdminPassword}' http://$masterIP:8080/computer/$instanceId/slave-agent.jnlp | xmllint --xpath '//argument[1]/text()' -)
+                secret=$(curl --silent --max-time 60 -u 'admin:${MasterAdminPassword}' http://$masterIP:8080/computer/$instanceId/slave-agent.jnlp | xmllint --xpath '//argument[1]/text()' -)
                 java -classpath remoting.jar hudson.remoting.jnlp.Main $secret $instanceId -url http://$masterIP:8080/ -headless
               mode: '000500'
               owner: jenkins
@@ -1873,8 +1885,8 @@ Resources:
                 #!/bin/bash -ex
                 masterInstanceId=$(aws --region ${AWS::Region} autoscaling describe-auto-scaling-groups --auto-scaling-group-names ${MasterASG} --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)
                 masterIP=$(aws --region ${AWS::Region} ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
-                wget -q -T 60 http://$masterIP:8080/jnlpJars/remoting.jar
-                wget -q -T 60 http://$masterIP:8080/jnlpJars/jenkins-cli.jar
+                wget --quiet --timeout=60 http://$masterIP:8080/jnlpJars/remoting.jar
+                wget --quiet --timeout=60 http://$masterIP:8080/jnlpJars/jenkins-cli.jar
               mode: '000500'
               owner: root
               group: root
@@ -1935,7 +1947,8 @@ Resources:
                 $conf = YAML::load_file(__dir__ + '/healthcheck.conf')
                 Aws.config.update(region: $conf['region'])
                 $log.info 'server started'
-                $instanceId = `curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id`
+                $token = `curl --silent --max-time 60 -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 30"`
+                $instanceId = `curl --silent --max-time 60 -H "X-aws-ec2-metadata-token: #{$token}" http://169.254.169.254/latest/meta-data/instance-id`
                 def isHealthy(agent)
                   autoscaling = Aws::AutoScaling::Client.new()
                   ec2 = Aws::EC2::Client.new()
@@ -2023,27 +2036,34 @@ Resources:
                 - '/opt/agent-healthcheck/daemon.rb'
                 - '/opt/agent-healthcheck/server.rb'
     Properties:
-      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
-      IamInstanceProfile: !Ref AgentIP
-      InstanceType: !Ref AgentInstanceType
-      SecurityGroups:
-      - !Ref AgentSG
-      KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
-      BlockDeviceMappings:
-      - DeviceName: '/dev/xvda'
-        Ebs:
-          VolumeSize: !Ref AgentVolumeSize
-          VolumeType: gp2
-      UserData:
-        'Fn::Base64': !Sub |
-          #!/bin/bash -x
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource AgentLC --region ${AWS::Region}
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AgentASG --region ${AWS::Region}
+      LaunchTemplateData:
+        BlockDeviceMappings:
+        - DeviceName: '/dev/xvda'
+          Ebs:
+            VolumeSize: !Ref AgentVolumeSize
+            VolumeType: gp2
+        IamInstanceProfile:
+          Name: !Ref AgentIP
+        ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+        InstanceType: !Ref AgentInstanceType
+        KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+        MetadataOptions:
+          HttpPutResponseHopLimit: 2 # allow the build to run inside Docker
+          HttpTokens: required
+        SecurityGroupIds:
+        - !Ref AgentSG
+        UserData:
+          'Fn::Base64': !Sub |
+            #!/bin/bash -x
+            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource AgentLaunchTemplate --region ${AWS::Region}
+            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AgentASG --region ${AWS::Region}
   AgentASG:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     DependsOn: MasterASG
     Properties:
-      LaunchConfigurationName: !Ref AgentLC
+      LaunchTemplate:
+        LaunchTemplateId: !Ref AgentLaunchTemplate
+        Version: !GetAtt 'AgentLaunchTemplate.LatestVersionNumber'
       MinSize: !Ref AgentMinSize
       MaxSize: !Ref AgentMaxSize
       HealthCheckGracePeriod: 900 # needs to be in sync with CreationPolicy/UpdatePolicy timeout
