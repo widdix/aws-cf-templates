@@ -79,6 +79,16 @@ Resources:
             Service: 'delivery.logs.amazonaws.com'
           Action: 's3:GetBucketAcl'
           Resource: !GetAtt 'LogBucket.Arn'
+        - Sid: AllowSSLRequestsOnly
+          Effect: Deny
+          Principal: '*'
+          Action: 's3:*'
+          Resource:
+          - !GetAtt 'LogBucket.Arn'
+          - !Sub '${LogBucket.Arn}/*'
+          Condition:
+            Bool:
+              'aws:SecureTransport': false
   FlowLogInternalBucket:
     Condition: InternalBucket
     DependsOn: LogBucketPolicy
