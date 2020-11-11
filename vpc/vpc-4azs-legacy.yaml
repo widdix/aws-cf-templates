@@ -118,7 +118,7 @@ Parameters:
     Description: 'Route table D private.'
     Type: String
 Conditions:
-  HasNot: !Equals [ 'true', 'false' ]
+  HasNot: !Equals ['true', 'false']
 Resources:
   NullResource:
     Type: 'Custom::NullResource'
