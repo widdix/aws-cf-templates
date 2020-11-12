@@ -54,6 +54,24 @@ Resources:
     Condition: InternalBucket
     Type: 'AWS::S3::Bucket'
     Properties: {}
+  ConfigBucketPolicy:
+    Condition: InternalBucket
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref ConfigBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: AllowSSLRequestsOnly # AWS Foundational Security Best Practices v1.0.0 S3.5
+          Effect: Deny
+          Principal: '*'
+          Action: 's3:*'
+          Resource:
+          - !GetAtt 'ConfigBucket.Arn'
+          - !Sub '${ConfigBucket.Arn}/*'
+          Condition:
+            Bool:
+              'aws:SecureTransport': false
   ConfigTopic:
     Type: 'AWS::SNS::Topic'
     Properties: {}

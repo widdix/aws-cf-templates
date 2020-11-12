@@ -117,10 +117,12 @@ Parameters:
   RouteTableDPrivate:
     Description: 'Route table D private.'
     Type: String
+Conditions:
+  HasNot: !Equals ['true', 'false']
 Resources:
-  Dummy:
-    Type: 'AWS::S3::Bucket'
-    Properties: {}
+  NullResource:
+    Type: 'Custom::NullResource'
+    Condition: HasNot
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'

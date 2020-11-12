@@ -83,7 +83,17 @@ Resources:
             - !Sub '${StateBucket.Arn}'
             - !Sub '${StateBucket.Arn}/*'
             NotPrincipal:
-              AWS: !Split [',', {"Fn::Sub": '${TerraformStateUserARNs},${TerraformStateAdminARNs}'}]
+              AWS: !Split [',', {'Fn::Sub': '${TerraformStateUserARNs},${TerraformStateAdminARNs}'}]
+          - Sid: AllowSSLRequestsOnly # AWS Foundational Security Best Practices v1.0.0 S3.5
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+            - !GetAtt 'StateBucket.Arn'
+            - !Sub '${StateBucket.Arn}/*'
+            Condition:
+              Bool:
+                'aws:SecureTransport': false
         - - Effect: 'Deny'
             Action: 's3:*'
             Resource:
@@ -91,6 +101,16 @@ Resources:
             - !Sub '${StateBucket.Arn}/*'
             NotPrincipal:
               AWS: !Split [',', !Ref TerraformStateAdminARNs]
+          - Sid: AllowSSLRequestsOnly # AWS Foundational Security Best Practices v1.0.0 S3.5
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+            - !GetAtt 'StateBucket.Arn'
+            - !Sub '${StateBucket.Arn}/*'
+            Condition:
+              Bool:
+                'aws:SecureTransport': false
   StateTable:
     Type: AWS::DynamoDB::Table
     Properties:
