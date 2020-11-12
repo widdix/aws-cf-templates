@@ -169,3 +169,8 @@ Outputs:
     Value: !Ref Topic
     Export:
       Name: !Sub '${AWS::StackName}-TopicARN'
+  TopicName:
+    Description: 'The name of the alert topic.'
+    Value: !GetAtt 'Topic.TopicName'
+    Export:
+      Name: !Sub '${AWS::StackName}-TopicName'
