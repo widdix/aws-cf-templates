@@ -93,6 +93,16 @@ Resources:
           Condition:
             StringEquals:
               's3:x-amz-acl': 'bucket-owner-full-control'
+        - Sid: AllowSSLRequestsOnly # AWS Foundational Security Best Practices v1.0.0 S3.5
+          Effect: Deny
+          Principal: '*'
+          Action: 's3:*'
+          Resource:
+          - !GetAtt 'TrailBucket.Arn'
+          - !Sub '${TrailBucket.Arn}/*'
+          Condition:
+            Bool:
+              'aws:SecureTransport': false
   TrailLogGroup:
     Type: 'AWS::Logs::LogGroup'
     Properties:
