@@ -26,6 +26,7 @@ Metadata:
       - ParentZoneStack
       - ParentSSHBastionStack
       - ParentAlertStack
+      - ParentSecretStack
     - Label:
         default: 'RDS Parameters'
       Parameters:
@@ -36,8 +37,6 @@ Metadata:
       - DBBackupRetentionPeriod
       - DBMasterUsername
       - DBMasterUserPassword
-      - UseSecretsManager
-      - SecretName
       - SubDomainNameWithDot
       - ReadSubDomainNameWithDot
       - PreferredBackupWindow
@@ -63,6 +62,10 @@ Parameters:
     Default: ''
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  ParentSecretStack:
+    Description: 'Optional Stack name of parent SecretsManager Secret Stack based on state/secretsmanager-dbsecret.yaml template.'
     Type: String
     Default: ''
   Engine:
@@ -104,20 +107,9 @@ Parameters:
     Type: 'String'
     Default: master
   DBMasterUserPassword:
-    Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set, value used from snapshot. Also ignored when UseSecretsManager is set to true).'
+    Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set, value used from snapshot. Also ignored when ParentSecretStack is used).'
     Type: String
     NoEcho: true
-    Default: ''
-  UseSecretsManager:
-    Description: Set to true if you want to use Secrets Manager to handle the database credential handling
-    Type: String
-    Default: false
-    AllowedValues:
-    - true
-    - false
-  SecretName:
-    Description: Name of the Secret to use. Must be set if UseSecretsManager is set to true
-    Type: String
     Default: ''
   SubDomainNameWithDot:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
@@ -204,6 +196,7 @@ Mappings:
       ClusterParameterGroupFamily: 'aurora-postgresql10'
       ParameterGroupFamily: 'aurora-postgresql10'
 Conditions:
+  HasSecret: !Not [!Equals [!Ref ParentSecretStack, '']]
   HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
@@ -211,24 +204,13 @@ Conditions:
   HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, '']]
   HasKmsKeyAndNotDBSnapshotIdentifier: !And [!Condition HasKmsKey, !Not [!Condition HasDBSnapshotIdentifier]]
   HasEngineMySQL: !Or [!Equals [!FindInMap [EngineMap, !Ref Engine, Engine], 'aurora'], !Equals [!FindInMap [EngineMap, !Ref Engine, Engine], 'aurora-mysql']]
-  HasSecretsManager: !Equals [!Ref UseSecretsManager, true]
 Resources:
-  Secret:
-    Condition: HasSecretsManager
-    Type: 'AWS::SecretsManager::Secret'
-    Properties:
-      Name: !Ref SecretName
-      GenerateSecretString:
-        SecretStringTemplate: !Sub '{"username": "${DBMasterUsername}"}'
-        GenerateStringKey: "password"
-        PasswordLength: 30
-        ExcludeCharacters: '"@/\'
   SecretTargetAttachment:
-    Condition: HasSecretsManager
+    Condition: HasSecret
     Type: "AWS::SecretsManager::SecretTargetAttachment"
     Properties:
-      SecretId: !Ref Secret
       TargetId: !Ref DBCluster
+      SecretId: {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}
       TargetType: AWS::RDS::DBCluster
   RecordSet:
     Condition: HasZone
@@ -314,8 +296,8 @@ Resources:
       - HasDBSnapshotIdentifier
       - !Ref 'AWS::NoValue'
       - !If
-        - HasSecretsManager
-        - {"Fn::Join": ["", ["{{resolve:secretsmanager:", {"Ref": "Secret"}, ":SecretString:password}}"]]}
+        - HasSecret
+        - {"Fn::Join": ["", ["{{resolve:secretsmanager:", {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}, ":SecretString:password}}"]]}
         - !Ref DBMasterUserPassword
       Port: !FindInMap [EngineMap, !Ref Engine, Port]
       PreferredBackupWindow: !Ref PreferredBackupWindow
