@@ -38,6 +38,7 @@ Metadata:
       - SubDomainName
       - NumShards
       - NumReplicas
+      - MultiAZ
     - Label:
         default: 'Alerting Parameters'
       Parameters:
@@ -124,6 +125,11 @@ Parameters:
     Default: 1
     MinValue: 0
     MaxValue: 5
+  MultiAZ:
+    Description: 'Specifies if the elasticache instance is deployed to multiple Availability Zones for HA.'
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'false'
   CPUUtilizationThreshold:
     Description: 'The maximum percentage of CPU usage (set to -1 to disable).'
     Type: Number
@@ -258,6 +264,7 @@ Resources:
       SnapshotRetentionLimit: !Ref SnapshotRetentionLimit
       SnapshotWindow: '00:00-03:00'
       TransitEncryptionEnabled: !Ref TransitEncryption
+      MultiAZEnabled: !Ref MultiAZ
     UpdatePolicy:
       UseOnlineResharding: true
   Node1CPUUtilizationTooHighAlarm:
