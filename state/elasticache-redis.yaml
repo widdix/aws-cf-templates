@@ -242,6 +242,7 @@ Resources:
       AtRestEncryptionEnabled: true
       AuthToken: !If [HasAuthToken, !Ref AuthToken, !Ref 'AWS::NoValue']
       AutomaticFailoverEnabled: !If [HasAutomaticFailoverEnabled, true, false]
+      MultiAZEnabled: !If [HasAutomaticFailoverEnabled, true, false]
       CacheNodeType: !Ref CacheNodeType
       CacheParameterGroupName: !Ref CacheParameterGroup
       CacheSubnetGroupName: !Ref CacheSubnetGroupName
