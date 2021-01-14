@@ -34,6 +34,7 @@ Metadata:
       - CertificateArn
       - Upstream
       - CookieSecret
+      - SkipAuthRegex
     - Label:
         default: 'EC2 Parameters'
       Parameters:
@@ -123,6 +124,10 @@ Parameters:
     Description: 'Seed string for secure cookies. Create one with python -c ''import os,base64; print base64.b64encode(os.urandom(16))'''
     Type: String
     NoEcho: true
+  SkipAuthRegex:
+    Description: 'Regex for path(s) which will be passed through the proxy without requiring Github authentication. The default is to require authentication for all paths.'
+    Type: String
+    Default: ''
   SubDomainNameWithDot:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
@@ -190,6 +195,7 @@ Conditions:
   HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
+  HasSkipAuthRegex: !Not [!Equals [!Ref SkipAuthRegex, '']]
 Resources:
   Logs:
     Type: 'AWS::Logs::LogGroup'
@@ -675,23 +681,26 @@ Resources:
             '/opt/oauth2-proxy': 'https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v6.1.1/oauth2-proxy-v6.1.1.linux-amd64.tar.gz'
           files:
             '/etc/oauth2-proxy.cfg':
-              content: !Sub |
-                ## OAuth2 Proxy Config File
-                ## https://github.com/oauth2-proxy/oauth2-proxy
-                http_address = "0.0.0.0:4180"
-                upstreams = [
-                  "${Upstream}"
-                ]
-                request_logging = false
-                pass_basic_auth = false
-                email_domains = [
-                  "*"
-                ]
-                client_id = "${GitHubClientId}"
-                client_secret = "${GitHubClientSecret}"
-                cookie_secret = "${CookieSecret}"
-                provider = "github"
-                github_org = "${GitHubOrganization}"
+              content: !Sub
+              - |
+                  ## OAuth2 Proxy Config File
+                  ## https://github.com/oauth2-proxy/oauth2-proxy
+                  http_address = "0.0.0.0:4180"
+                  upstreams = [
+                    "${Upstream}"
+                  ]
+                  ${SkipAuthRegexBlock}
+                  request_logging = false
+                  pass_basic_auth = false
+                  email_domains = [
+                    "*"
+                  ]
+                  client_id = "${GitHubClientId}"
+                  client_secret = "${GitHubClientSecret}"
+                  cookie_secret = "${CookieSecret}"
+                  provider = "github"
+                  github_org = "${GitHubOrganization}"
+              - {SkipAuthRegexBlock: !If [HasSkipAuthRegex, !Join ['', ['skip_auth_regex = ["', !Ref SkipAuthRegex, '"]']], '']}
               mode: '000644'
               owner: root
               group: root
