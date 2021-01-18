@@ -835,7 +835,7 @@ Resources:
         install:
           packages:
             rpm:
-              jenkins: 'http://ftp-chi.osuosl.org/pub/jenkins/redhat-stable/jenkins-2.263.1-1.1.noarch.rpm'
+              jenkins: 'http://ftp-chi.osuosl.org/pub/jenkins/redhat-stable/jenkins-2.263.2-1.1.noarch.rpm'
             yum:
               'java-1.8.0-amazon-corretto': []
           files:
