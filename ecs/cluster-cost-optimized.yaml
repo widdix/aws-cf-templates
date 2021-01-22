@@ -796,6 +796,11 @@ Resources:
                   - amazon-ssm-agent
     Properties:
       LaunchTemplateData:
+        BlockDeviceMappings:
+        - DeviceName: '/dev/xvda'
+          Ebs:
+            Encrypted: true
+            VolumeType: gp3
         IamInstanceProfile:
           Name: !Ref InstanceProfile
         ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', ECSAMI]

@@ -1315,8 +1315,9 @@ Resources:
         BlockDeviceMappings:
         - DeviceName: '/dev/xvda'
           Ebs:
+            Encrypted: true
             VolumeSize: !Ref MasterVolumeSize
-            VolumeType: gp2
+            VolumeType: gp3
         IamInstanceProfile:
           Name: !Ref MasterIP
         ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
@@ -2040,8 +2041,9 @@ Resources:
         BlockDeviceMappings:
         - DeviceName: '/dev/xvda'
           Ebs:
+            Encrypted: true
             VolumeSize: !Ref AgentVolumeSize
-            VolumeType: gp2
+            VolumeType: gp3
         IamInstanceProfile:
           Name: !Ref AgentIP
         ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]

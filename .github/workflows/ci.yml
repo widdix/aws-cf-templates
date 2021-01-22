@@ -16,12 +16,12 @@ jobs:
 
     - name: yamlllint
       run: |
-        pip install yamllint==1.24.2
+        pip install yamllint==1.25.0
         yamllint .
 
     - name: cfn-lint
       run: |
-        pip install cfn-lint==0.34.0
+        pip install cfn-lint==0.44.4
         cfn-lint -i W2001 W4002 W6001 -t '**/*.yaml'
 
     - name: license
