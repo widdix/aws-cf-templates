@@ -456,6 +456,11 @@ Resources:
                 - '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
     Properties:
       LaunchTemplateData:
+        BlockDeviceMappings:
+        - DeviceName: '/dev/xvda'
+          Ebs:
+            Encrypted: true
+            VolumeType: gp3
         IamInstanceProfile:
           Name: !Ref NATInstanceProfile
         ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', NATAMI]
