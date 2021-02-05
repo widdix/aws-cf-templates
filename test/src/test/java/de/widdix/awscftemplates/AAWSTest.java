@@ -15,6 +15,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.*;
 import com.amazonaws.services.s3.model.Region;
+import com.amazonaws.services.s3.model.Tag;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
@@ -22,6 +23,7 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,7 +37,7 @@ public abstract class AAWSTest extends ATest {
 
     private AmazonIdentityManagement iam;
 
-    private final AmazonS3 s3;
+    protected final AmazonS3 s3;
 
     private final AWSSecurityTokenService sts;
 
@@ -105,6 +107,21 @@ public abstract class AAWSTest extends ATest {
         this.s3.putObject(bucketName, key, body);
     }
 
+    protected final void createObject(final String bucketName, final String key, final InputStream content, final String contentType, final long contentLength) {
+        final ObjectMetadata metadata = new ObjectMetadata();
+        metadata.setContentType(contentType);
+        metadata.setContentLength(contentLength);
+        this.s3.putObject(bucketName, key, content, metadata);
+    }
+
+    protected final boolean doesObjectExist(final String bucketName, final String key) {
+        return this.s3.doesObjectExist(bucketName, key);
+    }
+
+    protected final List<Tag> getObjectTags(final String bucketName, final String key) {
+        return this.s3.getObjectTagging(new GetObjectTaggingRequest(bucketName, key)).getTagSet();
+    }
+
     protected final void deleteObject(final Context context, final String bucketName, final String key) {
         if (Config.get(Config.Key.DELETION_POLICY).equals("delete")) {
             if (Config.get(Config.Key.FAILURE_POLICY).equals("retain") && context.hasFailure()) {
@@ -140,6 +157,20 @@ public abstract class AAWSTest extends ATest {
                 }
             }
         }
+    }
+
+    protected long countBucket(final String name) {
+        long count = 0;
+        ObjectListing objectListing = s3.listObjects(name);
+        while (true) {
+            count += objectListing.getObjectSummaries().size();
+            if (objectListing.isTruncated()) {
+                objectListing = s3.listNextBatchOfObjects(objectListing);
+            } else {
+                break;
+            }
+        }
+        return count;
     }
 
     protected final void deleteBucket(final Context context, final String name) {

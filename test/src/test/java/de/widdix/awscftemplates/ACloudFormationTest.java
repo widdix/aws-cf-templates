@@ -27,7 +27,7 @@ public abstract class ACloudFormationTest extends AAWSTest {
         }
     }
 
-    private final AmazonCloudFormation cf = AmazonCloudFormationClientBuilder.standard().withCredentials(this.credentialsProvider).build();
+    protected final AmazonCloudFormation cf = AmazonCloudFormationClientBuilder.standard().withCredentials(this.credentialsProvider).build();
 
     public ACloudFormationTest() {
         super();
@@ -123,7 +123,7 @@ public abstract class ACloudFormationTest extends AAWSTest {
         return events;
     }
 
-    private void waitForStack(final Context context, final String stackName, final FinalStatus finalStackStatus) {
+    protected void waitForStack(final Context context, final String stackName, final FinalStatus finalStackStatus) {
         System.out.println("waitForStack[" + stackName + "]: to reach status " + finalStackStatus.finalStatus);
         final List<StackEvent> eventsDisplayed = new ArrayList<>();
         while (true) {
