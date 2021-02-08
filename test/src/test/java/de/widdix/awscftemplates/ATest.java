@@ -12,15 +12,17 @@ import org.junit.Assert;
 
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class ATest {
 
     protected final <T> T retry(final Context context, final Callable<T> callable) {
+        final AtomicInteger t = new AtomicInteger(0);
         final Callable<T> wrapper = () -> {
             try {
                 return callable.call();
             } catch (final Exception e) {
-                System.out.println("retry[] exception: " + e.getMessage());
+                System.out.println("retry[" + t.incrementAndGet() + "] exception: " + e.getMessage());
                 e.printStackTrace(System.out);
                 System.out.println();
                 throw e;
@@ -32,8 +34,8 @@ public abstract class ATest {
                 .withDelayBetweenTries(10, ChronoUnit.SECONDS)
                 .withFixedBackoff()
                 .build();
-        final CallResults<Object> results = new CallExecutor(config).execute(wrapper);
         try {
+            final CallResults<Object> results = new CallExecutor(config).execute(wrapper);
             return (T) results.getResult();
         } catch (final RuntimeException e) {
             context.reportFailure();

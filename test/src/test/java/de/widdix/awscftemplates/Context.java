@@ -11,7 +11,9 @@ public class Context {
     public void addStack(final String stackName) {
         stacks.put(stackName, true);
     }
+
     public void reportStackFailure(final String stackName) {
+        System.out.println("stack failure for " + stackName + " reported in context");
         if (!stacks.containsKey(stackName)) {
             throw new RuntimeException("stack not in context");
         }
@@ -19,6 +21,7 @@ public class Context {
     }
 
     public void reportFailure() {
+        System.out.println("failure reported in context");
         this.failure = true;
     }
 
