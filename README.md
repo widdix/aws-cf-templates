@@ -24,12 +24,6 @@ All templates are published under Apache License Version 2.0.
 
 ## Sponsors
 
-![AWS Open Source](./docs/img/aws-open-source.png)
-
-AWS sponsors credits to run the weekly integration tests. With the help of AWS, we run tests in multiple regions (`us-east-1`, `ap-southeast-2`, and `eu-central-1`) to increase the quality of the templates.[Read more](https://aws.amazon.com/blogs/opensource/aws-promotional-credits-open-source-projects/)
-
----
-
 [Become a sponsor](https://github.com/sponsors/widdix) via GitHub Sponsors.
 
 ---
