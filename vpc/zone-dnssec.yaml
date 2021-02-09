@@ -39,7 +39,7 @@ Conditions:
 Resources:
   KeySigningKey:
     Type: 'AWS::Route53::KeySigningKey'
-    Properties: 
+    Properties:
       HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
       KeyManagementServiceArn: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}
       Name: 'ksk_01'
@@ -47,7 +47,7 @@ Resources:
   DNSSEC:
     DependsOn: [KeySigningKey]
     Type: 'AWS::Route53::DNSSEC'
-    Properties: 
+    Properties:
       HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
   DNSSECInternalFailureAlarm:
     Condition: HasAlertTopic
