@@ -207,45 +207,45 @@ Parameters:
 Mappings:
   RegionMap:
     'af-south-1':
-      ECSAMI: 'ami-07df2589b665edaeb'
+      ECSAMI: 'ami-03b4171c2514d23c8'
     'eu-north-1':
-      ECSAMI: 'ami-0e297ba48ee0d8420'
+      ECSAMI: 'ami-0437d0e29b8dd2629'
     'ap-south-1':
-      ECSAMI: 'ami-0382cce5fd7023271'
+      ECSAMI: 'ami-08fcbb6bcfbc5ced8'
     'eu-west-3':
-      ECSAMI: 'ami-0591b048d04681f04'
+      ECSAMI: 'ami-0b2b26f34eb9f6482'
     'eu-west-2':
-      ECSAMI: 'ami-07d7061189d56c1eb'
+      ECSAMI: 'ami-0f82969826859fb14'
     'eu-south-1':
-      ECSAMI: 'ami-0cef1ce13a147aa10'
+      ECSAMI: 'ami-041a04d3133bd1c82'
     'eu-west-1':
-      ECSAMI: 'ami-02e8b3843287bc013'
+      ECSAMI: 'ami-0c15700b4e6bf474e'
     'ap-northeast-2':
-      ECSAMI: 'ami-0cc0a1657e6978861'
+      ECSAMI: 'ami-0d9ea717f56829882'
     'me-south-1':
-      ECSAMI: 'ami-045f5b6a34d6b9ea1'
+      ECSAMI: 'ami-022179c15f37ed380'
     'ap-northeast-1':
-      ECSAMI: 'ami-0fa2ad3f51711653a'
+      ECSAMI: 'ami-08aba6714243b1bf9'
     'sa-east-1':
-      ECSAMI: 'ami-04625c1460c9a9d32'
+      ECSAMI: 'ami-0e32d15591985c079'
     'ca-central-1':
-      ECSAMI: 'ami-0b30ea7d35c930001'
+      ECSAMI: 'ami-0c9bfd3e97bd089e9'
     'ap-east-1':
-      ECSAMI: 'ami-0fe4ccc06609fdf97'
+      ECSAMI: 'ami-0300fb071542677b3'
     'ap-southeast-1':
-      ECSAMI: 'ami-01308997d4554a2f3'
+      ECSAMI: 'ami-093df4839e8df694e'
     'ap-southeast-2':
-      ECSAMI: 'ami-091469e4fdf00e0ab'
+      ECSAMI: 'ami-0122a3618e52b6418'
     'eu-central-1':
-      ECSAMI: 'ami-08c1d0b4f39f110d4'
+      ECSAMI: 'ami-0f8ee411ba3a66276'
     'us-east-1':
-      ECSAMI: 'ami-0669eafef622afea1'
+      ECSAMI: 'ami-0e5b37ba2c8e7cc82'
     'us-east-2':
-      ECSAMI: 'ami-09e6907b7bcde92d5'
+      ECSAMI: 'ami-09c93f5e8e4b50e05'
     'us-west-1':
-      ECSAMI: 'ami-08683f0adcda2044b'
+      ECSAMI: 'ami-0306f5737181bb754'
     'us-west-2':
-      ECSAMI: 'ami-05d33de432484ef34'
+      ECSAMI: 'ami-0927d80c641f8d8bb'
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
