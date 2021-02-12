@@ -151,7 +151,7 @@ Resources:
         QueueConfigurations:
         - !If [HasS3VirusScan, {Event: 's3:ObjectCreated:*', Queue: {'Fn::ImportValue': !Sub '${ParentS3VirusScanStack}-ScanQueueArn'}}, !Ref 'AWS::NoValue']
       VersioningConfiguration: !If [HasVersioning, {Status: Enabled}, !If [HadVersioning, {Status: Suspended}, !Ref 'AWS::NoValue']]
-      BucketEncryption: !If [HasKmsKey, {ServerSideEncryptionConfiguration: [{ServerSideEncryptionByDefault: {KMSMasterKeyID: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}, SSEAlgorithm: 'aws:kms'}}]}, !Ref 'AWS::NoValue']
+      BucketEncryption: !If [HasKmsKey, {ServerSideEncryptionConfiguration: [{BucketKeyEnabled: true, ServerSideEncryptionByDefault: {KMSMasterKeyID: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}, SSEAlgorithm: 'aws:kms'}}]}, !Ref 'AWS::NoValue']
   BucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
     Properties:
