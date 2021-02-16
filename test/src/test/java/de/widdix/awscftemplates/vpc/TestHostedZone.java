@@ -15,7 +15,12 @@ public class TestHostedZone extends ACloudFormationTest {
         final String zoneStackName = "hostedzone-" + this.random8String();
         final String dnssecStackName = "dnssec-" + this.random8String();
         try {
-            this.createStack(context, keyStackName,"security/kms-key.yaml");
+            this.createStack(context, keyStackName,
+                    "security/kms-key.yaml",
+                    new Parameter().withParameterKey("Service").withParameterValue("dnssec-route53"),
+                    new Parameter().withParameterKey("KeySpec").withParameterValue("ECC_NIST_P256"),
+                    new Parameter().withParameterKey("KeyUsage").withParameterValue("SIGN_VERIFY")
+            );
             try {
                 this.createStack(context, zoneStackName,
                         "vpc/zone-legacy.yaml",
