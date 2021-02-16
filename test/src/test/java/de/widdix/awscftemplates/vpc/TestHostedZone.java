@@ -2,6 +2,7 @@ package de.widdix.awscftemplates.vpc;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 import de.widdix.awscftemplates.Context;
+import de.widdix.awscftemplates.Config;
 import org.junit.Test;
 
 public class TestHostedZone extends ACloudFormationTest {
