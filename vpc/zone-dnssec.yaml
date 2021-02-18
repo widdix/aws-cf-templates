@@ -1,0 +1,101 @@
+---
+# Copyright 2018 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'VPC: DNSSEC for public DNS zone (us-east-1 only!), a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentZoneStack
+      - ParentKmsKeyStack
+      - ParentAlertStack
+Parameters:
+  ParentZoneStack:
+    Description: 'Stack name of parent zone stack based on vpc/zone-*.yaml template.'
+    Type: String
+  ParentKmsKeyStack:
+    Description: 'Stack name of parent KMS key stack based on security/kms-key.yaml template (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
+    Type: String
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+Conditions:
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+Resources:
+  KeySigningKey:
+    Type: 'AWS::Route53::KeySigningKey'
+    Properties:
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
+      KeyManagementServiceArn: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}
+      Name: 'ksk_01'
+      Status: 'ACTIVE'
+  DNSSEC:
+    DependsOn: [KeySigningKey]
+    Type: 'AWS::Route53::DNSSEC'
+    Properties:
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
+  DNSSECInternalFailureAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      AlarmDescription: 'Hosted zone is in an INTERNAL_FAILURE state.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: HostedZoneId
+        Value: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
+      EvaluationPeriods: 1
+      MetricName: DNSSECInternalFailure
+      Namespace: 'AWS/Route53'
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+  DNSSECKeySigningKeysNeedingActionAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      AlarmDescription: 'One or multiple key signing keys (KSKs) are in ACTION_NEEDED state due to KMS failure.'
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: HostedZoneId
+        Value: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
+      EvaluationPeriods: 1
+      MetricName: DNSSECKeySigningKeysNeedingAction
+      Namespace: 'AWS/Route53'
+      OKActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'vpc/zone-dnssec'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
