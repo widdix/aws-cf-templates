@@ -290,3 +290,25 @@ If you have an existing Route53 Hosted Zone you can wrap it into our required fo
 
 ## Dependencies
 * `vpc/vpc-*azs.yaml` (**required**)
+
+# DNSSEC
+This template enables DNSSEC for a Route53 hosted zone. DNSSEC works for public hoted zones only.
+
+> Deploy this template to region `us-east-1` only.
+
+> In case you deployed the hosted zone stack based on `vpc/zone-public.yaml` in a region other than `us-east-1` deploy a wrapper stack based on `vpc/zone-legacy.yaml` to `us-east-1`.
+
+## Installation Guide
+1. This template depends the `zone-public.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/zone-public.yaml&stackName=zone)
+1. This template depends on the [`kms-key.yaml`](./security/) template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/security/kms-key.yaml&stackName=kms-key&param_Service=dnssec-route53&param_KeySpec=ECC_NIST_P256&param_KeyUsage=SIGN_VERIFY)
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/zone-dnssec.yaml&stackName=zone-dnssec&param_ParentZoneStack=zone&param_ParentKmsKeyStack=kms-key)
+1. Click **Next** to proceed with the next step of the wizard.
+1. Click **Next** to skip the **Options** step of the wizard.
+1. Click **Create** to start the creation of the stack.
+1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
+
+## Dependencies
+* `vpc/zone-public.yaml` (**required**)
+* `security/kms-key.yaml` (**required**)
+* `operations/alert.yaml` (recommended)

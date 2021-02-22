@@ -25,6 +25,8 @@ Metadata:
         default: 'KMS Parameters'
       Parameters:
       - Service
+      - KeySpec
+      - KeyUsage
 Parameters:
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
@@ -55,18 +57,44 @@ Parameters:
     - sqs
     - workmail
     - workspaces
+    - dnssec-route53
     Default: ALL_SERVICES
+  KeySpec:
+    Description: 'Specify the type of the CMK.'
+    Type: String
+    AllowedValues:
+    - SYMMETRIC_DEFAULT
+    - RSA_2048
+    - RSA_3072
+    - RSA_4096
+    - ECC_NIST_P256
+    - ECC_NIST_P384
+    - ECC_NIST_P521
+    - ECC_SECG_P256K1
+    Default: SYMMETRIC_DEFAULT
+  KeyUsage:
+    Description: 'Which cryptographic operations should the CMK support?'
+    Type: String
+    AllowedValues:
+    - ENCRYPT_DECRYPT
+    - SIGN_VERIFY
+    Default: ENCRYPT_DECRYPT
 Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasServiceAllServices: !Equals [!Ref Service, 'ALL_SERVICES']
   HasServiceS3PublicAccess: !Equals [!Ref Service, 'S3_PUBLIC_ACCESS']
+  HasDNSSECRoute53Access: !Equals [!Ref Service, 'dnssec-route53']
+  HasNotDNSSECRoute53Access: !Not [!Equals [!Ref Service, 'dnssec-route53']]
+  HasSymmetricKey: !Equals [!Ref KeySpec, 'SYMMETRIC_DEFAULT']
 Resources:
   Key:
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Type: 'AWS::KMS::Key'
     Properties:
-      EnableKeyRotation: true
+      EnableKeyRotation: !If [HasSymmetricKey, true, false]
+      KeySpec: !Ref KeySpec
+      KeyUsage: !Ref KeyUsage
       KeyPolicy:
         Version: '2012-10-17'
         Statement:
@@ -75,24 +103,27 @@ Resources:
             AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
           Action: 'kms:*'
           Resource: '*'
-        - Effect: Allow
-          Principal:
-            AWS: '*'
-          Action:
-          - 'kms:Encrypt'
-          - 'kms:Decrypt'
-          - 'kms:ReEncrypt*'
-          - 'kms:GenerateDataKey*'
-          - 'kms:CreateGrant'
-          - 'kms:ListGrants'
-          - 'kms:DescribeKey'
-          Resource: '*'
-          Condition:
-            StringEquals: !If
-            - HasServiceAllServices
-            - 'kms:CallerAccount': !Ref 'AWS::AccountId'
-            - 'kms:CallerAccount': !Ref 'AWS::AccountId'
-              'kms:ViaService': !Sub '${Service}.${AWS::Region}.amazonaws.com'
+        - !If
+          - HasNotDNSSECRoute53Access
+          - Effect: Allow
+            Principal:
+              AWS: '*'
+            Action:
+            - 'kms:Encrypt'
+            - 'kms:Decrypt'
+            - 'kms:ReEncrypt*'
+            - 'kms:GenerateDataKey*'
+            - 'kms:CreateGrant'
+            - 'kms:ListGrants'
+            - 'kms:DescribeKey'
+            Resource: '*'
+            Condition:
+              StringEquals: !If
+              - HasServiceAllServices
+              - 'kms:CallerAccount': !Ref 'AWS::AccountId'
+              - 'kms:CallerAccount': !Ref 'AWS::AccountId'
+                'kms:ViaService': !Sub '${Service}.${AWS::Region}.amazonaws.com'
+          - !Ref 'AWS::NoValue'
         - !If
           - HasServiceS3PublicAccess
           - Effect: Allow
@@ -104,6 +135,29 @@ Resources:
             Condition:
               StringEquals:
                 'kms:ViaService': !Sub 's3.${AWS::Region}.amazonaws.com'
+          - !Ref 'AWS::NoValue'
+        - !If
+          - HasDNSSECRoute53Access
+          - Effect: Allow
+            Principal:
+              Service: 'dnssec-route53.amazonaws.com'
+            Action:
+            - 'kms:DescribeKey'
+            - 'kms:GetPublicKey'
+            - 'kms:Sign'
+            Resource: '*'
+          - !Ref 'AWS::NoValue'
+        - !If
+          - HasDNSSECRoute53Access
+          - Effect: Allow
+            Principal:
+              Service: 'dnssec-route53.amazonaws.com'
+            Action:
+            - 'kms:CreateGrant'
+            Resource: '*'
+            Condition:
+              Bool:
+                'kms:GrantIsForAWSResource': true
           - !Ref 'AWS::NoValue'
   KeyAlias:
     DeletionPolicy: Retain
