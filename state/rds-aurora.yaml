@@ -27,6 +27,7 @@ Metadata:
       - ParentSSHBastionStack
       - ParentAlertStack
       - ParentSecretStack
+      - ParentSecretKmsKeyStack
     - Label:
         default: 'RDS Parameters'
       Parameters:
@@ -66,6 +67,12 @@ Parameters:
     Default: ''
   ParentSecretStack:
     Description: 'Optional Stack name of parent SecretsManager Secret Stack based on state/secretsmanager-dbsecret.yaml template.'
+    Type: String
+    Default: ''
+  ParentSecretKmsKeyStack:
+    Description: >-
+      'Optional Stack name of parent KMS key stack based on security/kms-key.yaml template.
+      Set this if your secret uses a custom KMS key.'
     Type: String
     Default: ''
   Engine:
@@ -197,6 +204,7 @@ Mappings:
       ParameterGroupFamily: 'aurora-postgresql10'
 Conditions:
   HasSecret: !Not [!Equals [!Ref ParentSecretStack, '']]
+  HasSecretKmsKey: !Not [!Equals [!Ref ParentSecretKmsKeyStack, '']]
   HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
@@ -212,6 +220,20 @@ Resources:
       TargetId: !Ref DBCluster
       SecretId: {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}
       TargetType: AWS::RDS::DBCluster
+  RotationSchedule:
+    Type: AWS::SecretsManager::RotationSchedule
+    DependsOn: SecretTargetAttachment
+    Properties:
+      SecretId: {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}
+      RotationRules:
+        AutomaticallyAfterDays: 30
+      HostedRotationLambda:
+        RotationType: MySQLSingleUser
+        KmsKeyArn: !If [HasSecretKmsKey, {'Fn::ImportValue': !Sub '${ParentSecretKmsKeyStack}-KeyId'}, !Ref 'AWS:NoValue']
+        RotationLambdaName: # TODO
+        VpcSubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
+        VpcSecurityGroupIds:
+
   RecordSet:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
