@@ -924,7 +924,7 @@ Resources:
         install:
           packages:
             rpm:
-              jenkins: 'http://ftp-chi.osuosl.org/pub/jenkins/redhat-stable/jenkins-2.263.4-1.1.noarch.rpm'
+              jenkins: 'http://ftp-chi.osuosl.org/pub/jenkins/redhat-stable/jenkins-2.277.1-1.1.noarch.rpm'
             yum:
               'java-1.8.0-amazon-corretto': []
               'ruby': []
@@ -1876,7 +1876,7 @@ Resources:
                 instanceId=$(curl --silent --max-time 60 -H "X-aws-ec2-metadata-token: $token" http://169.254.169.254/latest/meta-data/instance-id)
                 masterInstanceId=$(aws --region ${AWS::Region} autoscaling describe-auto-scaling-groups --auto-scaling-group-names ${MasterASG} --query 'AutoScalingGroups[0].Instances[0].InstanceId' --output text)
                 masterIP=$(aws --region ${AWS::Region} ec2 describe-instances --instance-ids $masterInstanceId --query 'Reservations[0].Instances[0].PrivateIpAddress' --output text)
-                secret=$(curl --silent --max-time 60 -u 'admin:${MasterAdminPassword}' http://$masterIP:8080/computer/$instanceId/slave-agent.jnlp | xmllint --xpath '//argument[1]/text()' -)
+                secret=$(curl --silent --max-time 60 -u 'admin:${MasterAdminPassword}' http://$masterIP:8080/computer/$instanceId/jenkins-agent.jnlp | xmllint --xpath '//argument[1]/text()' -)
                 java -classpath remoting.jar hudson.remoting.jnlp.Main $secret $instanceId -url http://$masterIP:8080/ -headless
               mode: '000500'
               owner: jenkins
