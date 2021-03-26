@@ -111,7 +111,8 @@ public class TestFargateService extends ACloudFormationTest {
                                 "fargate/service-cluster-alb.yaml",
                                 new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                                 new Parameter().withParameterKey("ParentClusterStack").withParameterValue(clusterStackName),
-                                new Parameter().withParameterKey("AppImage").withParameterValue("nginx:1.11.5")
+                                new Parameter().withParameterKey("AppImage").withParameterValue("nginx:1.11.5"),
+                                new Parameter().withParameterKey("Spot").withParameterValue("true")
                         );
                         final Callable<String> callable = () -> {
                             final HttpResponse response = WS.url(url).timeout(10000).get();
@@ -212,7 +213,8 @@ public class TestFargateService extends ACloudFormationTest {
                                 new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                                 new Parameter().withParameterKey("ParentClusterStack").withParameterValue(clusterStackName),
                                 new Parameter().withParameterKey("ParentWAFStack").withParameterValue(wafStackName),
-                                new Parameter().withParameterKey("AppImage").withParameterValue("nginx:1.11.5")
+                                new Parameter().withParameterKey("AppImage").withParameterValue("nginx:1.11.5"),
+                                new Parameter().withParameterKey("Spot").withParameterValue("true")
                         );
                         final String url = this.getStackOutputValue(stackName, "URL");
                         final Callable<String> callable = () -> {
@@ -327,7 +329,6 @@ public class TestFargateService extends ACloudFormationTest {
         } finally {
             this.deleteKey(context, keyName);
         }
-
     }
 
 }
