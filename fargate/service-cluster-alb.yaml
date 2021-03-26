@@ -74,6 +74,7 @@ Metadata:
       - Memory
       - SubnetsReach
       - AutoScaling
+      - Spot
       - DesiredCount
       - MaxCapacity
       - MinCapacity
@@ -320,6 +321,11 @@ Parameters:
     Default: 60
     MinValue: 0
     MaxValue: 1800
+  Spot:
+    Description: 'Run workload on spot capacity?'
+    Type: String
+    Default: false
+    AllowedValues: [true, false]
 Mappings:
   CpuMap:
     '0.25':
@@ -422,6 +428,7 @@ Conditions:
   HasSidecarEnvironment1Key: !Not [!Equals [!Ref SidecarEnvironment1Key, '']]
   HasSidecarEnvironment2Key: !Not [!Equals [!Ref SidecarEnvironment2Key, '']]
   HasSidecarEnvironment3Key: !Not [!Equals [!Ref SidecarEnvironment3Key, '']]
+  HasSpot: !Equals [!Ref Spot, 'true']
 Resources:
   RecordSet:
     Condition: HasZone
@@ -657,13 +664,16 @@ Resources:
     DependsOn: LoadBalancerListenerRule
     Type: 'AWS::ECS::Service'
     Properties:
+      CapacityProviderStrategy:
+      - Base: 0
+        CapacityProvider: !If [HasSpot, FARGATE_SPOT, FARGATE]
+        Weight: 1
       Cluster: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 100
       DesiredCount: !Ref DesiredCount
       HealthCheckGracePeriodSeconds: !Ref HealthCheckGracePeriod
-      LaunchType: FARGATE
       LoadBalancers:
       - ContainerName: !If [HasProxyImage, proxy, app]
         ContainerPort: !If [HasProxyImage, !Ref ProxyPort, !Ref AppPort]
