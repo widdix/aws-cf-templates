@@ -680,7 +680,7 @@ Resources:
           users:
             oauth2-proxy: {}
           sources:
-            '/opt/oauth2-proxy': 'https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v7.1.1/oauth2-proxy-v7.1.1.linux-amd64.tar.gz'
+            '/opt/oauth2-proxy': 'https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v7.1.2/oauth2-proxy-v7.1.2.linux-amd64.tar.gz'
           files:
             '/etc/oauth2-proxy.cfg':
               content: !Sub
@@ -721,7 +721,7 @@ Resources:
                 User=oauth2-proxy
                 Group=oauth2-proxy
 
-                ExecStart=/opt/oauth2-proxy/oauth2-proxy-v7.1.1.linux-amd64/oauth2-proxy --config=/etc/oauth2-proxy.cfg
+                ExecStart=/opt/oauth2-proxy/oauth2-proxy-v7.1.2.linux-amd64/oauth2-proxy --config=/etc/oauth2-proxy.cfg
                 ExecReload=/bin/kill -HUP $MAINPID
 
                 KillMode=process
