@@ -196,45 +196,47 @@ Parameters:
 Mappings:
   RegionMap:
     'af-south-1':
-      AMI: 'ami-0438616cef15ba2ca'
+      AMI: 'ami-050312a64b6fd7ad9'
     'eu-north-1':
-      AMI: 'ami-0eb6f319b31f7092d'
+      AMI: 'ami-076c2ee28e3f9f38e'
     'ap-south-1':
-      AMI: 'ami-08e0ca9924195beba'
+      AMI: 'ami-068d43a544160b7ef'
     'eu-west-3':
-      AMI: 'ami-0ea4a063871686f37'
+      AMI: 'ami-0575fc648136871a1'
     'eu-west-2':
-      AMI: 'ami-098828924dc89ea4a'
+      AMI: 'ami-01c835443b86fe988'
     'eu-south-1':
-      AMI: 'ami-0ea288dd7bb5b0251'
+      AMI: 'ami-0458384bd8b7c17d4'
     'eu-west-1':
-      AMI: 'ami-0fc970315c2d38f01'
+      AMI: 'ami-0d712b3e6e1f798ef'
+    'ap-northeast-3':
+      AMI: 'ami-039fe1eba495c966f'
     'ap-northeast-2':
-      AMI: 'ami-09282971cf2faa4c9'
+      AMI: 'ami-081511b9e3af53902'
     'me-south-1':
-      AMI: 'ami-0cc4f2b06b56d27e9'
+      AMI: 'ami-0a70a3362a013de22'
     'ap-northeast-1':
-      AMI: 'ami-0992fc94ca0f1415a'
+      AMI: 'ami-0bc8ae3ec8e338cbc'
     'sa-east-1':
-      AMI: 'ami-089aac6323aa08aee'
+      AMI: 'ami-0ca43e15336e41670'
     'ca-central-1':
-      AMI: 'ami-075cfad2d9805c5f2'
+      AMI: 'ami-09d75fc0586859f7a'
     'ap-east-1':
-      AMI: 'ami-040f64b9a031d8eb0'
+      AMI: 'ami-093d73f27794c5b1d'
     'ap-southeast-1':
-      AMI: 'ami-0e2e44c03b85f58b3'
+      AMI: 'ami-0ba0ce0c11eb723a1'
     'ap-southeast-2':
-      AMI: 'ami-04f77aa5970939148'
+      AMI: 'ami-0b3d7a5ecc2daba4c'
     'eu-central-1':
-      AMI: 'ami-0a6dc7529cd559185'
+      AMI: 'ami-013fffc873b1eaa1c'
     'us-east-1':
-      AMI: 'ami-047a51fa27710816e'
+      AMI: 'ami-0533f2ba8a1995cf9'
     'us-east-2':
-      AMI: 'ami-01aab85a5e4a5a0fe'
+      AMI: 'ami-089c6f2e3866f0f14'
     'us-west-1':
-      AMI: 'ami-005c06c6de69aee84'
+      AMI: 'ami-0a245a00f741d6301'
     'us-west-2':
-      AMI: 'ami-0e999cbd62129e3b1'
+      AMI: 'ami-05b622b5fa0269787'
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasKeyName: !Not [!Equals [!Ref WebServerKeyName, '']]
