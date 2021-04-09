@@ -207,11 +207,11 @@ Conditions:
 Resources:
   SecretTargetAttachment:
     Condition: HasSecret
-    Type: "AWS::SecretsManager::SecretTargetAttachment"
+    Type: 'AWS::SecretsManager::SecretTargetAttachment'
     Properties:
       TargetId: !Ref DBCluster
       SecretId: {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}
-      TargetType: AWS::RDS::DBCluster
+      TargetType: 'AWS::RDS::DBCluster'
   RecordSet:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
@@ -297,7 +297,7 @@ Resources:
       - !Ref 'AWS::NoValue'
       - !If
         - HasSecret
-        - {"Fn::Join": ["", ["{{resolve:secretsmanager:", {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}, ":SecretString:password}}"]]}
+        - !Join ['', ['{{resolve:secretsmanager:', {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}, ':SecretString:password}}']]
         - !Ref DBMasterUserPassword
       Port: !FindInMap [EngineMap, !Ref Engine, Port]
       PreferredBackupWindow: !Ref PreferredBackupWindow

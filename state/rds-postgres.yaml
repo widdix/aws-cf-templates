@@ -153,11 +153,11 @@ Conditions:
 Resources:
   SecretTargetAttachment:
     Condition: HasSecret
-    Type: "AWS::SecretsManager::SecretTargetAttachment"
+    Type: 'AWS::SecretsManager::SecretTargetAttachment'
     Properties:
       TargetId: !Ref DBInstance
       SecretId: {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}
-      TargetType: AWS::RDS::DBInstance
+      TargetType: 'AWS::RDS::DBInstance'
   RecordSet:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
@@ -220,7 +220,7 @@ Resources:
       - !Ref 'AWS::NoValue'
       - !If
         - HasSecret
-        - {"Fn::Join": ["", ["{{resolve:secretsmanager:", {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}, ":SecretString:password}}"]]}
+        - !Join ['', ['{{resolve:secretsmanager:', {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}, ':SecretString:password}}']]
         - !Ref DBMasterUserPassword
       MultiAZ: !Ref DBMultiAZ
       OptionGroupName: !If [HasDBOptionGroupName, !Ref DBOptionGroupName, !Ref 'AWS::NoValue']

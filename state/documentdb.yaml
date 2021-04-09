@@ -84,12 +84,10 @@ Parameters:
     MaxLength: 63
     Default: master
   MasterUserPassword:
-    Description: >-
-      'The password for the master database user. This password can contain any printable ASCII character except forward slash (/), double quote ("), or the "at" symbol (@).
-      This will be ignored if ParentSecretStack is used.'
+    Description: 'The password for the master database user. This password can contain any printable ASCII character except forward slash (/), double quote ("), or the "at" symbol (@). This will be ignored if ParentSecretStack is used.'
     Type: String
-    AllowedPattern: ^$|^[^@/\"]{8,100}$
     NoEcho: true
+    Default: ''
   PreferredBackupWindow:
     Description: 'The daily time range (in UTC) during which automated backups are created.'
     Type: String
@@ -121,11 +119,11 @@ Conditions:
 Resources:
   SecretTargetAttachment:
     Condition: HasSecret
-    Type: "AWS::SecretsManager::SecretTargetAttachment"
+    Type: 'AWS::SecretsManager::SecretTargetAttachment'
     Properties:
       TargetId: !Ref Cluster
       SecretId: {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}
-      TargetType: AWS::DocDB::DBCluster
+      TargetType: 'AWS::DocDB::DBCluster'
   DBSubnetGroup:
     Type: 'AWS::DocDB::DBSubnetGroup'
     Properties:
@@ -177,7 +175,7 @@ Resources:
       - !Ref 'AWS::NoValue'
       - !If
         - HasSecret
-        - {"Fn::Join": ["", ["{{resolve:secretsmanager:", {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}, ":SecretString:password}}"]]}
+        - !Join ['', ['{{resolve:secretsmanager:', {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}, ':SecretString:password}}']]
         - !Ref MasterUserPassword
       Port: 27017
       PreferredBackupWindow: !Ref PreferredBackupWindow
