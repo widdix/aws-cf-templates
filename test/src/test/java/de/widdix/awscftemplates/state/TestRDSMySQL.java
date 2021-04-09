@@ -62,7 +62,7 @@ public class TestRDSMySQL extends ACloudFormationTest {
                                 "state/rds-mysql.yaml",
                                 new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                                 new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName),
-                                new Parameter().withParameterKey("ParentSecretStack").withParameterValue(clientStackName),
+                                new Parameter().withParameterKey("ParentSecretStack").withParameterValue(secretStackName),
                                 new Parameter().withParameterKey("DBName").withParameterValue("db1")
                         );
                         // TODO how can we check if this stack works? start a bastion host and try to connect?
