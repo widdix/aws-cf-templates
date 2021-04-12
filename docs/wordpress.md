@@ -44,8 +44,9 @@ This template combines the following services:
 * `vpc/vpc-*azs.yaml` (**required**)
 * `vpc/zone-*.yaml` (**required**)
 * `vpc/vpc-*-bastion.yaml` (recommended)
-* `security/auth-proxy-*.yaml`
 * `operations/alert.yaml` (recommended)
+* `security/auth-proxy-*.yaml`
+* `security/waf.yaml`
 
 ## Limitations
 * WordPress will only run in two Availability Zones, even if your VPC stack has more.
@@ -97,8 +98,9 @@ This template combines the following services:
 * `vpc/vpc-*azs.yaml` (**required, 3 or more AZs required**)
 * `vpc/zone-*.yaml` (**required**)
 * `vpc/vpc-*-bastion.yaml` (recommended)
-* `security/auth-proxy-*.yaml`
 * `operations/alert.yaml` (recommended)
+* `security/auth-proxy-*.yaml`
+* `security/waf.yaml`
 
 ## Limitations
 * WordPress will only run three Availability Zones, even if your VPC stack has more.

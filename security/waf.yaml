@@ -24,9 +24,10 @@ Metadata:
       - RateLimit
       - RateLimitEffect
       - ReputationListEffect
+      - BotControlEffect
 Parameters:
   Scope:
-    Description: 'Specify wether WAF shall be used with CloudFront or regional (ALB, API Gateway, and AppSync).'
+    Description: 'Specify wether WAF shall be used with CloudFront (us-east-1 only!) or regional (ALB, API Gateway, and AppSync).'
     Type: String
     Default: 'REGIONAL'
     AllowedValues:
@@ -54,14 +55,24 @@ Parameters:
     - 'Disable'
     - 'Block'
     - 'Count'
+  BotControlEffect:
+    Description: 'Block or count requests from bots. Alterantively, disable bot control at all.'
+    Type: String
+    Default: 'Disable'
+    AllowedValues:
+    - 'Disable'
+    - 'Block'
+    - 'Count'
 Conditions:
   EnableRateLimit: !Not [!Equals [!Ref RateLimitEffect, 'Disable']]
   BlockRateLimit: !Equals [!Ref RateLimitEffect, 'Block']
   EnableReputationList: !Not [!Equals [!Ref ReputationListEffect, 'Disable']]
   BlockReputationList: !Equals [!Ref ReputationListEffect, 'Block']
+  EnableBotControl: !Not [!Equals [!Ref BotControlEffect, 'Disable']]
+  BlockBotControl: !Equals [!Ref BotControlEffect, 'Block']
 Resources:
   WebACL:
-    Type: AWS::WAFv2::WebACL
+    Type: 'AWS::WAFv2::WebACL'
     Properties:
       DefaultAction:
         Allow: {}
@@ -102,6 +113,23 @@ Resources:
             CloudWatchMetricsEnabled: true
             MetricName: RateLimit
         - !Ref 'AWS::NoValue'
+      - !If
+        - EnableBotControl
+        - Name: AWSBotControl
+          Priority: 3
+          OverrideAction: !If
+          - BlockBotControl
+          - None: {}
+          - Count: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: AWSBotControl
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesBotControlRuleSet
+        - !Ref 'AWS::NoValue'
       Scope: !Ref Scope
       VisibilityConfig:
         CloudWatchMetricsEnabled: true
@@ -110,7 +138,7 @@ Resources:
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
-    Value: 'security/waf'
+    Value: 'security/waf-legacy'
   TemplateVersion:
     Description: 'cloudonaut.io template version.'
     Value: '__VERSION__'

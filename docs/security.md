@@ -2,10 +2,10 @@
 
 > **New**: [Become a sponsor](https://github.com/sponsors/widdix) via GitHub Sponsors!
 
-# S3 VirusScan
-This template creates a Antivirus cluster for S3 buckets. You can connect as many buckets as you like by using [S3 Event Notifications](http://docs.aws.amazon.com/AmazonS3/latest/dev/NotificationHowTo.html). The template has it's own repository: [aws-s3-virusscan](https://github.com/widdix/aws-s3-virusscan)
+# VirusScan for Amazon S3
+This template creates a antivirus cluster for S3 buckets. You can connect as many buckets as you like by using [S3 Event Notifications](http://docs.aws.amazon.com/AmazonS3/latest/dev/NotificationHowTo.html). The template has it's own repository: [aws-s3-virusscan](https://github.com/widdix/aws-s3-virusscan)
 
-> The [S3 VirusScan](https://s3-virusscan.widdix.net/) with additional integrations is available in the [AWS Marketplace](https://aws.amazon.com/marketplace/pp/B07XFR781T).
+> The [VirusScan for Amazon S3](https://s3-virusscan.widdix.net/) with additional integrations is available in the [AWS Marketplace](https://aws.amazon.com/marketplace/pp/B07XFR781T).
 
 ## Features
 
@@ -22,7 +22,7 @@ This template creates a Antivirus cluster for S3 buckets. You can connect as man
 * Security Hub Integration
 * SSM OpsCenter Integration
 
-The [S3 VirusScan](https://s3-virusscan.widdix.net/) with additional integrations is available in the [AWS Marketplace](https://aws.amazon.com/marketplace/pp/B07XFR781T).
+The [VirusScan for Amazon S3](https://s3-virusscan.widdix.net/) with additional integrations is available in the [AWS Marketplace](https://aws.amazon.com/marketplace/pp/B07XFR781T).
 
 ## Installation Guide
 Visit the template's repository for installation instructions: [aws-s3-virusscan](https://github.com/widdix/aws-s3-virusscan)
@@ -199,3 +199,17 @@ If you have an existing KMS customer managed CMK you can wrap it into our requir
 
 ## Dependencies
 * `operations/alert.yaml` (recommended)
+
+# Web Application Firewall
+This templates provides a WebACL with preconfigured rules.
+
+## Installation Guide
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/security/waf.yaml&stackName=waf)
+1. Click **Next** to proceed with the next step of the wizard.
+1. Specify a name and all parameters for the stack.
+1. Click **Next** to proceed with the next step of the wizard.
+1. Click **Next** to skip the **Options** step of the wizard.
+1. Click **Create** to start the creation of the stack.
+1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
+If you have an existing WEB ACL, or if you need a WAF for CloudFront in a different region, you can wrap it into our required form using a legacy WAF wrapper: [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/security/waf-legacy.yaml&stackName=waf)
