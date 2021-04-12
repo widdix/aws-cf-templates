@@ -130,7 +130,7 @@ Resources:
               VendorName: AWS
               Name: AWSManagedRulesBotControlRuleSet
               ExcludedRules:
-              - CategoryMonitoring
+              - Name: CategoryMonitoring
         - !Ref 'AWS::NoValue'
       Scope: !Ref Scope
       VisibilityConfig:
