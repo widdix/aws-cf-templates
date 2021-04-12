@@ -129,6 +129,8 @@ Resources:
             ManagedRuleGroupStatement:
               VendorName: AWS
               Name: AWSManagedRulesBotControlRuleSet
+              ExcludedRules:
+              - CategoryMonitoring
         - !Ref 'AWS::NoValue'
       Scope: !Ref Scope
       VisibilityConfig:
