@@ -26,6 +26,7 @@ Metadata:
       - ParentZoneStack
       - ParentSSHBastionStack
       - ParentAlertStack
+      - ParentSecretStack
     - Label:
         default: 'RDS Parameters'
       Parameters:
@@ -61,6 +62,10 @@ Parameters:
     Default: ''
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  ParentSecretStack:
+    Description: 'Optional Stack name of parent SecretsManager Secret Stack based on state/secretsmanager-dbsecret.yaml template.'
     Type: String
     Default: ''
   Engine:
@@ -102,7 +107,7 @@ Parameters:
     Type: 'String'
     Default: master
   DBMasterUserPassword:
-    Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
+    Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set, value used from snapshot. Also ignored when ParentSecretStack is used).'
     Type: String
     NoEcho: true
     Default: ''
@@ -191,6 +196,7 @@ Mappings:
       ClusterParameterGroupFamily: 'aurora-postgresql10'
       ParameterGroupFamily: 'aurora-postgresql10'
 Conditions:
+  HasSecret: !Not [!Equals [!Ref ParentSecretStack, '']]
   HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
@@ -199,6 +205,13 @@ Conditions:
   HasKmsKeyAndNotDBSnapshotIdentifier: !And [!Condition HasKmsKey, !Not [!Condition HasDBSnapshotIdentifier]]
   HasEngineMySQL: !Or [!Equals [!FindInMap [EngineMap, !Ref Engine, Engine], 'aurora'], !Equals [!FindInMap [EngineMap, !Ref Engine, Engine], 'aurora-mysql']]
 Resources:
+  SecretTargetAttachment:
+    Condition: HasSecret
+    Type: 'AWS::SecretsManager::SecretTargetAttachment'
+    Properties:
+      TargetId: !Ref DBCluster
+      SecretId: {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}
+      TargetType: 'AWS::RDS::DBCluster'
   RecordSet:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
@@ -279,7 +292,13 @@ Resources:
       EngineVersion: !FindInMap [EngineMap, !Ref Engine, EngineVersion]
       KmsKeyId: !If [HasKmsKeyAndNotDBSnapshotIdentifier, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}, !Ref 'AWS::NoValue']
       MasterUsername: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUsername]
-      MasterUserPassword: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUserPassword]
+      MasterUserPassword: !If
+      - HasDBSnapshotIdentifier
+      - !Ref 'AWS::NoValue'
+      - !If
+        - HasSecret
+        - !Join ['', ['{{resolve:secretsmanager:', {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}, ':SecretString:password}}']]
+        - !Ref DBMasterUserPassword
       Port: !FindInMap [EngineMap, !Ref Engine, Port]
       PreferredBackupWindow: !Ref PreferredBackupWindow
       PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow

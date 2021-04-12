@@ -25,6 +25,7 @@ Metadata:
       - ParentAlertStack
       - ParentBastionStack
       - ParentKmsKeyStack
+      - ParentSecretStack
     - Label:
         default: 'DocumentDB Parameters'
       Parameters:
@@ -56,6 +57,10 @@ Parameters:
     Description: 'Optional Stack name of parent KMS key stack based on security/kms-key.yaml template (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
     Type: String
     Default: ''
+  ParentSecretStack:
+    Description: 'Optional Stack name of parent SecretsManager Secret Stack based on state/secretsmanager-dbsecret.yaml template.'
+    Type: String
+    Default: ''
   BackupRetentionPeriod:
     Description: 'The number of days for which automated backups are retained.'
     Type: Number
@@ -79,11 +84,10 @@ Parameters:
     MaxLength: 63
     Default: master
   MasterUserPassword:
-    Description: 'The password for the master database user. This password can contain any printable ASCII character except forward slash (/), double quote ("), or the "at" symbol (@).'
+    Description: 'The password for the master database user. This password can contain any printable ASCII character except forward slash (/), double quote ("), or the "at" symbol (@). This will be ignored if ParentSecretStack is used.'
     Type: String
-    MinLength: 8
-    MaxLength: 100
     NoEcho: true
+    Default: ''
   PreferredBackupWindow:
     Description: 'The daily time range (in UTC) during which automated backups are created.'
     Type: String
@@ -105,6 +109,7 @@ Mappings:
     '3.6.0':
       ParameterGroupFamily: 'docdb3.6'
 Conditions:
+  HasSecret: !Not [!Equals [!Ref ParentSecretStack, '']]
   HasParentKmsKeyStack: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasParentAlertStack: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasParentBastionStack: !Not [!Equals [!Ref ParentBastionStack, '']]
@@ -112,6 +117,13 @@ Conditions:
   HasNotDBClusterParameterGroupName: !Not [!Condition HasDBClusterParameterGroupName]
   HasSnapshotIdentifier: !Not [!Equals [!Ref SnapshotIdentifier, '']]
 Resources:
+  SecretTargetAttachment:
+    Condition: HasSecret
+    Type: 'AWS::SecretsManager::SecretTargetAttachment'
+    Properties:
+      TargetId: !Ref Cluster
+      SecretId: {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}
+      TargetType: 'AWS::DocDB::DBCluster'
   DBSubnetGroup:
     Type: 'AWS::DocDB::DBSubnetGroup'
     Properties:
@@ -158,7 +170,13 @@ Resources:
       EngineVersion: !Ref EngineVersion
       KmsKeyId: !If [HasParentKmsKeyStack, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}, !Ref 'AWS::NoValue']
       MasterUsername: !Ref MasterUsername
-      MasterUserPassword: !Ref MasterUserPassword
+      MasterUserPassword: !If
+      - HasSnapshotIdentifier
+      - !Ref 'AWS::NoValue'
+      - !If
+        - HasSecret
+        - !Join ['', ['{{resolve:secretsmanager:', {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}, ':SecretString:password}}']]
+        - !Ref MasterUserPassword
       Port: 27017
       PreferredBackupWindow: !Ref PreferredBackupWindow
       PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow

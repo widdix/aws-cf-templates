@@ -26,6 +26,7 @@ Metadata:
       - ParentZoneStack
       - ParentSSHBastionStack
       - ParentAlertStack
+      - ParentSecretStack
     - Label:
         default: 'RDS Parameters'
       Parameters:
@@ -69,6 +70,10 @@ Parameters:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
+  ParentSecretStack:
+    Description: 'Optional Stack name of parent SecretsManager Secret Stack based on state/secretsmanager-dbsecret.yaml template.'
+    Type: String
+    Default: ''
   DBSnapshotIdentifier:
     Description: 'Optional identifier for the DB cluster snapshot from which you want to restore (leave blank to create an empty cluster).'
     Type: String
@@ -88,7 +93,7 @@ Parameters:
     Type: 'String'
     Default: master
   DBMasterUserPassword:
-    Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
+    Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set, value used from snapshot. Also ignored when ParentSecretStack is used).'
     Type: String
     NoEcho: true
     Default: ''
@@ -146,12 +151,20 @@ Mappings:
       EngineVersion: '5.7.mysql_aurora.2.07.1'
       Engine: 'aurora-mysql'
 Conditions:
+  HasSecret: !Not [!Equals [!Ref ParentSecretStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasNotDBSnapshotIdentifier: !Equals [!Ref DBSnapshotIdentifier, '']
   HasDBSnapshotIdentifier: !Not [!Condition HasNotDBSnapshotIdentifier]
 Resources:
+  SecretTargetAttachment:
+    Condition: HasSecret
+    Type: 'AWS::SecretsManager::SecretTargetAttachment'
+    Properties:
+      TargetId: !Ref DBCluster
+      SecretId: {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}
+      TargetType: 'AWS::RDS::DBCluster'
   RecordSet:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
@@ -218,7 +231,13 @@ Resources:
       EngineVersion: !FindInMap [EngineVersionMap, !Ref EngineVersion, EngineVersion]
       KmsKeyId: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}]
       MasterUsername: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUsername]
-      MasterUserPassword: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUserPassword]
+      MasterUserPassword: !If
+      - HasDBSnapshotIdentifier
+      - !Ref 'AWS::NoValue'
+      - !If
+        - HasSecret
+        - !Join ['', ['{{resolve:secretsmanager:', {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}, ':SecretString:password}}']]
+        - !Ref DBMasterUserPassword
       # PreferredBackupWindow: !Ref PreferredBackupWindow TODO re-enable as soon as CloudFormation bug ix fixed
       # PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow TODO re-enable as soon as CloudFormation bug ix fixed
       ScalingConfiguration:
