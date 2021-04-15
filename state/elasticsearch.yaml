@@ -33,6 +33,7 @@ Metadata:
       - ElasticsearchVersion
       - EBSEnabled
       - EBSVolumeSize
+      - AvailabilityZones
       - ClusterInstanceCount
       - ClusterInstanceType
       - DedicatedMasterCount
@@ -78,8 +79,13 @@ Parameters:
     Type: String
     Default: '5.5'
     AllowedValues: ['7.7', '7.4', '7.1', '6.8', '6.7', '6.5', '6.4', '6.3', '6.2', '6.0', '5.6', '5.5'] # aws es list-elasticsearch-versions --query "ElasticsearchVersions[]"
+  AvailabilityZones:
+    Description: 'Number of Availability Zones nodes are spread across.'
+    Type: String
+    Default: '2-AZ'
+    AllowedValues: ['1-AZ', '2-AZ', '3-AZ']
   ClusterInstanceCount:
-    Description: 'The number of data nodes (instances) to use in the Amazon ES domain.'
+    Description: 'The number of data nodes (instances) to use in the Amazon ES domain. If the defaul value of 1 is used, then automatically 1 node per Availability Zones is used. Therefore if 3-AZ is selected the value 1 and 3 produces the same result and 2 is not supported.'
     Type: Number
     Default: 1
   ClusterInstanceType:
@@ -103,10 +109,12 @@ Conditions:
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
-  HasSingleClusterInstance: !Equals [!Ref ClusterInstanceCount, '1']
   HasDedicatedMasterNodes: !Not [!Equals [!Ref DedicatedMasterCount, 0]]
   HasEBSEnabled: !Equals [!Ref EBSEnabled, 'true']
-  HasAlertTopicAndNotSingleClusterInstance: !And [!Condition HasAlertTopic, !Not [!Condition HasSingleClusterInstance]]
+  HasZoneAwareness: !Not [!Equals [!Ref AvailabilityZones, '1-AZ']]
+  HasAlertTopicAndZoneAwareness: !And [!Condition HasAlertTopic, !Condition HasZoneAwareness]
+  Has3AvailabilityZones: !Equals [!Ref AvailabilityZones, '3-AZ']
+  HasCustomClusterInstanceCount: !Not [!Equals [!Ref ClusterInstanceCount, 1]]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -163,9 +171,16 @@ Resources:
         DedicatedMasterCount: !If [HasDedicatedMasterNodes, !Ref DedicatedMasterCount, !Ref 'AWS::NoValue']
         DedicatedMasterEnabled: !If [HasDedicatedMasterNodes, true, false]
         DedicatedMasterType: !If [HasDedicatedMasterNodes, !Ref DedicatedMasterType, !Ref 'AWS::NoValue']
-        InstanceCount: !Ref ClusterInstanceCount
+        InstanceCount: !If
+        - HasCustomClusterInstanceCount
+        - !Ref ClusterInstanceCount
+        - !Select ['0', {'Fn::Split': ['-', !Ref AvailabilityZones]}]
         InstanceType: !Ref ClusterInstanceType
-        ZoneAwarenessEnabled: !If [HasSingleClusterInstance, false, true]
+        ZoneAwarenessEnabled: !If [HasZoneAwareness, true, false]
+        ZoneAwarenessConfig: !If
+        - HasZoneAwareness
+        - AvailabilityZoneCount: !Select ['0', {'Fn::Split': ['-', !Ref AvailabilityZones]}]
+        - !Ref 'AWS::NoValue'
       ElasticsearchVersion: !Ref ElasticsearchVersion
       EncryptionAtRestOptions: !If [HasKmsKey, {Enabled: true, KmsKeyId: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}}, !Ref 'AWS::NoValue']
       SnapshotOptions:
@@ -173,15 +188,20 @@ Resources:
       VPCOptions:
         SecurityGroupIds:
         - !Ref SecurityGroup
-        SubnetIds: !If
-        - HasSingleClusterInstance
-        - - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'}
-        - - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'}
+        SubnetIds:
+        - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'}
+        - !If
+          - HasZoneAwareness
           - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetBPrivate'}
+          - !Ref 'AWS::NoValue'
+        - !If
+          - Has3AvailabilityZones
+          - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetCPrivate'}
+          - !Ref 'AWS::NoValue'
     UpdatePolicy:
       EnableVersionUpgrade: true
   ClusterStatusYellowAlarm:
-    Condition: HasAlertTopicAndNotSingleClusterInstance
+    Condition: HasAlertTopicAndZoneAwareness
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmActions:
