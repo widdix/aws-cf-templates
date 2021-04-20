@@ -76,6 +76,7 @@ Parameters:
     Type: String
     AllowedValues:
     - '3.6.0'
+    - '4.0.0'
     Default: '3.6.0'
   MasterUsername:
     Description: 'The name of the master user for the cluster.'
@@ -108,6 +109,8 @@ Mappings:
   EngineVersionMap:
     '3.6.0':
       ParameterGroupFamily: 'docdb3.6'
+    '4.0.0':
+      ParameterGroupFamily: 'docdb4.0'
 Conditions:
   HasSecret: !Not [!Equals [!Ref ParentSecretStack, '']]
   HasParentKmsKeyStack: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
