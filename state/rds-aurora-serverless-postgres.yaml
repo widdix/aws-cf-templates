@@ -139,10 +139,12 @@ Parameters:
     Description: 'Aurora Serverless PostgreSQL version.'
     Type: String
     Default: '10.7'
-    AllowedValues: ['10.7'] # aws rds describe-db-engine-versions --engine aurora-postgresql --query 'DBEngineVersions[?contains(SupportedEngineModes,`serverless`)]'
+    AllowedValues: ['10.7', '10.12'] # aws rds describe-db-engine-versions --engine aurora-postgresql --query 'DBEngineVersions[?contains(SupportedEngineModes,`serverless`)]'
 Mappings:
   EngineVersionMap:
     '10.7':
+      ClusterParameterGroupFamily: 'aurora-postgresql10'
+    '10.12':
       ClusterParameterGroupFamily: 'aurora-postgresql10'
 Conditions:
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
