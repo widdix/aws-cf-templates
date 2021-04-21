@@ -73,3 +73,4 @@ To improve the default CloudFront behavior, we developed a Lambda@Edge solution 
 * `vpc/zone-*.yaml` (**required**)
 * `operations/alert.yaml` (recommended)
 * `state/s3.yaml` (recommended)
+* `security/waf.yaml`

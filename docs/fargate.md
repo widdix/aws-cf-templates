@@ -28,6 +28,7 @@ This template describes a fault tolerant and scalable Fargate cluster on AWS.
 * `vpc/vpc-*azs.yaml` (**required**)
 * `operations/alert.yaml` (recommended)
 * `security/auth-proxy-*.yaml`
+* `security/waf.yaml`
 * `vpc/zone-*.yaml`
 * `state/s3.yaml*`
 
@@ -86,6 +87,7 @@ This template describes a fault tolerant and scalable Fargate service that uses 
 * `fargate/cluster.yaml` (**required**)
 * `operations/alert.yaml` (recommended)
 * `security/auth-proxy-*.yaml`
+* `security/waf.yaml`
 * `vpc/zone-*.yaml`
 * `state/s3.yaml*`
 * `state/client-sg.yaml`

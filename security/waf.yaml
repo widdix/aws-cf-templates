@@ -24,9 +24,15 @@ Metadata:
       - RateLimit
       - RateLimitEffect
       - ReputationListEffect
+      - BotControlEffect
+      - BotControlExcludeRule1
+      - BotControlExcludeRule2
+      - BotControlExcludeRule3
+      - BotControlExcludeRule4
+      - BotControlExcludeRule5
 Parameters:
   Scope:
-    Description: 'Specify wether WAF shall be used with CloudFront or regional (ALB, API Gateway, and AppSync).'
+    Description: 'Specify wether WAF shall be used with CloudFront (us-east-1 only!) or regional (ALB, API Gateway, and AppSync).'
     Type: String
     Default: 'REGIONAL'
     AllowedValues:
@@ -54,14 +60,49 @@ Parameters:
     - 'Disable'
     - 'Block'
     - 'Count'
+  BotControlEffect:
+    Description: 'Block or count requests from bots. Alterantively, disable bot control at all.'
+    Type: String
+    Default: 'Disable'
+    AllowedValues:
+    - 'Disable'
+    - 'Block'
+    - 'Count'
+  BotControlExcludeRule1:
+    Description: 'The rule whose actions are set to COUNT by the web ACL. This effectively excludes the rule from acting on web requests. (Valid rule names: https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-list.html#aws-managed-rule-groups-bot)'
+    Type: String
+    Default: ''
+  BotControlExcludeRule2:
+    Description: 'The rule whose actions are set to COUNT by the web ACL. This effectively excludes the rule from acting on web requests. (Valid rule names: https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-list.html#aws-managed-rule-groups-bot)'
+    Type: String
+    Default: ''
+  BotControlExcludeRule3:
+    Description: 'The rule whose actions are set to COUNT by the web ACL. This effectively excludes the rule from acting on web requests. (Valid rule names: https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-list.html#aws-managed-rule-groups-bot)'
+    Type: String
+    Default: ''
+  BotControlExcludeRule4:
+    Description: 'The rule whose actions are set to COUNT by the web ACL. This effectively excludes the rule from acting on web requests. (Valid rule names: https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-list.html#aws-managed-rule-groups-bot)'
+    Type: String
+    Default: ''
+  BotControlExcludeRule5:
+    Description: 'The rule whose actions are set to COUNT by the web ACL. This effectively excludes the rule from acting on web requests. (Valid rule names: https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-list.html#aws-managed-rule-groups-bot)'
+    Type: String
+    Default: ''
 Conditions:
   EnableRateLimit: !Not [!Equals [!Ref RateLimitEffect, 'Disable']]
   BlockRateLimit: !Equals [!Ref RateLimitEffect, 'Block']
   EnableReputationList: !Not [!Equals [!Ref ReputationListEffect, 'Disable']]
   BlockReputationList: !Equals [!Ref ReputationListEffect, 'Block']
+  EnableBotControl: !Not [!Equals [!Ref BotControlEffect, 'Disable']]
+  BlockBotControl: !Equals [!Ref BotControlEffect, 'Block']
+  HasBotControlExcludeRule1: !Not [!Equals [!Ref BotControlExcludeRule1, '']]
+  HasBotControlExcludeRule2: !Not [!Equals [!Ref BotControlExcludeRule2, '']]
+  HasBotControlExcludeRule3: !Not [!Equals [!Ref BotControlExcludeRule3, '']]
+  HasBotControlExcludeRule4: !Not [!Equals [!Ref BotControlExcludeRule4, '']]
+  HasBotControlExcludeRule5: !Not [!Equals [!Ref BotControlExcludeRule5, '']]
 Resources:
   WebACL:
-    Type: AWS::WAFv2::WebACL
+    Type: 'AWS::WAFv2::WebACL'
     Properties:
       DefaultAction:
         Allow: {}
@@ -102,6 +143,29 @@ Resources:
             CloudWatchMetricsEnabled: true
             MetricName: RateLimit
         - !Ref 'AWS::NoValue'
+      - !If
+        - EnableBotControl
+        - Name: AWSBotControl
+          Priority: 3
+          OverrideAction: !If
+          - BlockBotControl
+          - None: {}
+          - Count: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: AWSBotControl
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesBotControlRuleSet
+              ExcludedRules:
+              - !If [HasBotControlExcludeRule1, {Name: !Ref BotControlExcludeRule1}, !Ref 'AWS::NoValue']
+              - !If [HasBotControlExcludeRule2, {Name: !Ref BotControlExcludeRule2}, !Ref 'AWS::NoValue']
+              - !If [HasBotControlExcludeRule3, {Name: !Ref BotControlExcludeRule3}, !Ref 'AWS::NoValue']
+              - !If [HasBotControlExcludeRule4, {Name: !Ref BotControlExcludeRule4}, !Ref 'AWS::NoValue']
+              - !If [HasBotControlExcludeRule5, {Name: !Ref BotControlExcludeRule5}, !Ref 'AWS::NoValue']
+        - !Ref 'AWS::NoValue'
       Scope: !Ref Scope
       VisibilityConfig:
         CloudWatchMetricsEnabled: true
@@ -110,7 +174,7 @@ Resources:
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
-    Value: 'security/waf'
+    Value: 'security/waf-legacy'
   TemplateVersion:
     Description: 'cloudonaut.io template version.'
     Value: '__VERSION__'
