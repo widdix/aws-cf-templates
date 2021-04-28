@@ -6,13 +6,12 @@ Your source for free [AWS CloudFormation](https://aws.amazon.com/cloudformation/
 
 * Speed up development and migration: reuse our templates to create complex environments for common use cases with ease.
 * Rely on high-quality infrastructure templates: peer-reviewed by an expert (certified AWS solutions architect Professional) and verified with automated tests.
-* All templates are production-ready. If no other limitations are documented, they are:
-    * Highly available: no single point of failure
-    * Scalable: increase or decrease the capacity based on utilization
-    * Frictionless deployment: deliver new versions of your application automatically without downtime
-    * Secure: using the latest operating systems and software components, follow the least privilege principle in all areas, backups enabled
-    * Operator-friendly: provide tools like logging, monitoring and alerting to recognize and debug problems
-* Premium Support available: Get help in case of small and big emergencies and submit a feature request.
+* All templates are production-ready. If no other limitations are documented, the following applies:
+    * Highly available: The template has no single point of failure.
+    * Scalable: The capacity increases or decreases based on utilization (auto-scaling).
+    * Frictionless deployment: You can deploy new versions of the templates or your application without downtime.
+    * Secure: We use the latest operating systems and software components. We follow the least privilege principle in all areas (IAM, network). We support encryption. We enable backups.
+    * Operator-friendly: Logging, monitoring, and alerting are configured out-of-the-box.
 
 # Related projects
 
@@ -86,25 +85,14 @@ Finally, you can create the Jenkins stack.
 
 The cool thing is that you can re-use the dependencies. E.g., you can use the same SSH bastion host for Jenkins and WordPress.
 
-## License
+# License
 All templates are published under Apache License Version 2.0.
 
 # Sponsors
-
-![AWS Open Source](./img/aws-open-source.png)
-
-AWS sponsors credits to run the weekly integration tests. With the help of AWS, we run tests in multiple regions (`us-east-1`, `ap-southeast-2`, and `eu-central-1`) to increase the quality of the templates.[Read more](https://aws.amazon.com/blogs/opensource/aws-promotional-credits-open-source-projects/)
-
----
-
 [Become a sponsor](https://github.com/sponsors/widdix) via GitHub Sponsors.
 
----
-
-Are you in need of an urgent bug fix or important feature request? [Contact us](mailto:hello@widdix.net) to sponsor a feature or bug fix.
-
-## Training and Consulting
+# Training and Consulting
 Do you want to accelerate your start with AWS CloudFormation and our templates? We do offer remote and on-site training for you and your team. Are you looking for guidance on how to use or adapt our templates to your use case? We offer consulting services as well. [Contact us](mailto:hello@widdix.net), and we’ll accelerate your project.
 
 # About
-A [cloudonaut.io](https://cloudonaut.io/templates-for-aws-cloudformation/) project. Engineered by [widdix](https://widdix.net).
+A [cloudonaut.io](https://cloudonaut.io/) project. Engineered by [widdix](https://widdix.net).
