@@ -218,7 +218,7 @@ Resources:
             for (let record of event.Records) {
               if (record.s3.object.key.endsWith('.anonymized.log')) {
                 continue;
-              } else if (record.s3.object.key.endsWith('.log')) {
+              } else if (record.s3.object.key.endsWith('.log') && record.s3.object.size > 0) {
                 await process(record);
               }
             }
