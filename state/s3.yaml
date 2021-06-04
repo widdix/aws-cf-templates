@@ -44,7 +44,7 @@ Parameters:
     Type: String
     Default: ''
   ParentS3VirusScanStack:
-    Description: 'Optional stack name of parent S3 VirusScan stack based on https://github.com/widdix/aws-s3-virusscan template.'
+    Description: 'Optional stack name of parent Antivirus for Amazon S3 stack based on https://github.com/widdix/aws-s3-virusscan template.'
     Type: String
     Default: ''
   ParentVpcEndpointStack:
