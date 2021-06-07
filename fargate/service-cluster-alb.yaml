@@ -74,6 +74,7 @@ Metadata:
       - Memory
       - SubnetsReach
       - AutoScaling
+      - CircuitBreaker
       - Spot
       - DesiredCount
       - MaxCapacity
@@ -326,6 +327,11 @@ Parameters:
     Type: String
     Default: false
     AllowedValues: [true, false]
+  CircuitBreaker:
+    Description: 'Enable circuit breaker for Service deployments'
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
 Mappings:
   CpuMap:
     '0.25':
@@ -410,6 +416,7 @@ Conditions:
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasSubnetsReachPublic: !Equals [!Ref SubnetsReach, Public]
   HasAutoScaling: !Equals [!Ref AutoScaling, 'true']
+  HasCircuitBreaker: !Equals [!Ref CircuitBreaker, 'true']
   HasClientSecurityGroup1: !Not [!Equals [!Ref ParentClientStack1, '']]
   HasClientSecurityGroup2: !Not [!Equals [!Ref ParentClientStack2, '']]
   HasClientSecurityGroup3: !Not [!Equals [!Ref ParentClientStack3, '']]
@@ -672,6 +679,9 @@ Resources:
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 100
+        DeploymentCircuitBreaker:
+          Enable: !If [HasCircuitBreaker, true, false]
+          Rollback: !If [HasCircuitBreaker, true, false]
       DesiredCount: !Ref DesiredCount
       HealthCheckGracePeriodSeconds: !Ref HealthCheckGracePeriod
       LoadBalancers:

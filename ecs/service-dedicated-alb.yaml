@@ -47,6 +47,7 @@ Metadata:
       - MaxCapacity
       - MinCapacity
       - HealthCheckGracePeriod
+      - CircuitBreaker
     - Label:
         default: 'Permission Parameters'
       Parameters:
@@ -142,6 +143,11 @@ Parameters:
     Default: 60
     MinValue: 0
     MaxValue: 1800
+  CircuitBreaker:
+    Description: 'Enable circuit breaker for Service deployments'
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
@@ -151,6 +157,7 @@ Conditions:
   HasLoadBalancerCertificateArn: !Not [!Equals [!Ref LoadBalancerCertificateArn, '']]
   HasAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
   HasNotAuthProxySecurityGroupAndLoadBalancerCertificateArn: !And [!Condition HasNotAuthProxySecurityGroup, !Condition HasLoadBalancerCertificateArn]
+  HasCircuitBreaker: !Equals [!Ref CircuitBreaker, 'true']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasZoneAndLoadBalancerSchemeInternetFacing: !And [!Condition HasZone, !Condition HasLoadBalancerSchemeInternetFacing]
@@ -428,6 +435,9 @@ Resources:
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 50
+        DeploymentCircuitBreaker:
+          Enable: !If [HasCircuitBreaker, true, false]
+          Rollback: !If [HasCircuitBreaker, true, false]
       DesiredCount: !Ref DesiredCount
       HealthCheckGracePeriodSeconds: !Ref HealthCheckGracePeriod
       LoadBalancers:
