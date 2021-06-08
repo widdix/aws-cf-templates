@@ -44,7 +44,6 @@ Metadata:
       - MaxCapacity
       - MinCapacity
       - HealthCheckGracePeriod
-      - CircuitBreaker
     - Label:
         default: 'Permission Parameters'
       Parameters:
@@ -134,17 +133,11 @@ Parameters:
     Default: 60
     MinValue: 0
     MaxValue: 1800
-  CircuitBreaker:
-    Description: 'Enable circuit breaker for Service deployments'
-    Type: String
-    Default: 'true'
-    AllowedValues: ['true', 'false']
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasLoadBalancerHttps: !Equals [!Ref LoadBalancerHttps, 'true']
   HasLoadBalancerPath: !Not [!Equals [!Ref LoadBalancerPath, '']]
   HasLoadBalancerHostPattern: !Not [!Equals [!Ref LoadBalancerHostPattern, '']]
-  HasCircuitBreaker: !Equals [!Ref CircuitBreaker, 'true']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
   HasAutoScaling: !Equals [!Ref AutoScaling, 'true']
@@ -327,8 +320,8 @@ Resources:
         MaximumPercent: 200
         MinimumHealthyPercent: 50
         DeploymentCircuitBreaker:
-          Enable: !If [HasCircuitBreaker, true, false]
-          Rollback: !If [HasCircuitBreaker, true, false]
+          Enable: true
+          Rollback: true
       DesiredCount: !Ref DesiredCount
       HealthCheckGracePeriodSeconds: !Ref HealthCheckGracePeriod
       LoadBalancers:
