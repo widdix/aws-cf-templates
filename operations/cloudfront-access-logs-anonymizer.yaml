@@ -229,7 +229,7 @@ Resources:
             for (let record of event.Records) {
               if (record.s3.object.key.endsWith('.anonymized.gz')) {
                 continue;
-              } else if (record.s3.object.key.endsWith('.gz')) {
+              } else if (record.s3.object.key.endsWith('.gz') && record.s3.object.size > 0) {
                 await process(record);
               }
             }
