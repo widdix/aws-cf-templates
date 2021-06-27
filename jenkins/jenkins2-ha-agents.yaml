@@ -918,10 +918,10 @@ Resources:
         extras:
           commands:
             'a_enable_docker':
-              command: 'amazon-linux-extras enable docker=18.06.1'
+              command: 'amazon-linux-extras enable docker=18.06.1 && yum -y clean metadata'
               test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
             'b_enable_corretto8':
-              command: 'amazon-linux-extras enable corretto8'
+              command: 'amazon-linux-extras enable corretto8 && yum -y clean metadata'
               test: "! grep -Fxq '[amzn2extra-corretto8]' /etc/yum.repos.d/amzn2-extras.repo"
         install:
           packages:
@@ -1777,10 +1777,10 @@ Resources:
         extras:
           commands:
             'a_enable_docker':
-              command: 'amazon-linux-extras enable docker=18.06.1'
+              command: 'amazon-linux-extras enable docker=18.06.1 && yum -y clean metadata'
               test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
             'b_enable_corretto8':
-              command: 'amazon-linux-extras enable corretto8'
+              command: 'amazon-linux-extras enable corretto8 && yum -y clean metadata'
               test: "! grep -Fxq '[amzn2extra-corretto8]' /etc/yum.repos.d/amzn2-extras.repo"
         install:
           packages:
