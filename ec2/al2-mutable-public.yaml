@@ -201,9 +201,11 @@ Parameters:
     Description: 'Version of Amazon Linux 2 to boot from the first time (ignored if RestoreImageId is set; select the latest version for new stacks; OS updates are enabled to patch the system).'
     Type: String
     Default: '20191217.0'
-    AllowedValues: ['20210126.0', '20200917.0', '20200722.0', '20200520.1', '20200406.0', '20200304.0', '20200207.1', '20191217.0']
+    AllowedValues: ['20210617.0', '20210126.0', '20200917.0', '20200722.0', '20200520.1', '20200406.0', '20200304.0', '20200207.1', '20191217.0']
 Mappings:
   VersionMap:
+    '20210617.0':
+      Map: RegionMap202106170
     '20210126.0':
       Map: RegionMap202101260
     '20200917.0':
@@ -220,6 +222,49 @@ Mappings:
       Map: RegionMap202002071
     '20191217.0':
       Map: RegionMap201912170
+  RegionMap202106170:
+    'af-south-1':
+      AMI: 'ami-0a797f6e4448b3b6f'
+    'eu-north-1':
+      AMI: 'ami-0865a7423ddc6317c'
+    'ap-south-1':
+      AMI: 'ami-011c99152163a87ae'
+    'eu-west-3':
+      AMI: 'ami-0b2f05cf909299b7c'
+    'eu-west-2':
+      AMI: 'ami-033af134328c47f48'
+    'eu-south-1':
+      AMI: 'ami-0512b7a96307ce5c4'
+    'eu-west-1':
+      AMI: 'ami-0f89681a05a3a9de7'
+    'ap-northeast-3':
+      AMI: 'ami-09965f96c50f5a3d4'
+    'ap-northeast-2':
+      AMI: 'ami-086a3601cd7a83590'
+    'me-south-1':
+      AMI: 'ami-0a0ee2492a9f81d76'
+    'ap-northeast-1':
+      AMI: 'ami-06631ebafb3ae5d34'
+    'sa-east-1':
+      AMI: 'ami-0113db2202e3b45a5'
+    'ca-central-1':
+      AMI: 'ami-07d95746fec4b20a3'
+    'ap-east-1':
+      AMI: 'ami-036fe7ba35d60224e'
+    'ap-southeast-1':
+      AMI: 'ami-018c1c51c7a13e363'
+    'ap-southeast-2':
+      AMI: 'ami-05064bb33b40c33a2'
+    'eu-central-1':
+      AMI: 'ami-089b5384aac360007'
+    'us-east-1':
+      AMI: 'ami-0ab4d1e9cf9a1215a'
+    'us-east-2':
+      AMI: 'ami-0277b52859bac6f4b'
+    'us-west-1':
+      AMI: 'ami-02f24ad9a1d24a799'
+    'us-west-2':
+      AMI: 'ami-0721c9af7b9b75114'
   RegionMap202101260:
     'af-south-1':
       AMI: 'ami-0438616cef15ba2ca'
