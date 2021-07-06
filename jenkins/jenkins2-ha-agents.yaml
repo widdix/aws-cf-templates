@@ -1161,25 +1161,25 @@ Resources:
                 - '/opt/lifecycle-poller/worker.rb'
         setup:
           files:
-            '/root/plugins.txt':
+            '/root/plugins.txt': # list updates: java -jar /opt/jenkins-plugin-manager.jar --war /usr/lib/jenkins/jenkins.war --plugin-download-directory /var/lib/jenkins/plugins --plugin-file /root/plugins.txt --available-updates
               content: |
-                http://ftp-chi.osuosl.org/pub/jenkins/plugins/jqs-monitoring/1.4/jqs-monitoring.hpi
-                http://ftp-chi.osuosl.org/pub/jenkins/plugins/ant/1.11/ant.hpi
-                http://ftp-chi.osuosl.org/pub/jenkins/plugins/build-timeout/1.20/build-timeout.hpi
-                http://ftp-chi.osuosl.org/pub/jenkins/plugins/docker-workflow/1.23/docker-workflow.hpi
-                http://ftp-chi.osuosl.org/pub/jenkins/plugins/credentials-binding/1.23/credentials-binding.hpi
-                http://ftp-chi.osuosl.org/pub/jenkins/plugins/email-ext/2.73/email-ext.hpi
-                http://ftp-chi.osuosl.org/pub/jenkins/plugins/envinject/2.3.0/envinject.hpi
-                http://ftp-chi.osuosl.org/pub/jenkins/plugins/github-organization-folder/1.6/github-organization-folder.hpi
-                http://ftp-chi.osuosl.org/pub/jenkins/plugins/gradle/1.36/gradle.hpi
-                http://ftp-chi.osuosl.org/pub/jenkins/plugins/workflow-aggregator/2.6/workflow-aggregator.hpi
-                http://ftp-chi.osuosl.org/pub/jenkins/plugins/pipeline-maven/3.8.2/pipeline-maven.hpi
-                http://ftp-chi.osuosl.org/pub/jenkins/plugins/ssh-slaves/1.31.2/ssh-slaves.hpi
-                http://ftp-chi.osuosl.org/pub/jenkins/plugins/subversion/2.13.1/subversion.hpi
-                http://ftp-chi.osuosl.org/pub/jenkins/plugins/timestamper/1.11.5/timestamper.hpi
-                http://ftp-chi.osuosl.org/pub/jenkins/plugins/ws-cleanup/0.38/ws-cleanup.hpi
-                http://ftp-chi.osuosl.org/pub/jenkins/plugins/pipeline-aws/1.42/pipeline-aws.hpi
-                http://ftp-chi.osuosl.org/pub/jenkins/plugins/http_request/1.8.26/http_request.hpi
+                jqs-monitoring:1.4
+                ant:1.11
+                build-timeout:1.20
+                docker-workflow:1.26
+                credentials-binding:1.26
+                email-ext:2.83
+                envinject:2.4.0
+                github-organization-folder:1.6
+                gradle:1.36
+                workflow-aggregator:2.6
+                pipeline-maven:3.10.0
+                ssh-slaves:1.32.0
+                subversion:2.14.4
+                timestamper:1.13
+                ws-cleanup:0.39
+                pipeline-aws:1.43
+                http_request:1.9.0
               mode: '000400'
               owner: root
               group: root
@@ -1261,19 +1261,22 @@ Resources:
             'h_await_jenkins':
               command: 'until $(curl --silent --max-time 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'i_install_plugins':
-              command: 'java -jar /opt/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" install-plugin $(cat /root/plugins.txt | tr "\n" " ")'
+            'i_download_jenkins_plugin_manager':
+              command: 'wget --quiet --timeout=60 --output-document=/opt/jenkins-plugin-manager.jar https://github.com/jenkinsci/plugin-installation-manager-tool/releases/download/2.10.0/jenkins-plugin-manager-2.10.0.jar'
+              est: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
+            'j_install_plugins':
+              command: 'java -jar /opt/jenkins-plugin-manager.jar --war /usr/lib/jenkins/jenkins.war --plugin-download-directory /var/lib/jenkins/plugins --plugin-file /root/plugins.txt'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'j_restart_jenkins':
+            'k_restart_jenkins':
               command: 'service jenkins restart'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'k_await_jenkins':
+            'l_await_jenkins':
               command: 'until $(curl --silent --max-time 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'l_set_admin_password':
+            'm_set_admin_password':
               command: !Sub 'echo $''jenkins.model.Jenkins.instance.securityRealm.createAccount("admin", \''${MasterAdminPassword}\'')'' | java -jar /opt/jenkins-cli.jar -s "http://localhost:8080/" -auth "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" groovy ='
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
-            'm_stop_jenkins':
+            'n_stop_jenkins':
               command: 'service jenkins stop'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'x_create_setup_done_file':
