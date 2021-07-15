@@ -919,7 +919,7 @@ Resources:
               command: 'wget --quiet --timeout=60 --output-document=/opt/jenkins-plugin-manager.jar https://github.com/jenkinsci/plugin-installation-manager-tool/releases/download/2.10.0/jenkins-plugin-manager-2.10.0.jar'
               est: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'i_install_plugins':
-              command: 'java -jar /opt/jenkins-plugin-manager.jar --war /usr/lib/jenkins/jenkins.war --plugin-download-directory /var/lib/jenkins/plugins --plugin-file /root/plugins.txt'
+              command: 'java -jar /opt/jenkins-plugin-manager.jar --war /usr/lib/jenkins/jenkins.war --plugin-download-directory /var/lib/jenkins/plugins --plugin-file /root/plugins.txt --latest=false'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'j_restart_jenkins':
               command: 'service jenkins restart'
