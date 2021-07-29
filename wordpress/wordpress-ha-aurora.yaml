@@ -894,8 +894,8 @@ Resources:
         extras:
           commands:
             'a_enable_php':
-              command: 'amazon-linux-extras enable php7.2 && yum -y clean metadata'
-              test: "! grep -Fxq '[amzn2extra-php7.2]' /etc/yum.repos.d/amzn2-extras.repo"
+              command: 'amazon-linux-extras enable php7.4 && yum -y clean metadata'
+              test: "! grep -Fxq '[amzn2extra-php7.4]' /etc/yum.repos.d/amzn2-extras.repo"
         config:
           packages:
             yum:
