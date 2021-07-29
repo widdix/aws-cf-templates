@@ -279,7 +279,6 @@ Conditions:
   HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
   HasEFSProvisionedThroughput: !Not [!Condition HasNotEFSProvisionedThroughput]
   HasNotEFSProvisionedThroughput: !Equals [!Ref EFSProvisionedThroughputInMibps, '0']
-  HasAlertTopicAndEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasEFSProvisionedThroughput]
   HasAlertTopicAndNotEFSProvisionedThroughput: !And [!Condition HasAlertTopic, !Condition HasNotEFSProvisionedThroughput]
   HasEFSBackupRetentionPeriod: !Not [!Equals [!Ref EFSBackupRetentionPeriod, 0]]
 Resources:
@@ -336,23 +335,56 @@ Resources:
       Dimensions:
       - Name: FileSystemId
         Value: !Ref MasterStorage
-  MasterStorageThroughputAlarm:
-    Condition: HasAlertTopicAndEFSProvisionedThroughput
+  MasterStorageThroughputAlarm: # https://docs.aws.amazon.com/efs/latest/ug/monitoring-metric-math.html#metric-math-throughput-utilization
+    Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: 'Reached 90% of the provisioned throughput over last 10 minutes.'
-      Namespace: 'AWS/EFS'
-      MetricName: TotalIOBytes
-      Statistic: Sum
-      Period: 600
-      EvaluationPeriods: 1
+      AlarmDescription: 'Reached 80% of the permitted throughput 6 times over last 10 minutes.'
+      Metrics:
+      - Id: m1
+        Label: MeteredIOBytes
+        MetricStat:
+          Metric:
+            Namespace: 'AWS/EFS'
+            MetricName: MeteredIOBytes
+            Dimensions:
+            - Name: FileSystemId
+              Value: !Ref MasterStorage
+          Period: 60
+          Stat: Sum
+          Unit: Bytes
+        ReturnData: false
+      - Id: m2
+        Label: PermittedThroughput
+        MetricStat:
+          Metric:
+            Namespace: 'AWS/EFS'
+            MetricName: PermittedThroughput
+            Dimensions:
+            - Name: FileSystemId
+              Value: !Ref MasterStorage
+          Period: 60
+          Stat: Sum
+          Unit: 'Bytes/Second'
+        ReturnData: false
+      - Expression: '(m1/1048576)/PERIOD(m1)'
+        Id: e1
+        Label: e1
+        ReturnData: false
+      - Expression: 'm2/1048576'
+        Id: e2
+        Label: e2
+        ReturnData: false
+      - Expression: '((e1)*100)/(e2)'
+        Id: e3
+        Label: 'Throughput utilization (%)'
+        ReturnData: true
+      EvaluationPeriods: 10
+      DatapointsToAlarm: 6
       ComparisonOperator: GreaterThanThreshold
-      Threshold: !GetAtt MaxThroughputCalculator.Threshold
+      Threshold: 80
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      Dimensions:
-      - Name: FileSystemId
-        Value: !Ref MasterStorage
   MasterStorageMountTargetA:
     Type: 'AWS::EFS::MountTarget'
     Properties:
@@ -2242,66 +2274,6 @@ Resources:
       Namespace: !Ref 'AWS::StackName'
       ComparisonOperator: LessThanOrEqualToThreshold
       MetricName: BuildActiveQueue
-  LambdaRole:
-    Condition: HasEFSProvisionedThroughput
-    Type: 'AWS::IAM::Role'
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service: 'lambda.amazonaws.com'
-          Action: 'sts:AssumeRole'
-      PermissionsBoundary: !If [HasPermissionsBoundary, !Ref PermissionsBoundary, !Ref 'AWS::NoValue']
-  LambdaPolicy:
-    Condition: HasEFSProvisionedThroughput
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      Roles:
-      - !Ref LambdaRole
-      PolicyName: lambda
-      PolicyDocument:
-        Statement:
-        - Effect: Allow
-          Action:
-          - 'logs:CreateLogStream'
-          - 'logs:PutLogEvents'
-          Resource: !GetAtt 'LambdaLogGroup.Arn'
-  LambdaFunction: # needs no monitoring because it is used as a custom resource
-    Condition: HasEFSProvisionedThroughput
-    Type: 'AWS::Lambda::Function'
-    Properties:
-      Code:
-        ZipFile: |
-          'use strict';
-          const response = require('cfn-response');
-          exports.handler = (event, context, cb) => {
-            const throughput = parseInt(event.ResourceProperties.ThroughputInMibps, 10);
-            const threshold = Math.round(throughput * 1048576 * 600 * 0.9);
-            response.send(event, context, response.SUCCESS, {Threshold: threshold});
-          };
-      Handler: 'index.handler'
-      MemorySize: 128
-      Role: !GetAtt 'LambdaRole.Arn'
-      Runtime: 'nodejs12.x'
-      Timeout: 60
-  LambdaLogGroup:
-    Condition: HasEFSProvisionedThroughput
-    Type: 'AWS::Logs::LogGroup'
-    Properties:
-      LogGroupName: !Sub '/aws/lambda/${LambdaFunction}'
-      RetentionInDays: !Ref MasterLogsRetentionInDays
-  MaxThroughputCalculator:
-    Condition: HasEFSProvisionedThroughput
-    Type: 'Custom::MaxThroughputCalculator'
-    DependsOn:
-    - LambdaLogGroup
-    - LambdaPolicy
-    Version: '1.0'
-    Properties:
-      ThroughputInMibps: !Ref EFSProvisionedThroughputInMibps
-      ServiceToken: !GetAtt 'LambdaFunction.Arn'
   BackupVault: # cannot be deleted with data
     Condition: HasEFSBackupRetentionPeriod
     Type: 'AWS::Backup::BackupVault'
