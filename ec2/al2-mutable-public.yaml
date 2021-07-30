@@ -201,9 +201,11 @@ Parameters:
     Description: 'Version of Amazon Linux 2 to boot from the first time (ignored if RestoreImageId is set; select the latest version for new stacks; OS updates are enabled to patch the system).'
     Type: String
     Default: '20191217.0'
-    AllowedValues: ['20210617.0', '20210126.0', '20200917.0', '20200722.0', '20200520.1', '20200406.0', '20200304.0', '20200207.1', '20191217.0']
+    AllowedValues: ['20210721.2', '20210617.0', '20210126.0', '20200917.0', '20200722.0', '20200520.1', '20200406.0', '20200304.0', '20200207.1', '20191217.0']
 Mappings:
   VersionMap:
+    '20210721.2':
+      Map: RegionMap202107212
     '20210617.0':
       Map: RegionMap202106170
     '20210126.0':
@@ -222,6 +224,49 @@ Mappings:
       Map: RegionMap202002071
     '20191217.0':
       Map: RegionMap201912170
+  RegionMap202107212:
+    'af-south-1':
+      AMI: 'ami-0edec67949fd25461'
+    'eu-north-1':
+      AMI: 'ami-0d441f5643da997cb'
+    'ap-south-1':
+      AMI: 'ami-04db49c0fb2215364'
+    'eu-west-3':
+      AMI: 'ami-0d49cec198762b78c'
+    'eu-west-2':
+      AMI: 'ami-0d26eb3972b7f8c96'
+    'eu-south-1':
+      AMI: 'ami-0fce326033a239d55'
+    'eu-west-1':
+      AMI: 'ami-02b4e72b17337d6c1'
+    'ap-northeast-3':
+      AMI: 'ami-0e787554e61105680'
+    'ap-northeast-2':
+      AMI: 'ami-0a0de518b1fc4524c'
+    'me-south-1':
+      AMI: 'ami-004b77593bd476317'
+    'ap-northeast-1':
+      AMI: 'ami-09ebacdc178ae23b7'
+    'sa-east-1':
+      AMI: 'ami-0f8243a5175208e08'
+    'ca-central-1':
+      AMI: 'ami-02f84cf47c23f1769'
+    'ap-east-1':
+      AMI: 'ami-0a2115f8cc0a3956b'
+    'ap-southeast-1':
+      AMI: 'ami-0f511ead81ccde020'
+    'ap-southeast-2':
+      AMI: 'ami-0aab712d6363da7f9'
+    'eu-central-1':
+      AMI: 'ami-0453cb7b5f2b7fca2'
+    'us-east-1':
+      AMI: 'ami-0c2b8ca1dad447f8a'
+    'us-east-2':
+      AMI: 'ami-0443305dabd4be2bc'
+    'us-west-1':
+      AMI: 'ami-04b6c97b14c54de18'
+    'us-west-2':
+      AMI: 'ami-083ac7c7ecf9bb9b0'
   RegionMap202106170:
     'af-south-1':
       AMI: 'ami-0a797f6e4448b3b6f'
