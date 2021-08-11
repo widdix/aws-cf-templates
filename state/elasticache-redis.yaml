@@ -197,7 +197,7 @@ Resources:
         HostedZoneName:
           'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'
       ResourceRecords:
-      - !GetAtt 'ReplicationGroup.PrimaryEndPoint.Address'
+      - !If [HasClusterModeEnabled, !GetAtt 'ReplicationGroup.ConfigurationEndPoint.Address', !GetAtt 'ReplicationGroup.PrimaryEndPoint.Address']
       TTL: 60
       Type: CNAME
   CacheParameterGroup:
