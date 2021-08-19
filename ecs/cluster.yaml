@@ -991,11 +991,11 @@ Resources:
     Properties:
       AutoScalingGroupName: !Ref AutoScalingGroup
       PolicyType: StepScaling
-      AdjustmentType: PercentChangeInCapacity
+      AdjustmentType: ChangeInCapacity
       MinAdjustmentMagnitude: 1
       StepAdjustments:
       - MetricIntervalLowerBound: 0.0
-        ScalingAdjustment: -25
+        ScalingAdjustment: -1
   ContainerInstancesShortageAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
