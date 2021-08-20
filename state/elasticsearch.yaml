@@ -495,6 +495,28 @@ Resources:
       Period: 60
       Statistic: Maximum
       Threshold: 0
+  ESSoftwareUpdateEvent:
+    Condition: HasAlertTopic
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: 'Alerts and notifications from ES software updates.'
+      EventPattern:
+        source:
+        - 'aws.es'
+        'detail-type':
+        - 'Amazon ES Service Software Update Notification'
+        resources:
+        - !GetAtt 'ElasticsearchDomain.Arn'
+        detail:
+          status:
+          - Failed
+          - Available
+          - Completed
+          - Required
+      State: ENABLED
+      Targets:
+      - Arn: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+        Id: rule
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
