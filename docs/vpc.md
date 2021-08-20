@@ -156,7 +156,7 @@ During installation, the [pre shared key](https://en.wikipedia.org/wiki/Pre-shar
 
 ![Windows step 2](./img/vpc-vpn-bastion-windows2.png)
 
-1. Download and install [SoftEther VPN Server and VPN Bridge (Ver 4.29, Build 9680, rtm)](http://www.softether-download.com/files/softether/v4.29-9680-rtm-2019.02.28-tree/Windows/SoftEther_VPN_Server_and_VPN_Bridge/softether-vpnserver_vpnbridge-v4.29-9680-rtm-2019.02.28-windows-x86_x64-intel.exe)
+1. Download and install [SoftEther VPN Server and VPN Bridge (Ver 4.38, Build 9760, rtm)](http://www.softether-download.com/files/softether/v4.38-9760-rtm-2021.08.17-tree/Windows/SoftEther_VPN_Server_and_VPN_Bridge/softether-vpnserver_vpnbridge-v4.38-9760-rtm-2021.08.17-windows-x86_x64-intel.exe)
     1. Select the component `SoftEther VPN Server Manager (Admin Tools Only)`
 1. Add a new setting
 1. Set host name to
