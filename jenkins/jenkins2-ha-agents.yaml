@@ -726,7 +726,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: [awslogs, !If [HasIAMUserSSHAccess, ssh-access, !Ref 'AWS::NoValue'], mount, extras, install, setup, custom_before, run, custom_after]
+          default: [awslogs, !If [HasIAMUserSSHAccess, ssh-access, !Ref 'AWS::NoValue'], mount, extras, epel, dependencies, install, setup, custom_before, run, custom_after]
         awslogs:
           packages:
             yum:
@@ -952,12 +952,23 @@ Resources:
             'a_enable_docker':
               command: 'amazon-linux-extras enable docker=18.06.1 && yum -y clean metadata'
               test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
+            'b_enable_epel':
+              command: 'amazon-linux-extras enable epel=7.11 && yum -y clean metadata'
+              test: "! grep -Fxq '[amzn2extra-epel]' /etc/yum.repos.d/amzn2-extras.repo"
+        epel:
+          packages:
+            yum:
+              'epel-release': []
+        dependencies:
+          packages:
+            yum:
+              'java-11-amazon-corretto-headless': []
+              'daemonize': []
         install:
           packages:
             rpm:
               jenkins: 'http://ftp-chi.osuosl.org/pub/jenkins/redhat-stable/jenkins-2.303.1-1.1.noarch.rpm'
             yum:
-              'java-11-amazon-corretto-headless': []
               'ruby': []
             rubygems:
               'aws-sdk-autoscaling': ['1.47.0']
