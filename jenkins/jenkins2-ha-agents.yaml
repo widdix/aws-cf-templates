@@ -726,7 +726,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: [awslogs, !If [HasIAMUserSSHAccess, ssh-access, !Ref 'AWS::NoValue'], mount, extras, install, setup, custom_before, run, custom_after]
+          default: [awslogs, !If [HasIAMUserSSHAccess, ssh-access, !Ref 'AWS::NoValue'], mount, extras, epel, dependencies, install, setup, custom_before, run, custom_after]
         awslogs:
           packages:
             yum:
@@ -952,15 +952,23 @@ Resources:
             'a_enable_docker':
               command: 'amazon-linux-extras enable docker=18.06.1 && yum -y clean metadata'
               test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
-            'b_enable_corretto8':
-              command: 'amazon-linux-extras enable corretto8 && yum -y clean metadata'
-              test: "! grep -Fxq '[amzn2extra-corretto8]' /etc/yum.repos.d/amzn2-extras.repo"
+            'b_enable_epel':
+              command: 'amazon-linux-extras enable epel=7.11 && yum -y clean metadata'
+              test: "! grep -Fxq '[amzn2extra-epel]' /etc/yum.repos.d/amzn2-extras.repo"
+        epel:
+          packages:
+            yum:
+              'epel-release': []
+        dependencies:
+          packages:
+            yum:
+              'java-11-amazon-corretto-headless': []
+              'daemonize': []
         install:
           packages:
             rpm:
-              jenkins: 'http://ftp-chi.osuosl.org/pub/jenkins/redhat-stable/jenkins-2.289.3-1.1.noarch.rpm'
+              jenkins: 'http://ftp-chi.osuosl.org/pub/jenkins/redhat-stable/jenkins-2.303.1-1.1.noarch.rpm'
             yum:
-              'java-1.8.0-amazon-corretto': []
               'ruby': []
             rubygems:
               'aws-sdk-autoscaling': ['1.47.0']
@@ -1294,7 +1302,7 @@ Resources:
               command: 'until $(curl --silent --max-time 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'i_download_jenkins_plugin_manager':
-              command: 'wget --quiet --timeout=60 --output-document=/opt/jenkins-plugin-manager.jar https://github.com/jenkinsci/plugin-installation-manager-tool/releases/download/2.10.0/jenkins-plugin-manager-2.10.0.jar'
+              command: 'wget --quiet --timeout=60 --output-document=/opt/jenkins-plugin-manager.jar https://github.com/jenkinsci/plugin-installation-manager-tool/releases/download/2.10.2/jenkins-plugin-manager-2.10.2.jar'
               est: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'j_install_plugins':
               command: 'java -jar /opt/jenkins-plugin-manager.jar --war /usr/lib/jenkins/jenkins.war --plugin-download-directory /var/lib/jenkins/plugins --plugin-file /root/plugins.txt --latest=false'
@@ -1814,13 +1822,10 @@ Resources:
             'a_enable_docker':
               command: 'amazon-linux-extras enable docker=18.06.1 && yum -y clean metadata'
               test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
-            'b_enable_corretto8':
-              command: 'amazon-linux-extras enable corretto8 && yum -y clean metadata'
-              test: "! grep -Fxq '[amzn2extra-corretto8]' /etc/yum.repos.d/amzn2-extras.repo"
         install:
           packages:
             yum:
-              'java-1.8.0-amazon-corretto': []
+              'java-11-amazon-corretto-headless': []
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
