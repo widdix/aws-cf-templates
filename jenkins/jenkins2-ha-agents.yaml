@@ -964,12 +964,16 @@ Resources:
             yum:
               'java-11-amazon-corretto-headless': []
               'daemonize': []
+              ruby: []
+            rubygems: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
+              'aws-eventstream': ['1.1.1']
+              'aws-partitions': ['1.493.0']
+              'aws-sigv4': ['1.2.4']
+              'aws-sdk-core': ['3.119.1']
         install:
           packages:
             rpm:
               jenkins: 'http://ftp-chi.osuosl.org/pub/jenkins/redhat-stable/jenkins-2.303.1-1.1.noarch.rpm'
-            yum:
-              'ruby': []
             rubygems:
               'aws-sdk-autoscaling': ['1.47.0']
               'aws-sdk-sqs': ['1.34.0']
@@ -1826,6 +1830,12 @@ Resources:
           packages:
             yum:
               'java-11-amazon-corretto-headless': []
+              ruby: []
+            rubygems: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
+              'aws-eventstream': ['1.1.1']
+              'aws-partitions': ['1.493.0']
+              'aws-sigv4': ['1.2.4']
+              'aws-sdk-core': ['3.119.1']
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -1866,8 +1876,6 @@ Resources:
                 ensureRunning: !If [HasSystemsManagerAccess, true, false]
         setup:
           packages:
-            yum:
-              'ruby': []
             rubygems:
               'aws-sdk-autoscaling': ['1.47.0']
               'aws-sdk-ec2': ['1.200.0']
