@@ -967,7 +967,7 @@ Resources:
               ruby: []
             rubygems:
               daemons: ['1.3.1']
-          commands:    
+          commands:
             a_gem_install_aws_eventstream: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
               command: 'gem install aws-eventstream -v 1.1.1'
               test: '! gem list aws-eventstream -i -v 1.1.1'
@@ -1639,7 +1639,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: [awslogs, !If [HasIAMUserSSHAccess, ssh-access, !Ref 'AWS::NoValue'], extras, dependencies, install, setup, custom, run]]
+          default: [awslogs, !If [HasIAMUserSSHAccess, ssh-access, !Ref 'AWS::NoValue'], extras, dependencies, install, setup, custom, run]
         awslogs:
           packages:
             yum:
@@ -1845,7 +1845,7 @@ Resources:
               ruby: []
             rubygems:
               daemons: ['1.3.1']
-          commands:    
+          commands:
             a_gem_install_aws_eventstream: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
               command: 'gem install aws-eventstream -v 1.1.1'
               test: '! gem list aws-eventstream -i -v 1.1.1'
