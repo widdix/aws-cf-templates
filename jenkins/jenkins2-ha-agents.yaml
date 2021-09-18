@@ -965,19 +965,31 @@ Resources:
               'java-11-amazon-corretto-headless': []
               'daemonize': []
               ruby: []
-            rubygems: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
-              'aws-eventstream': ['1.1.1']
-              'aws-partitions': ['1.493.0']
-              'aws-sigv4': ['1.2.4']
-              'aws-sdk-core': ['3.119.1']
+            rubygems:
+              daemons: ['1.3.1']
+          commands:
+            a_gem_install_aws_eventstream: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
+              command: 'gem install aws-eventstream -v 1.1.1'
+              test: '! gem list aws-eventstream -i -v 1.1.1'
+            b_gem_install_aws_partitions: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
+              command: 'gem install aws-partitions -v 1.493.0'
+              test: '! gem list aws-partitions -i -v 1.493.0'
+            c_gem_install_aws_sigv4: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
+              command: 'gem install aws-sigv4 -v 1.2.4'
+              test: '! gem list aws-sigv4 -i -v 1.2.4'
+            d_gem_install_aws_sdk_core: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
+              command: 'gem install aws-sdk-core -v 3.119.1'
+              test: '! gem list aws-sdk-core -i -v 3.119.1'
+            e_gem_install_aws_sdk_autoscaling: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
+              command: 'gem install aws-sdk-autoscaling -v 1.47.0'
+              test: '! gem list aws-sdk-autoscaling -i -v 1.47.0'
+            f_gem_install_aws_sdk_sqs: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
+              command: 'gem install aws-sdk-sqs -v 1.34.0'
+              test: '! gem list aws-sdk-sqs -i -v 1.34.0'
         install:
           packages:
             rpm:
               jenkins: 'http://ftp-chi.osuosl.org/pub/jenkins/redhat-stable/jenkins-2.303.1-1.1.noarch.rpm'
-            rubygems:
-              'aws-sdk-autoscaling': ['1.47.0']
-              'aws-sdk-sqs': ['1.34.0']
-              daemons: ['1.3.1']
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -1627,7 +1639,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Init':
         configSets:
-          default: !If [HasIAMUserSSHAccess, [awslogs, ssh-access, extras, install, setup, custom, run], [awslogs, extras, install, setup, custom, run]]
+          default: [awslogs, !If [HasIAMUserSSHAccess, ssh-access, !Ref 'AWS::NoValue'], extras, dependencies, install, setup, custom, run]
         awslogs:
           packages:
             yum:
@@ -1826,16 +1838,33 @@ Resources:
             'a_enable_docker':
               command: 'amazon-linux-extras enable docker=18.06.1 && yum -y clean metadata'
               test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
-        install:
+        dependencies:
           packages:
             yum:
               'java-11-amazon-corretto-headless': []
               ruby: []
-            rubygems: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
-              'aws-eventstream': ['1.1.1']
-              'aws-partitions': ['1.493.0']
-              'aws-sigv4': ['1.2.4']
-              'aws-sdk-core': ['3.119.1']
+            rubygems:
+              daemons: ['1.3.1']
+          commands:
+            a_gem_install_aws_eventstream: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
+              command: 'gem install aws-eventstream -v 1.1.1'
+              test: '! gem list aws-eventstream -i -v 1.1.1'
+            b_gem_install_aws_partitions: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
+              command: 'gem install aws-partitions -v 1.493.0'
+              test: '! gem list aws-partitions -i -v 1.493.0'
+            c_gem_install_aws_sigv4: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
+              command: 'gem install aws-sigv4 -v 1.2.4'
+              test: '! gem list aws-sigv4 -i -v 1.2.4'
+            d_gem_install_aws_sdk_core: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
+              command: 'gem install aws-sdk-core -v 3.119.1'
+              test: '! gem list aws-sdk-core -i -v 3.119.1'
+            e_gem_install_aws_sdk_autoscaling: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
+              command: 'gem install aws-sdk-autoscaling -v 1.47.0'
+              test: '! gem list aws-sdk-autoscaling -i -v 1.47.0'
+            f_gem_install_aws_sdk_ec2: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
+              command: 'gem install aws-sdk-ec2 -v 1.200.0'
+              test: '! gem list aws-sdk-ec2 -i -v 1.200.0'
+        install:
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -1875,11 +1904,6 @@ Resources:
                 enabled: !If [HasSystemsManagerAccess, true, false]
                 ensureRunning: !If [HasSystemsManagerAccess, true, false]
         setup:
-          packages:
-            rubygems:
-              'aws-sdk-autoscaling': ['1.47.0']
-              'aws-sdk-ec2': ['1.200.0']
-              daemons: ['1.3.1']
           files:
             '/root/agent.xml':
               content: |
