@@ -167,47 +167,47 @@ Parameters:
 Mappings:
   RegionMap:
     'af-south-1':
-      AMI: 'ami-0edec67949fd25461'
+      AMI: 'ami-03590d67411bbd24e'
     'eu-north-1':
-      AMI: 'ami-0d441f5643da997cb'
+      AMI: 'ami-0f0b4cb72cf3eadf3'
     'ap-south-1':
-      AMI: 'ami-04db49c0fb2215364'
+      AMI: 'ami-0a23ccb2cdd9286bb'
     'eu-west-3':
-      AMI: 'ami-0d49cec198762b78c'
+      AMI: 'ami-072056ff9d3689e7b'
     'eu-west-2':
-      AMI: 'ami-0d26eb3972b7f8c96'
+      AMI: 'ami-0dbec48abfe298cab'
     'eu-south-1':
-      AMI: 'ami-0fce326033a239d55'
+      AMI: 'ami-043c883e65558daa0'
     'eu-west-1':
-      AMI: 'ami-02b4e72b17337d6c1'
+      AMI: 'ami-0d1bf5b68307103c2'
     'ap-northeast-3':
-      AMI: 'ami-0e787554e61105680'
+      AMI: 'ami-09ec82600a05bc23a'
     'ap-northeast-2':
-      AMI: 'ami-0a0de518b1fc4524c'
+      AMI: 'ami-08c64544f5cfcddd0'
     'me-south-1':
-      AMI: 'ami-004b77593bd476317'
+      AMI: 'ami-0cc423da78c883d64'
     'ap-northeast-1':
-      AMI: 'ami-09ebacdc178ae23b7'
+      AMI: 'ami-02892a4ea9bfa2192'
     'sa-east-1':
-      AMI: 'ami-0f8243a5175208e08'
+      AMI: 'ami-09b9b17384f68fd7c'
     'ca-central-1':
-      AMI: 'ami-02f84cf47c23f1769'
+      AMI: 'ami-0e2407e55b9816758'
     'ap-east-1':
-      AMI: 'ami-0a2115f8cc0a3956b'
+      AMI: 'ami-0de9d09f41c5e334c'
     'ap-southeast-1':
-      AMI: 'ami-0f511ead81ccde020'
+      AMI: 'ami-082105f875acab993'
     'ap-southeast-2':
-      AMI: 'ami-0aab712d6363da7f9'
+      AMI: 'ami-0210560cedcb09f07'
     'eu-central-1':
-      AMI: 'ami-0453cb7b5f2b7fca2'
+      AMI: 'ami-07df274a488ca9195'
     'us-east-1':
-      AMI: 'ami-0c2b8ca1dad447f8a'
+      AMI: 'ami-087c17d1fe0178315'
     'us-east-2':
-      AMI: 'ami-0443305dabd4be2bc'
+      AMI: 'ami-00dfe2c7ce89a450b'
     'us-west-1':
-      AMI: 'ami-04b6c97b14c54de18'
+      AMI: 'ami-011996ff98de391d1'
     'us-west-2':
-      AMI: 'ami-083ac7c7ecf9bb9b0'
+      AMI: 'ami-0c2d06d50ce30b442'
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
