@@ -33,11 +33,13 @@ Parameters:
     Type: String
     Default: ''
   Service:
-    Description: 'Which AWS service is allowed to use this CMK?'
+    Description: 'Which AWS service is allowed to use this CMK (upper-case names define use-cases)'
     Type: String
     AllowedValues:
     - 'ALL_SERVICES'
     - 'S3_PUBLIC_ACCESS'
+    - 'ROUTE53_DNSSEC'
+    - 'CLOUDTRAIL'
     - connect
     - dms
     - ssm
@@ -57,7 +59,8 @@ Parameters:
     - sqs
     - workmail
     - workspaces
-    - dnssec-route53
+    - dnssec-route53 # Deprecated since v13. Will be removed in v15. Use ROUTE53_DNSSEC instead.
+    - cloudtrail
     Default: ALL_SERVICES
   KeySpec:
     Description: 'Specify the type of the CMK.'
@@ -83,8 +86,9 @@ Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasServiceAllServices: !Equals [!Ref Service, 'ALL_SERVICES']
   HasServiceS3PublicAccess: !Equals [!Ref Service, 'S3_PUBLIC_ACCESS']
-  HasDNSSECRoute53Access: !Equals [!Ref Service, 'dnssec-route53']
-  HasNotDNSSECRoute53Access: !Not [!Equals [!Ref Service, 'dnssec-route53']]
+  HasServiceRoute53Dnssec: !Or [!Equals [!Ref Service, 'ROUTE53_DNSSEC'], !Equals [!Ref Service, 'dnssec-route53']]
+  HasServiceCloudTrail: !Equals [!Ref Service, 'CLOUDTRAIL']
+  HasService: !Not [!Or [!Condition HasServiceAllServices, !Condition HasServiceS3PublicAccess, !Condition HasServiceRoute53Dnssec, !Condition HasServiceCloudTrail]]
   HasSymmetricKey: !Equals [!Ref KeySpec, 'SYMMETRIC_DEFAULT']
 Resources:
   Key:
@@ -104,7 +108,7 @@ Resources:
           Action: 'kms:*'
           Resource: '*'
         - !If
-          - HasNotDNSSECRoute53Access
+          - HasService
           - Effect: Allow
             Principal:
               AWS: '*'
@@ -118,11 +122,27 @@ Resources:
             - 'kms:DescribeKey'
             Resource: '*'
             Condition:
-              StringEquals: !If
-              - HasServiceAllServices
-              - 'kms:CallerAccount': !Ref 'AWS::AccountId'
-              - 'kms:CallerAccount': !Ref 'AWS::AccountId'
+              StringEquals:
+                'kms:CallerAccount': !Ref 'AWS::AccountId'
                 'kms:ViaService': !Sub '${Service}.${AWS::Region}.amazonaws.com'
+          - !Ref 'AWS::NoValue'
+        - !If
+          - HasServiceAllServices
+          - Effect: Allow
+            Principal:
+              AWS: '*'
+            Action:
+            - 'kms:Encrypt'
+            - 'kms:Decrypt'
+            - 'kms:ReEncrypt*'
+            - 'kms:GenerateDataKey*'
+            - 'kms:CreateGrant'
+            - 'kms:ListGrants'
+            - 'kms:DescribeKey'
+            Resource: '*'
+            Condition:
+              StringEquals:
+                'kms:CallerAccount': !Ref 'AWS::AccountId'
           - !Ref 'AWS::NoValue'
         - !If
           - HasServiceS3PublicAccess
@@ -137,7 +157,7 @@ Resources:
                 'kms:ViaService': !Sub 's3.${AWS::Region}.amazonaws.com'
           - !Ref 'AWS::NoValue'
         - !If
-          - HasDNSSECRoute53Access
+          - HasServiceRoute53Dnssec
           - Effect: Allow
             Principal:
               Service: 'dnssec-route53.amazonaws.com'
@@ -148,7 +168,7 @@ Resources:
             Resource: '*'
           - !Ref 'AWS::NoValue'
         - !If
-          - HasDNSSECRoute53Access
+          - HasServiceRoute53Dnssec
           - Effect: Allow
             Principal:
               Service: 'dnssec-route53.amazonaws.com'
@@ -158,6 +178,18 @@ Resources:
             Condition:
               Bool:
                 'kms:GrantIsForAWSResource': true
+          - !Ref 'AWS::NoValue'
+        - !If
+          - HasServiceCloudTrail
+          - Effect: Allow # https://docs.aws.amazon.com/awscloudtrail/latest/userguide/create-kms-key-policy-for-cloudtrail.html#create-kms-key-policy-for-cloudtrail-encrypt
+            Principal:
+              Service: 'cloudtrail.amazonaws.com'
+            Action:
+            - 'kms:GenerateDataKey*'
+            Resource: '*'
+            Condition:
+              StringLike:
+                'kms:EncryptionContext:aws:cloudtrail:arn': !Sub 'arn:aws:cloudtrail:*:${AWS::AccountId}:trail/*'
           - !Ref 'AWS::NoValue'
   KeyAlias:
     DeletionPolicy: Retain

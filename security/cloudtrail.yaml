@@ -21,6 +21,7 @@ Metadata:
         default: 'CloudTrail Parameters'
       Parameters:
       - ParentAlertStack
+      - ParentKmsKeyStack
       - CloudWatchLogsRetentionInDays
       - ExternalTrailBucket
       - LogFilePrefix
@@ -32,6 +33,10 @@ Metadata:
 Parameters:
   ParentAlertStack:
     Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  ParentKmsKeyStack:
+    Description: 'Optional Stack name of parent KMS key stack based on security/kms-key.yaml template.'
     Type: String
     Default: ''
   PermissionsBoundary:
@@ -60,6 +65,7 @@ Parameters:
     - 'false'
 Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasParentKmsKeyStack: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   InternalBucket: !Equals [!Ref ExternalTrailBucket, '']
   ExternalBucket: !Not [!Equals [!Ref ExternalTrailBucket, '']]
@@ -157,6 +163,7 @@ Resources:
       IsLogging: true
       IsMultiRegionTrail: true
       EventSelectors: !If [IsS3DataEvents, [{DataResources: [{Type: 'AWS::S3::Object', Values: ['arn:aws:s3:::']}], IncludeManagementEvents: true, ReadWriteType: All}], !Ref 'AWS::NoValue']
+      KMSKeyId: !If [HasParentKmsKeyStack, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}, !Ref 'AWS::NoValue']
       S3BucketName: !Ref TrailBucket
       S3KeyPrefix: !Ref LogFilePrefix
       EnableLogFileValidation: true
@@ -173,6 +180,7 @@ Resources:
       IsLogging: true
       IsMultiRegionTrail: true
       EventSelectors: !If [IsS3DataEvents, [{DataResources: [{Type: 'AWS::S3::Object', Values: ['arn:aws:s3:::']}], IncludeManagementEvents: true, ReadWriteType: All}], !Ref 'AWS::NoValue']
+      KMSKeyId: !If [HasParentKmsKeyStack, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}, !Ref 'AWS::NoValue']
       S3BucketName: !Ref ExternalTrailBucket
       S3KeyPrefix: !Ref LogFilePrefix
       EnableLogFileValidation: true
