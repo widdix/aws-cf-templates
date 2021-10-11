@@ -219,47 +219,47 @@ Parameters:
 Mappings:
   RegionMap:
     'af-south-1':
-      AMI: 'ami-03590d67411bbd24e'
+      AMI: 'ami-0cff8a37cfecca308'
     'eu-north-1':
-      AMI: 'ami-0f0b4cb72cf3eadf3'
+      AMI: 'ami-0d15082500b576303'
     'ap-south-1':
-      AMI: 'ami-0a23ccb2cdd9286bb'
+      AMI: 'ami-041d6256ed0f2061c'
     'eu-west-3':
-      AMI: 'ami-072056ff9d3689e7b'
+      AMI: 'ami-0eb34a1ff6bafc83f'
     'eu-west-2':
-      AMI: 'ami-0dbec48abfe298cab'
+      AMI: 'ami-02f5781cba46a5e8a'
     'eu-south-1':
-      AMI: 'ami-043c883e65558daa0'
+      AMI: 'ami-07b39d7b78c49db0c'
     'eu-west-1':
-      AMI: 'ami-0d1bf5b68307103c2'
+      AMI: 'ami-05cd35b907b4ffe77'
     'ap-northeast-3':
-      AMI: 'ami-09ec82600a05bc23a'
+      AMI: 'ami-0791d2e614355a9eb'
     'ap-northeast-2':
-      AMI: 'ami-08c64544f5cfcddd0'
+      AMI: 'ami-0e4a9ad2eb120e054'
     'me-south-1':
-      AMI: 'ami-0cc423da78c883d64'
+      AMI: 'ami-09982ea549a4b883e'
     'ap-northeast-1':
-      AMI: 'ami-02892a4ea9bfa2192'
+      AMI: 'ami-0701e21c502689c31'
     'sa-east-1':
-      AMI: 'ami-09b9b17384f68fd7c'
+      AMI: 'ami-05855ed85de7fbd77'
     'ca-central-1':
-      AMI: 'ami-0e2407e55b9816758'
+      AMI: 'ami-0a70476e631caa6d3'
     'ap-east-1':
-      AMI: 'ami-0de9d09f41c5e334c'
+      AMI: 'ami-0f9b476fca017b449'
     'ap-southeast-1':
-      AMI: 'ami-082105f875acab993'
+      AMI: 'ami-073998ba87e205747'
     'ap-southeast-2':
-      AMI: 'ami-0210560cedcb09f07'
+      AMI: 'ami-05c029a4b57edda9e'
     'eu-central-1':
-      AMI: 'ami-07df274a488ca9195'
+      AMI: 'ami-058e6df85cfc7760b'
     'us-east-1':
-      AMI: 'ami-087c17d1fe0178315'
+      AMI: 'ami-02e136e904f3da870'
     'us-east-2':
-      AMI: 'ami-00dfe2c7ce89a450b'
+      AMI: 'ami-074cce78125f09d61'
     'us-west-1':
-      AMI: 'ami-011996ff98de391d1'
+      AMI: 'ami-03ab7423a204da002'
     'us-west-2':
-      AMI: 'ami-0c2d06d50ce30b442'
+      AMI: 'ami-013a129d325529d4d'
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasZeroAgents: !Equals [!Ref AgentMinSize, '0']

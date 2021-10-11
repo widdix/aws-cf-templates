@@ -99,47 +99,47 @@ Parameters:
 Mappings:
   RegionMap: # TODO update to Amazon Linux 2 (don't forget to adjust awslogs config as well)
     'af-south-1':
-      NATAMI: 'ami-02a4d53bdd3e50b64'
+      NATAMI: 'ami-0301591cb09254660'
     'eu-north-1':
-      NATAMI: 'ami-0b162e954f43a67ad'
+      NATAMI: 'ami-0213f0a5b0267a261'
     'ap-south-1':
-      NATAMI: 'ami-0b8a83c274c0fd9d2'
+      NATAMI: 'ami-0a58809eee80aa0aa'
     'eu-west-3':
-      NATAMI: 'ami-02f832028d044c162'
+      NATAMI: 'ami-052a40b25c41dd3e1'
     'eu-west-2':
-      NATAMI: 'ami-0a296f7689b0f7b35'
+      NATAMI: 'ami-00400a198e1509988'
     'eu-south-1':
-      NATAMI: 'ami-0d498f2f5b0f87b4a'
+      NATAMI: 'ami-05aeb6196027c6d79'
     'eu-west-1':
-      NATAMI: 'ami-09e45ffc9fee3dce1'
+      NATAMI: 'ami-044677ea00df5825f'
     'ap-northeast-3':
-      NATAMI: 'ami-0b7496b4128543db2'
+      NATAMI: 'ami-0d182d3da86926c86'
     'ap-northeast-2':
-      NATAMI: 'ami-0e046f0c741e508db'
+      NATAMI: 'ami-0521b2a62a9329809'
     'me-south-1':
-      NATAMI: 'ami-0f191ff1591ba2030'
+      NATAMI: 'ami-024a7e72d23b4a447'
     'ap-northeast-1':
-      NATAMI: 'ami-055e1ec80e281a291'
+      NATAMI: 'ami-076209132bc69adb0'
     'sa-east-1':
-      NATAMI: 'ami-02dacf3ff2c30e620'
+      NATAMI: 'ami-06909414df2a438ae'
     'ca-central-1':
-      NATAMI: 'ami-0cf2edb7c4010a034'
+      NATAMI: 'ami-05b8dd01c6ff3ddda'
     'ap-east-1':
-      NATAMI: 'ami-06322b632e8ada1fa'
+      NATAMI: 'ami-0e728e9f7c6b7ab7f'
     'ap-southeast-1':
-      NATAMI: 'ami-0a3d7c296ebfff761'
+      NATAMI: 'ami-0e5ff9dcbc5a55508'
     'ap-southeast-2':
-      NATAMI: 'ami-015aff2ceba6d2b6e'
+      NATAMI: 'ami-07da08241e23b56ed'
     'eu-central-1':
-      NATAMI: 'ami-08ffe5c72a85c894d'
+      NATAMI: 'ami-0a50a8301f0e10fce'
     'us-east-1':
-      NATAMI: 'ami-00a36856283d67c39'
+      NATAMI: 'ami-070801f9b4d12d5dc'
     'us-east-2':
-      NATAMI: 'ami-0fbd30fcb05346f14'
+      NATAMI: 'ami-079d7a20b448f4d4d'
     'us-west-1':
-      NATAMI: 'ami-0046c079820366dc3'
+      NATAMI: 'ami-04f89cb3daa0e9134'
     'us-west-2':
-      NATAMI: 'ami-07516a08e3c79b372'
+      NATAMI: 'ami-0d88b34dd56682109'
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
