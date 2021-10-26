@@ -176,7 +176,7 @@ Parameters:
     MinValue: 8
     MaxValue: 1024
   MaintenanceWindowSchedule:
-    Description: 'SSM cron expressions to trigger the maintenace window for patch installation.'
+    Description: 'SSM cron expressions to trigger the maintenace window for patch installation (leave empty to disable).'
     Type: String
     Default: 'cron(0 5 ? * SUN *)'
   MaintenanceWindowScheduleTimezone:
@@ -692,6 +692,7 @@ Conditions:
   HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
   HasBackupRetentionPeriod: !Not [!Equals [!Ref BackupRetentionPeriod, 0]]
   HasRestoreImageId: !Not [!Equals [!Ref RestoreImageId, '']]
+  HasMaintenanceWindowSchedule: !Not [!Equals [!Ref MaintenanceWindowSchedule, '']]
 Resources:
   RecordSet:
     Condition: HasZone
@@ -1215,6 +1216,7 @@ Resources:
       - Name: path
         Value: '/'
   MaintenanceWindow:
+    Condition: HasMaintenanceWindowSchedule
     Type: 'AWS::SSM::MaintenanceWindow'
     Properties:
       AllowUnassociatedTargets: false
@@ -1224,6 +1226,7 @@ Resources:
       Schedule: !Ref MaintenanceWindowSchedule
       ScheduleTimezone: !Ref MaintenanceWindowScheduleTimezone
   MaintenanceWindowTarget:
+    Condition: HasMaintenanceWindowSchedule
     Type: 'AWS::SSM::MaintenanceWindowTarget'
     Properties:
       ResourceType: INSTANCE
@@ -1232,6 +1235,7 @@ Resources:
         Values: [!Ref VirtualMachine]
       WindowId: !Ref MaintenanceWindow
   MaintenanceWindowTask:
+    Condition: HasMaintenanceWindowSchedule
     Type: 'AWS::SSM::MaintenanceWindowTask'
     Properties:
       MaxConcurrency: '1'
