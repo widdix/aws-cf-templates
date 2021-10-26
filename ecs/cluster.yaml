@@ -207,47 +207,47 @@ Parameters:
 Mappings:
   RegionMap:
     'af-south-1':
-      ECSAMI: 'ami-01ac4eeba86f9a8d5'
+      ECSAMI: 'ami-0127b8951a6d8ed65'
     'eu-north-1':
-      ECSAMI: 'ami-02ed85945b0e46f6f'
+      ECSAMI: 'ami-02aa54802a2c06c02'
     'ap-south-1':
-      ECSAMI: 'ami-0405ea06ab2621cff'
+      ECSAMI: 'ami-0c50344154200fefa'
     'eu-west-3':
-      ECSAMI: 'ami-004138ffbf7aad984'
+      ECSAMI: 'ami-0d46bcc68b972dce9'
     'eu-west-2':
-      ECSAMI: 'ami-0b5e334d61108a1aa'
+      ECSAMI: 'ami-0f731427db4bbe921'
     'eu-south-1':
-      ECSAMI: 'ami-00d7a4084bac16c81'
+      ECSAMI: 'ami-0894d26282e454a96'
     'eu-west-1':
-      ECSAMI: 'ami-0fdb1527ad8bf80f7'
+      ECSAMI: 'ami-0da10b897b6796e40'
     'ap-northeast-3':
-      ECSAMI: 'ami-025db54f56fda879d'
+      ECSAMI: 'ami-0db1f5991b7658e55'
     'ap-northeast-2':
-      ECSAMI: 'ami-0cacf8fb201c07e6b'
+      ECSAMI: 'ami-0a3f927a9ce2b6258'
     'me-south-1':
-      ECSAMI: 'ami-05f7a182e037b82af'
+      ECSAMI: 'ami-0a3675c5b74d4aaba'
     'ap-northeast-1':
-      ECSAMI: 'ami-0b155218d6916661a'
+      ECSAMI: 'ami-064bf9846657106e1'
     'sa-east-1':
-      ECSAMI: 'ami-00f653b3399483762'
+      ECSAMI: 'ami-0ec5a5205d55d1bb9'
     'ca-central-1':
-      ECSAMI: 'ami-0a5cfc26b04c4a20e'
+      ECSAMI: 'ami-03385197f86bc0b98'
     'ap-east-1':
-      ECSAMI: 'ami-09bab3582fd4f92a9'
+      ECSAMI: 'ami-09f22589b6b9800f0'
     'ap-southeast-1':
-      ECSAMI: 'ami-0f9e7ad4abf49df6b'
+      ECSAMI: 'ami-07b84da235be1cfcb'
     'ap-southeast-2':
-      ECSAMI: 'ami-0cdf16bb10adcaaa1'
+      ECSAMI: 'ami-06e2d8d2a2a6be608'
     'eu-central-1':
-      ECSAMI: 'ami-0da383d2d6bdb9100'
+      ECSAMI: 'ami-06a0b593202c1590d'
     'us-east-1':
-      ECSAMI: 'ami-04942e54b391af5d0'
+      ECSAMI: 'ami-0eba366342cb1dfda'
     'us-east-2':
-      ECSAMI: 'ami-0c38a2329ed4dae9a'
+      ECSAMI: 'ami-0a4cbf3bd47ef1bc9'
     'us-west-1':
-      ECSAMI: 'ami-0ab1b97c4bbf16bf3'
+      ECSAMI: 'ami-0bc32f414af8badcb'
     'us-west-2':
-      ECSAMI: 'ami-06c73a8827b372409'
+      ECSAMI: 'ami-0971980bcf180eb0c'
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
