@@ -989,7 +989,7 @@ Resources:
         install:
           packages:
             rpm:
-              jenkins: 'http://ftp-chi.osuosl.org/pub/jenkins/redhat-stable/jenkins-2.303.2-1.1.noarch.rpm'
+              jenkins: 'http://ftp-chi.osuosl.org/pub/jenkins/redhat-stable/jenkins-2.303.3-1.1.noarch.rpm'
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -1220,22 +1220,22 @@ Resources:
             '/root/plugins.txt': # list updates: java -jar /opt/jenkins-plugin-manager.jar --war /usr/lib/jenkins/jenkins.war --plugin-download-directory /var/lib/jenkins/plugins --plugin-file /root/plugins.txt --available-updates
               content: |
                 jqs-monitoring:1.4
-                ant:1.11
+                ant:1.12
                 build-timeout:1.20
                 docker-workflow:1.26
-                credentials-binding:1.26
-                email-ext:2.83
+                credentials-binding:1.27
+                email-ext:2.84
                 envinject:2.4.0
                 github-organization-folder:1.6
-                gradle:1.36
+                gradle:1.37.1
                 workflow-aggregator:2.6
                 pipeline-maven:3.10.0
-                ssh-slaves:1.32.0
-                subversion:2.14.4
+                ssh-slaves:1.33.0
+                subversion:2.15.1
                 timestamper:1.13
                 ws-cleanup:0.39
                 pipeline-aws:1.43
-                http_request:1.9.0
+                http_request:1.11
               mode: '000400'
               owner: root
               group: root
