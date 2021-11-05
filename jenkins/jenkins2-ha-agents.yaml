@@ -981,10 +981,10 @@ Resources:
               command: 'gem install aws-sdk-core -v 3.119.1'
               test: '! gem list aws-sdk-core -i -v 3.119.1'
             e_gem_install_aws_sdk_autoscaling: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
-              command: 'gem install aws-sdk-autoscaling -v 1.47.0'
+              command: 'gem install aws-sdk-autoscaling -v 1.47.0 --ignore-dependencies'
               test: '! gem list aws-sdk-autoscaling -i -v 1.47.0'
             f_gem_install_aws_sdk_sqs: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
-              command: 'gem install aws-sdk-sqs -v 1.34.0'
+              command: 'gem install aws-sdk-sqs -v 1.34.0 --ignore-dependencies'
               test: '! gem list aws-sdk-sqs -i -v 1.34.0'
         install:
           packages:
@@ -1859,10 +1859,10 @@ Resources:
               command: 'gem install aws-sdk-core -v 3.119.1'
               test: '! gem list aws-sdk-core -i -v 3.119.1'
             e_gem_install_aws_sdk_autoscaling: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
-              command: 'gem install aws-sdk-autoscaling -v 1.47.0'
+              command: 'gem install aws-sdk-autoscaling -v 1.47.0 --ignore-dependencies'
               test: '! gem list aws-sdk-autoscaling -i -v 1.47.0'
             f_gem_install_aws_sdk_ec2: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
-              command: 'gem install aws-sdk-ec2 -v 1.200.0'
+              command: 'gem install aws-sdk-ec2 -v 1.200.0 --ignore-dependencies'
               test: '! gem list aws-sdk-ec2 -i -v 1.200.0'
         install:
           files:
