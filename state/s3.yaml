@@ -23,6 +23,7 @@ Metadata:
       - ParentKmsKeyStack
       - ParentS3VirusScanStack
       - ParentVpcEndpointStack
+      - ParentS3StackAccessLog
     - Label:
         default: 'S3 Parameters'
       Parameters:
@@ -51,6 +52,10 @@ Parameters:
     Description: 'Optional Stack name of parent VPC endpoint stack based on vpc/vpc-endpoint-s3.yaml template (Required if Access := VpcEndpointRead).'
     Type: String
     Default: ''
+  ParentS3StackAccessLog:
+    Description: 'Optional stack name of parent s3 stack based on state/s3.yaml template (with Access set to S3AccessLogWrite) to store access logs.'
+    Type: String
+    Default: ''
   BucketName:
     Description: 'Optional name of the bucket.'
     Type: String
@@ -59,7 +64,7 @@ Parameters:
     Description: 'Access policy of the bucket.'
     Type: String
     Default: Private
-    AllowedValues: [Private, PublicRead, CloudFrontRead, CloudFrontAccessLogWrite, ElbAccessLogWrite, ConfigWrite, CloudTrailWrite, VpcEndpointRead, FlowLogWrite]
+    AllowedValues: [Private, PublicRead, CloudFrontRead, CloudFrontAccessLogWrite, ElbAccessLogWrite, S3AccessLogWrite, ConfigWrite, CloudTrailWrite, VpcEndpointRead, FlowLogWrite]
   Versioning:
     Description: 'Enable versioning to keep a backup if objects change.'
     Type: String
@@ -109,11 +114,13 @@ Parameters:
     Default: ''
 Conditions:
   HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
+  HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
   HasS3VirusScan: !Not [!Equals [!Ref ParentS3VirusScanStack, '']]
   HasPrivateAccess: !Equals [!Ref Access, Private]
   HasPublicReadAccess: !Equals [!Ref Access, PublicRead]
   HasCloudFrontReadAccess: !Equals [!Ref Access, CloudFrontRead]
   HasElbAccessLogWriteAccess: !Equals [!Ref Access, ElbAccessLogWrite]
+  HasS3AccessLogWrite: !Equals [!Ref Access, S3AccessLogWrite]
   HasConfigWriteAccess: !Equals [!Ref Access, ConfigWrite]
   HasCloudTrailWriteAccess: !Equals [!Ref Access, CloudTrailWrite]
   HasVpcEndpointReadAccess: !Equals [!Ref Access, VpcEndpointRead]
@@ -135,6 +142,8 @@ Resources:
     Type: 'AWS::S3::Bucket'
     Properties:
       BucketName: !If [HasBucketName, !Ref BucketName, !Ref 'AWS::NoValue']
+      LoggingConfiguration: !If [HasS3Bucket, {DestinationBucketName: {'Fn::ImportValue': !Sub '${ParentS3StackAccessLog}-BucketName'}, LogFilePrefix: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
+      AccessControl: !If [HasS3AccessLogWrite, LogDeliveryWrite, !Ref 'AWS::NoValue']
       LifecycleConfiguration:
         Rules:
         - AbortIncompleteMultipartUpload:
