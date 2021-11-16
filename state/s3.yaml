@@ -211,7 +211,7 @@ Resources:
         - !If
           - HasElbAccessLogWriteAccess
           - Principal:
-              AWS: # https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html#access-logging-bucket-permissions
+              AWS: # https://docs.aws.amazon.com/de_de/elasticloadbalancing/latest/classic/enable-access-logs.html
               - !If [HasPartitionPublic, 'arn:aws:iam::127311923021:root', !Ref 'AWS::NoValue'] # us-east-1
               - !If [HasPartitionPublic, 'arn:aws:iam::033677994240:root', !Ref 'AWS::NoValue'] # us-east-2
               - !If [HasPartitionPublic, 'arn:aws:iam::027434742980:root', !Ref 'AWS::NoValue'] # us-west-1
@@ -240,7 +240,7 @@ Resources:
         - !If
           - HasElbAccessLogWriteAccess
           - Principal:
-              Service: 'delivery.logs.amazonaws.com' # https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-access-logs.html
+              Service: 'delivery.logs.amazonaws.com' # https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html and https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-access-logs.html
             Action: 's3:PutObject'
             Effect: Allow
             Resource: !Sub '${Bucket.Arn}/*AWSLogs/${AWS::AccountId}/*'
@@ -251,7 +251,7 @@ Resources:
         - !If
           - HasElbAccessLogWriteAccess
           - Principal:
-              Service: 'delivery.logs.amazonaws.com' # https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-access-logs.html
+              Service: 'delivery.logs.amazonaws.com' # https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html and https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-access-logs.html
             Action: 's3:GetBucketAcl'
             Effect: Allow
             Resource: !GetAtt 'Bucket.Arn'
