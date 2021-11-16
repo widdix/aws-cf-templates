@@ -137,6 +137,7 @@ Conditions:
   HasPartitionUsGov: !Equals [!Ref 'AWS::Partition', 'aws-us-gov']
   HasLambdaFunctionArn: !Not [!Equals [!Ref LambdaFunctionArn, '']]
   HasLambdaFunctionFilterPrefix: !Not [!Equals [!Ref LambdaFunctionFilterPrefix, '']]
+  HasPublicAccessBlock: !Not [!Condition HasPublicReadAccess]
 Resources:
   Bucket: # cannot be deleted with data
     Type: 'AWS::S3::Bucket'
@@ -159,6 +160,7 @@ Resources:
         - !If [HasLambdaFunctionArn, {Event: !Ref LambdaFunctionEvent, Function: !Ref LambdaFunctionArn, Filter: !If [HasLambdaFunctionFilterPrefix, {S3Key: {Rules: [{Name: prefix, Value: !Ref LambdaFunctionFilterPrefix}]}}, !Ref 'AWS::NoValue']}, !Ref 'AWS::NoValue']
         QueueConfigurations:
         - !If [HasS3VirusScan, {Event: 's3:ObjectCreated:*', Queue: {'Fn::ImportValue': !Sub '${ParentS3VirusScanStack}-ScanQueueArn'}}, !Ref 'AWS::NoValue']
+      PublicAccessBlockConfiguration: !If [HasPublicAccessBlock, {BlockPublicAcls: true, BlockPublicPolicy: true, IgnorePublicAcls: true, RestrictPublicBuckets: true}, !Ref 'AWS::NoValue'] # AWS Foundational Security Best Practices v1.0.0 S3.8
       VersioningConfiguration: !If [HasVersioning, {Status: Enabled}, !If [HadVersioning, {Status: Suspended}, !Ref 'AWS::NoValue']]
       BucketEncryption: !If [HasKmsKey, {ServerSideEncryptionConfiguration: [{BucketKeyEnabled: true, ServerSideEncryptionByDefault: {KMSMasterKeyID: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}, SSEAlgorithm: 'aws:kms'}}]}, !Ref 'AWS::NoValue']
   BucketPolicy:
