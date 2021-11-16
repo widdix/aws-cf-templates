@@ -119,6 +119,7 @@ Conditions:
   HasPrivateAccess: !Equals [!Ref Access, Private]
   HasPublicReadAccess: !Equals [!Ref Access, PublicRead]
   HasCloudFrontReadAccess: !Equals [!Ref Access, CloudFrontRead]
+  HasCloudFrontAccessLogWrite: !Equals [!Ref Access, CloudFrontAccessLogWrite]
   HasElbAccessLogWriteAccess: !Equals [!Ref Access, ElbAccessLogWrite]
   HasS3AccessLogWrite: !Equals [!Ref Access, S3AccessLogWrite]
   HasConfigWriteAccess: !Equals [!Ref Access, ConfigWrite]
@@ -137,6 +138,7 @@ Conditions:
   HasPartitionUsGov: !Equals [!Ref 'AWS::Partition', 'aws-us-gov']
   HasLambdaFunctionArn: !Not [!Equals [!Ref LambdaFunctionArn, '']]
   HasLambdaFunctionFilterPrefix: !Not [!Equals [!Ref LambdaFunctionFilterPrefix, '']]
+  HasAccessControlLogDeliveryWrite: !Or [!Condition HasCloudFrontAccessLogWrite, !Condition HasS3AccessLogWrite]
   HasPublicAccessBlock: !Not [!Condition HasPublicReadAccess]
 Resources:
   Bucket: # cannot be deleted with data
@@ -144,7 +146,7 @@ Resources:
     Properties:
       BucketName: !If [HasBucketName, !Ref BucketName, !Ref 'AWS::NoValue']
       LoggingConfiguration: !If [HasS3Bucket, {DestinationBucketName: {'Fn::ImportValue': !Sub '${ParentS3StackAccessLog}-BucketName'}, LogFilePrefix: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
-      AccessControl: !If [HasS3AccessLogWrite, LogDeliveryWrite, !Ref 'AWS::NoValue']
+      AccessControl: !If [HasAccessControlLogDeliveryWrite, LogDeliveryWrite, !Ref 'AWS::NoValue']
       LifecycleConfiguration:
         Rules:
         - AbortIncompleteMultipartUpload:
