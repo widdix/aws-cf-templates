@@ -119,6 +119,7 @@ Conditions:
   HasPrivateAccess: !Equals [!Ref Access, Private]
   HasPublicReadAccess: !Equals [!Ref Access, PublicRead]
   HasCloudFrontReadAccess: !Equals [!Ref Access, CloudFrontRead]
+  HasCloudFrontAccessLogWrite: !Equals [!Ref Access, CloudFrontAccessLogWrite]
   HasElbAccessLogWriteAccess: !Equals [!Ref Access, ElbAccessLogWrite]
   HasS3AccessLogWrite: !Equals [!Ref Access, S3AccessLogWrite]
   HasConfigWriteAccess: !Equals [!Ref Access, ConfigWrite]
@@ -137,13 +138,15 @@ Conditions:
   HasPartitionUsGov: !Equals [!Ref 'AWS::Partition', 'aws-us-gov']
   HasLambdaFunctionArn: !Not [!Equals [!Ref LambdaFunctionArn, '']]
   HasLambdaFunctionFilterPrefix: !Not [!Equals [!Ref LambdaFunctionFilterPrefix, '']]
+  HasAccessControlLogDeliveryWrite: !Or [!Condition HasCloudFrontAccessLogWrite, !Condition HasS3AccessLogWrite]
+  HasPublicAccessBlock: !Not [!Condition HasPublicReadAccess]
 Resources:
   Bucket: # cannot be deleted with data
     Type: 'AWS::S3::Bucket'
     Properties:
       BucketName: !If [HasBucketName, !Ref BucketName, !Ref 'AWS::NoValue']
       LoggingConfiguration: !If [HasS3Bucket, {DestinationBucketName: {'Fn::ImportValue': !Sub '${ParentS3StackAccessLog}-BucketName'}, LogFilePrefix: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
-      AccessControl: !If [HasS3AccessLogWrite, LogDeliveryWrite, !Ref 'AWS::NoValue']
+      AccessControl: !If [HasAccessControlLogDeliveryWrite, LogDeliveryWrite, !Ref 'AWS::NoValue']
       LifecycleConfiguration:
         Rules:
         - AbortIncompleteMultipartUpload:
@@ -159,6 +162,7 @@ Resources:
         - !If [HasLambdaFunctionArn, {Event: !Ref LambdaFunctionEvent, Function: !Ref LambdaFunctionArn, Filter: !If [HasLambdaFunctionFilterPrefix, {S3Key: {Rules: [{Name: prefix, Value: !Ref LambdaFunctionFilterPrefix}]}}, !Ref 'AWS::NoValue']}, !Ref 'AWS::NoValue']
         QueueConfigurations:
         - !If [HasS3VirusScan, {Event: 's3:ObjectCreated:*', Queue: {'Fn::ImportValue': !Sub '${ParentS3VirusScanStack}-ScanQueueArn'}}, !Ref 'AWS::NoValue']
+      PublicAccessBlockConfiguration: !If [HasPublicAccessBlock, {BlockPublicAcls: true, BlockPublicPolicy: true, IgnorePublicAcls: true, RestrictPublicBuckets: true}, !Ref 'AWS::NoValue'] # AWS Foundational Security Best Practices v1.0.0 S3.8
       VersioningConfiguration: !If [HasVersioning, {Status: Enabled}, !If [HadVersioning, {Status: Suspended}, !Ref 'AWS::NoValue']]
       BucketEncryption: !If [HasKmsKey, {ServerSideEncryptionConfiguration: [{BucketKeyEnabled: true, ServerSideEncryptionByDefault: {KMSMasterKeyID: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}, SSEAlgorithm: 'aws:kms'}}]}, !Ref 'AWS::NoValue']
   BucketPolicy:
@@ -207,7 +211,7 @@ Resources:
         - !If
           - HasElbAccessLogWriteAccess
           - Principal:
-              AWS: # https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html#access-logging-bucket-permissions
+              AWS: # https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/enable-access-logs.html
               - !If [HasPartitionPublic, 'arn:aws:iam::127311923021:root', !Ref 'AWS::NoValue'] # us-east-1
               - !If [HasPartitionPublic, 'arn:aws:iam::033677994240:root', !Ref 'AWS::NoValue'] # us-east-2
               - !If [HasPartitionPublic, 'arn:aws:iam::027434742980:root', !Ref 'AWS::NoValue'] # us-west-1
@@ -236,7 +240,7 @@ Resources:
         - !If
           - HasElbAccessLogWriteAccess
           - Principal:
-              Service: 'delivery.logs.amazonaws.com' # https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-access-logs.html
+              Service: 'delivery.logs.amazonaws.com' # https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html and https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-access-logs.html
             Action: 's3:PutObject'
             Effect: Allow
             Resource: !Sub '${Bucket.Arn}/*AWSLogs/${AWS::AccountId}/*'
@@ -247,7 +251,7 @@ Resources:
         - !If
           - HasElbAccessLogWriteAccess
           - Principal:
-              Service: 'delivery.logs.amazonaws.com' # https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-access-logs.html
+              Service: 'delivery.logs.amazonaws.com' # https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html and https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-access-logs.html
             Action: 's3:GetBucketAcl'
             Effect: Allow
             Resource: !GetAtt 'Bucket.Arn'

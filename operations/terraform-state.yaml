@@ -54,7 +54,7 @@ Resources:
             KMSMasterKeyID: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}
             SSEAlgorithm: 'aws:kms'
       BucketName: !Ref TerraformStateIdentifier
-      PublicAccessBlockConfiguration:
+      PublicAccessBlockConfiguration: # AWS Foundational Security Best Practices v1.0.0 S3.8
         BlockPublicAcls: true
         BlockPublicPolicy: true
         IgnorePublicAcls: true

@@ -55,7 +55,12 @@ Resources:
   LogBucket:
     Condition: InternalBucket
     Type: 'AWS::S3::Bucket'
-    Properties: {}
+    Properties:
+      PublicAccessBlockConfiguration: # AWS Foundational Security Best Practices v1.0.0 S3.8
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
   LogBucketPolicy:
     Condition: InternalBucket
     Type: 'AWS::S3::BucketPolicy'
