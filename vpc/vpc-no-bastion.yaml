@@ -1,0 +1,48 @@
+---
+# Copyright 2018 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'VPC: No bastion host, a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+Resources:
+  SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Ref 'AWS::StackName'
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'vpc/vpc-no-bastion'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
+  SecurityGroup:
+    Description: 'Use this Security Group to reference incoming traffic from the bastion host/instance.'
+    Value: !Ref SecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-SecurityGroup'

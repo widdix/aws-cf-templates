@@ -133,6 +133,18 @@ Use `ssh -J $user@$bastion $target` and replace `$user` with your IAM user name;
 ## Limitations
 * Only one EC2 instance is managed by the ASG. In case of an outage the instance will be replaced within 5 minutes.
 
+# No bastion host/instance
+If you leave the `ParentSSHBastionStack` parameter blank in other templates, port 22 is open to the world `0.0.0.0/0`. This template can be used to disable SSH access by deploying an "empty" / non-existent bastion host (e.g., when using SSM Session Manager).
+
+## Installation Guide
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-no-bastion.yaml&stackName=no-bastion&param_ParentVPCStack=vpc)
+1. Click **Next** to proceed with the next step of the wizard.
+1. Specify a name and all parameters for the stack.
+1. Click **Next** to proceed with the next step of the wizard.
+1. Click **Next** to skip the **Options** step of the wizard.
+1. Click **Create** to start the creation of the stack.
+1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
 # VPN bastion host/instance
 This template describes a **highly available** VPN bastion host/instance based on the [SoftEther VPN Project](https://www.softether.org).
 
