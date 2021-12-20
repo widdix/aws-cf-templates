@@ -46,7 +46,7 @@ Resources:
         'detail-type':
         - 'AWS API Call via CloudTrail'
         resources:
-        - !Sub 'arn:aws:${AWS::Partition}:${AWS::Region}:${AWS::AccountId}:key/${KeyId}'
+        - !Sub 'arn:${AWS::Partition}:${AWS::Partition}:${AWS::Region}:${AWS::AccountId}:key/${KeyId}'
         detail:
           eventSource:
           - 'kms.amazonaws.com'

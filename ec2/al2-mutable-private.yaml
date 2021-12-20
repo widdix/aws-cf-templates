@@ -868,7 +868,7 @@ Resources:
           - 'iam:ListSSHPublicKeys'
           - 'iam:GetSSHPublicKey'
           Resource:
-          - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
+          - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:user/*'
   VirtualMachine: # TODO make IMDSv2 required (waits for https://github.com/aws-cloudformation/aws-cloudformation-coverage-roadmap/issues/655)
     Type: 'AWS::EC2::Instance'
     Metadata:
@@ -1156,7 +1156,7 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Threshold: 0
       AlarmActions:
-      - !Sub 'arn:aws:automate:${AWS::Region}:ec2:recover'
+      - !Sub 'arn:${AWS::Partition}:automate:${AWS::Region}:ec2:recover'
       Dimensions:
       - Name: InstanceId
         Value: !Ref VirtualMachine

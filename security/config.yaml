@@ -125,13 +125,13 @@ Resources:
           Statement:
           - Effect: Allow
             Action: 's3:PutObject'
-            Resource: !Sub 'arn:aws:s3:::${ConfigBucket}/*'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${ConfigBucket}/*'
             Condition:
               StringLike:
                 's3:x-amz-acl': 'bucket-owner-full-control'
           - Effect: Allow
             Action: 's3:GetBucketAcl'
-            Resource: !Sub 'arn:aws:s3:::${ConfigBucket}'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${ConfigBucket}'
       - PolicyName: 'sns-policy'
         PolicyDocument:
           Version: '2012-10-17'

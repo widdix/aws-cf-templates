@@ -292,7 +292,7 @@ Resources:
             - 'ecs:SubmitContainerStateChange'
             - 'ecs:SubmitTaskStateChange'
             - 'ecs:ListContainerInstances'
-            Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}'
+            Resource: !Sub 'arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}'
       - PolicyName: ecs-cluster-instance
         PolicyDocument:
           Version: '2012-10-17'
@@ -304,11 +304,11 @@ Resources:
             - 'ecs:UpdateContainerInstancesState'
             - 'ecs:ListTasks'
             - 'ecs:DescribeContainerInstances'
-            Resource: !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:container-instance/*'
+            Resource: !Sub 'arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:container-instance/*'
             Condition:
               'StringEquals':
                 'ecs:cluster':
-                  !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}'
+                  !Sub 'arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}'
       - PolicyName: ecr
         PolicyDocument:
           Version: '2012-10-17'
@@ -351,7 +351,7 @@ Resources:
           - 'iam:ListSSHPublicKeys'
           - 'iam:GetSSHPublicKey'
           Resource:
-          - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
+          - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:user/*'
   ALBSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:

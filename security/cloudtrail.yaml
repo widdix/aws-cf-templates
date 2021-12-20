@@ -94,13 +94,13 @@ Resources:
           Principal:
             Service: 'cloudtrail.amazonaws.com'
           Action: 's3:GetBucketAcl'
-          Resource: !Sub 'arn:aws:s3:::${TrailBucket}'
+          Resource: !Sub 'arn:${AWS::Partition}:s3:::${TrailBucket}'
         - Sid: AWSCloudTrailWrite
           Effect: Allow
           Principal:
             Service: 'cloudtrail.amazonaws.com'
           Action: 's3:PutObject'
-          Resource: !If [HasLogFilePrefix, !Sub 'arn:aws:s3:::${TrailBucket}/${LogFilePrefix}/AWSLogs/${AWS::AccountId}/*', !Sub 'arn:aws:s3:::${TrailBucket}/AWSLogs/${AWS::AccountId}/*']
+          Resource: !If [HasLogFilePrefix, !Sub 'arn:${AWS::Partition}:s3:::${TrailBucket}/${LogFilePrefix}/AWSLogs/${AWS::AccountId}/*', !Sub 'arn:${AWS::Partition}:s3:::${TrailBucket}/AWSLogs/${AWS::AccountId}/*']
           Condition:
             StringEquals:
               's3:x-amz-acl': 'bucket-owner-full-control'
