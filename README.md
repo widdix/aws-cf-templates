@@ -23,7 +23,7 @@ Besides our open-source projects, we also offer commercial products on the AWS M
 
 * [marbot to monitor AWS](https://marbot.io)
 * [bucketAV to protect S3 buckets form malware and viruses](https://bucketav.com)
-* [HyperEnv for Jenkins a secure, scalable, highly available, and operator-friendly automation server for AWS](https://hyperenv.com)
+* [HyperEnv for Jenkins to run the popular automation server on AWS](https://hyperenv.com/jenkins/)
 
 ## Sponsors
 [Become a sponsor](https://github.com/sponsors/widdix) via GitHub Sponsors.
