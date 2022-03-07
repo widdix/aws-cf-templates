@@ -271,8 +271,8 @@ Conditions:
   HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
   HasEFSBackupRetentionPeriod: !Not [!Equals [!Ref EFSBackupRetentionPeriod, 0]]
   HasWAF: !Not [!Equals [!Ref ParentWAFStack, '']]
-  HasCloudFrontPrefixList: !Not [!Or [!Equals [!Ref AWS::Region, 'ap-northeast-3'], !Equals [!Ref AWS::Region, 'ap-southheast-3']]]
-  HasNotCloudFrontPrefixList: !Or [!Equals [!Ref AWS::Region, 'ap-northeast-3'], !Equals [!Ref AWS::Region, 'ap-southheast-3']]
+  HasCloudFrontPrefixList: !Not [ !Equals [ !FindInMap [ 'RegionMap', !Ref 'AWS::Region', 'PrefixListCloudFront' ], '' ] ]
+  HasNotCloudFrontPrefixList: !Equals [ !FindInMap [ 'RegionMap', !Ref 'AWS::Region', 'PrefixListCloudFront' ], '' ]
 Resources:
   WebServerLogs:
     Type: 'AWS::Logs::LogGroup'
