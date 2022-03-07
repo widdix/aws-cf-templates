@@ -22,7 +22,6 @@ Metadata:
       Parameters:
       - ParentVPCStack
       - ParentSSHBastionStack
-      - ParentAuthProxyStack
       - ParentAlertStack
       - ParentS3StackAccessLog
       - ParentZoneStack
@@ -75,10 +74,6 @@ Parameters:
     Type: String
   ParentSSHBastionStack:
     Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-*-bastion.yaml template.'
-    Type: String
-    Default: ''
-  ParentAuthProxyStack:
-    Description: 'Optional stack name of parent auth proxy stack based on security/auth-proxy-*.yaml template.'
     Type: String
     Default: ''
   ParentAlertStack:
@@ -233,49 +228,71 @@ Parameters:
 Mappings:
   RegionMap:
     'af-south-1':
-      AMI: 'ami-0e896f1f6fc1e3480'
+      AMI: 'ami-0d7fe0087700f21a2'
+      PrefixListCloudFront: 'pl-c0aa4fa9'
     'eu-north-1':
-      AMI: 'ami-0e3f1570eb0a9bc7f'
+      AMI: 'ami-0ba3efa3b01966bcb'
+      PrefixListCloudFront: 'pl-fab65393'
     'ap-south-1':
-      AMI: 'ami-0dafa01c8100180f8'
+      AMI: 'ami-041aae81ed72817fd'
+      PrefixListCloudFront: 'pl-9aa247f3'
     'eu-west-3':
-      AMI: 'ami-05cb6b584fc3c8ac8'
+      AMI: 'ami-0299a65418e560db7'
+      PrefixListCloudFront: 'pl-75b1541c'
     'eu-west-2':
-      AMI: 'ami-098a393b6fa6e700b'
+      AMI: 'ami-0804a2711fa3726f3'
+      PrefixListCloudFront: 'pl-93a247fa'
     'eu-south-1':
-      AMI: 'ami-0f8415bea5b1e5fd1'
+      AMI: 'ami-0420a01403c9572b9'
+      PrefixListCloudFront: 'pl-1bbc5972'
     'eu-west-1':
-      AMI: 'ami-09d5dd12541e69077'
+      AMI: 'ami-08754599965c30981'
+      PrefixListCloudFront: 'pl-4fa04526'
     'ap-northeast-3':
-      AMI: 'ami-032e497ef5ca5794c'
+      AMI: 'ami-038c5e963b706eb42'
+      PrefixListCloudFront: ''
     'ap-northeast-2':
-      AMI: 'ami-0eb7a369386789460'
+      AMI: 'ami-0829f99d6eebc491a'
+      PrefixListCloudFront: 'pl-22a6434b'
     'me-south-1':
-      AMI: 'ami-05c00047b0c3b6ed1'
+      AMI: 'ami-0bff2679df4b5325d'
+      PrefixListCloudFront: 'pl-17b2577e'
     'ap-northeast-1':
-      AMI: 'ami-08d56ac42e2d4a08b'
+      AMI: 'ami-0a35e0f30c477c4ed'
+      PrefixListCloudFront: 'pl-58a04531'
     'sa-east-1':
-      AMI: 'ami-088911543b10876a4'
+      AMI: 'ami-0e75da331852510a4'
+      PrefixListCloudFront: 'pl-5da64334'
     'ca-central-1':
-      AMI: 'ami-040d8c460f4fc4a9f'
+      AMI: 'ami-0e299df0d6042ab19'
+      PrefixListCloudFront: 'pl-38a64351'
     'ap-east-1':
-      AMI: 'ami-02333d201cff78886'
+      AMI: 'ami-0a9e4ecfcdcdf2ffe'
+      PrefixListCloudFront: 'pl-14b2577d'
     'ap-southeast-1':
-      AMI: 'ami-04fc979a55e14b094'
+      AMI: 'ami-04b112e8ba800ec78'
+      PrefixListCloudFront: 'pl-31a34658'
     'ap-southeast-2':
-      AMI: 'ami-042c4533fa25c105a'
+      AMI: 'ami-08d76d04928793577'
+      PrefixListCloudFront: 'pl-b8a742d1'
     'eu-central-1':
-      AMI: 'ami-00e232b942edaf8f9'
+      AMI: 'ami-0e06412e7a2ab14a2'
+      PrefixListCloudFront: 'pl-a3a144ca'
     'ap-southeast-3':
-      AMI: 'ami-00ec7b5e8882f3a58'
+      AMI: 'ami-09beff734503fcd96'
+      PrefixListCloudFront: ''
     'us-east-1':
-      AMI: 'ami-038b3df3312ddf25d'
+      AMI: 'ami-0e322da50e0e90e21'
+      PrefixListCloudFront: 'pl-3b927c52'
     'us-east-2':
-      AMI: 'ami-07b1d7739c91ed3fc'
+      AMI: 'ami-059e474a5b37e133b'
+      PrefixListCloudFront: 'pl-b6a144df'
     'us-west-1':
-      AMI: 'ami-0729cd65c1a99b0c9'
+      AMI: 'ami-07747ec74364622ce'
+      PrefixListCloudFront: 'pl-4ea04527'
     'us-west-2':
-      AMI: 'ami-090bc08d7ae1f3881'
+      AMI: 'ami-00656d51d312f0dee'
+      PrefixListCloudFront: 'pl-82a045eb'
   DBServerInstanceTypeMap:
     'db.t3.micro':
       PerformanceInsights: false
@@ -396,8 +413,6 @@ Conditions:
   HasSystemsManagerAccess: !Equals [!Ref WebServerSystemsManagerAccess, 'true']
   HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
   HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
-  HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
-  HasNotAuthProxySecurityGroup: !Equals [!Ref ParentAuthProxyStack, '']
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
   HasEFSProvisionedThroughput: !Not [!Condition HasNotEFSProvisionedThroughput]
@@ -407,6 +422,8 @@ Conditions:
   HasEFSBackupRetentionPeriod: !Not [!Equals [!Ref EFSBackupRetentionPeriod, 0]]
   HasRDSPerformanceInsights: !Equals [!FindInMap [DBServerInstanceTypeMap, !Ref DBServerInstanceType, PerformanceInsights], true]
   HasWAF: !Not [!Equals [!Ref ParentWAFStack, '']]
+  HasCloudFrontPrefixList: !Not [!Equals [!FindInMap ['RegionMap', !Ref 'AWS::Region', 'PrefixListCloudFront'], '']]
+  HasNotCloudFrontPrefixList: !Not [!Condition HasCloudFrontPrefixList]
 Resources:
   WebServerLogs:
     Type: 'AWS::Logs::LogGroup'
@@ -417,33 +434,24 @@ Resources:
     Properties:
       GroupDescription: 'wordpress-elb'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
-  LoadBalancerSecurityGroupInWorld:
+  LoadBalancerSecurityGroupInCloudFront:
+    Condition: HasCloudFrontPrefixList
     Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasNotAuthProxySecurityGroup
+    Properties:
+      GroupId: !Ref LoadBalancerSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourcePrefixListId: !FindInMap ['RegionMap', !Ref 'AWS::Region', 'PrefixListCloudFront']
+  LoadBalancerSecurityGroupInWorld:
+    Condition: HasNotCloudFrontPrefixList
+    Type: 'AWS::EC2::SecurityGroupIngress'
     Properties:
       GroupId: !Ref LoadBalancerSecurityGroup
       IpProtocol: tcp
       FromPort: 443
       ToPort: 443
       CidrIp: '0.0.0.0/0'
-  LoadBalancerSecurityGroupInWorldIPv6:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasNotAuthProxySecurityGroup
-    Properties:
-      GroupId: !Ref LoadBalancerSecurityGroup
-      IpProtocol: tcp
-      FromPort: 443
-      ToPort: 443
-      CidrIpv6: '::/0'
-  LoadBalancerSecurityGroupInAuthProxy:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Condition: HasAuthProxySecurityGroup
-    Properties:
-      GroupId: !Ref LoadBalancerSecurityGroup
-      IpProtocol: tcp
-      FromPort: 80
-      ToPort: 80
-      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentAuthProxyStack}-SecurityGroup'}
   WebServerSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
