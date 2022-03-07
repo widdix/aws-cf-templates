@@ -422,8 +422,8 @@ Conditions:
   HasEFSBackupRetentionPeriod: !Not [!Equals [!Ref EFSBackupRetentionPeriod, 0]]
   HasRDSPerformanceInsights: !Equals [!FindInMap [DBServerInstanceTypeMap, !Ref DBServerInstanceType, PerformanceInsights], true]
   HasWAF: !Not [!Equals [!Ref ParentWAFStack, '']]
-  HasCloudFrontPrefixList: !Not [ !Equals [ !FindInMap [ 'RegionMap', !Ref 'AWS::Region', 'PrefixListCloudFront' ], '' ] ]
-  HasNotCloudFrontPrefixList: !Not [ !Condition HasCloudFrontPrefixList ]
+  HasCloudFrontPrefixList: !Not [!Equals [!FindInMap ['RegionMap', !Ref 'AWS::Region', 'PrefixListCloudFront'], '']]
+  HasNotCloudFrontPrefixList: !Not [!Condition HasCloudFrontPrefixList]
 Resources:
   WebServerLogs:
     Type: 'AWS::Logs::LogGroup'
