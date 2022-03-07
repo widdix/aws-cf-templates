@@ -201,9 +201,11 @@ Parameters:
     Description: 'Version of Amazon Linux 2 to boot from the first time (ignored if RestoreImageId is set; select the latest version for new stacks; OS updates are enabled to patch the system).'
     Type: String
     Default: '20191217.0'
-    AllowedValues: ['20211223.0', '20211005.0', '20210721.2', '20210617.0', '20210126.0', '20200917.0', '20200722.0', '20200520.1', '20200406.0', '20200304.0', '20200207.1', '20191217.0']
+    AllowedValues: ['20220218.1', '20211223.0', '20211005.0', '20210721.2', '20210617.0', '20210126.0', '20200917.0', '20200722.0', '20200520.1', '20200406.0', '20200304.0', '20200207.1', '20191217.0']
 Mappings:
   VersionMap:
+    '20220218.1':
+      Map: RegionMap20202202181
     '20220207.1':
       Map: RegionMap202202071
     '20211223.0':
@@ -230,6 +232,51 @@ Mappings:
       Map: RegionMap202002071
     '20191217.0':
       Map: RegionMap201912170
+  RegionMap20202202181:
+    'af-south-1':
+      AMI: 'ami-0d7fe0087700f21a2'
+    'eu-north-1':
+      AMI: 'ami-0ba3efa3b01966bcb'
+    'ap-south-1':
+      AMI: 'ami-041aae81ed72817fd'
+    'eu-west-3':
+      AMI: 'ami-0299a65418e560db7'
+    'eu-west-2':
+      AMI: 'ami-0804a2711fa3726f3'
+    'eu-south-1':
+      AMI: 'ami-0420a01403c9572b9'
+    'eu-west-1':
+      AMI: 'ami-08754599965c30981'
+    'ap-northeast-3':
+      AMI: 'ami-038c5e963b706eb42'
+    'ap-northeast-2':
+      AMI: 'ami-0829f99d6eebc491a'
+    'me-south-1':
+      AMI: 'ami-0bff2679df4b5325d'
+    'ap-northeast-1':
+      AMI: 'ami-0a35e0f30c477c4ed'
+    'sa-east-1':
+      AMI: 'ami-0e75da331852510a4'
+    'ca-central-1':
+      AMI: 'ami-0e299df0d6042ab19'
+    'ap-east-1':
+      AMI: 'ami-0a9e4ecfcdcdf2ffe'
+    'ap-southeast-1':
+      AMI: 'ami-04b112e8ba800ec78'
+    'ap-southeast-2':
+      AMI: 'ami-08d76d04928793577'
+    'eu-central-1':
+      AMI: 'ami-0e06412e7a2ab14a2'
+    'ap-southeast-3':
+      AMI: 'ami-09beff734503fcd96'
+    'us-east-1':
+      AMI: 'ami-0e322da50e0e90e21'
+    'us-east-2':
+      AMI: 'ami-059e474a5b37e133b'
+    'us-west-1':
+      AMI: 'ami-07747ec74364622ce'
+    'us-west-2':
+      AMI: 'ami-00656d51d312f0dee'
   RegionMap202202071:
     'af-south-1':
       AMI: 'ami-0e896f1f6fc1e3480'
