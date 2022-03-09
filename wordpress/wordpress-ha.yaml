@@ -228,70 +228,70 @@ Parameters:
 Mappings:
   RegionMap:
     'af-south-1':
-      AMI: 'ami-0d7fe0087700f21a2'
+      AMI: 'ami-08d292fff05be4fd7'
       PrefixListCloudFront: 'pl-c0aa4fa9'
     'eu-north-1':
-      AMI: 'ami-0ba3efa3b01966bcb'
+      AMI: 'ami-0cc56fdf12f1adbf6'
       PrefixListCloudFront: 'pl-fab65393'
     'ap-south-1':
-      AMI: 'ami-041aae81ed72817fd'
+      AMI: 'ami-058927a80413afd9e'
       PrefixListCloudFront: 'pl-9aa247f3'
     'eu-west-3':
-      AMI: 'ami-0299a65418e560db7'
+      AMI: 'ami-000fb470705e9b427'
       PrefixListCloudFront: 'pl-75b1541c'
     'eu-west-2':
-      AMI: 'ami-0804a2711fa3726f3'
+      AMI: 'ami-0127d411688545f05'
       PrefixListCloudFront: 'pl-93a247fa'
     'eu-south-1':
-      AMI: 'ami-0420a01403c9572b9'
+      AMI: 'ami-09bb171d034878fa6'
       PrefixListCloudFront: 'pl-1bbc5972'
     'eu-west-1':
-      AMI: 'ami-08754599965c30981'
+      AMI: 'ami-01ddabedd99da311e'
       PrefixListCloudFront: 'pl-4fa04526'
     'ap-northeast-3':
-      AMI: 'ami-038c5e963b706eb42'
+      AMI: 'ami-01b2cb75ad60685ea'
       PrefixListCloudFront: ''
     'ap-northeast-2':
-      AMI: 'ami-0829f99d6eebc491a'
+      AMI: 'ami-036f006e994752282'
       PrefixListCloudFront: 'pl-22a6434b'
     'me-south-1':
-      AMI: 'ami-0bff2679df4b5325d'
+      AMI: 'ami-0c622a92dda7b6ea0'
       PrefixListCloudFront: 'pl-17b2577e'
     'ap-northeast-1':
-      AMI: 'ami-0a35e0f30c477c4ed'
+      AMI: 'ami-0726c1c7e01759156'
       PrefixListCloudFront: 'pl-58a04531'
     'sa-east-1':
-      AMI: 'ami-0e75da331852510a4'
+      AMI: 'ami-01f19ebd61bd11278'
       PrefixListCloudFront: 'pl-5da64334'
     'ca-central-1':
-      AMI: 'ami-0e299df0d6042ab19'
+      AMI: 'ami-08b873ca28bee919b'
       PrefixListCloudFront: 'pl-38a64351'
     'ap-east-1':
-      AMI: 'ami-0a9e4ecfcdcdf2ffe'
+      AMI: 'ami-0dc0e75ebff016b38'
       PrefixListCloudFront: 'pl-14b2577d'
     'ap-southeast-1':
-      AMI: 'ami-04b112e8ba800ec78'
+      AMI: 'ami-0b65860b1b39327d1'
       PrefixListCloudFront: 'pl-31a34658'
     'ap-southeast-2':
-      AMI: 'ami-08d76d04928793577'
+      AMI: 'ami-00b8a691539cc0039'
       PrefixListCloudFront: 'pl-b8a742d1'
     'eu-central-1':
-      AMI: 'ami-0e06412e7a2ab14a2'
+      AMI: 'ami-0b67cc43bc64a6060'
       PrefixListCloudFront: 'pl-a3a144ca'
     'ap-southeast-3':
-      AMI: 'ami-09beff734503fcd96'
+      AMI: 'ami-07d9d45b01cb0b44e'
       PrefixListCloudFront: ''
     'us-east-1':
-      AMI: 'ami-0e322da50e0e90e21'
+      AMI: 'ami-01b20f5ea962e3fe7'
       PrefixListCloudFront: 'pl-3b927c52'
     'us-east-2':
-      AMI: 'ami-059e474a5b37e133b'
+      AMI: 'ami-07e19c485c7cf2266'
       PrefixListCloudFront: 'pl-b6a144df'
     'us-west-1':
-      AMI: 'ami-07747ec74364622ce'
+      AMI: 'ami-0577aef94c154720e'
       PrefixListCloudFront: 'pl-4ea04527'
     'us-west-2':
-      AMI: 'ami-00656d51d312f0dee'
+      AMI: 'ami-07c73ee7f59efbb9a'
       PrefixListCloudFront: 'pl-82a045eb'
   DBServerInstanceTypeMap:
     'db.t3.micro':
