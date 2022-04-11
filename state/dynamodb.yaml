@@ -41,10 +41,13 @@ Metadata:
       Parameters:
       - Index1PartitionKeyName
       - Index1SortKeyName
+      - Index1Name
       - Index2PartitionKeyName
       - Index2SortKeyName
+      - Index2Name
       - Index3PartitionKeyName
       - Index3SortKeyName
+      - Index3Name
       - Attribute1Name
       - Attribute1Type
       - Attribute2Name
@@ -112,6 +115,15 @@ Parameters:
     Description: 'Optional name of the sort key for index 1, must match with one of the following: PartitionKeyName, SortKeyName, or Attribute*Name.'
     Type: String
     Default: ''
+  Index1Name:
+    Description: 'Optional name of index 1.'
+    Type: String
+    Default: ''
+  Index1ProjectionType:
+    Description: 'Optional projection type of index 1.'
+    Type: String
+    Default: 'ALL'
+    AllowedValues: ['ALL', 'KEYS_ONLY']
   Index2PartitionKeyName:
     Description: 'Optional name of the partition key for index 2, must match with one of the following: PartitionKeyName, SortKeyName, or Attribute*Name.'
     Type: String
@@ -120,6 +132,15 @@ Parameters:
     Description: 'Optional name of the sort key for index 2, must match with one of the following: PartitionKeyName, SortKeyName, or Attribute*Name.'
     Type: String
     Default: ''
+  Index2Name:
+    Description: 'Optional name of index 2.'
+    Type: String
+    Default: ''
+  Index2ProjectionType:
+    Description: 'Optional projection type of index 2.'
+    Type: String
+    Default: 'ALL'
+    AllowedValues: ['ALL', 'KEYS_ONLY']
   Index3PartitionKeyName:
     Description: 'Optional name of the partition key for index 3, must match with one of the following: PartitionKeyName, SortKeyName, or Attribute*Name.'
     Type: String
@@ -128,6 +149,15 @@ Parameters:
     Description: 'Optional name of the sort key for index 3, must match with one of the following: PartitionKeyName, SortKeyName, or Attribute*Name.'
     Type: String
     Default: ''
+  Index3Name:
+    Description: 'Optional name of index 2'
+    Type: String
+    Default: ''
+  Index3ProjectionType:
+    Description: 'Optional projection type of index 3.'
+    Type: String
+    Default: 'ALL'
+    AllowedValues: ['ALL', 'KEYS_ONLY']
   Attribute1Name:
     Description: 'Name of the attribute 1, not allowed to overlap with PartitionKeyNam, SortKeyName, or Attribute[2-6]Name.'
     Type: String
@@ -242,10 +272,13 @@ Conditions:
   HasSortKey: !Not [!Equals [!Ref SortKeyName, '']]
   HasIndex1: !Not [!Equals [!Ref Index1PartitionKeyName, '']]
   HasIndex1SortKey: !Not [!Equals [!Ref Index1SortKeyName, '']]
+  HasIndex1Name: !Not [!Equals [!Ref Index1Name, '']]
   HasIndex2: !Not [!Equals [!Ref Index2PartitionKeyName, '']]
   HasIndex2SortKey: !Not [!Equals [!Ref Index2SortKeyName, '']]
+  HasIndex2Name: !Not [!Equals [!Ref Index2Name, '']]
   HasIndex3: !Not [!Equals [!Ref Index3PartitionKeyName, '']]
   HasIndex3SortKey: !Not [!Equals [!Ref Index3SortKeyName, '']]
+  HasIndex3Name: !Not [!Equals [!Ref Index3Name, '']]
   HasAttribute1Definition: !Not [!Equals [!Ref Attribute1Name, '']]
   HasAttribute2Definition: !Not [!Equals [!Ref Attribute2Name, '']]
   HasAttribute3Definition: !Not [!Equals [!Ref Attribute3Name, '']]
@@ -304,9 +337,9 @@ Resources:
       - !If
         - HasIndex1
         - IndexName: !If
-          - HasIndex1SortKey
-          - !Sub 'Index-${Index1PartitionKeyName}-${Index1SortKeyName}'
-          - !Sub 'Index-${Index1PartitionKeyName}'
+          - HasIndex1Name
+          - !Ref Index1Name
+          - !If [HasIndex1SortKey, !Sub 'Index-${Index1PartitionKeyName}-${Index1SortKeyName}', !Sub 'Index-${Index1PartitionKeyName}']
           KeySchema:
           - AttributeName: !Ref Index1PartitionKeyName
             KeyType: HASH
@@ -316,15 +349,15 @@ Resources:
               KeyType: RANGE
             - !Ref 'AWS::NoValue'
           Projection:
-            ProjectionType: 'ALL'
+            ProjectionType: !Ref Index1ProjectionType
           ProvisionedThroughput: !If [HasBillingAndScalingModeProvisioned, {ReadCapacityUnits: !Ref MinReadCapacityUnits, WriteCapacityUnits: !Ref MinWriteCapacityUnits}, !Ref 'AWS::NoValue']
         - !Ref 'AWS::NoValue'
       - !If
         - HasIndex2
         - IndexName: !If
-          - HasIndex2SortKey
-          - !Sub 'Index-${Index2PartitionKeyName}-${Index2SortKeyName}'
-          - !Sub 'Index-${Index2PartitionKeyName}'
+          - HasIndex2Name
+          - !Ref Index2Name
+          - !If [HasIndex2SortKey, !Sub 'Index-${Index2PartitionKeyName}-${Index2SortKeyName}', !Sub 'Index-${Index2PartitionKeyName}']
           KeySchema:
           - AttributeName: !Ref Index2PartitionKeyName
             KeyType: HASH
@@ -334,15 +367,15 @@ Resources:
               KeyType: RANGE
             - !Ref 'AWS::NoValue'
           Projection:
-            ProjectionType: 'ALL'
+            ProjectionType: !Ref Index2ProjectionType
           ProvisionedThroughput: !If [HasBillingAndScalingModeProvisioned, {ReadCapacityUnits: !Ref MinReadCapacityUnits, WriteCapacityUnits: !Ref MinWriteCapacityUnits}, !Ref 'AWS::NoValue']
         - !Ref 'AWS::NoValue'
       - !If
         - HasIndex3
         - IndexName: !If
-          - HasIndex3SortKey
-          - !Sub 'Index-${Index3PartitionKeyName}-${Index3SortKeyName}'
-          - !Sub 'Index-${Index3PartitionKeyName}'
+          - HasIndex3Name
+          - !Ref Index3Name
+          - !If [HasIndex3SortKey, !Sub 'Index-${Index3PartitionKeyName}-${Index3SortKeyName}', !Sub 'Index-${Index3PartitionKeyName}']
           KeySchema:
           - AttributeName: !Ref Index3PartitionKeyName
             KeyType: HASH
@@ -352,7 +385,7 @@ Resources:
               KeyType: RANGE
             - !Ref 'AWS::NoValue'
           Projection:
-            ProjectionType: 'ALL'
+            ProjectionType: !Ref Index3ProjectionType
           ProvisionedThroughput: !If [HasBillingAndScalingModeProvisioned, {ReadCapacityUnits: !Ref MinReadCapacityUnits, WriteCapacityUnits: !Ref MinWriteCapacityUnits}, !Ref 'AWS::NoValue']
         - !Ref 'AWS::NoValue'
       BillingMode: !If [HasBillingAndScalingModeProvisioned, PROVISIONED, PAY_PER_REQUEST]
