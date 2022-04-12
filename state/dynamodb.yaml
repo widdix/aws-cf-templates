@@ -37,17 +37,8 @@ Metadata:
       - BackupScheduleExpression
       - PointInTimeRecoveryEnabled
     - Label:
-        default: 'DynamoDB Global Secondary Indexes (GSIs)'
+        default: 'Attributes'
       Parameters:
-      - Index1PartitionKeyName
-      - Index1SortKeyName
-      - Index1Name
-      - Index2PartitionKeyName
-      - Index2SortKeyName
-      - Index2Name
-      - Index3PartitionKeyName
-      - Index3SortKeyName
-      - Index3Name
       - Attribute1Name
       - Attribute1Type
       - Attribute2Name
@@ -60,6 +51,33 @@ Metadata:
       - Attribute5Type
       - Attribute6Name
       - Attribute6Type
+    - Label:
+        default: 'DynamoDB Global Secondary Indexes (GSIs)'
+      Parameters:
+      - Index1PartitionKeyName
+      - Index1SortKeyName
+      - Index1Name
+      - Index1ProjectionType
+      - Index2PartitionKeyName
+      - Index2SortKeyName
+      - Index2Name
+      - Index2ProjectionType
+      - Index3PartitionKeyName
+      - Index3SortKeyName
+      - Index3Name
+      - Index3ProjectionType
+    - Label:
+        default: 'DynamoDB Local Secondary Indexes (LSIs)'
+      Parameters:
+      - LocalIndex1SortKeyName
+      - LocalIndex1Name
+      - LocalIndex1ProjectionType
+      - LocalIndex2SortKeyName
+      - LocalIndex2Name
+      - LocalIndex2ProjectionType
+      - LocalIndex3SortKeyName
+      - LocalIndex3Name
+      - LocalIndex3ProjectionType
     - Label:
         default: 'DynamoDB PROVISIONED Mode Parameters'
       Parameters:
@@ -155,6 +173,45 @@ Parameters:
     Default: ''
   Index3ProjectionType:
     Description: 'Optional projection type of index 3.'
+    Type: String
+    Default: 'ALL'
+    AllowedValues: ['ALL', 'KEYS_ONLY']
+  LocalIndex1SortKeyName:
+    Description: 'Optional name of the sort key for local index 1, must match with one of the following: Attribute*Name.'
+    Type: String
+    Default: ''
+  LocalIndex1Name:
+    Description: 'Optional name of local index 1'
+    Type: String
+    Default: ''
+  LocalIndex1ProjectionType:
+    Description: 'Optional projection type of local index 1.'
+    Type: String
+    Default: 'ALL'
+    AllowedValues: ['ALL', 'KEYS_ONLY']
+  LocalIndex2SortKeyName:
+    Description: 'Optional name of the sort key for local index 2, must match with one of the following: Attribute*Name.'
+    Type: String
+    Default: ''
+  LocalIndex2Name:
+    Description: 'Optional name of local index 2'
+    Type: String
+    Default: ''
+  LocalIndex2ProjectionType:
+    Description: 'Optional projection type of local index 2.'
+    Type: String
+    Default: 'ALL'
+    AllowedValues: ['ALL', 'KEYS_ONLY']
+  LocalIndex3SortKeyName:
+    Description: 'Optional name of the sort key for local index 3, must match with one of the following: Attribute*Name.'
+    Type: String
+    Default: ''
+  LocalIndex3Name:
+    Description: 'Optional name of local index 3'
+    Type: String
+    Default: ''
+  LocalIndex3ProjectionType:
+    Description: 'Optional projection type of local index 3.'
     Type: String
     Default: 'ALL'
     AllowedValues: ['ALL', 'KEYS_ONLY']
@@ -279,6 +336,12 @@ Conditions:
   HasIndex3: !Not [!Equals [!Ref Index3PartitionKeyName, '']]
   HasIndex3SortKey: !Not [!Equals [!Ref Index3SortKeyName, '']]
   HasIndex3Name: !Not [!Equals [!Ref Index3Name, '']]
+  HasLocalIndex1: !Not [!Equals [!Ref LocalIndex1SortKeyName, '']]
+  HasLocalIndex1Name: !Not [!Equals [!Ref LocalIndex1Name, '']]
+  HasLocalIndex2: !Not [!Equals [!Ref LocalIndex2SortKeyName, '']]
+  HasLocalIndex2Name: !Not [!Equals [!Ref LocalIndex2Name, '']]
+  HasLocalIndex3: !Not [!Equals [!Ref LocalIndex3SortKeyName, '']]
+  HasLocalIndex3Name: !Not [!Equals [!Ref LocalIndex3Name, '']]
   HasAttribute1Definition: !Not [!Equals [!Ref Attribute1Name, '']]
   HasAttribute2Definition: !Not [!Equals [!Ref Attribute2Name, '']]
   HasAttribute3Definition: !Not [!Equals [!Ref Attribute3Name, '']]
@@ -387,6 +450,49 @@ Resources:
           Projection:
             ProjectionType: !Ref Index3ProjectionType
           ProvisionedThroughput: !If [HasBillingAndScalingModeProvisioned, {ReadCapacityUnits: !Ref MinReadCapacityUnits, WriteCapacityUnits: !Ref MinWriteCapacityUnits}, !Ref 'AWS::NoValue']
+        - !Ref 'AWS::NoValue'
+      LocalSecondaryIndexes:
+      - !If
+        - HasLocalIndex1
+        - IndexName: !If
+          - HasLocalIndex1Name
+          - !Ref LocalIndex1Name
+          - !Sub 'LocalIndex-${PartitionKeyName}-${LocalIndex1SortKeyName}'
+          KeySchema:
+          - AttributeName: !Ref PartitionKeyName
+            KeyType: HASH
+          - AttributeName: !Ref LocalIndex1SortKeyName
+            KeyType: RANGE
+          Projection:
+            ProjectionType: !Ref LocalIndex1ProjectionType
+        - !Ref 'AWS::NoValue'
+      - !If
+        - HasLocalIndex2
+        - IndexName: !If
+          - HasLocalIndex2Name
+          - !Ref LocalIndex2Name
+          - !Sub 'LocalIndex-${PartitionKeyName}-${LocalIndex2SortKeyName}'
+          KeySchema:
+          - AttributeName: !Ref PartitionKeyName
+            KeyType: HASH
+          - AttributeName: !Ref LocalIndex2SortKeyName
+            KeyType: RANGE
+          Projection:
+            ProjectionType: !Ref LocalIndex2ProjectionType
+        - !Ref 'AWS::NoValue'
+      - !If
+        - HasLocalIndex3
+        - IndexName: !If
+          - HasLocalIndex3Name
+          - !Ref LocalIndex3Name
+          - !Sub 'LocalIndex-${PartitionKeyName}-${LocalIndex3SortKeyName}'
+          KeySchema:
+          - AttributeName: !Ref PartitionKeyName
+            KeyType: HASH
+          - AttributeName: !Ref LocalIndex3SortKeyName
+            KeyType: RANGE
+          Projection:
+            ProjectionType: !Ref LocalIndex3ProjectionType
         - !Ref 'AWS::NoValue'
       BillingMode: !If [HasBillingAndScalingModeProvisioned, PROVISIONED, PAY_PER_REQUEST]
       KeySchema:
