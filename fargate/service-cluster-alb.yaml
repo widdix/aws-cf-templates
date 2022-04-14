@@ -717,7 +717,7 @@ Resources:
     Properties:
       EventPattern:
         source:
-        - 'aws.ec2'
+        - 'aws.ecs'
         'detail-type':
         - 'ECS Service Action'
         resources:
