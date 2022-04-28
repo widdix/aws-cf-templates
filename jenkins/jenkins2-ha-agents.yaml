@@ -969,6 +969,12 @@ Resources:
               ruby: []
             rubygems:
               daemons: ['1.3.1']
+          files:
+            '/etc/log4j-cve-2021-44228-hotpatch.kill': # Do not run the Log4j hotpach, Jenkins was never affected
+              content: 'placeholder'
+              mode: '000644'
+              owner: root
+              group: root
           commands:
             a_gem_install_aws_eventstream: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
               command: 'gem install aws-eventstream -v 1.1.1'
@@ -1847,6 +1853,12 @@ Resources:
               ruby: []
             rubygems:
               daemons: ['1.3.1']
+          files:
+            '/etc/log4j-cve-2021-44228-hotpatch.kill': # Do not run the Log4j hotpach, Jenkins was never affected
+              content: 'placeholder'
+              mode: '000644'
+              owner: root
+              group: root
           commands:
             a_gem_install_aws_eventstream: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
               command: 'gem install aws-eventstream -v 1.1.1'
