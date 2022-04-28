@@ -957,6 +957,8 @@ Resources:
             'b_enable_epel':
               command: 'amazon-linux-extras enable epel=7.11 && yum -y clean metadata'
               test: "! grep -Fxq '[amzn2extra-epel]' /etc/yum.repos.d/amzn2-extras.repo"
+            'c_disable_log4j_hotpatch': # Jenkins was never affected
+              command: 'systemctl mask log4j-cve-2021-44228-hotpatch'
         epel:
           packages:
             yum:
@@ -969,12 +971,6 @@ Resources:
               ruby: []
             rubygems:
               daemons: ['1.3.1']
-          files:
-            '/etc/log4j-cve-2021-44228-hotpatch.kill': # Do not run the Log4j hotpach, Jenkins was never affected
-              content: 'placeholder'
-              mode: '000644'
-              owner: root
-              group: root
           commands:
             a_gem_install_aws_eventstream: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
               command: 'gem install aws-eventstream -v 1.1.1'
@@ -1846,6 +1842,8 @@ Resources:
             'a_enable_docker':
               command: 'amazon-linux-extras enable docker=18.06.1 && yum -y clean metadata'
               test: "! grep -Fxq '[amzn2extra-docker]' /etc/yum.repos.d/amzn2-extras.repo"
+            'b_disable_log4j_hotpatch': # Jenkins was never affected
+              command: 'systemctl mask log4j-cve-2021-44228-hotpatch'
         dependencies:
           packages:
             yum:
@@ -1853,12 +1851,6 @@ Resources:
               ruby: []
             rubygems:
               daemons: ['1.3.1']
-          files:
-            '/etc/log4j-cve-2021-44228-hotpatch.kill': # Do not run the Log4j hotpach, Jenkins was never affected
-              content: 'placeholder'
-              mode: '000644'
-              owner: root
-              group: root
           commands:
             a_gem_install_aws_eventstream: # workaround for https://github.com/aws/aws-sdk-ruby/pull/2573#issuecomment-913984611
               command: 'gem install aws-eventstream -v 1.1.1'

@@ -873,17 +873,14 @@ Resources:
           packages:
             yum:
               'epel-release': []
+          commands:
+            'a_disable_log4j_hotpatch': # Jenkins was never affected
+              command: 'systemctl mask log4j-cve-2021-44228-hotpatch'
         dependencies:
           packages:
             yum:
               'java-11-amazon-corretto-headless': []
               'daemonize': []
-          files:
-            '/etc/log4j-cve-2021-44228-hotpatch.kill': # Do not run the Log4j hotpach, Jenkins was never affected
-              content: 'placeholder'
-              mode: '000644'
-              owner: root
-              group: root
         install:
           packages:
             rpm:
