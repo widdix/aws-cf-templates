@@ -873,15 +873,26 @@ Resources:
           packages:
             yum:
               'epel-release': []
+          commands:
+            'a_disable_log4j_hotpatch': # Jenkins was never affected
+              command: 'systemctl mask log4j-cve-2021-44228-hotpatch'
         dependencies:
           packages:
             yum:
               'java-11-amazon-corretto-headless': []
               'daemonize': []
+          files:
+            '/etc/systemd/system/jenkins.service.d/timeout.conf':
+              content: |
+                [Service]
+                TimeoutStartSec=300
+              mode: '000644'
+              owner: root
+              group: root
         install:
           packages:
             rpm:
-              jenkins: 'http://ftp-chi.osuosl.org/pub/jenkins/redhat-stable/jenkins-2.319.2-1.1.noarch.rpm'
+              jenkins: 'http://ftp-chi.osuosl.org/pub/jenkins/redhat-stable/jenkins-2.332.3-1.1.noarch.rpm'
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
@@ -912,25 +923,26 @@ Resources:
                 ensureRunning: !If [HasSystemsManagerAccess, true, false]
         setup:
           files:
-            '/root/plugins.txt': # list updates: java -jar /opt/jenkins-plugin-manager.jar --war /usr/lib/jenkins/jenkins.war --plugin-download-directory /var/lib/jenkins/plugins --plugin-file /root/plugins.txt --available-updates
+            '/root/plugins.txt': # list updates: java -jar /opt/jenkins-plugin-manager.jar --war /usr/share/java/jenkins.war --plugin-download-directory /var/lib/jenkins/plugins --plugin-file /root/plugins.txt --available-updates
               content: |
                 jqs-monitoring:1.4
-                ant:1.12
+                ant:475.vf34069fef73c
                 build-timeout:1.20
-                docker-workflow:1.26
-                credentials-binding:1.27
-                email-ext:2.84
-                envinject:2.4.0
+                docker-workflow:1.28
+                credentials-binding:523.vd859a_4b_122e6
+                email-ext:2.88
+                envinject:2.854.vfa_1657078c97
                 github-organization-folder:1.6
-                gradle:1.37.1
-                workflow-aggregator:2.6
+                gradle:1.38
+                workflow-aggregator:2.7
                 pipeline-maven:3.10.0
-                ssh-slaves:1.33.0
-                subversion:2.15.1
-                timestamper:1.13
-                ws-cleanup:0.39
+                ssh-slaves:1.814.vc82988f54b_10
+                subversion:2.15.4
+                timestamper:1.17
+                ws-cleanup:0.42
                 pipeline-aws:1.43
-                http_request:1.11
+                http_request:1.15
+                cloudbees-folder:6.17
               mode: '000400'
               owner: root
               group: root
@@ -957,10 +969,10 @@ Resources:
               command: 'until $(curl --silent --max-time 60 -o /dev/null -I -f -u "admin:$(cat /var/lib/jenkins/secrets/initialAdminPassword)" http://localhost:8080/cli/); do printf "."; sleep 1; done'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'h_download_jenkins_plugin_manager':
-              command: 'wget --quiet --timeout=60 --output-document=/opt/jenkins-plugin-manager.jar https://github.com/jenkinsci/plugin-installation-manager-tool/releases/download/2.11.0/jenkins-plugin-manager-2.11.0.jar'
+              command: 'wget --quiet --timeout=60 --output-document=/opt/jenkins-plugin-manager.jar https://github.com/jenkinsci/plugin-installation-manager-tool/releases/download/2.12.3/jenkins-plugin-manager-2.12.3.jar'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'i_install_plugins':
-              command: 'java -jar /opt/jenkins-plugin-manager.jar --war /usr/lib/jenkins/jenkins.war --plugin-download-directory /var/lib/jenkins/plugins --plugin-file /root/plugins.txt --latest=false'
+              command: 'java -jar /opt/jenkins-plugin-manager.jar --war /usr/share/java/jenkins.war --plugin-download-directory /var/lib/jenkins/plugins --plugin-file /root/plugins.txt --latest=false'
               test: '[ ! -f /var/lib/jenkins/setup_done.txt ]'
             'j_restart_jenkins':
               command: 'service jenkins restart'
