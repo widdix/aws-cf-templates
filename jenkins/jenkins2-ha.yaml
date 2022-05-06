@@ -883,7 +883,7 @@ Resources:
               'daemonize': []
           files:
             '/etc/systemd/system/jenkins.service.d/timeout.conf':
-              content: !Sub |
+              content: |
                 [Service]
                 TimeoutStartSec=300
               mode: '000644'
