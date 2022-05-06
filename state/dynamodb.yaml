@@ -342,6 +342,7 @@ Conditions:
   HasLocalIndex2Name: !Not [!Equals [!Ref LocalIndex2Name, '']]
   HasLocalIndex3: !Not [!Equals [!Ref LocalIndex3SortKeyName, '']]
   HasLocalIndex3Name: !Not [!Equals [!Ref LocalIndex3Name, '']]
+  HasLocalIndex: !Or [!Condition HasLocalIndex1, !Condition HasLocalIndex2, !Condition HasLocalIndex3]
   HasAttribute1Definition: !Not [!Equals [!Ref Attribute1Name, '']]
   HasAttribute2Definition: !Not [!Equals [!Ref Attribute2Name, '']]
   HasAttribute3Definition: !Not [!Equals [!Ref Attribute3Name, '']]
@@ -451,49 +452,51 @@ Resources:
             ProjectionType: !Ref Index3ProjectionType
           ProvisionedThroughput: !If [HasBillingAndScalingModeProvisioned, {ReadCapacityUnits: !Ref MinReadCapacityUnits, WriteCapacityUnits: !Ref MinWriteCapacityUnits}, !Ref 'AWS::NoValue']
         - !Ref 'AWS::NoValue'
-      LocalSecondaryIndexes:
-      - !If
-        - HasLocalIndex1
-        - IndexName: !If
-          - HasLocalIndex1Name
-          - !Ref LocalIndex1Name
-          - !Sub 'LocalIndex-${PartitionKeyName}-${LocalIndex1SortKeyName}'
-          KeySchema:
-          - AttributeName: !Ref PartitionKeyName
-            KeyType: HASH
-          - AttributeName: !Ref LocalIndex1SortKeyName
-            KeyType: RANGE
-          Projection:
-            ProjectionType: !Ref LocalIndex1ProjectionType
-        - !Ref 'AWS::NoValue'
-      - !If
-        - HasLocalIndex2
-        - IndexName: !If
-          - HasLocalIndex2Name
-          - !Ref LocalIndex2Name
-          - !Sub 'LocalIndex-${PartitionKeyName}-${LocalIndex2SortKeyName}'
-          KeySchema:
-          - AttributeName: !Ref PartitionKeyName
-            KeyType: HASH
-          - AttributeName: !Ref LocalIndex2SortKeyName
-            KeyType: RANGE
-          Projection:
-            ProjectionType: !Ref LocalIndex2ProjectionType
-        - !Ref 'AWS::NoValue'
-      - !If
-        - HasLocalIndex3
-        - IndexName: !If
-          - HasLocalIndex3Name
-          - !Ref LocalIndex3Name
-          - !Sub 'LocalIndex-${PartitionKeyName}-${LocalIndex3SortKeyName}'
-          KeySchema:
-          - AttributeName: !Ref PartitionKeyName
-            KeyType: HASH
-          - AttributeName: !Ref LocalIndex3SortKeyName
-            KeyType: RANGE
-          Projection:
-            ProjectionType: !Ref LocalIndex3ProjectionType
-        - !Ref 'AWS::NoValue'
+      LocalSecondaryIndexes: !If
+      - HasLocalIndex # extra condition to avoid replacement because property was added later
+      - - !If
+          - HasLocalIndex1
+          - IndexName: !If
+            - HasLocalIndex1Name
+            - !Ref LocalIndex1Name
+            - !Sub 'LocalIndex-${PartitionKeyName}-${LocalIndex1SortKeyName}'
+            KeySchema:
+            - AttributeName: !Ref PartitionKeyName
+              KeyType: HASH
+            - AttributeName: !Ref LocalIndex1SortKeyName
+              KeyType: RANGE
+            Projection:
+              ProjectionType: !Ref LocalIndex1ProjectionType
+          - !Ref 'AWS::NoValue'
+        - !If
+          - HasLocalIndex2
+          - IndexName: !If
+            - HasLocalIndex2Name
+            - !Ref LocalIndex2Name
+            - !Sub 'LocalIndex-${PartitionKeyName}-${LocalIndex2SortKeyName}'
+            KeySchema:
+            - AttributeName: !Ref PartitionKeyName
+              KeyType: HASH
+            - AttributeName: !Ref LocalIndex2SortKeyName
+              KeyType: RANGE
+            Projection:
+              ProjectionType: !Ref LocalIndex2ProjectionType
+          - !Ref 'AWS::NoValue'
+        - !If
+          - HasLocalIndex3
+          - IndexName: !If
+            - HasLocalIndex3Name
+            - !Ref LocalIndex3Name
+            - !Sub 'LocalIndex-${PartitionKeyName}-${LocalIndex3SortKeyName}'
+            KeySchema:
+            - AttributeName: !Ref PartitionKeyName
+              KeyType: HASH
+            - AttributeName: !Ref LocalIndex3SortKeyName
+              KeyType: RANGE
+            Projection:
+              ProjectionType: !Ref LocalIndex3ProjectionType
+          - !Ref 'AWS::NoValue'
+      - !Ref 'AWS::NoValue'
       BillingMode: !If [HasBillingAndScalingModeProvisioned, PROVISIONED, PAY_PER_REQUEST]
       KeySchema:
       - AttributeName: !Ref PartitionKeyName
