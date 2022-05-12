@@ -27,6 +27,23 @@ Metadata:
       - LogFilePrefix
       - S3DataEvents
     - Label:
+        default: 'CIS alarms Parameters'
+      Parameters:
+      - DisableUnauthorizedOperationAlarm
+      - DisableNonMfaConsoleLoginAlarm
+      - DisableRootUserActivityAlarm
+      - DisableIamPolicyChangeAlarm
+      - DisableCloudTrailConfigChangeAlarm
+      - DisableManagementConsoleAuthFailureAlarm
+      - DisableDeletingKmsCmkAlarm
+      - DisableS3BucketPolicyChangeAlarm
+      - DisableConfigChangeAlarm
+      - DisableSecurityGroupChangeAlarm
+      - DisableNaclChangeAlarm
+      - DisableNetworkGatewayChangeAlarm
+      - DisableRouteTableChangeAlarm
+      - DisableVpcChangeAlarm
+    - Label:
         default: 'Permission Parameters'
       Parameters:
       - PermissionsBoundary
@@ -56,6 +73,76 @@ Parameters:
     Description: 'Optional The log file prefix.'
     Type: String
     Default: ''
+  DisableUnauthorizedOperationAlarm:
+    Description: 'Disable CIS 3.1 alarm.'
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  DisableNonMfaConsoleLoginAlarm:
+    Description: 'Disable CIS 3.2 alarm.'
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  DisableRootUserActivityAlarm:
+    Description: 'Disable CIS 3.3 alarm.'
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+  DisableIamPolicyChangeAlarm:
+    Description: 'Disable CIS 3.4 alarm.'
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  DisableCloudTrailConfigChangeAlarm:
+    Description: 'Disable CIS 3.5 alarm.'
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  DisableManagementConsoleAuthFailureAlarm:
+    Description: 'Disable CIS 3.6 alarm.'
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  DisableDeletingKmsCmkAlarm:
+    Description: 'Disable CIS 3.7 alarm.'
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  DisableS3BucketPolicyChangeAlarm:
+    Description: 'Disable CIS 3.8 alarm.'
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  DisableConfigChangeAlarm:
+    Description: 'Disable CIS 3.9 alarm.'
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  DisableSecurityGroupChangeAlarm:
+    Description: 'Disable CIS 3.10 alarm.'
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  DisableNaclChangeAlarm:
+    Description: 'Disable CIS 3.11 alarm.'
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  DisableNetworkGatewayChangeAlarm:
+    Description: 'Disable CIS 3.12 alarm.'
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  DisableRouteTableChangeAlarm:
+    Description: 'Disable CIS 3.13 alarm.'
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  DisableVpcChangeAlarm:
+    Description: 'Disable CIS 3.14 alarm.'
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
   S3DataEvents:
     Description: 'Record data events of all S3 buckets? (Warning: additional charges apply.)'
     Type: String
@@ -71,6 +158,20 @@ Conditions:
   ExternalBucket: !Not [!Equals [!Ref ExternalTrailBucket, '']]
   HasLogFilePrefix: !Not [!Equals [!Ref LogFilePrefix, '']]
   IsS3DataEvents: !Equals [!Ref S3DataEvents, 'true']
+  HasUnauthorizedOperationAlarm: !And [!Equals [!Ref DisableUnauthorizedOperationAlarm, 'false'], !Condition HasAlertTopic]
+  HasNonMfaConsoleLoginAlarm: !And [!Equals [!Ref DisableNonMfaConsoleLoginAlarm, 'false'], !Condition HasAlertTopic]
+  HasRootUserActivityAlarm: !And [!Equals [!Ref DisableRootUserActivityAlarm, 'false'], !Condition HasAlertTopic]
+  HasIamPolicyChangeAlarm: !And [!Equals [!Ref DisableIamPolicyChangeAlarm, 'false'], !Condition HasAlertTopic]
+  HasCloudTrailConfigChangeAlarm: !And [!Equals [!Ref DisableCloudTrailConfigChangeAlarm, 'false'], !Condition HasAlertTopic]
+  HasManagementConsoleAuthFailureAlarm: !And [!Equals [!Ref DisableManagementConsoleAuthFailureAlarm, 'false'], !Condition HasAlertTopic]
+  HasDeletingKmsCmkAlarm: !And [!Equals [!Ref DisableDeletingKmsCmkAlarm, 'false'], !Condition HasAlertTopic]
+  HasS3BucketPolicyChangeAlarm: !And [!Equals [!Ref DisableS3BucketPolicyChangeAlarm, 'false'], !Condition HasAlertTopic]
+  HasConfigChangeAlarm: !And [!Equals [!Ref DisableConfigChangeAlarm, 'false'], !Condition HasAlertTopic]
+  HasSecurityGroupChangeAlarm: !And [!Equals [!Ref DisableSecurityGroupChangeAlarm, 'false'], !Condition HasAlertTopic]
+  HasNaclChangeAlarm: !And [!Equals [!Ref DisableNaclChangeAlarm, 'false'], !Condition HasAlertTopic]
+  HasNetworkGatewayChangeAlarm: !And [!Equals [!Ref DisableNetworkGatewayChangeAlarm, 'false'], !Condition HasAlertTopic]
+  HasRouteTableChangeAlarm: !And [!Equals [!Ref DisableRouteTableChangeAlarm, 'false'], !Condition HasAlertTopic]
+  HasVpcChangeAlarm: !And [!Equals [!Ref DisableVpcChangeAlarm, 'false'], !Condition HasAlertTopic]
 Resources:
   TrailBucket:
     Condition: InternalBucket
@@ -193,7 +294,7 @@ Resources:
       CloudWatchLogsRoleArn: !GetAtt 'TrailLogGroupRole.Arn'
       SnsTopicName: !GetAtt 'TrailTopic.TopicName'
   UnauthorizedOperationMetricFilter: # CIS 3.1
-    Condition: HasAlertTopic
+    Condition: HasUnauthorizedOperationAlarm
     Type: 'AWS::Logs::MetricFilter'
     Properties:
       FilterPattern: '{($.errorCode = "*UnauthorizedOperation") || ($.errorCode = "AccessDenied*")}'
@@ -203,7 +304,7 @@ Resources:
         MetricNamespace: !Ref 'AWS::StackName'
         MetricName: 'UnauthorizedOperationCount'
   UnauthorizedOperationAlarm:
-    Condition: HasAlertTopic
+    Condition: HasUnauthorizedOperationAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'CloudTrail: unauthorized API calls detected'
@@ -218,7 +319,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       TreatMissingData: notBreaching
   NonMfaConsoleLoginMetricFilter: # CIS 3.2
-    Condition: HasAlertTopic
+    Condition: HasNonMfaConsoleLoginAlarm
     Type: 'AWS::Logs::MetricFilter'
     Properties:
       FilterPattern: '{($.eventName = "ConsoleLogin") && ($.additionalEventData.MFAUsed != "Yes")}'
@@ -228,7 +329,7 @@ Resources:
         MetricNamespace: !Ref 'AWS::StackName'
         MetricName: 'NonMfaConsoleLoginCount'
   NonMfaConsoleLoginAlarm:
-    Condition: HasAlertTopic
+    Condition: HasNonMfaConsoleLoginAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'CloudTrail: Management Console sign-in without MFA detected'
@@ -243,7 +344,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       TreatMissingData: notBreaching
   RootUserActivityMetricFilter: # CIS 1.1 & 3.3
-    Condition: HasAlertTopic
+    Condition: HasRootUserActivityAlarm
     Type: 'AWS::Logs::MetricFilter'
     Properties:
       FilterPattern: '{$.userIdentity.type = "Root" && $.userIdentity.invokedBy NOT EXISTS && $.eventType != "AwsServiceEvent"}'
@@ -253,7 +354,7 @@ Resources:
         MetricNamespace: !Ref 'AWS::StackName'
         MetricName: 'RootUserActivityCount'
   RootUserActivityAlarm:
-    Condition: HasAlertTopic
+    Condition: HasRootUserActivityAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'CloudTrail: usage of root account/user detected'
@@ -268,7 +369,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       TreatMissingData: notBreaching
   IamPolicyChangeMetricFilter: # CIS 3.4
-    Condition: HasAlertTopic
+    Condition: HasIamPolicyChangeAlarm
     Type: 'AWS::Logs::MetricFilter'
     Properties:
       FilterPattern: '{($.eventName=DeleteGroupPolicy) || ($.eventName=DeleteRolePolicy) || ($.eventName=DeleteUserPolicy) || ($.eventName=PutGroupPolicy) || ($.eventName=PutRolePolicy) || ($.eventName=PutUserPolicy) || ($.eventName=CreatePolicy) || ($.eventName=DeletePolicy) || ($.eventName=CreatePolicyVersion) || ($.eventName=DeletePolicyVersion) || ($.eventName=AttachRolePolicy) || ($.eventName=DetachRolePolicy) || ($.eventName=AttachUserPolicy) || ($.eventName=DetachUserPolicy) || ($.eventName=AttachGroupPolicy) || ($.eventName=DetachGroupPolicy)}'
@@ -278,7 +379,7 @@ Resources:
         MetricNamespace: !Ref 'AWS::StackName'
         MetricName: 'IamPolicyChangeCount'
   IamPolicyChangeAlarm:
-    Condition: HasAlertTopic
+    Condition: HasIamPolicyChangeAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'CloudTrail: IAM policy changes detected'
@@ -293,7 +394,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       TreatMissingData: notBreaching
   CloudTrailConfigChangeMetricFilter: # CIS 3.5
-    Condition: HasAlertTopic
+    Condition: HasCloudTrailConfigChangeAlarm
     Type: 'AWS::Logs::MetricFilter'
     Properties:
       FilterPattern: '{($.eventName = CreateTrail) || ($.eventName = UpdateTrail) || ($.eventName = DeleteTrail) || ($.eventName = StartLogging) || ($.eventName = StopLogging)}'
@@ -303,7 +404,7 @@ Resources:
         MetricNamespace: !Ref 'AWS::StackName'
         MetricName: 'CloudTrailConfigChangeCount'
   CloudTrailConfigChangeAlarm:
-    Condition: HasAlertTopic
+    Condition: HasCloudTrailConfigChangeAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'CloudTrail: CloudTrail configuration changes detected'
@@ -318,7 +419,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       TreatMissingData: notBreaching
   ManagementConsoleAuthFailureMetricFilter: # CIS 3.6
-    Condition: HasAlertTopic
+    Condition: HasManagementConsoleAuthFailureAlarm
     Type: 'AWS::Logs::MetricFilter'
     Properties:
       FilterPattern: '{($.eventName = ConsoleLogin) && ($.errorMessage = "Failed authentication")}'
@@ -328,7 +429,7 @@ Resources:
         MetricNamespace: !Ref 'AWS::StackName'
         MetricName: 'ManagementConsoleAuthFailureCount'
   ManagementConsoleAuthFailureAlarm:
-    Condition: HasAlertTopic
+    Condition: HasManagementConsoleAuthFailureAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'CloudTrail: Management Console authentication failures detected'
@@ -343,7 +444,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       TreatMissingData: notBreaching
   DeletingKmsCmkMetricFilter: # CIS 3.7
-    Condition: HasAlertTopic
+    Condition: HasDeletingKmsCmkAlarm
     Type: 'AWS::Logs::MetricFilter'
     Properties:
       FilterPattern: '{($.eventSource = kms.amazonaws.com) && (($.eventName=DisableKey) || ($.eventName=ScheduleKeyDeletion))}'
@@ -353,7 +454,7 @@ Resources:
         MetricNamespace: !Ref 'AWS::StackName'
         MetricName: 'DeletingKmsCmkCount'
   DeletingKmsCmkAlarm:
-    Condition: HasAlertTopic
+    Condition: HasDeletingKmsCmkAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'CloudTrail: disabling or scheduled deletion of customer created CMKs detected'
@@ -368,7 +469,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       TreatMissingData: notBreaching
   S3BucketPolicyChangeMetricFilter: # CIS 3.8
-    Condition: HasAlertTopic
+    Condition: HasS3BucketPolicyChangeAlarm
     Type: 'AWS::Logs::MetricFilter'
     Properties:
       FilterPattern: '{($.eventSource = s3.amazonaws.com) && (($.eventName = PutBucketAcl) || ($.eventName = PutBucketPolicy) || ($.eventName = PutBucketCors) || ($.eventName = PutBucketLifecycle) || ($.eventName = PutBucketReplication) || ($.eventName = DeleteBucketPolicy) || ($.eventName = DeleteBucketCors) || ($.eventName = DeleteBucketLifecycle) || ($.eventName = DeleteBucketReplication))}'
@@ -378,7 +479,7 @@ Resources:
         MetricNamespace: !Ref 'AWS::StackName'
         MetricName: 'S3BucketPolicyChangeCount'
   S3BucketPolicyChangeAlarm:
-    Condition: HasAlertTopic
+    Condition: HasS3BucketPolicyChangeAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'CloudTrail:  S3 bucket policy changes detected'
@@ -393,7 +494,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       TreatMissingData: notBreaching
   ConfigChangeMetricFilter: # CIS 3.9
-    Condition: HasAlertTopic
+    Condition: HasConfigChangeAlarm
     Type: 'AWS::Logs::MetricFilter'
     Properties:
       FilterPattern: '{($.eventSource = config.amazonaws.com) && (($.eventName = StopConfigurationRecorder) || ($.eventName = DeleteDeliveryChannel) || ($.eventName = PutDeliveryChannel) || ($.eventName = PutConfigurationRecorder))}'
@@ -403,7 +504,7 @@ Resources:
         MetricNamespace: !Ref 'AWS::StackName'
         MetricName: 'ConfigChangeCount'
   ConfigChangeAlarm:
-    Condition: HasAlertTopic
+    Condition: HasConfigChangeAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'CloudTrail: AWS Config configuration changes detected'
@@ -418,7 +519,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       TreatMissingData: notBreaching
   SecurityGroupChangeMetricFilter: # CIS 3.10
-    Condition: HasAlertTopic
+    Condition: HasSecurityGroupChangeAlarm
     Type: 'AWS::Logs::MetricFilter'
     Properties:
       FilterPattern: '{($.eventName = AuthorizeSecurityGroupIngress) || ($.eventName = AuthorizeSecurityGroupEgress) || ($.eventName = RevokeSecurityGroupIngress) || ($.eventName = RevokeSecurityGroupEgress) || ($.eventName = CreateSecurityGroup) || ($.eventName = DeleteSecurityGroup)}'
@@ -428,7 +529,7 @@ Resources:
         MetricNamespace: !Ref 'AWS::StackName'
         MetricName: 'SecurityGroupChangeCount'
   SecurityGroupChangeAlarm:
-    Condition: HasAlertTopic
+    Condition: HasSecurityGroupChangeAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'CloudTrail: security group changes detected'
@@ -443,7 +544,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       TreatMissingData: notBreaching
   NaclChangeMetricFilter: # CIS 3.11
-    Condition: HasAlertTopic
+    Condition: HasNaclChangeAlarm
     Type: 'AWS::Logs::MetricFilter'
     Properties:
       FilterPattern: '{($.eventName = CreateNetworkAcl) || ($.eventName = CreateNetworkAclEntry) || ($.eventName = DeleteNetworkAcl) || ($.eventName = DeleteNetworkAclEntry) || ($.eventName = ReplaceNetworkAclEntry) || ($.eventName = ReplaceNetworkAclAssociation)}'
@@ -453,7 +554,7 @@ Resources:
         MetricNamespace: !Ref 'AWS::StackName'
         MetricName: 'NaclChangeCount'
   NaclChangeAlarm:
-    Condition: HasAlertTopic
+    Condition: HasNaclChangeAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'CloudTrail: changes to Network Access Control List (NACL) detected'
@@ -468,7 +569,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       TreatMissingData: notBreaching
   NetworkGatewayChangeMetricFilter: # CIS 3.12
-    Condition: HasAlertTopic
+    Condition: HasNetworkGatewayChangeAlarm
     Type: 'AWS::Logs::MetricFilter'
     Properties:
       FilterPattern: '{($.eventName = CreateCustomerGateway) || ($.eventName = DeleteCustomerGateway) || ($.eventName = AttachInternetGateway) || ($.eventName = CreateInternetGateway) || ($.eventName = DeleteInternetGateway) || ($.eventName = DetachInternetGateway)}'
@@ -478,7 +579,7 @@ Resources:
         MetricNamespace: !Ref 'AWS::StackName'
         MetricName: 'NetworkGatewayChangeChangeCount'
   NetworkGatewayChangeAlarm:
-    Condition: HasAlertTopic
+    Condition: HasNetworkGatewayChangeAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'CloudTrail: changes to network gateways detected'
@@ -493,7 +594,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       TreatMissingData: notBreaching
   RouteTableChangeMetricFilter: # CIS 3.13
-    Condition: HasAlertTopic
+    Condition: HasRouteTableChangeAlarm
     Type: 'AWS::Logs::MetricFilter'
     Properties:
       FilterPattern: '{($.eventName = CreateRoute) || ($.eventName = CreateRouteTable) || ($.eventName = ReplaceRoute) || ($.eventName = ReplaceRouteTableAssociation) || ($.eventName = DeleteRouteTable) || ($.eventName = DeleteRoute) || ($.eventName = DisassociateRouteTable)}'
@@ -503,7 +604,7 @@ Resources:
         MetricNamespace: !Ref 'AWS::StackName'
         MetricName: 'RouteTableChangeCount'
   RouteTableChangeAlarm:
-    Condition: HasAlertTopic
+    Condition: HasRouteTableChangeAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'CloudTrail: changes to route tables detected'
@@ -518,7 +619,7 @@ Resources:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       TreatMissingData: notBreaching
   VpcChangeMetricFilter: # CIS 3.14
-    Condition: HasAlertTopic
+    Condition: HasVpcChangeAlarm
     Type: 'AWS::Logs::MetricFilter'
     Properties:
       FilterPattern: '{($.eventName = CreateVpc) || ($.eventName = DeleteVpc) || ($.eventName = ModifyVpcAttribute) || ($.eventName = AcceptVpcPeeringConnection) || ($.eventName = CreateVpcPeeringConnection) || ($.eventName = DeleteVpcPeeringConnection) || ($.eventName = RejectVpcPeeringConnection) || ($.eventName = AttachClassicLinkVpc) || ($.eventName = DetachClassicLinkVpc) || ($.eventName = DisableVpcClassicLink) || ($.eventName = EnableVpcClassicLink)}'
@@ -527,8 +628,8 @@ Resources:
       - MetricValue: '1'
         MetricNamespace: !Ref 'AWS::StackName'
         MetricName: 'VpcChangeCount'
-  VpcTableChangeAlarm:
-    Condition: HasAlertTopic
+  VpcChangeAlarm:
+    Condition: HasVpcChangeAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
       AlarmDescription: 'CloudTrail: changes to VPCs detected'
