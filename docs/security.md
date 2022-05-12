@@ -211,6 +211,19 @@ If you have an existing KMS customer managed CMK you can wrap it into our requir
 ## Dependencies
 * `operations/alert.yaml` (recommended)
 
+# Security Hub controls
+This template provides a way to disable controls when enabling security hub and standards via administrator account. In other words, we assume that the default hub is created and the security standard is enabled where you disable controls.
+
+## Installation Guide
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/security/securityhub-controls.yaml&stackName=securityhub-controls)
+1. Click **Next** to proceed with the next step of the wizard.
+1. Specify a name and all parameters for the stack.
+1. Click **Next** to proceed with the next step of the wizard.
+1. Click **Next** to skip the **Options** step of the wizard.
+1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
+1. Click **Create** to start the creation of the stack.
+1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
 # Web Application Firewall
 This templates provides a WebACL with preconfigured rules.
 
