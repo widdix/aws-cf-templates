@@ -20,8 +20,8 @@ Metadata:
     - Label:
         default: 'Controls Parameters'
       Parameters:
-      - DisabledCIS120Controls
-      - DisabledFSB100Controls
+      - DisableCIS120Controls
+      - DisableFSBP100Controls
     - Label:
         default: 'Operational Parameters'
       Parameters:
@@ -31,12 +31,12 @@ Metadata:
       Parameters:
       - PermissionsBoundary
 Parameters:
-  DisabledCIS120Controls:
-    Description: 'Disabled CIS AWS Foundations Benchmark standard v1.2.0 cotrols.'
+  DisableCIS120Controls:
+    Description: 'CIS AWS Foundations Benchmark standard v1.2.0 cotrols to disable.'
     Type: CommaDelimitedList
     Default: '1.14,1.20 '
-  DisabledFSB100Controls:
-    Description: 'Disabled AWS Foundational Security Best Practices v1.0.0 cotrols.'
+  DisableFSBP100Controls:
+    Description: 'AWS Foundational Security Best Practices v1.0.0 cotrols to disable.'
     Type: CommaDelimitedList
     Default: 'IAM.6,GuardDuty.1'
   LogsRetentionInDays:
@@ -106,7 +106,7 @@ Resources:
                 ControlStatus: status
               };
               if (status === 'DISABLED') {
-                params.DisabledReason = 'Disabled by CloudFormation';
+                params.DisabledReason = 'Disabled by aws-cf-templates';
               }
               await securitysub.updateStandardsControl(params).promise();
               await sleep(1000); // avoid rate limit
@@ -165,17 +165,17 @@ Resources:
     Version: '1.0'
     Properties:
       Prefix: !Sub 'arn:aws:securityhub:${AWS::Region}:${AWS::AccountId}:control/cis-aws-foundations-benchmark/v/1.2.0/'
-      Controls: !Ref DisabledCIS120Controls
+      Controls: !Ref DisableCIS120Controls
       ServiceToken: !GetAtt 'LambdaFunction.Arn'
-  FSB100:
-    Type: 'Custom::FSB100'
+  FSBP100:
+    Type: 'Custom::FSBP100'
     DependsOn:
     - LambdaLogGroup
     - LambdaPolicy
     Version: '1.0'
     Properties:
       Prefix: !Sub 'arn:aws:securityhub:${AWS::Region}:${AWS::AccountId}:control/aws-foundational-security-best-practices/v/1.0.0/'
-      Controls: !Ref DisabledFSB100Controls
+      Controls: !Ref DisableFSBP100Controls
       ServiceToken: !GetAtt 'LambdaFunction.Arn'
 Outputs:
   TemplateID:
