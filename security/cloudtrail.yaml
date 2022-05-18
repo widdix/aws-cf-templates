@@ -86,7 +86,7 @@ Parameters:
   DisableRootUserActivityAlarm:
     Description: 'Disable CIS 3.3 alarm.'
     Type: String
-    Default: 'true'
+    Default: 'false'
     AllowedValues: ['true', 'false']
   DisableIamPolicyChangeAlarm:
     Description: 'Disable CIS 3.4 alarm.'
