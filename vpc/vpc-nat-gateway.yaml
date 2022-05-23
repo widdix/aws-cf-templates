@@ -65,7 +65,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: !Sub 'NAT gateway ${SubnetZone} could not allocate a source port'
+      AlarmDescription: !Sub 'NAT gateway ${SubnetZone} could not allocate a source port. Too many concurrent connections are open through the NAT gateway.'
       Namespace: 'AWS/NATGateway'
       MetricName: ErrorPortAllocation
       Statistic: Sum
@@ -82,7 +82,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
-      AlarmDescription: !Sub 'NAT gateway ${SubnetZone} dropped packets'
+      AlarmDescription: !Sub 'NAT gateway ${SubnetZone} dropped packets. This might indicate an ongoing transient issue with the NAT gateway.'
       Namespace: 'AWS/NATGateway'
       MetricName: PacketsDropCount
       Statistic: Sum
@@ -157,11 +157,79 @@ Resources:
           Stat: Sum
           Unit: Bytes
         ReturnData: false
-      - Expression: '(in1+in2+out1+out2)/2/60*8/1000/1000/1000' # to Gbit/s
+      - Expression: '(in1+in2+out1+out2)/60*8/1000/1000/1000' # to Gbit/s
         Id: 'bandwidth'
         Label: 'Bandwidth'
         ReturnData: true
       Threshold: 36 # hard limit is 45 Gbit/s
+      TreatMissingData: notBreaching
+  AlarmNatGatewayPackets:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      AlarmDescription: !Sub 'NAT gateway ${SubnetZone} packets utilization is over 80%'
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Metrics:
+      - Id: 'in1'
+        Label: 'InFromDestination'
+        MetricStat:
+          Metric:
+            Namespace: 'AWS/NATGateway'
+            MetricName: PacketsInFromDestination # packets per minute
+            Dimensions:
+            - Name: NatGatewayId
+              Value: !Ref NatGateway
+          Period: 60
+          Stat: Sum
+          Unit: Count
+        ReturnData: false
+      - Id: 'in2'
+        Label: 'InFromSource'
+        MetricStat:
+          Metric:
+            Namespace: 'AWS/NATGateway'
+            MetricName: PacketsInFromSource # packets per minute
+            Dimensions:
+            - Name: NatGatewayId
+              Value: !Ref NatGateway
+          Period: 60
+          Stat: Sum
+          Unit: Count
+        ReturnData: false
+      - Id: 'out1'
+        Label: 'OutToDestination'
+        MetricStat:
+          Metric:
+            Namespace: 'AWS/NATGateway'
+            MetricName: PacketsOutToDestination # packets per minute
+            Dimensions:
+            - Name: NatGatewayId
+              Value: !Ref NatGateway
+          Period: 60
+          Stat: Sum
+          Unit: Count
+        ReturnData: false
+      - Id: 'out2'
+        Label: 'OutToSource'
+        MetricStat:
+          Metric:
+            Namespace: 'AWS/NATGateway'
+            MetricName: PacketsOutToSource # packets per minute
+            Dimensions:
+            - Name: NatGatewayId
+              Value: !Ref NatGateway
+          Period: 60
+          Stat: Sum
+          Unit: Count
+        ReturnData: false
+      - Expression: '(in1+in2+out1+out2)/60' # to packets per second
+        Id: 'packets'
+        Label: 'Packets'
+        ReturnData: true
+      Threshold: 3200000 # hard limit is 4,000,000 packets per second
       TreatMissingData: notBreaching
 Outputs:
   TemplateID:
