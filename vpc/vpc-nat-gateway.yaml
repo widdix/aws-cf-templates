@@ -169,7 +169,7 @@ Resources:
     Properties:
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
-      AlarmDescription:  !Sub 'NAT gateway ${SubnetZone} packets utilization is over 80%'
+      AlarmDescription: !Sub 'NAT gateway ${SubnetZone} packets utilization is over 80%'
       ComparisonOperator: GreaterThanThreshold
       EvaluationPeriods: 1
       Metrics:
