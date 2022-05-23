@@ -1192,7 +1192,7 @@ Resources:
                   end
                 end
                 def awaitFile(file)
-                  endTime = Time.now.to_i + $conf['maxWaitInSeconds']
+                  endTime = Time.now.to_i + 1800
                   while Time.now.to_i < endTime do
                     if File.exist? file
                       $log.info "file #{file} exists"
@@ -2226,7 +2226,7 @@ Resources:
       Period: 60
       EvaluationPeriods: 1
       ComparisonOperator: GreaterThanThreshold
-      Threshold: 600
+      Threshold: !Ref AgentMaxBuildWaitTimeInSeconds
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       Dimensions:
