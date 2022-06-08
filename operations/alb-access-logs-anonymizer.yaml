@@ -236,7 +236,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 1024
       Role: !GetAtt 'Role.Arn'
-      Runtime: 'nodejs12.x'
+      Runtime: 'nodejs16.x'
       Timeout: 300
   ErrorsTooHighAlarm:
     Condition: HasAlertTopic

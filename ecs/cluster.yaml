@@ -1292,7 +1292,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'SchedulableContainersLambdaRole.Arn'
-      Runtime: 'nodejs12.x'
+      Runtime: 'nodejs16.x'
       Timeout: 60
   SchedulableContainersLogGroup:
     Type: 'AWS::Logs::LogGroup'
@@ -1489,7 +1489,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'DrainInstanceLambdaRole.Arn'
-      Runtime: 'nodejs12.x'
+      Runtime: 'nodejs16.x'
       Timeout: 30
       Environment:
         Variables:
