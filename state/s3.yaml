@@ -450,7 +450,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'LambdaRole.Arn'
-      Runtime: 'nodejs12.x'
+      Runtime: 'nodejs16.x'
       Timeout: 60
   LambdaLogGroup:
     Condition: HasCloudFrontAccessLogWrite

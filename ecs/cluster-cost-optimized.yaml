@@ -1181,7 +1181,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'ScaleUpLambdaRole.Arn'
-      Runtime: 'nodejs12.x'
+      Runtime: 'nodejs16.x'
       Timeout: 60
       Environment:
         Variables:
@@ -1381,7 +1381,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'DrainInstanceLambdaRole.Arn'
-      Runtime: 'nodejs12.x'
+      Runtime: 'nodejs16.x'
       Timeout: 30
       Environment:
         Variables:
