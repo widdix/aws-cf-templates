@@ -729,6 +729,8 @@ Resources:
             Action:
             - 'dynamodb:DescribeTable'
             - 'dynamodb:CreateBackup'
+            - 'dynamodb:ListTagsOfResource'
+            - 'dynamodb:StartAwsBackupJob'
             Resource: !GetAtt 'Table.Arn'
           - Effect: Allow
             Action:
