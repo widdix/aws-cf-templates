@@ -60,7 +60,7 @@ public class TestRDSAurora extends ACloudFormationTest {
                             "state/rds-aurora.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName),
-                            new Parameter().withParameterKey("Engine").withParameterValue("aurora-mysql"),
+                            new Parameter().withParameterKey("Engine").withParameterValue("5.7.mysql-aurora.2.04.3"),
                             new Parameter().withParameterKey("DBName").withParameterValue("db1"),
                             new Parameter().withParameterKey("DBMasterUserPassword").withParameterValue(password)
                     );
