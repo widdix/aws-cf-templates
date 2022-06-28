@@ -52,6 +52,10 @@ Parameter `EngineVersion` default value was removed. Use `5.7.21` if you haven't
 
 Parameter `EngineVersion` default value was removed. Use `10.17` if you haven't specified the parameter value before.
 
+## wordpress/*
+
+We updated WordPress to version 6.0.
+
 ## Deprecation warnings
 
 * `security/kms-key`: Value `dnssec-route53` for parameter `Service` will be removed in v15. Use `ROUTE53_DNSSEC` instead.
