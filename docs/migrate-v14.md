@@ -6,7 +6,7 @@
 
 ## Version defaults removed
 
-We removed default values for parameters selecting a version. AWS constatly deprecates versions and therefore defaults will become unavailable over time.
+We removed default values for parameters selecting a version. AWS constantly deprecates versions, and therefore defaults will become unavailable over time.
 
 ### ec2/al2-mutable-private
 
@@ -50,7 +50,7 @@ Parameter `EngineVersion` default value was removed. Use `5.7.21` if you haven't
 
 ### state/rds-postgres
 
-Parameter `EngineVersion` default value was removed. Use `10.17` if you haven't specified the parameter value before.
+Parameter `EngineVersion` default value was removed. The previous default of `9.6.24` is no longer supported. Use `10.17` if you haven't specified the parameter value before.
 
 ## wordpress/*
 
