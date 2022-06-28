@@ -72,7 +72,6 @@ Parameters:
   EngineVersion:
     Description: 'Redis version'
     Type: String
-    Default: '5.0.0'
     AllowedValues: # aws elasticache describe-cache-engine-versions --engine redis --query "CacheEngineVersions[].EngineVersion"
     - '3.2.6' # 3.2.4 and 3.2.10 do not support encryption
     - '4.0.10'

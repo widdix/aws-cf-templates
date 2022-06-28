@@ -24,7 +24,8 @@ public class TestElastiCacheMemcached extends ACloudFormationTest {
                     this.createStack(context, stackName,
                             "state/elasticache-memcached.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
-                            new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName)
+                            new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName),
+                            new Parameter().withParameterKey("EngineVersion").withParameterValue("1.4.34")
                     );
                     // TODO how can we check if this stack works? start a bastion host and try to connect?
                 } finally {

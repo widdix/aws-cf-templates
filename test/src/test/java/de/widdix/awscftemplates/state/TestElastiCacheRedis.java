@@ -24,7 +24,8 @@ public class TestElastiCacheRedis extends ACloudFormationTest {
                     this.createStack(context, stackName,
                             "state/elasticache-redis.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
-                            new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName)
+                            new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName),
+                            new Parameter().withParameterKey("EngineVersion").withParameterValue("5.0.0")
                     );
                     // TODO how can we check if this stack works? start a bastion host and try to connect?
                 } finally {

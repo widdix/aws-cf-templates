@@ -138,7 +138,6 @@ Parameters:
   EngineVersion:
     Description: 'Aurora Serverless MySQL version.'
     Type: String
-    Default: '5.6.10a'
     AllowedValues: ['5.6.10a', '5.7.mysql-aurora.2.07.1'] # aws rds describe-db-engine-versions --engine aurora --query 'DBEngineVersions[?contains(SupportedEngineModes,`serverless`)]'; aws rds describe-db-engine-versions --engine aurora-mysql --query 'DBEngineVersions[?contains(SupportedEngineModes,`serverless`)]'
 Mappings:
   EngineVersionMap:

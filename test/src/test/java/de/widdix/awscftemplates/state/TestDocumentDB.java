@@ -25,7 +25,8 @@ public class TestDocumentDB extends ACloudFormationTest {
                             "state/documentdb.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName),
-                            new Parameter().withParameterKey("MasterUserPassword").withParameterValue("Test!1234")
+                            new Parameter().withParameterKey("MasterUserPassword").withParameterValue("Test!1234"),
+                            new Parameter().withParameterKey("EngineVersion").withParameterValue("3.6.0")
                     );
                     // TODO how can we check if this stack works? start a bastion host and try to connect?
                 } finally {
@@ -60,7 +61,8 @@ public class TestDocumentDB extends ACloudFormationTest {
                                 "state/documentdb.yaml",
                                 new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                                 new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName),
-                                new Parameter().withParameterKey("ParentSecretStack").withParameterValue(secretStackName)
+                                new Parameter().withParameterKey("ParentSecretStack").withParameterValue(secretStackName),
+                                new Parameter().withParameterKey("EngineVersion").withParameterValue("3.6.0")
                         );
                         // TODO how can we check if this stack works? start a bastion host and try to connect?
                     } finally {

@@ -98,12 +98,12 @@ Parameters:
     Default: '404'
     AllowedValues: ['200', '404']
   EnableRedirectSubDomainName:
-    Description: 'Deprecated since v12. Will be removed in v14. Use static-website/lambdaedge-index-document instead.'
+    Description: 'Enable secondary name redirecting to the primary name defined in parameter SubDomainNameWithDot (requires template static-website/lambdaedge-index-document)?'
     Type: String
     Default: 'false'
     AllowedValues: ['true', 'false']
   RedirectSubDomainNameWithDot:
-    Description: 'Deprecated since v12. Will be removed in v14. Use static-website/lambdaedge-index-document instead.'
+    Description: 'Optional secondary name redirecting to the primary name (requires EnableRedirectSubDomainName).'
     Type: String
     Default: ''
   CertificateType:

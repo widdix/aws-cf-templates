@@ -87,7 +87,6 @@ Parameters:
     - 'aurora-postgresql-12.8'
     - 'aurora-postgresql-13.4'
     - 'aurora-postgresql-14.3'
-    Default: aurora
   DBSnapshotIdentifier:
     Description: 'Optional identifier for the DB cluster snapshot from which you want to restore (leave blank to create an empty cluster).'
     Type: String

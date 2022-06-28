@@ -200,7 +200,6 @@ Parameters:
   AmazonLinux2Version:
     Description: 'Version of Amazon Linux 2 to boot from the first time (ignored if RestoreImageId is set; select the latest version for new stacks; OS updates are enabled to patch the system).'
     Type: String
-    Default: '20191217.0'
     AllowedValues: ['20220316.0', '20220218.3', '20220218.1', '20220207.1', '20211223.0', '20211005.0', '20210721.2', '20210617.0', '20210126.0', '20200917.0', '20200722.0', '20200520.1', '20200406.0', '20200304.0', '20200207.1', '20191217.0']
 Mappings:
   VersionMap:

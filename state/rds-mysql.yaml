@@ -133,7 +133,6 @@ Parameters:
   EngineVersion:
     Description: 'MySQL version.'
     Type: String
-    Default: '5.7.21'
     AllowedValues: ['8.0.23', '8.0.15', '5.7.25', '5.7.21', '5.6.41', '5.5.61'] # aws rds describe-db-engine-versions --engine mysql --query "DBEngineVersions[].EngineVersion"
   EnableIAMDatabaseAuthentication:
     Description: 'Enable mapping of AWS Identity and Access Management (IAM) accounts to database accounts (https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/UsingWithRDS.IAMDBAuth.html).'

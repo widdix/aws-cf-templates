@@ -25,7 +25,8 @@ public class TestElasticsearch extends ACloudFormationTest {
                             "state/elasticsearch.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName),
-                            new Parameter().withParameterKey("DomainName").withParameterValue(stackName)
+                            new Parameter().withParameterKey("DomainName").withParameterValue(stackName),
+                            new Parameter().withParameterKey("ElasticsearchVersion").withParameterValue("5.5")
                     );
                     // TODO how can we check if this stack works? start a bastion host and try to connect?
                 } finally {
