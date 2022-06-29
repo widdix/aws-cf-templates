@@ -13,7 +13,8 @@ public abstract class AVPCTest extends ACloudFormationTest {
             this.createStack(context, stackName,
                     "ec2/al2-mutable-" + reach + ".yaml",
                     new Parameter().withParameterKey("ParentVPCStack").withParameterValue(parentVPCStack),
-                    new Parameter().withParameterKey("SubnetName").withParameterValue(subnetName)
+                    new Parameter().withParameterKey("SubnetName").withParameterValue(subnetName),
+                    new Parameter().withParameterKey("AmazonLinux2Version").withParameterValue("20191217.0")
             );
         } finally {
             this.deleteStack(context, stackName);
