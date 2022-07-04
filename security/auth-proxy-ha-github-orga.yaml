@@ -704,6 +704,7 @@ Resources:
                   cookie_secret = "${CookieSecret}"
                   provider = "github"
                   github_org = "${GitHubOrganization}"
+                  scope = "user:email" # workaround https://github.com/oauth2-proxy/oauth2-proxy/issues/1669
               - {SkipAuthRegexBlock: !If [HasSkipAuthRegex, !Join ['', ['skip_auth_regex = ["', !Ref SkipAuthRegex, '"]']], '']}
               mode: '000644'
               owner: root
