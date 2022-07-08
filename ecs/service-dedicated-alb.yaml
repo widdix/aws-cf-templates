@@ -47,6 +47,7 @@ Metadata:
       - MaxCapacity
       - MinCapacity
       - HealthCheckGracePeriod
+      - HealthCheckPath
     - Label:
         default: 'Permission Parameters'
       Parameters:
@@ -142,6 +143,11 @@ Parameters:
     Default: 60
     MinValue: 0
     MaxValue: 1800
+  HealthCheckPath:
+    Description: 'Path of health check'
+    Type: String
+    Default: '/'
+
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasAuthProxySecurityGroup: !Not [!Equals [!Ref ParentAuthProxyStack, '']]
@@ -248,7 +254,7 @@ Resources:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
       HealthCheckIntervalSeconds: 15
-      HealthCheckPath: '/'
+      HealthCheckPath: !Ref HealthCheckPath
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 10
       HealthyThresholdCount: 2
