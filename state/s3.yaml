@@ -488,6 +488,11 @@ Outputs:
     Value: !GetAtt 'Bucket.DomainName'
     Export:
       Name: !Sub '${AWS::StackName}-BucketDomainName'
+  BucketRegionalDomainName:
+    Description: 'Regional domain name of the bucket.'
+    Value: !GetAtt 'Bucket.RegionalDomainName'
+    Export:
+      Name: !Sub '${AWS::StackName}-BucketRegionalDomainName'
   CloudFrontOriginAccessIdentity:
     Condition: HasCloudFrontReadAccess
     Description: 'Origin access identity for secure CloudFront access.'
