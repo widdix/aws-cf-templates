@@ -22,6 +22,7 @@ Metadata:
       Parameters:
       - ParentVPCStack
       - ParentClientStack
+      - ParentAlertStack
     - Label:
         default: 'Endpoint Parameters'
       Parameters:
@@ -32,6 +33,10 @@ Parameters:
     Type: String
   ParentClientStack:
     Description: 'Optional stack name of parent client stack based on state/client-sg.yaml template.'
+    Type: String
+    Default: ''
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
     Type: String
     Default: ''
   ServiceName:
@@ -206,6 +211,7 @@ Parameters:
     - xray
 Conditions:
   HasParentClientStack: !Not [!Equals [!Ref ParentClientStack, '']]
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   UseEmailSMTP: !Equals [!Ref ServiceName, 'email-smtp']
 Resources:
   SecurityGroup:
@@ -276,6 +282,88 @@ Resources:
       SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
       VpcEndpointType: Interface
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+  AlarmEndpointPacketsDropped:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: !Sub 'VPC Interface endpoint ${ServiceName} dropped packets. This could indicate that the endpoint or endpoint service is unhealthy.'
+      Namespace: 'AWS/PrivateLinkEndpoints'
+      MetricName: PacketsDropped
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      TreatMissingData: notBreaching
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: 'Endpoint Type'
+        Value: Interface
+      - Name: 'Service Name'
+        Value: !Sub 'com.amazonaws.${AWS::Region}.${ServiceName}'
+      - Name: 'VPC Endpoint Id'
+        Value: !Ref Endpoint
+      - Name: 'VPC Id'
+        Value: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+  AlarmEndpointRstPacketsReceived:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: !Sub 'VPC Interface endpoint ${ServiceName} received RST packets. This could indicate that the endpoint service is unhealthy.'
+      Namespace: 'AWS/PrivateLinkEndpoints'
+      MetricName: RstPacketsReceived
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      TreatMissingData: notBreaching
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: 'Endpoint Type'
+        Value: Interface
+      - Name: 'Service Name'
+        Value: !Sub 'com.amazonaws.${AWS::Region}.${ServiceName}'
+      - Name: 'VPC Endpoint Id'
+        Value: !Ref Endpoint
+      - Name: 'VPC Id'
+        Value: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+  AlarmEndpointBandwidth:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      AlarmDescription: !Sub 'VPC Interface endpoint ${ServiceName} bandwidth utilization is over 80%'
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Metrics:
+      - Id: bytesProcessed
+        Label: BytesProcessed
+        MetricStat:
+          Metric:
+            Namespace: 'AWS/PrivateLinkEndpoints'
+            MetricName: BytesProcessed # bytes per minute
+            Dimensions:
+            - Name: 'Endpoint Type'
+              Value: Interface
+            - Name: 'Service Name'
+              Value: !Sub 'com.amazonaws.${AWS::Region}.${ServiceName}'
+            - Name: 'VPC Endpoint Id'
+              Value: !Ref Endpoint
+            - Name: 'VPC Id'
+              Value: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+          Period: 60
+          Stat: Sum
+        ReturnData: false
+      - Expression: 'bytesProcessed/60*8/1000/1000/1000' # to Gbit/s
+        Id: 'bandwidth'
+        Label: 'Bandwidth'
+        ReturnData: true
+      Threshold: 80 # hard limit is 100 Gbit/s
+      TreatMissingData: notBreaching
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'
