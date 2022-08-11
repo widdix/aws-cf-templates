@@ -137,9 +137,9 @@ Parameters:
     - true
     - false
   WebServerInstanceType:
-    Description: 'The instance type of web servers (e.g. t2.micro).'
+    Description: 'The instance type of web servers (e.g. t3.micro).'
     Type: String
-    Default: 't2.micro'
+    Default: 't3.micro'
   WebServerLogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain log events.'
     Type: Number
@@ -628,8 +628,8 @@ Resources:
           Principal:
             Service: 'ec2.amazonaws.com'
           Action: 'sts:AssumeRole'
-      PermissionsBoundary: !If [HasPermissionsBoundary, !Ref PermissionsBoundary, !Ref 'AWS::NoValue']
       ManagedPolicyArns: !If [HasManagedPolicyArns, !Split [',', !Ref ManagedPolicyArns], !Ref 'AWS::NoValue']
+      PermissionsBoundary: !If [HasPermissionsBoundary, !Ref PermissionsBoundary, !Ref 'AWS::NoValue']
       Policies:
       - !If
         - HasSystemsManagerAccess
