@@ -1357,7 +1357,7 @@ Resources:
           ViewerProtocolPolicy: 'redirect-to-https'
           Compress: true
         Enabled: true
-        HttpVersion: http2
+        HttpVersion: http2and3
         IPV6Enabled: true
         PriceClass: 'PriceClass_All'
         ViewerCertificate:

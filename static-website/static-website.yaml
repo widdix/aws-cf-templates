@@ -263,7 +263,7 @@ Resources:
           ViewerProtocolPolicy: 'redirect-to-https'
         DefaultRootObject: !If [HasDefaultRootObject, !Ref DefaultRootObject, !Ref 'AWS::NoValue']
         Enabled: true
-        HttpVersion: http2
+        HttpVersion: http2and3
         IPV6Enabled: true
         Logging: !If [HasS3Bucket, {Bucket: {'Fn::ImportValue': !Sub '${ParentS3StackAccessLog}-BucketDomainName'}, Prefix: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
         Origins:
