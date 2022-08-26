@@ -133,7 +133,8 @@ Mappings:
     'us-west-1':
       AMI: 'ami-0019ad94c6124959d'
     'us-west-2':
-      AMI: 'ami-07d59d159373b8030'Conditions:
+      AMI: 'ami-07d59d159373b8030'
+Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
   HasIAMUserSSHAccess: !Equals [!Ref IAMUserSSHAccess, 'true']
