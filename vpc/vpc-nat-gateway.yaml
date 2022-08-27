@@ -161,7 +161,7 @@ Resources:
         Id: 'bandwidth'
         Label: 'Bandwidth'
         ReturnData: true
-      Threshold: 36 # hard limit is 45 Gbit/s
+      Threshold: 80 # hard limit is 100 Gbit/s
       TreatMissingData: notBreaching
   AlarmNatGatewayPackets:
     Condition: HasAlertTopic
@@ -229,7 +229,7 @@ Resources:
         Id: 'packets'
         Label: 'Packets'
         ReturnData: true
-      Threshold: 3200000 # hard limit is 4,000,000 packets per second
+      Threshold: 8000000 # hard limit is 10,000,000 packets per second
       TreatMissingData: notBreaching
 Outputs:
   TemplateID:
