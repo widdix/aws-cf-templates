@@ -8,7 +8,16 @@ import org.junit.Test;
 public class TestDocumentDB extends ACloudFormationTest {
 
     @Test
-    public void test() {
+    public void testVersion3() {
+        this.testVersion("3.6.0");
+    }
+
+    @Test
+    public void testVersion4() {
+        this.testVersion("4.0.0");
+    }
+
+    private void testVersion(final String version) {
         final Context context = new Context();
         final String vpcStackName = "vpc-2azs-" + this.random8String();
         final String clientStackName = "client-" + this.random8String();
@@ -26,7 +35,7 @@ public class TestDocumentDB extends ACloudFormationTest {
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName),
                             new Parameter().withParameterKey("MasterUserPassword").withParameterValue("Test!1234"),
-                            new Parameter().withParameterKey("EngineVersion").withParameterValue("3.6.0")
+                            new Parameter().withParameterKey("EngineVersion").withParameterValue(version)
                     );
                     // TODO how can we check if this stack works? start a bastion host and try to connect?
                 } finally {

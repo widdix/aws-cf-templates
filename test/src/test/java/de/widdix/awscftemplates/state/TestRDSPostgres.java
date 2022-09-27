@@ -8,7 +8,16 @@ import org.junit.Test;
 public class TestRDSPostgres extends ACloudFormationTest {
 
     @Test
-    public void test() {
+    public void testVersion10() {
+        this.testVersion("10.17");
+    }
+
+    @Test
+    public void testVersion14() {
+        this.testVersion("14.4");
+    }
+
+    private void testVersion(final String version) {
         final Context context = new Context();
         final String vpcStackName = "vpc-2azs-" + this.random8String();
         final String clientStackName = "client-" + this.random8String();
@@ -28,7 +37,7 @@ public class TestRDSPostgres extends ACloudFormationTest {
                             new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName),
                             new Parameter().withParameterKey("DBName").withParameterValue("db1"),
                             new Parameter().withParameterKey("DBMasterUserPassword").withParameterValue(password),
-                            new Parameter().withParameterKey("EngineVersion").withParameterValue("10.17")
+                            new Parameter().withParameterKey("EngineVersion").withParameterValue(version)
                     );
                     // TODO how can we check if this stack works? start a bastion host and try to connect?
                 } finally {
