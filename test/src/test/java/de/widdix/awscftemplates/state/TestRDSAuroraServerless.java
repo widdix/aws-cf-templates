@@ -9,12 +9,12 @@ public class TestRDSAuroraServerless extends ACloudFormationTest {
 
     @Test
     public void testVersion56() {
-        this.testVersion("5.6.mysql_aurora.1.22.3");
+        this.testVersion("5.6.mysql-aurora.1.22.3");
     }
 
     @Test
     public void testVersion57() {
-        this.testVersion("5.7.mysql_aurora.2.08.3");
+        this.testVersion("5.7.mysql-aurora.2.08.3");
     }
     private void testVersion(final String version) {
         final Context context = new Context();
@@ -84,7 +84,7 @@ public class TestRDSAuroraServerless extends ACloudFormationTest {
                                     new Parameter().withParameterKey("ParentKmsKeyStack").withParameterValue(kmsKeyStackName),
                                     new Parameter().withParameterKey("ParentSecretStack").withParameterValue(secretStackName),
                                     new Parameter().withParameterKey("DBName").withParameterValue("db1"),
-                                    new Parameter().withParameterKey("EngineVersion").withParameterValue("5.6.mysql_aurora.1.22.3")
+                                    new Parameter().withParameterKey("EngineVersion").withParameterValue("5.6.mysql-aurora.1.22.3")
                             );
                             // TODO how can we check if this stack works? start a bastion host and try to connect?
                         } finally {
