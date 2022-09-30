@@ -76,7 +76,7 @@ Parameters:
   ElasticsearchVersion:
     Description: 'Elasticsearch version'
     Type: String
-    AllowedValues: ['7.9', '7.8', '7.7', '7.4', '7.1', '6.8', '6.7', '6.5', '6.4', '6.3', '6.2', '6.0', '5.6', '5.5'] # aws es list-elasticsearch-versions --query "ElasticsearchVersions[]"
+    AllowedValues: ['7.10', '7.9', '7.8', '7.7', '7.4', '7.1', '6.8', '6.7', '6.5', '6.4', '6.3', '6.2', '6.0', '5.6', '5.5', '5.3', '5.1', '2.3', '1.5'] # aws es list-elasticsearch-versions --query "ElasticsearchVersions[]"
   ClusterInstanceCount:
     Description: 'The number of data nodes (instances) to use in the Amazon ES domain.'
     Type: Number

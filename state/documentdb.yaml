@@ -74,9 +74,7 @@ Parameters:
   EngineVersion:
     Description: 'The version number of the database engine to use.'
     Type: String
-    AllowedValues:
-    - '3.6.0'
-    - '4.0.0'
+    AllowedValues: ['4.0.0', '3.6.0'] # aws docdb describe-db-engine-versions --engine docdb --query "DBEngineVersions[].EngineVersion"
   MasterUsername:
     Description: 'The name of the master user for the cluster.'
     Type: String

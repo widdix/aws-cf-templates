@@ -8,7 +8,26 @@ import org.junit.Test;
 public class TestElastiCacheRedis extends ACloudFormationTest {
 
     @Test
-    public void test() {
+    public void testVersion3() {
+        this.testVersion("3.2.6");
+    }
+
+    @Test
+    public void testVersion4() {
+        this.testVersion("4.0.10");
+    }
+
+    @Test
+    public void testVersion5() {
+        this.testVersion("5.0.6");
+    }
+
+    @Test
+    public void testVersion6() {
+        this.testVersion("6.2");
+    }
+
+    private void testVersion(final String version) {
         final Context context = new Context();
         final String vpcStackName = "vpc-2azs-" + this.random8String();
         final String clientStackName = "client-" + this.random8String();
@@ -25,7 +44,7 @@ public class TestElastiCacheRedis extends ACloudFormationTest {
                             "state/elasticache-redis.yaml",
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName),
-                            new Parameter().withParameterKey("EngineVersion").withParameterValue("5.0.0")
+                            new Parameter().withParameterKey("EngineVersion").withParameterValue(version)
                     );
                     // TODO how can we check if this stack works? start a bastion host and try to connect?
                 } finally {

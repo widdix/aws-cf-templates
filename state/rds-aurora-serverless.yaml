@@ -138,17 +138,17 @@ Parameters:
   EngineVersion:
     Description: 'Aurora Serverless MySQL version.'
     Type: String
-    AllowedValues: ['5.6.10a', '5.7.mysql-aurora.2.07.1'] # aws rds describe-db-engine-versions --engine aurora --query 'DBEngineVersions[?contains(SupportedEngineModes,`serverless`)]'; aws rds describe-db-engine-versions --engine aurora-mysql --query 'DBEngineVersions[?contains(SupportedEngineModes,`serverless`)]'
+    AllowedValues: ['5.7.mysql-aurora.2.08.3', '5.6.mysql-aurora.1.22.3'] # aws rds describe-db-engine-versions --engine aurora --query 'DBEngineVersions[?contains(SupportedEngineModes,`serverless`)].EngineVersion'; aws rds describe-db-engine-versions --engine aurora-mysql --query 'DBEngineVersions[?contains(SupportedEngineModes,`serverless`)].EngineVersion'
 Mappings:
   EngineVersionMap:
-    '5.6.10a':
-      ClusterParameterGroupFamily: 'aurora5.6'
-      EngineVersion: '5.6.10a'
-      Engine: aurora
-    '5.7.mysql-aurora.2.07.1':
+    '5.7.mysql-aurora.2.08.3':
       ClusterParameterGroupFamily: 'aurora-mysql5.7'
-      EngineVersion: '5.7.mysql_aurora.2.07.1'
+      EngineVersion: '5.7.mysql_aurora.2.08.3'
       Engine: 'aurora-mysql'
+    '5.6.mysql-aurora.1.22.3':
+      ClusterParameterGroupFamily: 'aurora5.6'
+      EngineVersion: '5.6.mysql_aurora.1.22.3'
+      Engine: aurora
 Conditions:
   HasSecret: !Not [!Equals [!Ref ParentSecretStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]

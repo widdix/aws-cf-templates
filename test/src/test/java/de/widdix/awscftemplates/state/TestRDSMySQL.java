@@ -8,7 +8,16 @@ import org.junit.Test;
 public class TestRDSMySQL extends ACloudFormationTest {
 
     @Test
-    public void test() {
+    public void testVersion57() {
+        this.testVersion("5.7.38");
+    }
+
+    @Test
+    public void testVersion8() {
+        this.testVersion("8.0.30");
+    }
+
+    private void testVersion(final String version) {
         final Context context = new Context();
         final String vpcStackName = "vpc-2azs-" + this.random8String();
         final String clientStackName = "client-" + this.random8String();
@@ -28,7 +37,7 @@ public class TestRDSMySQL extends ACloudFormationTest {
                             new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName),
                             new Parameter().withParameterKey("DBName").withParameterValue("db1"),
                             new Parameter().withParameterKey("DBMasterUserPassword").withParameterValue(password),
-                            new Parameter().withParameterKey("EngineVersion").withParameterValue("5.7.21")
+                            new Parameter().withParameterKey("EngineVersion").withParameterValue(version)
                     );
                     // TODO how can we check if this stack works? start a bastion host and try to connect?
                 } finally {
@@ -65,7 +74,7 @@ public class TestRDSMySQL extends ACloudFormationTest {
                                 new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName),
                                 new Parameter().withParameterKey("ParentSecretStack").withParameterValue(secretStackName),
                                 new Parameter().withParameterKey("DBName").withParameterValue("db1"),
-                                new Parameter().withParameterKey("EngineVersion").withParameterValue("5.7.21")
+                                new Parameter().withParameterKey("EngineVersion").withParameterValue("5.7.38")
                         );
                         // TODO how can we check if this stack works? start a bastion host and try to connect?
                     } finally {

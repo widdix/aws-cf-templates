@@ -5,10 +5,27 @@ import de.widdix.awscftemplates.ACloudFormationTest;
 import de.widdix.awscftemplates.Context;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public class TestRDSPostgres extends ACloudFormationTest {
 
     @Test
-    public void test() {
+    public void testVersion10() {
+        this.testVersion("10.17");
+    }
+
+    @Test
+    public void testVersion14() {
+        this.testVersion("14.4", "db.t3.micro");
+    }
+
+    private void testVersion(final String version) {
+        this.testVersion(version, null);
+    }
+
+    private void testVersion(final String version, final String instanceClassOrNull) {
         final Context context = new Context();
         final String vpcStackName = "vpc-2azs-" + this.random8String();
         final String clientStackName = "client-" + this.random8String();
@@ -22,13 +39,19 @@ public class TestRDSPostgres extends ACloudFormationTest {
                         new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName)
                 );
                 try {
-                    this.createStack(context, stackName,
-                            "state/rds-postgres.yaml",
+                    final List<Parameter> parameters= new ArrayList<>(Arrays.asList(
                             new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName),
                             new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName),
                             new Parameter().withParameterKey("DBName").withParameterValue("db1"),
                             new Parameter().withParameterKey("DBMasterUserPassword").withParameterValue(password),
-                            new Parameter().withParameterKey("EngineVersion").withParameterValue("10.17")
+                            new Parameter().withParameterKey("EngineVersion").withParameterValue(version)
+                    ));
+                    if (instanceClassOrNull != null) {
+                        parameters.add(new Parameter().withParameterKey("DBInstanceClass").withParameterValue(instanceClassOrNull));
+                    }
+                    this.createStack(context, stackName,
+                            "state/rds-postgres.yaml",
+                            parameters.toArray(new Parameter[0])
                     );
                     // TODO how can we check if this stack works? start a bastion host and try to connect?
                 } finally {

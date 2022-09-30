@@ -133,7 +133,7 @@ Parameters:
   EngineVersion:
     Description: 'PostgreSQL version.'
     Type: String
-    AllowedValues: ['10.17', '10.18', '10.19', '11.1', '11.4', '11.5', '11.6', '11.8', '11.10', '11.12', '11.13', '11.14', '12.6', '12.7', '12.8', '12.9', '13.3', '13.4', '13.5', '14.1'] # aws rds describe-db-engine-versions --engine postgres --query "DBEngineVersions[].EngineVersion"
+    AllowedValues: ['14.4', '14.3', '14.2', '14.1', '13.7', '13.6', '13.5', '13.4', '13.3', '12.11', '12.10', '12.9', '12.8', '12.7', '11.16', '11.15', '11.14', '11.13', '11.12', '10.21', '10.20', '10.19', '10.18', '10.17'] # aws rds describe-db-engine-versions --engine postgres --query "DBEngineVersions[].EngineVersion"
   EnableIAMDatabaseAuthentication:
     Description: 'Enable mapping of AWS Identity and Access Management (IAM) accounts to database accounts (https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/UsingWithRDS.IAMDBAuth.html).'
     Type: String
