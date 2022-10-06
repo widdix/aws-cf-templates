@@ -247,7 +247,7 @@ Resources:
           - 'iam:ListSSHPublicKeys'
           - 'iam:GetSSHPublicKey'
           Resource:
-          - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
+          - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:user/*'
   LaunchTemplate:
     Type: 'AWS::EC2::LaunchTemplate'
     Metadata:

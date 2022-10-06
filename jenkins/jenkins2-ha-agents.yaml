@@ -684,7 +684,7 @@ Resources:
           - 'iam:ListSSHPublicKeys'
           - 'iam:GetSSHPublicKey'
           Resource:
-          - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
+          - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:user/*'
   MasterSG:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -1616,7 +1616,7 @@ Resources:
           - 'iam:ListSSHPublicKeys'
           - 'iam:GetSSHPublicKey'
           Resource:
-          - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
+          - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:user/*'
   AgentSG:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:

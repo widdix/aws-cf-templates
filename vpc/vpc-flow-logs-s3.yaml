@@ -108,7 +108,7 @@ Resources:
     Condition: ExternalBucket
     Type: 'AWS::EC2::FlowLog'
     Properties:
-      LogDestination: !If [HasLogFilePrefix, !Sub 'arn:aws:s3:::${ExternalLogBucket}/${LogFilePrefix}/', !Sub 'arn:aws:s3:::${ExternalLogBucket}']
+      LogDestination: !If [HasLogFilePrefix, !Sub 'arn:${AWS::Partition}:s3:::${ExternalLogBucket}/${LogFilePrefix}/', !Sub 'arn:${AWS::Partition}:s3:::${ExternalLogBucket}']
       LogDestinationType: s3
       ResourceId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       ResourceType: 'VPC'

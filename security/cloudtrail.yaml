@@ -195,13 +195,13 @@ Resources:
           Principal:
             Service: 'cloudtrail.amazonaws.com'
           Action: 's3:GetBucketAcl'
-          Resource: !Sub 'arn:aws:s3:::${TrailBucket}'
+          Resource: !Sub 'arn:${AWS::Partition}:s3:::${TrailBucket}'
         - Sid: AWSCloudTrailWrite
           Effect: Allow
           Principal:
             Service: 'cloudtrail.amazonaws.com'
           Action: 's3:PutObject'
-          Resource: !If [HasLogFilePrefix, !Sub 'arn:aws:s3:::${TrailBucket}/${LogFilePrefix}/AWSLogs/${AWS::AccountId}/*', !Sub 'arn:aws:s3:::${TrailBucket}/AWSLogs/${AWS::AccountId}/*']
+          Resource: !If [HasLogFilePrefix, !Sub 'arn:${AWS::Partition}:s3:::${TrailBucket}/${LogFilePrefix}/AWSLogs/${AWS::AccountId}/*', !Sub 'arn:${AWS::Partition}:s3:::${TrailBucket}/AWSLogs/${AWS::AccountId}/*']
           Condition:
             StringEquals:
               's3:x-amz-acl': 'bucket-owner-full-control'
@@ -268,7 +268,7 @@ Resources:
       IncludeGlobalServiceEvents: true
       IsLogging: true
       IsMultiRegionTrail: true
-      EventSelectors: !If [IsS3DataEvents, [{DataResources: [{Type: 'AWS::S3::Object', Values: ['arn:aws:s3:::']}], IncludeManagementEvents: true, ReadWriteType: All}], !Ref 'AWS::NoValue']
+      EventSelectors: !If [IsS3DataEvents, [{DataResources: [{Type: 'AWS::S3::Object', Values: [!Sub 'arn:${AWS::Partition}:s3:::']}], IncludeManagementEvents: true, ReadWriteType: All}], !Ref 'AWS::NoValue']
       KMSKeyId: !If [HasParentKmsKeyStack, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}, !Ref 'AWS::NoValue']
       S3BucketName: !Ref TrailBucket
       S3KeyPrefix: !Ref LogFilePrefix
@@ -285,7 +285,7 @@ Resources:
       IncludeGlobalServiceEvents: true
       IsLogging: true
       IsMultiRegionTrail: true
-      EventSelectors: !If [IsS3DataEvents, [{DataResources: [{Type: 'AWS::S3::Object', Values: ['arn:aws:s3:::']}], IncludeManagementEvents: true, ReadWriteType: All}], !Ref 'AWS::NoValue']
+      EventSelectors: !If [IsS3DataEvents, [{DataResources: [{Type: 'AWS::S3::Object', Values: [!Sub 'arn:${AWS::Partition}:s3:::']}], IncludeManagementEvents: true, ReadWriteType: All}], !Ref 'AWS::NoValue']
       KMSKeyId: !If [HasParentKmsKeyStack, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}, !Ref 'AWS::NoValue']
       S3BucketName: !Ref ExternalTrailBucket
       S3KeyPrefix: !Ref LogFilePrefix

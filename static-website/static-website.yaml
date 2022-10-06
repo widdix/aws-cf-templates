@@ -188,7 +188,7 @@ Resources:
         Statement:
         - Action: 's3:GetObject'
           Effect: Allow
-          Resource: !Sub 'arn:aws:s3:::${S3Bucket}/*'
+          Resource: !Sub 'arn:${AWS::Partition}:s3:::${S3Bucket}/*'
           Principal:
             CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
         - Sid: AllowSSLRequestsOnly # AWS Foundational Security Best Practices v1.0.0 S3.5
