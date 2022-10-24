@@ -1,0 +1,95 @@
+---
+# Copyright 2018 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Operations: GitHub OpenID Connect, a cloudonaut.io template, sponsored by https://github.com/ngault'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'GitHub OpenID Connect IAM Role Parameters'
+      Parameters:
+      - GitHubRestriction
+      - RoleName
+      - ManagedPolicyArns
+    - Label:
+        default: 'Permission Parameters'
+      Parameters:
+      - PermissionsBoundary
+Parameters:
+  GitHubRestriction:
+    Description: 'Comma-delimited list GitHub (org, repo, git ref) restriction (e.g., repo:octo-org/octo-repo:ref:refs/heads/demo-branch).'
+    Type: String
+  RoleName:
+    Description: 'Optional name of GitHub OpenID Connect IAM Role.'
+    Type: String
+    Default: ''
+  ManagedPolicyArns:
+    Description: 'Comma-delimited list of IAM managed policy ARNs to attach to the GitHub OpenID Connect IAM Role.'
+    Type: String
+    Default: 'arn:aws:iam::aws:policy/AdministratorAccess'
+  PermissionsBoundary:
+    Description: 'Optional ARN for a policy that will be used as the permission boundary for all roles created by this template.'
+    Type: String
+    Default: ''
+Conditions:
+  HasRoleName: !Not [!Equals [!Ref RoleName, '']]
+  HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
+Resources:
+  Role:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !If [HasRoleName, !Ref RoleName, !Ref 'AWS::NoValue']
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Federated: !Ref OIDCProvider
+          Action: 'sts:AssumeRoleWithWebIdentity'
+          Condition:
+            StringEquals:
+              'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com'
+            StringLike:
+              'token.actions.githubusercontent.com:sub': !Split [',', !Ref GitHubRestriction]
+      ManagedPolicyArns: !Split [',', !Ref ManagedPolicyArns]
+      PermissionsBoundary: !If [HasPermissionsBoundary, !Ref PermissionsBoundary, !Ref 'AWS::NoValue']
+  OIDCProvider:
+    Type: 'AWS::IAM::OIDCProvider'
+    Properties:
+      ClientIdList:
+      - 'sts.amazonaws.com'
+      ThumbprintList:
+      - '6938FD4D98BAB03FAADB97B34396831E3780AEA1'
+      Url: 'https://token.actions.githubusercontent.com'
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'operations/github-openid-connect'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
+  RoleName:
+    Description: 'GitHub OpenID Connect IAM Role name.'
+    Value: !Ref Role
+    Export:
+      Name: !Sub '${AWS::StackName}-RoleName'
+  RoleArn:
+    Description: 'GitHub OpenID Connect IAM Role ARN.'
+    Value: !GetAtt 'Role.Arn'
+    Export:
+      Name: !Sub '${AWS::StackName}-RoleArn'
