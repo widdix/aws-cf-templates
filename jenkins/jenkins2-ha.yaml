@@ -167,51 +167,51 @@ Parameters:
 Mappings:
   RegionMap:
     'af-south-1':
-      AMI: 'ami-0c8f4401bffbcc52b'
+      AMI: 'ami-06802a470d405f25b'
     'eu-north-1':
-      AMI: 'ami-05807b6ca4228ed22'
+      AMI: 'ami-0d8ac604c02b0cc17'
     'ap-south-1':
-      AMI: 'ami-064687fa05edcd686'
+      AMI: 'ami-01f703c132f2b1a20'
     'eu-west-3':
-      AMI: 'ami-0eeba548a1a39b254'
+      AMI: 'ami-0a53f4992623d6f03'
     'eu-west-2':
-      AMI: 'ami-023665fdad063c8a9'
+      AMI: 'ami-060c0d1361bbd1bd7'
     'eu-south-1':
-      AMI: 'ami-0024dc61bc2f3d60f'
+      AMI: 'ami-04d9b6c3245fb8f5d'
     'eu-west-1':
-      AMI: 'ami-0af7a5885e3ff0439'
+      AMI: 'ami-0dcc20d3a15abf9bb'
     'ap-northeast-3':
-      AMI: 'ami-071e62426740a4919'
+      AMI: 'ami-0d92f0fcc82f45f80'
     'ap-northeast-2':
-      AMI: 'ami-0bb19571ca7f4bf31'
+      AMI: 'ami-07810a490b4267374'
     'me-south-1':
-      AMI: 'ami-02f339e26fdbed7a9'
+      AMI: 'ami-0bc65f60196533bc9'
     'ap-northeast-1':
-      AMI: 'ami-01154243795368525'
+      AMI: 'ami-046a961f907758d0d'
     'me-central-1':
-      AMI: 'ami-0b2373ec0e87325e0'
+      AMI: 'ami-09648061d3ac08b8f'
     'sa-east-1':
-      AMI: 'ami-0e41adb6f66146d4f'
+      AMI: 'ami-02e0498e7e54ef3c9'
     'ca-central-1':
-      AMI: 'ami-0d681e46bfc23b29c'
+      AMI: 'ami-05926d68079b85f1c'
     'ap-east-1':
-      AMI: 'ami-0481a59051168daa6'
+      AMI: 'ami-0a94039f0f5443c97'
     'ap-southeast-1':
-      AMI: 'ami-08326d8b49f61f528'
+      AMI: 'ami-0d46390da1dfb8792'
     'ap-southeast-2':
-      AMI: 'ami-00aa03f67b64f75dd'
+      AMI: 'ami-02b86aca723e9967e'
     'ap-southeast-3':
-      AMI: 'ami-013da7ea7023d5f7c'
+      AMI: 'ami-006438996c3cd85c2'
     'eu-central-1':
-      AMI: 'ami-08658d5197becde34'
+      AMI: 'ami-0b920b0594b5288fb'
     'us-east-1':
-      AMI: 'ami-0464d49b8794eba32'
+      AMI: 'ami-0c4e4b4eb2e11d1d4'
     'us-east-2':
-      AMI: 'ami-058d017bb0407da05'
+      AMI: 'ami-07693758d0ebc2111'
     'us-west-1':
-      AMI: 'ami-0147bd0a180d521bd'
+      AMI: 'ami-061352bb71c4724b2'
     'us-west-2':
-      AMI: 'ami-0620766f9d10d6c9e'
+      AMI: 'ami-0f9f005c313373218'
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
