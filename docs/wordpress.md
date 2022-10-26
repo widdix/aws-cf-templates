@@ -21,6 +21,8 @@ This template combines the following services:
 
 ![Architecture](./img/wordpress-ha.png)
 
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/wordpress/wordpress-ha.yaml`
+
 ## Installation Guide
 
 *Important: A custom domain name (e.g. `www.yourdomain.com`) is needed before installing Wordpress based on this template.* 
@@ -74,6 +76,8 @@ This template combines the following services:
 * RDS: Aurora database
 
 ![Architecture](./img/wordpress-ha.png)
+
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/wordpress/wordpress-ha-aurora.yaml`
 
 ## Installation Guide
 

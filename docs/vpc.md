@@ -9,6 +9,8 @@ This template describes a VPC with two private and two public subnets.
 
 ![Architecture](./img/vpc-2azs.png)
 
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml`
+
 ## Installation Guide
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
 1. Click **Next** to proceed with the next step of the wizard.
@@ -25,6 +27,8 @@ This template describes a VPC with three private and three public subnets.
 
 ![Architecture](./img/vpc-3azs.png)
 
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-3azs.yaml`
+
 ## Installation Guide
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-3azs.yaml&stackName=vpc)
 1. Click **Next** to proceed with the next step of the wizard.
@@ -40,6 +44,8 @@ If you have an existing VPC you can wrap it into our required form using a legac
 This template describes a VPC with four private and four public subnets.
 
 ![Architecture](./img/vpc-4azs.png)
+
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-4azs.yaml`
 
 ## Installation Guide
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-4azs.yaml&stackName=vpc)
@@ -58,6 +64,8 @@ This template describes a NAT Gateway that forwards HTTP, HTTPS and NTP traffic 
 > You need one Gateway in each `SubnetZone` (e.g. `A` and `B` in `vpc-2azs.yaml`).
 
 ![Architecture](./img/vpc-nat-gateway.png)
+
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-nat-gateway.yaml`
 
 ## Installation Guide
 1. This template depends on one of our `vpc-*azs.yaml` templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
@@ -79,6 +87,9 @@ This template describes a **highly available** Network Address Translation (NAT)
 > You need one Instance in each `SubnetZone` (e.g. `A` and `B` in `vpc-2azs.yaml`).
 
 ![Architecture](./img/vpc-nat-instance.png)
+
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-nat-instance.yaml`
+
 ## Installation Guide
 1. This template depends on one of our `vpc-*azs.yaml` templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-nat-instance.yaml&stackName=nat-instance&param_ParentVPCStack=vpc)
@@ -101,6 +112,8 @@ This template describes a **highly available** SSH bastion host/instance. SSH Po
 **Users must not be able to become root on the bastion host/instance! That's very important for security. Why? SSH places a SSH_AUTH_SOCK file into the /tmp directoy only accessible by the user. If you have root you could use any of those files and jump to other machines as another user!**
 
 ![Architecture](./img/vpc-ssh-bastion.png)
+
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-ssh-bastion.yaml`
 
 ## Single user: ec2-user
 
@@ -136,6 +149,8 @@ Use `ssh -J $user@$bastion $target` and replace `$user` with your IAM user name;
 # No bastion host/instance
 If you leave the `ParentSSHBastionStack` parameter blank in other templates, port 22 is open to the world `0.0.0.0/0`. This template can be used to disable SSH access by deploying an "empty" / non-existent bastion host (e.g., when using SSM Session Manager).
 
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-no-bastion.yaml`
+
 ## Installation Guide
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-no-bastion.yaml&stackName=no-bastion&param_ParentVPCStack=vpc)
 1. Click **Next** to proceed with the next step of the wizard.
@@ -147,6 +162,8 @@ If you leave the `ParentSSHBastionStack` parameter blank in other templates, por
 
 # VPN bastion host/instance
 This template describes a **highly available** VPN bastion host/instance based on the [SoftEther VPN Project](https://www.softether.org).
+
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-vpn-bastion.yaml`
 
 ## Installation Guide
 1. This template depends on one of our `vpc-*azs.yaml` templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
@@ -207,6 +224,9 @@ There is no graphical tool available for Linux. You can establish an SSH connect
 This template describes a Gateway VPC endpoint to securely access S3 without the need of a NAT Gateway, NAT instance, or public internet. Refer to [AWS documentation](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-endpoints-s3.html) if this is necessary for your stack. By default, access to all S3 actions and buckets is allowed, but may be constrained with a policy document.
 
 ![Architecture](./img/vpc-endpoint-s3.png)
+
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-endpoint-s3.yaml`
+
 ## Installation Guide
 1. This template depends on one of our `vpc-*azs.yaml` templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-endpoint-s3.yaml&stackName=vpc-endpoint-s3&param_ParentVPCStack=vpc)
@@ -222,6 +242,8 @@ This template describes a Gateway VPC endpoint to securely access S3 without the
 
 # Gateway Endpoint (DynamoDB)
 This template describes a Gateway VPC endpoint to securely access DynamoDB without the need of a NAT Gateway, NAT instance, or public internet. Refer to [AWS documentation](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-endpoints-ddb.html) if this is necessary for your stack. By default, access to all DynamoDB actions and tables is allowed, but may be constrained with a policy document.
+
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-endpoint-dynamodb.yaml`
 
 ## Installation Guide
 1. This template depends on one of our `vpc-*azs.yaml` templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
@@ -239,6 +261,8 @@ This template describes a Gateway VPC endpoint to securely access DynamoDB witho
 # Interface Endpoint
 This template describes a Interface VPC endpoint to securely access services without the need of a NAT Gateway, NAT instance, or public internet. Refer to [AWS documentation](https://docs.aws.amazon.com/vpc/latest/userguide/vpce-interface.html) if this is necessary for your stack. 
 
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-endpoint.yaml`
+
 ## Installation Guide
 1. This template depends on one of our `vpc-*azs.yaml` templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-endpoint.yaml&stackName=vpc-endpoint&param_ParentVPCStack=vpc)
@@ -254,6 +278,8 @@ This template describes a Interface VPC endpoint to securely access services wit
 
 # VPC Flow Logs to CloudWatch Logs
 This template enables [Flow Logs](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/flow-logs.html) for the specified VPC. Flow Logs contain aggregated network traffic data in your VPC.
+
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-flow-logs.yaml`
 
 ## Installation Guide
 1. This template depends on one of our `vpc-*azs.yaml` templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
@@ -274,6 +300,8 @@ Flow Logs will show up in CloudWatch Logs a few minutes after activation.
 # Public DNS Zone
 This template creates a Route53 hosted zone that is resolvable from the public Internet. Other templates depend on this template to register their DNS entries (record sets).
 
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/zone-public.yaml`
+
 ## Installation Guide
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/zone-public.yaml&stackName=zone)
 1. Click **Next** to proceed with the next step of the wizard.
@@ -287,6 +315,8 @@ If you have an existing Route53 Hosted Zone you can wrap it into our required fo
 
 # Private DNS Zone
 This template creates a Route53 hosted zone that is resolvable only from within a VPC. Other templates depend on this template to register their DNS entries (record sets).
+
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/zone-private.yaml`
 
 ## Installation Guide
 1. This template depends on one of our `vpc-*azs.yaml` templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
@@ -309,6 +339,8 @@ This template enables DNSSEC for a Route53 hosted zone. DNSSEC works for public 
 > Deploy this template to region `us-east-1` only.
 
 > In case you deployed the hosted zone stack based on `vpc/zone-public.yaml` in a region other than `us-east-1` deploy a wrapper stack based on `vpc/zone-legacy.yaml` to `us-east-1`.
+
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/zone-dnssec.yaml`
 
 ## Installation Guide
 1. This template depends the `zone-public.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/zone-public.yaml&stackName=zone)

@@ -10,21 +10,25 @@ This template describes a SNS topic that can be used by many other templates to 
 
 ![Architecture](./img/operations-alert.png)
 
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/alert.yaml`
+
 ## marbot
 
 ![marbot](https://marbot.io/assets/marbot.png)
 
-Hi, my name is marbot.
+AWS Monitoring from Slack and Microsoft Teams. Configure monitoring, receive alerts, solve incidents.
 
-I'm a Slack bot supporting your DevOps team to detect and solve incidents on AWS.
+marbot sets up CloudWatch Alarms and EventBridge Rules for all parts of your AWS infrastructure. CloudFormation and Terraform are supported.
 
-I help you to set up AWS monitoring. There are countless possibilities on AWS. Overlooking the important settings is easy. I connect you with all relevant AWS sources. You never miss an incident again.
+Your team receives alerts as direct messages or channel messages via Slack. The alert includes relevant details to understand and solve the problem. Use different Slack channels to separate prod from dev alerts. Only get alerted when necessary. To avoid a flood of alarms, marbot groups similar events.
 
-Don’t get distracted from your deep work, when not absolutely necessary. I do send alerts to a single team member. Of course, I escalate unnoticed alerts to another team member or the whole crew if necessary.
+Strong integrations with AWS and 3rd party services: AMI, Auto Scaling, Budget, CloudFormation, CloudWatch Alarms, CloudWatch Events, CodePipeline, DynamoDB, EC2, Elastic Beanstalk, ElastiCache, ELB, EMR, KMS, Lambda, RDS, S3, SES, SNS, Trusted Advisor, X-Ray, Bitbucket, Email, HTTP(S), Jenkins, New Relic, RSS Feed, Sumo Logic, Uptime Robot, ...
 
-Instead of cluttering up your inbox with emails I do send alerts via Slack. Just re-use your modern team communication solution. Invite me to multiple Slack channels to separate alerts. You can also talk to me.
+marbot escalates an alert to a single team member. Each alert can either be acknowledged, passed on, or closed. Unnoticed alerts are escalated to another team member or the whole crew if needed.
 
-I add links to AWS Management Console that are relevant to an incident. Contextual links save you time and reduce human error in stressful situations.
+marbot adds Quick Links pointing to the AWS Management Console automatically. marbot attaches runbooks to provide structured procedures to respond to incidents as well.
+
+Each week, marbot rewards team members for closing alerts. The detailed statistics help you to optimize your alert configuration as well.
 
 [Try marbot for free now!](https://marbot.io/?utm_source=templates&utm_medium=doc&utm_campaign=operations)
 
@@ -51,6 +55,8 @@ Access logs are stored in S3 buckets (created via [state/s3](./state/#s3)). The 
 ## CloudFront
 This template describes a Lambda function that can be used to anonymize IP addresses in CloudFront access logs. 
 
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/cloudfront-access-logs-anonymizer.yaml`
+
 ## Installation Guide
 1. This template depends on our `state/s3.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/state/s3.yaml&stackName=access-logs&param_Access=CloudFrontAccessLogWrite)
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/cloudfront-access-logs-anonymizer.yaml&stackName=access-logs-anonymizer&param_ParentS3Stack=access-logs)
@@ -70,6 +76,8 @@ This template describes a Lambda function that can be used to anonymize IP addre
 ## ALB
 This template describes a Lambda function that can be used to anonymize IP addresses in ALB access logs. 
 
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/alb-access-logs-anonymizer.yaml`
+
 ## Installation Guide
 1. This template depends on our `state/s3.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/state/s3.yaml&stackName=access-logs&param_Access=ElbAccessLogWrite)
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/alb-access-logs-anonymizer.yaml&stackName=access-logs-anonymizer&param_ParentS3Stack=access-logs)
@@ -86,9 +94,27 @@ This template describes a Lambda function that can be used to anonymize IP addre
 * `state/s3.yaml` (**required**)
 * `operations/alert.yaml` (recommended)
 
+# GitHub OpenID Connect
+
+Allow [GitHub Actions to assume IAM Roles](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services#updating-your-github-actions-workflow) in your AWS account without IAM users.
+
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/github-openid-connect.yaml`
+
+## Installation Guide
+1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/github-openid-connect.yaml&stackName=github-openid-connect)
+1. Click **Next** to proceed with the next step of the wizard.
+1. Specify a name and all parameters for the stack.
+1. Click **Next** to proceed with the next step of the wizard.
+1. Click **Next** to skip the **Options** step of the wizard.
+1. Check the **I acknowledge that this template might cause AWS CloudFormation to create IAM resources.** checkbox.
+1. Click **Create** to start the creation of the stack.
+1. Wait until the stack reaches the state **CREATE_COMPLETE**
+
 # Terraform State
 
 Creates S3 bucket and DynamoDB table used to manage remote Terraform state.
+
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/operations/terraform-state.yaml`
 
 ## Installation Guide
 1. This template depends on our `security/kms.yaml` template. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/security/kms-key.yaml&stackName=kms-key&param_Service=s3)

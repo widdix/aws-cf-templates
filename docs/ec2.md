@@ -18,6 +18,8 @@ The EC2 templates follow both approaches, choose them according to your needs.
 # Amazon Linux 2 (mutable, public)
 This template describes an EC2 instance running Amazon Linux 2. If the instance fails it will be replaced automatically. All data stored on EBS volumes will still be available. The public and private IP addresses won't change. Auto-recovery does only work inside of a single availability zone (AZ). Backups happen during a backup window. OS Updates during maintenance window (Instance might be restarted). We recommend to use AWS Systems Manager to configure the instance.
 
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/ec2/al2-mutable-public.yaml`
+
 ## Installation Guide
 1. This template depends on one of our [`vpc-*azs.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
 1. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/ec2/al2-mutable-public.yaml&stackName=al2-mutable-public&param_ParentVPCStack=vpc)
@@ -43,6 +45,8 @@ This template describes an EC2 instance running Amazon Linux 2. If the instance 
 
 # Amazon Linux 2 (mutable, private)
 This template describes an EC2 instance running Amazon Linux 2. If the instance fails it will be replaced automatically. All data stored on EBS volumes will still be available. The private IP address won't change. Auto-recovery does only work inside of a single availability zone (AZ). Backups happen during a backup window. OS Updates during maintenance window (Instance might be restarted). We recommend to use AWS Systems Manager to configure the instance.
+
+Amazon S3 URL: `https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/ec2/al2-mutable-private.yaml`
 
 ## Installation Guide
 1. This template depends on one of our [`vpc-*azs.yaml`](./vpc/) templates. [![Launch Stack](./img/launch-stack.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/widdix-aws-cf-templates-releases-eu-west-1/__VERSION__/vpc/vpc-2azs.yaml&stackName=vpc)
