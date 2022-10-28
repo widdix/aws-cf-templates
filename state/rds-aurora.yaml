@@ -72,12 +72,9 @@ Parameters:
     Description: 'Aurora engine and version'
     Type: String
     AllowedValues:
-    - '5.6.mysql-aurora.1.23.4' # aws rds describe-db-engine-versions --engine aurora --query 'DBEngineVersions[?contains(SupportedEngineModes,`provisioned`)].EngineVersion'
-    - '5.6.mysql-aurora.1.23.2'
-    - '5.6.mysql-aurora.1.19.1'
-    - aurora
     - '8.0.mysql-aurora.3.02.1' # aws rds describe-db-engine-versions --engine aurora-mysql --query 'DBEngineVersions[?contains(SupportedEngineModes,`provisioned`)].EngineVersion'
     - '8.0.mysql-aurora.3.02.0'
+    - '5.7.mysql-aurora.2.11.0'
     - '5.7.mysql-aurora.2.10.1'
     - '5.7.mysql-aurora.2.09.3'
     - '5.7.mysql-aurora.2.09.2'
@@ -132,30 +129,6 @@ Parameters:
     Default: 'sat:07:00-sat:07:30'
 Mappings:
   EngineMap:
-    '5.6.mysql-aurora.1.23.4':
-      Engine: aurora
-      EngineVersion: '5.6.mysql_aurora.1.23.4'
-      Port: 3306
-      ClusterParameterGroupFamily: 'aurora5.6'
-      ParameterGroupFamily: 'aurora5.6'
-    '5.6.mysql-aurora.1.23.2':
-      Engine: aurora
-      EngineVersion: '5.6.mysql_aurora.1.23.2'
-      Port: 3306
-      ClusterParameterGroupFamily: 'aurora5.6'
-      ParameterGroupFamily: 'aurora5.6'
-    '5.6.mysql-aurora.1.19.1':
-      Engine: aurora
-      EngineVersion: '5.6.mysql_aurora.1.19.1'
-      Port: 3306
-      ClusterParameterGroupFamily: 'aurora5.6'
-      ParameterGroupFamily: 'aurora5.6'
-    aurora:
-      Engine: aurora
-      EngineVersion: '5.6.10a'
-      Port: 3306
-      ClusterParameterGroupFamily: 'aurora5.6'
-      ParameterGroupFamily: 'aurora5.6'
     '8.0.mysql-aurora.3.02.1':
       Engine: 'aurora-mysql'
       EngineVersion: '8.0.mysql_aurora.3.02.1'
@@ -168,6 +141,12 @@ Mappings:
       Port: 3306
       ClusterParameterGroupFamily: 'aurora-mysql8.0'
       ParameterGroupFamily: 'aurora-mysql8.0'
+    '5.7.mysql-aurora.2.11.0':
+      Engine: 'aurora-mysql'
+      EngineVersion: '5.7.mysql_aurora.2.11.0'
+      Port: 3306
+      ClusterParameterGroupFamily: 'aurora-mysql5.7'
+      ParameterGroupFamily: 'aurora-mysql5.7'
     '5.7.mysql-aurora.2.10.1':
       Engine: 'aurora-mysql'
       EngineVersion: '5.7.mysql_aurora.2.10.1'
@@ -230,7 +209,7 @@ Conditions:
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
   HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, '']]
   HasKmsKeyAndNotDBSnapshotIdentifier: !And [!Condition HasKmsKey, !Not [!Condition HasDBSnapshotIdentifier]]
-  HasEngineMySQL: !Or [!Equals [!FindInMap [EngineMap, !Ref Engine, Engine], 'aurora'], !Equals [!FindInMap [EngineMap, !Ref Engine, Engine], 'aurora-mysql']]
+  HasEngineMySQL: !Equals [!FindInMap [EngineMap, !Ref Engine, Engine], 'aurora-mysql']
 Resources:
   SecretTargetAttachment:
     Condition: HasSecret
