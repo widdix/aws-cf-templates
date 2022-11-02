@@ -169,7 +169,10 @@ Resources:
         - AbortIncompleteMultipartUpload:
             DaysAfterInitiation: 7
           Status: Enabled
-        - NoncurrentVersionExpirationInDays: !If [HasNoncurrentVersionExpirationInDays, !Ref NoncurrentVersionExpirationInDays, 1]
+        - ExpiredObjectDeleteMarker: true
+          Status: Enabled
+        - NoncurrentVersionExpiration:
+            NoncurrentDays: !If [HasNoncurrentVersionExpirationInDays, !Ref NoncurrentVersionExpirationInDays, 1]
           Status: !If [HasNoncurrentVersionExpirationInDays, Enabled, Disabled]
         - ExpirationInDays: !If [HasExpirationInDays, !Ref ExpirationInDays, 1]
           Prefix: !If [HasExpirationPrefix, !Ref ExpirationPrefix, !Ref 'AWS::NoValue']
@@ -181,7 +184,9 @@ Resources:
         - !If [HasS3VirusScan, {Event: 's3:ObjectCreated:*', Queue: {'Fn::ImportValue': !Sub '${ParentS3VirusScanStack}-ScanQueueArn'}}, !Ref 'AWS::NoValue']
       PublicAccessBlockConfiguration: !If [HasPublicAccessBlock, {BlockPublicAcls: true, BlockPublicPolicy: true, IgnorePublicAcls: true, RestrictPublicBuckets: true}, !Ref 'AWS::NoValue'] # AWS Foundational Security Best Practices v1.0.0 S3.8
       VersioningConfiguration: !If [HasVersioning, {Status: Enabled}, !If [HadVersioning, {Status: Suspended}, !Ref 'AWS::NoValue']]
-      BucketEncryption: !If [HasKmsKey, {ServerSideEncryptionConfiguration: [{BucketKeyEnabled: true, ServerSideEncryptionByDefault: {KMSMasterKeyID: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}, SSEAlgorithm: 'aws:kms'}}]}, !Ref 'AWS::NoValue']
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - !If [HasKmsKey, {BucketKeyEnabled: true, ServerSideEncryptionByDefault: {KMSMasterKeyID: {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}, SSEAlgorithm: 'aws:kms'}}, {ServerSideEncryptionByDefault: {SSEAlgorithm: 'AES256'}}]
   BucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
     Properties:
