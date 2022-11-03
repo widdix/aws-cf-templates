@@ -22,6 +22,7 @@ Metadata:
       Parameters:
       - GitHubRestriction
       - RoleName
+      - RoleMaxSessionDuration
       - ManagedPolicyArns
     - Label:
         default: 'Permission Parameters'
@@ -35,6 +36,12 @@ Parameters:
     Description: 'Optional name of GitHub OpenID Connect IAM Role.'
     Type: String
     Default: ''
+  RoleMaxSessionDuration:
+    Description: 'The maximum session duration (in seconds) limits the role-duration-seconds value in aws-actions/configure-aws-credentials'
+    Type: Number
+    MinValue: 3600
+    MaxValue: 43200
+    Default: 21600
   ManagedPolicyArns:
     Description: 'Comma-delimited list of IAM managed policy ARNs to attach to the GitHub OpenID Connect IAM Role.'
     Type: String
@@ -64,6 +71,7 @@ Resources:
             StringLike:
               'token.actions.githubusercontent.com:sub': !Split [',', !Ref GitHubRestriction]
       ManagedPolicyArns: !Split [',', !Ref ManagedPolicyArns]
+      MaxSessionDuration: !Ref RoleMaxSessionDuration
       PermissionsBoundary: !If [HasPermissionsBoundary, !Ref PermissionsBoundary, !Ref 'AWS::NoValue']
   OIDCProvider:
     Type: 'AWS::IAM::OIDCProvider'
