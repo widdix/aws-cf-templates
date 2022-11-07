@@ -684,7 +684,7 @@ Resources:
           users:
             oauth2-proxy: {}
           sources:
-            '/opt/oauth2-proxy': 'https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v7.3.0/oauth2-proxy-v7.3.0.linux-amd64.tar.gz'
+            '/opt/oauth2-proxy': 'https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v7.4.0/oauth2-proxy-v7.4.0.linux-amd64.tar.gz'
           files:
             '/etc/oauth2-proxy.cfg':
               content: !Sub
