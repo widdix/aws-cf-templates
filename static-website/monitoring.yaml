@@ -87,7 +87,8 @@ Resources:
         Value: Global
       - Name: DistributionId
         Value: !Ref DistributionId
-      EvaluationPeriods: 1
+      EvaluationPeriods: 5
+      DatapointsToAlarm: 2
       MetricName: 5xxErrorRate
       Namespace: 'AWS/CloudFront'
       OKActions:
