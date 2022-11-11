@@ -21,6 +21,7 @@ Metadata:
         default: 'Controls Parameters'
       Parameters:
       - DisableCIS120Controls
+      - DisableCIS140Controls
       - DisableFSBP100Controls
     - Label:
         default: 'Operational Parameters'
@@ -34,7 +35,11 @@ Parameters:
   DisableCIS120Controls:
     Description: 'CIS AWS Foundations Benchmark standard v1.2.0 cotrols to disable.'
     Type: CommaDelimitedList
-    Default: '1.14,1.20 '
+    Default: '1.14,1.20'
+  DisableCIS140Controls:
+    Description: 'CIS AWS Foundations Benchmark standard v1.4.0 cotrols to disable.'
+    Type: CommaDelimitedList
+    Default: '1.6,1.17'
   DisableFSBP100Controls:
     Description: 'AWS Foundational Security Best Practices v1.0.0 cotrols to disable.'
     Type: CommaDelimitedList
@@ -166,6 +171,16 @@ Resources:
     Properties:
       Prefix: !Sub 'arn:aws:securityhub:${AWS::Region}:${AWS::AccountId}:control/cis-aws-foundations-benchmark/v/1.2.0/'
       Controls: !Ref DisableCIS120Controls
+      ServiceToken: !GetAtt 'LambdaFunction.Arn'
+  CIS140:
+    Type: 'Custom::CIS140'
+    DependsOn:
+    - LambdaLogGroup
+    - LambdaPolicy
+    Version: '1.0'
+    Properties:
+      Prefix: !Sub 'arn:aws:securityhub:${AWS::Region}:${AWS::AccountId}:control/cis-aws-foundations-benchmark/v/1.4.0/'
+      Controls: !Ref DisableCIS140Controls
       ServiceToken: !GetAtt 'LambdaFunction.Arn'
   FSBP100:
     Type: 'Custom::FSBP100'
