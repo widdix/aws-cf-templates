@@ -190,75 +190,81 @@ Parameters:
     MaxValue: 4000
 Mappings:
   RegionMap:
-    'af-south-1':
-      AMI: 'ami-06802a470d405f25b'
-      PrefixListCloudFront: 'pl-c0aa4fa9'
-    'eu-north-1':
-      AMI: 'ami-0d8ac604c02b0cc17'
-      PrefixListCloudFront: 'pl-fab65393'
     'ap-south-1':
-      AMI: 'ami-01f703c132f2b1a20'
+      AMI: 'ami-0a2457eba250ca23d'
       PrefixListCloudFront: 'pl-9aa247f3'
-    'eu-west-3':
-      AMI: 'ami-0a53f4992623d6f03'
-      PrefixListCloudFront: 'pl-75b1541c'
-    'eu-west-2':
-      AMI: 'ami-060c0d1361bbd1bd7'
-      PrefixListCloudFront: 'pl-93a247fa'
     'eu-south-1':
-      AMI: 'ami-04d9b6c3245fb8f5d'
+      AMI: 'ami-0a5352278bc7c5131'
       PrefixListCloudFront: 'pl-1bbc5972'
-    'eu-west-1':
-      AMI: 'ami-0dcc20d3a15abf9bb'
-      PrefixListCloudFront: 'pl-4fa04526'
-    'ap-northeast-3':
-      AMI: 'ami-0d92f0fcc82f45f80'
-      PrefixListCloudFront: 'pl-31a14458'
-    'ap-northeast-2':
-      AMI: 'ami-07810a490b4267374'
-      PrefixListCloudFront: 'pl-22a6434b'
-    'me-south-1':
-      AMI: 'ami-0bc65f60196533bc9'
-      PrefixListCloudFront: 'pl-17b2577e'
-    'ap-northeast-1':
-      AMI: 'ami-046a961f907758d0d'
-      PrefixListCloudFront: 'pl-58a04531'
-    'me-central-1':
-      AMI: 'ami-09648061d3ac08b8f'
+    'eu-south-2':
+      AMI: 'ami-06dead0e885b328ac'
       PrefixListCloudFront: ''
-    'sa-east-1':
-      AMI: 'ami-02e0498e7e54ef3c9'
-      PrefixListCloudFront: 'pl-5da64334'
+    'me-central-1':
+      AMI: 'ami-0884cb015c5e68ba2'
+      PrefixListCloudFront: ''
     'ca-central-1':
-      AMI: 'ami-05926d68079b85f1c'
+      AMI: 'ami-017f4811a06d3e510'
       PrefixListCloudFront: 'pl-38a64351'
-    'ap-east-1':
-      AMI: 'ami-0a94039f0f5443c97'
-      PrefixListCloudFront: 'pl-14b2577d'
-    'ap-southeast-1':
-      AMI: 'ami-0d46390da1dfb8792'
-      PrefixListCloudFront: 'pl-31a34658'
-    'ap-southeast-2':
-      AMI: 'ami-02b86aca723e9967e'
-      PrefixListCloudFront: 'pl-b8a742d1'
-    'ap-southeast-3':
-      AMI: 'ami-006438996c3cd85c2'
-      PrefixListCloudFront: 'pl-bca247d5'
     'eu-central-1':
-      AMI: 'ami-0b920b0594b5288fb'
+      AMI: 'ami-034a7d2833172671e'
       PrefixListCloudFront: 'pl-a3a144ca'
-    'us-east-1':
-      AMI: 'ami-0c4e4b4eb2e11d1d4'
-      PrefixListCloudFront: 'pl-3b927c52'
-    'us-east-2':
-      AMI: 'ami-07693758d0ebc2111'
-      PrefixListCloudFront: 'pl-b6a144df'
+    'eu-central-2':
+      AMI: 'ami-0ec30364fff59d57e'
+      PrefixListCloudFront: ''
     'us-west-1':
-      AMI: 'ami-061352bb71c4724b2'
+      AMI: 'ami-0e587da169af43ce1'
       PrefixListCloudFront: 'pl-4ea04527'
     'us-west-2':
-      AMI: 'ami-0f9f005c313373218'
+      AMI: 'ami-08e4eaf54ff5ee95e'
       PrefixListCloudFront: 'pl-82a045eb'
+    'af-south-1':
+      AMI: 'ami-0ad6ce76c6b363743'
+      PrefixListCloudFront: 'pl-c0aa4fa9'
+    'eu-north-1':
+      AMI: 'ami-00680fd4e58e51542'
+      PrefixListCloudFront: 'pl-fab65393'
+    'eu-west-3':
+      AMI: 'ami-03c2abbbe8af9a7e6'
+      PrefixListCloudFront: 'pl-75b1541c'
+    'eu-west-2':
+      AMI: 'ami-09dca206ba8b0b1cc'
+      PrefixListCloudFront: 'pl-93a247fa'
+    'eu-west-1':
+      AMI: 'ami-09958e8db3b1f3210'
+      PrefixListCloudFront: 'pl-4fa04526'
+    'ap-northeast-3':
+      AMI: 'ami-0ca7f72edb2808742'
+      PrefixListCloudFront: 'pl-31a14458'
+    'ap-northeast-2':
+      AMI: 'ami-06eb68a3c20079122'
+      PrefixListCloudFront: 'pl-22a6434b'
+    'me-south-1':
+      AMI: 'ami-0b55279ba6eea2f77'
+      PrefixListCloudFront: 'pl-17b2577e'
+    'ap-northeast-1':
+      AMI: 'ami-0b73aa7c1d1b2e901'
+      PrefixListCloudFront: 'pl-58a04531'
+    'sa-east-1':
+      AMI: 'ami-0886a3d2c8b721217'
+      PrefixListCloudFront: 'pl-5da64334'
+    'ap-east-1':
+      AMI: 'ami-0e40d6716d6ef2aa4'
+      PrefixListCloudFront: 'pl-14b2577d'
+    'ap-southeast-1':
+      AMI: 'ami-009c33adf2a03baf9'
+      PrefixListCloudFront: 'pl-31a34658'
+    'ap-southeast-2':
+      AMI: 'ami-08efd89f971ace76d'
+      PrefixListCloudFront: 'pl-b8a742d1'
+    'ap-southeast-3':
+      AMI: 'ami-0667c5c08ef2aeddb'
+      PrefixListCloudFront: 'pl-bca247d5'
+    'us-east-1':
+      AMI: 'ami-02b972fec07f1e659'
+      PrefixListCloudFront: 'pl-3b927c52'
+    'us-east-2':
+      AMI: 'ami-0185a6f76b69a1870'
+      PrefixListCloudFront: 'pl-b6a144df'
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasKeyName: !Not [!Equals [!Ref WebServerKeyName, '']]
