@@ -18,6 +18,12 @@ Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
     - Label:
+        default: 'Standards Parameters'
+      Parameters:
+      - EnableCIS120Standard
+      - EnableCIS140Standard
+      - EnableFSBP100Standard
+    - Label:
         default: 'Controls Parameters'
       Parameters:
       - DisableCIS120Controls
@@ -32,18 +38,39 @@ Metadata:
       Parameters:
       - PermissionsBoundary
 Parameters:
+  EnableCIS120Standard:
+    Description: 'Enable CIS AWS Foundations Benchmark standard v1.2.0?'
+    Type: String
+    Default: false
+    AllowedValues:
+    - true
+    - false
+  EnableCIS140Standard:
+    Description: 'String CIS AWS Foundations Benchmark standard v1.4.0?'
+    Type: String
+    Default: false
+    AllowedValues:
+    - true
+    - false
+  EnableFSBP100Standard:
+    Description: 'Enable AWS Foundational Security Best Practices v1.0.0?'
+    Type: String
+    Default: false
+    AllowedValues:
+    - true
+    - false
   DisableCIS120Controls:
-    Description: 'CIS AWS Foundations Benchmark standard v1.2.0 cotrols to disable.'
+    Description: 'CIS AWS Foundations Benchmark standard v1.2.0 cotrols to disable (e.g., 1.14,1.20).'
     Type: CommaDelimitedList
-    Default: '1.14,1.20'
+    Default: ''
   DisableCIS140Controls:
-    Description: 'CIS AWS Foundations Benchmark standard v1.4.0 cotrols to disable.'
+    Description: 'CIS AWS Foundations Benchmark standard v1.4.0 cotrols to disable (e.g., 1.6,1.17).'
     Type: CommaDelimitedList
-    Default: '1.6,1.17'
+    Default: ''
   DisableFSBP100Controls:
-    Description: 'AWS Foundational Security Best Practices v1.0.0 cotrols to disable.'
+    Description: 'AWS Foundational Security Best Practices v1.0.0 cotrols to disable (e.g., 1.14,1.20).'
     Type: CommaDelimitedList
-    Default: 'IAM.6,GuardDuty.1'
+    Default: ''
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain log events in the specified log group.'
     Type: Number
