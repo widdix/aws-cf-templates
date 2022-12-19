@@ -33,17 +33,17 @@ Metadata:
       - PermissionsBoundary
 Parameters:
   DisableCIS120Controls:
-    Description: 'CIS AWS Foundations Benchmark standard v1.2.0 cotrols to disable.'
+    Description: 'CIS AWS Foundations Benchmark standard v1.2.0 cotrols to disable (e.g., 1.14,1.20).'
     Type: CommaDelimitedList
-    Default: '1.14,1.20'
+    Default: ''
   DisableCIS140Controls:
-    Description: 'CIS AWS Foundations Benchmark standard v1.4.0 cotrols to disable.'
+    Description: 'CIS AWS Foundations Benchmark standard v1.4.0 cotrols to disable (e.g., 1.6,1.17).'
     Type: CommaDelimitedList
-    Default: '1.6,1.17'
+    Default: ''
   DisableFSBP100Controls:
-    Description: 'AWS Foundational Security Best Practices v1.0.0 cotrols to disable.'
+    Description: 'AWS Foundational Security Best Practices v1.0.0 cotrols to disable (e.g., 1.14,1.20).'
     Type: CommaDelimitedList
-    Default: 'IAM.6,GuardDuty.1'
+    Default: ''
   LogsRetentionInDays:
     Description: 'Specifies the number of days you want to retain log events in the specified log group.'
     Type: Number
