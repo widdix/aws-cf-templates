@@ -1498,7 +1498,7 @@ Resources:
         ViewerCertificate:
           AcmCertificateArn: !Ref CloudFrontAcmCertificate
           SslSupportMethod: 'sni-only'
-          MinimumProtocolVersion: TLSv1
+          MinimumProtocolVersion: 'TLSv1.2_2019'
   BackupVault: # cannot be deleted with data
     Condition: HasEFSBackupRetentionPeriod
     Type: 'AWS::Backup::BackupVault'
