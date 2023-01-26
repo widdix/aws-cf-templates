@@ -275,7 +275,7 @@ Resources:
         ViewerCertificate:
           AcmCertificateArn: !If [HasCreateAcmCertificate, !Ref Certificate, !If [HasAcmCertificateArn, !Ref ExistingCertificate, !Ref 'AWS::NoValue']]
           IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue']
-          MinimumProtocolVersion: 'TLSv1.1_2016'
+          MinimumProtocolVersion: 'TLSv1.2_2019'
           SslSupportMethod: 'sni-only'
         WebACLId: !If
         - HasWAF
