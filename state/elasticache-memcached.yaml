@@ -66,7 +66,7 @@ Parameters:
   EngineVersion:
     Description: 'memcached version'
     Type: String
-    AllowedValues: ['1.6.6', '1.6.12', '1.5.16', '1.5.10', '1.4.5', '1.4.34'] # aws elasticache describe-cache-engine-versions --engine memcached --query "CacheEngineVersions[].EngineVersion"
+    AllowedValues: ['1.6.17', '1.6.12', '1.6.6', '1.5.16', '1.5.10', '1.4.34'] # aws elasticache describe-cache-engine-versions --engine memcached --query "CacheEngineVersions[].EngineVersion"
   CacheNodeType:
     Description: 'The compute and memory capacity of the nodes in the node group (shard).'
     Type: 'String'
@@ -86,16 +86,16 @@ Parameters:
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
 Mappings:
   EngineVersionMap:
-    '1.6.6':
+    '1.6.17':
       CacheParameterGroupFamily: 'memcached1.6'
     '1.6.12':
+      CacheParameterGroupFamily: 'memcached1.6'
+    '1.6.6':
       CacheParameterGroupFamily: 'memcached1.6'
     '1.5.16':
       CacheParameterGroupFamily: 'memcached1.5'
     '1.5.10':
       CacheParameterGroupFamily: 'memcached1.5'
-    '1.4.5':
-      CacheParameterGroupFamily: 'memcached1.4'
     '1.4.34':
       CacheParameterGroupFamily: 'memcached1.4'
 Conditions:

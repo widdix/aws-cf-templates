@@ -19,7 +19,7 @@ public class TestElastiCacheMemcached extends ACloudFormationTest {
 
     @Test
     public void testVersion16() {
-        this.testVersion("1.6.12");
+        this.testVersion("1.6.17");
     }
 
     private void testVersion(final String version) {

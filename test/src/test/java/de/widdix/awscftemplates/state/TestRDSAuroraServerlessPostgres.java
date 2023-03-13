@@ -9,12 +9,12 @@ public class TestRDSAuroraServerlessPostgres extends ACloudFormationTest {
 
     @Test
     public void testVersion10() {
-        this.testVersion("10.18");
+        this.testVersion("10.21");
     }
 
     @Test
     public void testVersion11() {
-        this.testVersion("11.13");
+        this.testVersion("11.16");
     }
 
     private void testVersion(final String version) {

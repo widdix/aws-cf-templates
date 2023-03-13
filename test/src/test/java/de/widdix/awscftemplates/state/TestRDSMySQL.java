@@ -9,12 +9,12 @@ public class TestRDSMySQL extends ACloudFormationTest {
 
     @Test
     public void testVersion57() {
-        this.testVersion("5.7.38");
+        this.testVersion("5.7.41");
     }
 
     @Test
     public void testVersion8() {
-        this.testVersion("8.0.30");
+        this.testVersion("8.0.32");
     }
 
     private void testVersion(final String version) {
@@ -74,7 +74,7 @@ public class TestRDSMySQL extends ACloudFormationTest {
                                 new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName),
                                 new Parameter().withParameterKey("ParentSecretStack").withParameterValue(secretStackName),
                                 new Parameter().withParameterKey("DBName").withParameterValue("db1"),
-                                new Parameter().withParameterKey("EngineVersion").withParameterValue("5.7.38")
+                                new Parameter().withParameterKey("EngineVersion").withParameterValue("5.7.41")
                         );
                         // TODO how can we check if this stack works? start a bastion host and try to connect?
                     } finally {
