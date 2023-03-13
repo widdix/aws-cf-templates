@@ -9,7 +9,7 @@ public class TestElastiCacheRedis extends ACloudFormationTest {
 
     @Test
     public void testVersion3() {
-        this.testVersion("3.2.10");
+        this.testVersion("3.2.6");
     }
 
     @Test
