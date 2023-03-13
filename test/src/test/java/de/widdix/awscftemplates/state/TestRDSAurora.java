@@ -13,7 +13,7 @@ public class TestRDSAurora extends ACloudFormationTest {
 
     @Test
     public void testMyQSLVersion57() {
-        this.testVersion("5.7.mysql-aurora.2.11.0");
+        this.testVersion("5.7.mysql-aurora.2.11.1");
     }
 
     @Test
@@ -23,7 +23,7 @@ public class TestRDSAurora extends ACloudFormationTest {
 
     @Test
     public void testPostgresVersion14() {
-        this.testVersion("aurora-postgresql-14.3", "db.t3.medium");
+        this.testVersion("aurora-postgresql-14.6", "db.t3.medium");
     }
 
     private void testVersion(final String version) {
@@ -94,7 +94,7 @@ public class TestRDSAurora extends ACloudFormationTest {
                                 new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName),
                                 new Parameter().withParameterKey("ParentSecretStack").withParameterValue(secretStackName),
                                 new Parameter().withParameterKey("DBName").withParameterValue("db1"),
-                                new Parameter().withParameterKey("Engine").withParameterValue("5.7.mysql-aurora.2.11.0")
+                                new Parameter().withParameterKey("Engine").withParameterValue("5.7.mysql-aurora.2.11.1")
                         );
                         // TODO how can we check if this stack works? start a bastion host and try to connect?
                     } finally {

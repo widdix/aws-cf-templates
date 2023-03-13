@@ -27,6 +27,11 @@ public class TestElastiCacheRedis extends ACloudFormationTest {
         this.testVersion("6.2");
     }
 
+    @Test
+    public void testVersion7() {
+        this.testVersion("7.0");
+    }
+
     private void testVersion(final String version) {
         final Context context = new Context();
         final String vpcStackName = "vpc-2azs-" + this.random8String();

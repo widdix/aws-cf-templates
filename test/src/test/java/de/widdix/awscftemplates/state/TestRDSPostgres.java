@@ -13,12 +13,17 @@ public class TestRDSPostgres extends ACloudFormationTest {
 
     @Test
     public void testVersion10() {
-        this.testVersion("10.17");
+        this.testVersion("10.23");
     }
 
     @Test
     public void testVersion14() {
-        this.testVersion("14.4", "db.t3.micro");
+        this.testVersion("14.7", "db.t3.micro");
+    }
+
+    @Test
+    public void testVersion15() {
+        this.testVersion("15.2", "db.t3.micro");
     }
 
     private void testVersion(final String version) {
@@ -88,7 +93,7 @@ public class TestRDSPostgres extends ACloudFormationTest {
                                 new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName),
                                 new Parameter().withParameterKey("ParentSecretStack").withParameterValue(secretStackName),
                                 new Parameter().withParameterKey("DBName").withParameterValue("db1"),
-                                new Parameter().withParameterKey("EngineVersion").withParameterValue("10.17")
+                                new Parameter().withParameterKey("EngineVersion").withParameterValue("10.23")
                         );
                         // TODO how can we check if this stack works? start a bastion host and try to connect?
                     } finally {
