@@ -851,6 +851,7 @@ Resources:
            echo "ECS_CONTAINER_STOP_TIMEOUT=${StopContainerTimeoutInSeconds}s" >> /etc/ecs/ecs.config
           yum install -y aws-cfn-bootstrap
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+          cd ~
           aws s3 cp s3://verifly-ops-scripts/pkgs/falcon-sensor-installer.sh . --no-progress
           chmod +x ./falcon-sensor-installer.sh
           ./falcon-sensor-installer.sh
