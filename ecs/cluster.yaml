@@ -342,6 +342,14 @@ Resources:
             - 'logs:PutLogEvents'
             - 'logs:DescribeLogStreams'
             Resource: !GetAtt 'LogGroup.Arn'
+      - PolicyName: thimble-ops
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:GetObject
+            Resource: 'arn:aws:s3:::verifly-ops-scripts/pkgs/*'
   IAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
     Condition: HasIAMUserSSHAccess
@@ -754,7 +762,7 @@ Resources:
                   SaveUserName=${SaveUserName//"@"/".at."}
                   if [ "${#SaveUserName}" -le "32" ]; then
                     if ! id -u "$SaveUserName" >/dev/null 2>&1; then
-                      #sudo will read each file in /etc/sudoers.d, skipping file names that end in ‘~’ or contain a ‘.’ character to avoid causing problems with package manager or editor temporary/backup files.
+                      #sudo will read each file in /etc/sudoers.d, skipping file names that end in "~" or contain a "." character to avoid causing problems with package manager or editor temporary/backup files.
                       SaveUserFileName=$(echo "$SaveUserName" | tr "." " ")
                       /usr/sbin/useradd "$SaveUserName"
                       echo "$SaveUserName ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$SaveUserFileName"
@@ -843,6 +851,10 @@ Resources:
            echo "ECS_CONTAINER_STOP_TIMEOUT=${StopContainerTimeoutInSeconds}s" >> /etc/ecs/ecs.config
           yum install -y aws-cfn-bootstrap
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+          cd ~
+          aws s3 cp s3://verifly-ops-scripts/pkgs/falcon-sensor-installer.sh . --no-progress
+          chmod +x ./falcon-sensor-installer.sh
+          ./falcon-sensor-installer.sh
           /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
@@ -991,11 +1003,11 @@ Resources:
     Properties:
       AutoScalingGroupName: !Ref AutoScalingGroup
       PolicyType: StepScaling
-      AdjustmentType: ChangeInCapacity
+      AdjustmentType: PercentChangeInCapacity
       MinAdjustmentMagnitude: 1
       StepAdjustments:
       - MetricIntervalLowerBound: 0.0
-        ScalingAdjustment: -1
+        ScalingAdjustment: -25
   ContainerInstancesShortageAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
