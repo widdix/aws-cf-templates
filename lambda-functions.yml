@@ -1,0 +1,212 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Resources:
+  Lambdafunction1:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures:
+      - x86_64
+      CodeUri: s3://aerospace.wissen.com/sc-fn1-get-funcation-names.zip
+      Description: This lambda will quary the redshift database
+      Environment:
+        Variables:
+          ClusterIdentifier: ge-aviation-cluster-1
+          Database: dev
+          SecretArn: prod/redshift
+          Sql: SELECT * FROM systems_quality.precheck_table;
+      FunctionName: !Join ['-',[!Ref AWS::StackName,"fn1-get-funcation-names"]] #!Ref AWS::StackName #sc-fn1-get-funcation-names
+      Handler: sc-fn1-get-funcation-names.lambda_lambda_handler
+      MemorySize: 128
+      PackageType: Zip
+      Role: arn:aws:iam::882956824445:role/lambda-redshift-access-ge-aviation
+      Runtime: python3.9
+      Tags:
+        Key: Name
+        Value: AWS::StackName
+      Timeout: 600
+    Metadata:
+      SamResourceId: Lambdafunction
+
+#2
+  Lambdafunction2:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures:
+      - x86_64
+      CodeUri: s3://aerospace.wissen.com/sc-fn3-statement-status-retry-function.zip
+      Description: This lambda will quary the redshift database
+      Environment:
+        Variables:
+          ClusterIdentifier: ge-aviation-cluster-1
+          Database: dev
+          SecretArn: prod/redshift
+          Sql: SELECT * FROM systems_quality.precheck_table;
+      FunctionName: !Join ["-",[!Ref AWS::StackName,"fn3-statement-status-retry-function"]] #sc-fn3-statement-status-retry-function
+      Handler: sc-fn3-statement-status-retry-function.lambda_lambda_handler
+      MemorySize: 128
+      PackageType: Zip
+      Role: arn:aws:iam::882956824445:role/lambda-redshift-access-ge-aviation
+      Runtime: python3.9
+      Tags:
+        Key: Name
+        Value: AWS::StackName
+      Timeout: 600
+    Metadata:
+      SamResourceId: Lambdafunction
+#3
+  Lambdafunction3:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures:
+      - x86_64
+      CodeUri: s3://aerospace.wissen.com/sc-fn1-get-statement-status-function-names.zip
+      Description: This lambda will quary the redshift database
+      Environment:
+        Variables:
+          ClusterIdentifier: ge-aviation-cluster-1
+          Database: dev
+          SecretArn: prod/redshift
+          Sql: SELECT * FROM systems_quality.precheck_table;
+      FunctionName: !Join ["-",[!Ref AWS::StackName,"fn1-get-statement-status-function-names"]] #sc-fn1-get-statement-status-function-names
+      Handler: sc-fn1-get-statement-status-function-names.lambda_handler
+      MemorySize: 128
+      PackageType: Zip
+      Role: arn:aws:iam::882956824445:role/lambda-redshift-access-ge-aviation
+      Runtime: python3.9
+      Tags:
+        Key: Name
+        Value: AWS::StackName
+      Timeout: 600
+    Metadata:
+      SamResourceId: Lambdafunction
+
+#4
+  Lambdafunction4:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures:
+      - x86_64
+      CodeUri: s3://aerospace.wissen.com/sc-fn3-execute-retry-function.zip
+      Description: This lambda will quary the redshift database
+      Environment:
+        Variables:
+          ClusterIdentifier: ge-aviation-cluster-1
+          Database: dev
+          SecretArn: prod/redshift
+          Sql: SELECT * FROM systems_quality.precheck_table;
+      FunctionName: !Join ["-",[!Ref AWS::StackName,"fn3-execute-retry-function"]] #sc-fn3-execute-retry-function
+      Handler: sc-fn3-execute-retry-function.lambda_handler
+      MemorySize: 128
+      PackageType: Zip
+      Role: arn:aws:iam::882956824445:role/lambda-redshift-access-ge-aviation
+      Runtime: python3.9
+      Tags:
+        Key: Name
+        Value: AWS::StackName
+      Timeout: 600
+    Metadata:
+      SamResourceId: Lambdafunction
+#5
+  Lambdafunction5:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures:
+      - x86_64
+      CodeUri: s3://aerospace.wissen.com/sc-fn2-execute-functions.zip
+      Description: This lambda will quary the redshift database
+      Environment:
+        Variables:
+          ClusterIdentifier: ge-aviation-cluster-1
+          Database: dev
+          SecretArn: prod/redshift
+          Sql: SELECT * FROM systems_quality.precheck_table;
+      FunctionName: !Join ["-",[!Ref AWS::StackName,"fn2-execute-functions"]] #sc-fn2-execute-functions
+      Handler: sc-fn2-execute-functions.lambda_handler
+      MemorySize: 128
+      PackageType: Zip
+      Role: arn:aws:iam::882956824445:role/lambda-redshift-access-ge-aviation
+      Runtime: python3.9
+      Tags:
+        Key: Name
+        Value: AWS::StackName
+      Timeout: 600
+    Metadata:
+      SamResourceId: Lambdafunction      
+#6
+  Lambdafunction6:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures:
+      - x86_64
+      CodeUri: s3://aerospace.wissen.com/sc-fn1-get-results-function-names.zip
+      Description: This lambda will quary the redshift database
+      Environment:
+        Variables:
+          ClusterIdentifier: ge-aviation-cluster-1
+          Database: dev
+          SecretArn: prod/redshift
+          Sql: SELECT * FROM systems_quality.precheck_table;
+      FunctionName: !Join ["-",[!Ref AWS::StackName,"fn1-get-results-function-names"]] #sc-fn1-get-results-function-names
+      Handler: sc-fn1-get-results-function-names.lambda_handler
+      MemorySize: 128
+      PackageType: Zip
+      Role: arn:aws:iam::882956824445:role/lambda-redshift-access-ge-aviation
+      Runtime: python3.9
+      Tags:
+        Key: Name
+        Value: AWS::StackName
+      Timeout: 600
+    Metadata:
+      SamResourceId: Lambdafunction      
+#7
+  Lambdafunction7:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures:
+      - x86_64
+      CodeUri: s3://aerospace.wissen.com/sc-fn3-check-retry-function.zip
+      Description: This lambda will quary the redshift database
+      Environment:
+        Variables:
+          ClusterIdentifier: ge-aviation-cluster-1
+          Database: dev
+          SecretArn: prod/redshift
+          Sql: SELECT * FROM systems_quality.precheck_table;
+      FunctionName: !Join ["-",[!Ref AWS::StackName,"fn3-check-retry-function"]] #sc-fn3-check-retry-function
+      Handler: sc-fn3-check-retry-function.lambda_handler
+      MemorySize: 128
+      PackageType: Zip
+      Role: arn:aws:iam::882956824445:role/lambda-redshift-access-ge-aviation
+      Runtime: python3.9
+      Tags:
+        Key: Name
+        Value: AWS::StackName
+      Timeout: 600
+    Metadata:
+      SamResourceId: Lambdafunction      
+#8
+  Lambdafunction8:
+    Type: AWS::Serverless::Function
+    Properties:
+      Architectures:
+      - x86_64
+      CodeUri: s3://aerospace.wissen.com/sc-fn2-get-statement-status-function.zip
+      Description: This lambda will quary the redshift database
+      Environment:
+        Variables:
+          ClusterIdentifier: ge-aviation-cluster-1
+          Database: dev
+          SecretArn: prod/redshift
+          Sql: SELECT * FROM systems_quality.precheck_table;
+      FunctionName: !Join ["-",[!Ref AWS::StackName,"fn2-get-statement-status-function"]] #sc-fn2-get-statement-status-function
+      Handler: sc-fn2-get-statement-status-function.lambda_handler
+      MemorySize: 128
+      PackageType: Zip
+      Role: arn:aws:iam::882956824445:role/lambda-redshift-access-ge-aviation
+      Runtime: python3.9
+      Tags:
+        Key: Name
+        Value: AWS::StackName
+      Timeout: 600
+    Metadata:
+      SamResourceId: Lambdafunction   
