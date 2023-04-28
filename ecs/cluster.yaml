@@ -22,6 +22,10 @@ Metadata:
       - SystemsManagerAccess
       - ManagedPolicyArns
     - Label:
+        default: 'Crowdstrike Parameters'
+      Parameters:
+        - CrowdstrikeTags
+    - Label:
         default: 'Load Balancer Parameters'
       Parameters:
       - LoadBalancerScheme
@@ -49,13 +53,10 @@ Metadata:
       Parameters:
       - PermissionsBoundary
 Parameters:
-  Environment:
-    Description: Environment
+  CrowdstrikeTags:
+    Description: comma-delimited tags for Crowdstrike
     Type: String
-    Default: stage
-    AllowedValues:
-    - stage
-    - production
+    Default: ecs-cluster
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
@@ -861,7 +862,7 @@ Resources:
           cd ~
           aws s3 cp s3://verifly-ops-scripts/pkgs/falcon-sensor-installer.sh . --no-progress
           chmod +x ./falcon-sensor-installer.sh
-          ./falcon-sensor-installer.sh --tags ${Environment},aws/${AWS::Region},ecs-cluster
+          ./falcon-sensor-installer.sh --tags ${CrowdstrikeTags}
           /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
