@@ -507,7 +507,7 @@ Resources:
       BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
       DatabaseName: wordpress
       DBSubnetGroupName: !Ref DBSubnetGroup
-      Engine: aurora
+      Engine: 'aurora-mysql'
       MasterUsername: wordpress
       MasterUserPassword: !Ref DBMasterUserPassword
       VpcSecurityGroupIds:
