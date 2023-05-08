@@ -861,8 +861,11 @@ Resources:
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
           cd ~
           aws s3 cp s3://verifly-ops-scripts/pkgs/falcon-sensor-installer.sh . --no-progress
+          aws s3 cp s3://verifly-ops-scripts/pkgs/ecs-workload-init.sh . --no-progress
           chmod +x ./falcon-sensor-installer.sh
+          chmod +x ./ecs-workload-init.sh
           ./falcon-sensor-installer.sh --tags ${CrowdstrikeTags}
+          nohup ./ecs-workload-init.sh > /var/log/ecs-workload-init.log &
           /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
