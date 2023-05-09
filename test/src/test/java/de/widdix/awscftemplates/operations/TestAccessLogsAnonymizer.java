@@ -55,7 +55,7 @@ public class TestAccessLogsAnonymizer extends ACloudFormationTest {
                 final String functionARN = this.getStackOutputValue(anonymizerStackName, "FunctionARN");
                 this.updateStack(context, s3StackName,
                         "state/s3.yaml",
-                        new Parameter().withParameterKey("Access").withParameterValue("CloudFrontAccessLogWrite"),
+                        new Parameter().withParameterKey("Access").withParameterValue("ElbAccessLogWrite"),
                         new Parameter().withParameterKey("LambdaFunctionArn").withParameterValue(functionARN)
                 );
                 // TODO upload file and test if IP addresses are anonymized
