@@ -507,7 +507,7 @@ Resources:
       BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
       DatabaseName: wordpress
       DBSubnetGroupName: !Ref DBSubnetGroup
-      Engine: aurora
+      Engine: 'aurora-mysql'
       MasterUsername: wordpress
       MasterUserPassword: !Ref DBMasterUserPassword
       VpcSecurityGroupIds:
@@ -619,14 +619,14 @@ Resources:
     Properties:
       DBClusterIdentifier: !Ref DatabaseCluster
       DBInstanceClass: !Ref DBServerInstanceType
-      Engine: aurora
+      Engine: 'aurora-mysql'
       DBSubnetGroupName: !Ref DBSubnetGroup
   DatabaseB:
     Type: 'AWS::RDS::DBInstance'
     Properties:
       DBClusterIdentifier: !Ref DatabaseCluster
       DBInstanceClass: !Ref DBServerInstanceType
-      Engine: aurora
+      Engine: 'aurora-mysql'
       DBSubnetGroupName: !Ref DBSubnetGroup
   WebServerInstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
