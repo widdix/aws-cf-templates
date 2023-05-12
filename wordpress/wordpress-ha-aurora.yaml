@@ -191,85 +191,85 @@ Parameters:
 Mappings:
   RegionMap:
     'ap-south-2':
-      AMI: 'ami-06d480d132aa7b017'
-      PrefixListCloudFront: ''
+      AMI: 'ami-05bcfd9e35024e1f2'
+      PrefixListCloudFront: 'pl-0a25c3463226fcc61'
     'ap-south-1':
-      AMI: 'ami-012856638f0051bd5'
+      AMI: 'ami-0400aca7799d8cf19'
       PrefixListCloudFront: 'pl-9aa247f3'
     'eu-south-1':
-      AMI: 'ami-0c545ab743baa373e'
+      AMI: 'ami-07b2af763a8b958f3'
       PrefixListCloudFront: 'pl-1bbc5972'
     'eu-south-2':
-      AMI: 'ami-05ec42fecc4a572b0'
-      PrefixListCloudFront: ''
+      AMI: 'ami-060439bdafc77b9d3'
+      PrefixListCloudFront: 'pl-052dcbe0f793f19da'
     'me-central-1':
-      AMI: 'ami-0af1f5d3d4ddd8814'
+      AMI: 'ami-0384959b181e3642a'
       PrefixListCloudFront: 'pl-05266a86378662c23'
     'ca-central-1':
-      AMI: 'ami-0d1fdfcfaef4dae90'
+      AMI: 'ami-0eb3718c42cb70e52'
       PrefixListCloudFront: 'pl-38a64351'
     'eu-central-1':
-      AMI: 'ami-09b7450350496e62d'
+      AMI: 'ami-0f7585ae7a0d9a25a'
       PrefixListCloudFront: 'pl-a3a144ca'
     'eu-central-2':
-      AMI: 'ami-08f24acf0c72098af'
+      AMI: 'ami-0b4b03681a8222e3b'
       PrefixListCloudFront: 'pl-00b37293991dbe6a8'
     'us-west-1':
-      AMI: 'ami-0be8c499bc9cd5ac6'
+      AMI: 'ami-0ee3e1e65adeef858'
       PrefixListCloudFront: 'pl-4ea04527'
     'us-west-2':
-      AMI: 'ami-001e91409ff66b7b0'
+      AMI: 'ami-0ec021424fb596d6c'
       PrefixListCloudFront: 'pl-82a045eb'
     'af-south-1':
-      AMI: 'ami-0e3130eb95aad3a60'
+      AMI: 'ami-093ca241e4c72c205'
       PrefixListCloudFront: 'pl-c0aa4fa9'
     'eu-north-1':
-      AMI: 'ami-02d0f925d7102884c'
+      AMI: 'ami-0f58e72599cb99a79'
       PrefixListCloudFront: 'pl-fab65393'
     'eu-west-3':
-      AMI: 'ami-01fde5e5b31e98551'
+      AMI: 'ami-064c70d04ad799d5e'
       PrefixListCloudFront: 'pl-75b1541c'
     'eu-west-2':
-      AMI: 'ami-0af46197a872cda03'
+      AMI: 'ami-0dfe6158087b5c0ac'
       PrefixListCloudFront: 'pl-93a247fa'
     'eu-west-1':
-      AMI: 'ami-0990f25dae5f0ae14'
+      AMI: 'ami-047aad752a426ed48'
       PrefixListCloudFront: 'pl-4fa04526'
     'ap-northeast-3':
-      AMI: 'ami-08da182314b5f34cd'
+      AMI: 'ami-0cffa2172948e071e'
       PrefixListCloudFront: 'pl-31a14458'
     'ap-northeast-2':
-      AMI: 'ami-0e282bbf414018019'
+      AMI: 'ami-087af0192368bc87c'
       PrefixListCloudFront: 'pl-22a6434b'
     'me-south-1':
-      AMI: 'ami-00137e43f4b31e634'
+      AMI: 'ami-0a31e56929248acca'
       PrefixListCloudFront: 'pl-17b2577e'
     'ap-northeast-1':
-      AMI: 'ami-0ec1b47781bc9d6d1'
+      AMI: 'ami-0828596b82405edd7'
       PrefixListCloudFront: 'pl-58a04531'
     'sa-east-1':
-      AMI: 'ami-042409731c376b558'
+      AMI: 'ami-0df67b3c17f090c24'
       PrefixListCloudFront: 'pl-5da64334'
     'ap-east-1':
-      AMI: 'ami-00154b28bc7ef6683'
+      AMI: 'ami-0e992f1e63814db10'
       PrefixListCloudFront: 'pl-14b2577d'
     'ap-southeast-1':
-      AMI: 'ami-0968d8c309285bfbc'
+      AMI: 'ami-0ba98499caf94125a'
       PrefixListCloudFront: 'pl-31a34658'
     'ap-southeast-2':
-      AMI: 'ami-0ba1c1fc8b9ec09b8'
+      AMI: 'ami-0849cc8fe4ceaf988'
       PrefixListCloudFront: 'pl-b8a742d1'
     'ap-southeast-3':
-      AMI: 'ami-00dd3842c5b93645f'
+      AMI: 'ami-0cf40308729b83366'
       PrefixListCloudFront: 'pl-bca247d5'
     'ap-southeast-4':
-      AMI: 'ami-0fd93ff9fb8d0cd2a'
-      PrefixListCloudFront: ''
+      AMI: 'ami-090ce38dc696f4622'
+      PrefixListCloudFront: 'pl-0fb7e7cfe038ae0e9'
     'us-east-1':
-      AMI: 'ami-06d3b5e1ed9e1d982'
+      AMI: 'ami-0d52ddcdf3a885741'
       PrefixListCloudFront: 'pl-3b927c52'
     'us-east-2':
-      AMI: 'ami-097bdef77f0f80fa6'
+      AMI: 'ami-04148302a14f7d12b'
       PrefixListCloudFront: 'pl-b6a144df'
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
