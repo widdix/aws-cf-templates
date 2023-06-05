@@ -45,7 +45,7 @@ public abstract class AAWSTest extends ATest {
         super();
         if (Config.has(Config.Key.IAM_ROLE_ARN)) {
             final AWSSecurityTokenService local = AWSSecurityTokenServiceClientBuilder.standard().withCredentials(new DefaultAWSCredentialsProviderChain()).build();
-            this.credentialsProvider = new STSAssumeRoleSessionCredentialsProvider.Builder(Config.get(Config.Key.IAM_ROLE_ARN), IAM_SESSION_NAME).withStsClient(local).build();
+            this.credentialsProvider = new STSAssumeRoleSessionCredentialsProvider.Builder(Config.get(Config.Key.IAM_ROLE_ARN), IAM_SESSION_NAME).withRoleSessionDurationSeconds(43200).withStsClient(local).build();
         } else {
             this.credentialsProvider = new DefaultAWSCredentialsProviderChain();
         }
