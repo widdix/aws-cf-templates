@@ -72,7 +72,7 @@ Parameters:
     Description: 'Access policy of the bucket.'
     Type: String
     Default: Private
-    AllowedValues: [Private, PublicRead, CloudFrontRead, CloudFrontAccessLogWrite, ElbAccessLogWrite, S3AccessLogWrite, ConfigWrite, CloudTrailWrite, VpcEndpointRead, FlowLogWrite]
+    AllowedValues: [Private, PublicRead, PublicWrite, PublicReadAndWrite, CloudFrontRead, CloudFrontAccessLogWrite, ElbAccessLogWrite, S3AccessLogWrite, ConfigWrite, CloudTrailWrite, VpcEndpointRead, FlowLogWrite]
   Versioning:
     Description: 'Enable versioning to keep a backup if objects change.'
     Type: String
@@ -134,7 +134,8 @@ Conditions:
   HasS3Bucket: !Not [!Equals [!Ref ParentS3StackAccessLog, '']]
   HasS3VirusScan: !Not [!Equals [!Ref ParentS3VirusScanStack, '']]
   HasPrivateAccess: !Equals [!Ref Access, Private]
-  HasPublicReadAccess: !Equals [!Ref Access, PublicRead]
+  HasPublicReadAccess: !Or [!Equals [!Ref Access, PublicRead], !Equals [!Ref Access, PublicReadAndWrite]]
+  HasPublicWriteAccess: !Or [!Equals [!Ref Access, PublicWrite], !Equals [!Ref Access, PublicReadAndWrite]]
   HasCloudFrontReadAccess: !Equals [!Ref Access, CloudFrontRead]
   HasCloudFrontAccessLogWrite: !Equals [!Ref Access, CloudFrontAccessLogWrite]
   HasElbAccessLogWriteAccess: !Equals [!Ref Access, ElbAccessLogWrite]
@@ -155,7 +156,7 @@ Conditions:
   HasPartitionUsGov: !Equals [!Ref 'AWS::Partition', 'aws-us-gov']
   HasLambdaFunctionArn: !Not [!Equals [!Ref LambdaFunctionArn, '']]
   HasLambdaFunctionFilterPrefix: !Not [!Equals [!Ref LambdaFunctionFilterPrefix, '']]
-  HasPublicAccessBlock: !Not [!Condition HasPublicReadAccess]
+  HasPublicAccessBlock: !Not [!Or [!Condition HasPublicReadAccess, !Condition HasPublicWriteAccess]]
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
 Resources:
   Bucket: # cannot be deleted with data
@@ -221,6 +222,20 @@ Resources:
             Action: 's3:GetObject'
             Effect: Allow
             Resource: !Sub '${Bucket.Arn}/*'
+          - !Ref 'AWS::NoValue'
+        - !If
+          - HasPublicWriteAccess
+          - Principal: '*'
+            Action: 's3:PutObject'
+            Effect: Allow
+            Resource: !Sub '${Bucket.Arn}/*'
+          - !Ref 'AWS::NoValue'
+        - !If
+          - HasPublicWriteAccess
+          - Principal: '*'
+            Action: 's3:GetBucketAcl'
+            Effect: Allow
+            Resource: !GetAtt 'Bucket.Arn'
           - !Ref 'AWS::NoValue'
         - !If
           - HasCloudFrontReadAccess
