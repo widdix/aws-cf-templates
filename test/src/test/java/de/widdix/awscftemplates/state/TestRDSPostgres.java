@@ -23,7 +23,7 @@ public class TestRDSPostgres extends ACloudFormationTest {
 
     @Test
     public void testVersion13() {
-        this.testVersion("13.11");
+        this.testVersion("13.11", "db.t3.micro");
     }
 
     @Test
