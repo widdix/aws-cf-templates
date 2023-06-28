@@ -12,18 +12,28 @@ import java.util.List;
 public class TestRDSPostgres extends ACloudFormationTest {
 
     @Test
-    public void testVersion10() {
-        this.testVersion("10.23");
+    public void testVersion11() {
+        this.testVersion("11.20");
+    }
+
+    @Test
+    public void testVersion12() {
+        this.testVersion("12.15");
+    }
+
+    @Test
+    public void testVersion13() {
+        this.testVersion("13.11", "db.t3.micro");
     }
 
     @Test
     public void testVersion14() {
-        this.testVersion("14.7", "db.t3.micro");
+        this.testVersion("14.8", "db.t3.micro");
     }
 
     @Test
     public void testVersion15() {
-        this.testVersion("15.2", "db.t3.micro");
+        this.testVersion("15.3", "db.t3.micro");
     }
 
     private void testVersion(final String version) {
@@ -93,7 +103,8 @@ public class TestRDSPostgres extends ACloudFormationTest {
                                 new Parameter().withParameterKey("ParentClientStack").withParameterValue(clientStackName),
                                 new Parameter().withParameterKey("ParentSecretStack").withParameterValue(secretStackName),
                                 new Parameter().withParameterKey("DBName").withParameterValue("db1"),
-                                new Parameter().withParameterKey("EngineVersion").withParameterValue("10.23")
+                                new Parameter().withParameterKey("EngineVersion").withParameterValue("15.3"),
+                                new Parameter().withParameterKey("DBInstanceClass").withParameterValue("db.t3.micro")
                         );
                         // TODO how can we check if this stack works? start a bastion host and try to connect?
                     } finally {
