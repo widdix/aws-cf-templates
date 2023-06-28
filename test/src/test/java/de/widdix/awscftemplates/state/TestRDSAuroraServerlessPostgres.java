@@ -8,13 +8,13 @@ import org.junit.Test;
 public class TestRDSAuroraServerlessPostgres extends ACloudFormationTest {
 
     @Test
-    public void testVersion10() {
-        this.testVersion("10.21");
+    public void testVersion11() {
+        this.testVersion("11.16");
     }
 
     @Test
-    public void testVersion11() {
-        this.testVersion("11.16");
+    public void testVersion13() {
+        this.testVersion("13.9");
     }
 
     private void testVersion(final String version) {
@@ -84,7 +84,7 @@ public class TestRDSAuroraServerlessPostgres extends ACloudFormationTest {
                                     new Parameter().withParameterKey("ParentKmsKeyStack").withParameterValue(kmsKeyStackName),
                                     new Parameter().withParameterKey("ParentSecretStack").withParameterValue(secretStackName),
                                     new Parameter().withParameterKey("DBName").withParameterValue("db1"),
-                                    new Parameter().withParameterKey("EngineVersion").withParameterValue("10.21")
+                                    new Parameter().withParameterKey("EngineVersion").withParameterValue("13.9")
                             );
                             // TODO how can we check if this stack works? start a bastion host and try to connect?
                         } finally {
