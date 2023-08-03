@@ -7,8 +7,9 @@ build:
   os: 'ubuntu-22.04'
   tools:
     python: '3.11'
-  commands:
-  - 'sed -i "s/__VERSION__/${READTHEDOCS_VERSION}/g" docs/*.md'
+  jobs:
+    pre_build:
+    - 'sed -i "s/__VERSION__/${READTHEDOCS_VERSION}/g" docs/*.md'
 
 mkdocs:
   configuration: 'mkdocs.yml'
