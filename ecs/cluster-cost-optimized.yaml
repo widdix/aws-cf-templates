@@ -184,6 +184,8 @@ Mappings:
       ECSAMI: 'ami-01277e6519f8e544a'
     'me-central-1':
       ECSAMI: 'ami-05efff29991d235b2'
+    'il-central-1':
+      ECSAMI: 'ami-0387bafb5fea57347'
     'ca-central-1':
       ECSAMI: 'ami-05416ab7541ec13ce'
     'eu-central-1':
@@ -195,7 +197,7 @@ Mappings:
     'us-west-2':
       ECSAMI: 'ami-0f5a248e4e2db7bf2'
     'af-south-1':
-      ECSAMI: 'ami-0c374aaf85596ce70'
+      ECSAMI: 'ami-02702bab4efc6667c'
     'eu-north-1':
       ECSAMI: 'ami-020781ea57184fc15'
     'eu-west-3':

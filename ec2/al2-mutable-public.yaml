@@ -200,9 +200,11 @@ Parameters:
   AmazonLinux2Version:
     Description: 'Version of Amazon Linux 2 to boot from the first time (ignored if RestoreImageId is set; select the latest version for new stacks; OS updates are enabled to patch the system).'
     Type: String
-    AllowedValues: ['20220316.0', '20220218.3', '20220218.1', '20211223.0', '20211005.0', '20210721.2', '20210617.0', '20210126.0', '20200917.0', '20200722.0', '20200520.1', '20200406.0', '20200304.0', '20200207.1', '20191217.0']
+    AllowedValues: ['20230727.0', '20220316.0', '20220218.3', '20220218.1', '20211223.0', '20211005.0', '20210721.2', '20210617.0', '20210126.0', '20200917.0', '20200722.0', '20200520.1', '20200406.0', '20200304.0', '20200207.1', '20191217.0']
 Mappings:
   VersionMap:
+    '20230727.0':
+      Map: RegionMap202307270
     '20220316.0':
       Map: RegionMap202203160
     '20220218.3':
@@ -235,6 +237,63 @@ Mappings:
       Map: RegionMap202002071
     '20191217.0':
       Map: RegionMap201912170
+  RegionMap202307270:
+    'ap-south-2':
+      AMI: 'ami-04f8325a87d5f48aa'
+    'ap-south-1':
+      AMI: 'ami-09c013f43d377d58f'
+    'eu-south-1':
+      AMI: 'ami-0c7c7644930eba1a7'
+    'eu-south-2':
+      AMI: 'ami-03b60fea72bb1e610'
+    'me-central-1':
+      AMI: 'ami-050acf810641746a6'
+    'il-central-1':
+      AMI: 'ami-03afadd42fbc12d32'
+    'ca-central-1':
+      AMI: 'ami-099bd9e136c68844f'
+    'eu-central-1':
+      AMI: 'ami-0da9b15995cbb8ccf'
+    'eu-central-2':
+      AMI: 'ami-0963383410b4eca6d'
+    'us-west-1':
+      AMI: 'ami-06d7d7527a85b8ac2'
+    'us-west-2':
+      AMI: 'ami-01f8103a2082c0718'
+    'af-south-1':
+      AMI: 'ami-00720c0475e6d5a80'
+    'eu-north-1':
+      AMI: 'ami-04ee945d34fc3fd9b'
+    'eu-west-3':
+      AMI: 'ami-0b97213e168b04272'
+    'eu-west-2':
+      AMI: 'ami-094c8c300ad90df1f'
+    'eu-west-1':
+      AMI: 'ami-0ce10bf92ed664c67'
+    'ap-northeast-3':
+      AMI: 'ami-0a733536aa984f0fd'
+    'ap-northeast-2':
+      AMI: 'ami-0b7f251f110d30ada'
+    'me-south-1':
+      AMI: 'ami-094b200242fac6f76'
+    'ap-northeast-1':
+      AMI: 'ami-0f38fb80a464efed4'
+    'sa-east-1':
+      AMI: 'ami-0d9cc0b30f468a828'
+    'ap-east-1':
+      AMI: 'ami-00a8518d8fc39b7eb'
+    'ap-southeast-1':
+      AMI: 'ami-0e3c27023e862efdd'
+    'ap-southeast-2':
+      AMI: 'ami-035f7875613395a08'
+    'ap-southeast-3':
+      AMI: 'ami-00401fec20e6eeb8e'
+    'ap-southeast-4':
+      AMI: 'ami-065a3a37c6048a214'
+    'us-east-1':
+      AMI: 'ami-09748abeb7370d1bc'
+    'us-east-2':
+      AMI: 'ami-0497047c3dbd4485e'
   RegionMap202203160:
     'af-south-1':
       AMI: 'ami-01dacfb543597986e'
