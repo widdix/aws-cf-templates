@@ -26,4 +26,4 @@ jobs:
 
     - name: license
       run: |
-        find . -type f -name '*.yaml' | while read file; do set -ex && grep -q 'LICENSE-2.0' "$file"; done;
+        find . -type f -name '*.yaml' -not -name '.readthedocs.yaml' | while read file; do set -ex && grep -q 'LICENSE-2.0' "$file"; done;
