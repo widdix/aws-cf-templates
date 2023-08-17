@@ -55,7 +55,7 @@ public class TestS3 extends ACloudFormationTest {
     }
 
     @Test
-    public void testS3AccessLogWrite) {
+    public void testS3AccessLogWrite() {
         this.test("S3AccessLogWrite");
     }
 
