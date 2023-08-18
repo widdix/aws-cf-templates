@@ -158,7 +158,7 @@ Conditions:
   HasLambdaFunctionFilterPrefix: !Not [!Equals [!Ref LambdaFunctionFilterPrefix, '']]
   HasBlockPublicAccess: !Not [!Or [!Condition HasPublicReadAccess, !Condition HasPublicWriteAccess]]
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
-  HasBucketOwnerPreferred: !Or [!Condition HasCloudFrontAccessLogWrite, !Condition [HasS3AccessLogWrite], !Not [!Condition HasBlockPublicAccess]]
+  HasBucketOwnerPreferred: !Or [!Condition HasCloudFrontAccessLogWrite, !Condition HasS3AccessLogWrite, !Not [!Condition HasBlockPublicAccess]]
 Resources:
   Bucket: # cannot be deleted with data
     Type: 'AWS::S3::Bucket'
