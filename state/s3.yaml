@@ -158,7 +158,7 @@ Conditions:
   HasLambdaFunctionFilterPrefix: !Not [!Equals [!Ref LambdaFunctionFilterPrefix, '']]
   HasBlockPublicAccess: !Not [!Or [!Condition HasPublicReadAccess, !Condition HasPublicWriteAccess]]
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
-  HasCloudFrontAccessLogWriteOrNotBlockPublicAccess: !Or [!Condition HasCloudFrontAccessLogWrite, !Not [!Condition HasBlockPublicAccess]]
+  HasBucketOwnerPreferred: !Or [!Condition HasCloudFrontAccessLogWrite, !Condition [HasS3AccessLogWrite], !Not [!Condition HasBlockPublicAccess]]
 Resources:
   Bucket: # cannot be deleted with data
     Type: 'AWS::S3::Bucket'
@@ -183,7 +183,7 @@ Resources:
         - !If [HasLambdaFunctionArn, {Event: !Ref LambdaFunctionEvent, Function: !Ref LambdaFunctionArn, Filter: !If [HasLambdaFunctionFilterPrefix, {S3Key: {Rules: [{Name: prefix, Value: !Ref LambdaFunctionFilterPrefix}]}}, !Ref 'AWS::NoValue']}, !Ref 'AWS::NoValue']
         QueueConfigurations:
         - !If [HasS3VirusScan, {Event: 's3:ObjectCreated:*', Queue: {'Fn::ImportValue': !Sub '${ParentS3VirusScanStack}-ScanQueueArn'}}, !Ref 'AWS::NoValue']
-      OwnershipControls: !If [HasCloudFrontAccessLogWriteOrNotBlockPublicAccess, {Rules: [{ObjectOwnership: BucketOwnerPreferred}]}, {Rules: [{ObjectOwnership: BucketOwnerEnforced}]}]
+      OwnershipControls: !If [HasBucketOwnerPreferred, {Rules: [{ObjectOwnership: BucketOwnerPreferred}]}, {Rules: [{ObjectOwnership: BucketOwnerEnforced}]}]
       PublicAccessBlockConfiguration: !If [HasBlockPublicAccess, {BlockPublicAcls: true, BlockPublicPolicy: true, IgnorePublicAcls: true, RestrictPublicBuckets: true}, {BlockPublicAcls: true, BlockPublicPolicy: false, IgnorePublicAcls: true, RestrictPublicBuckets: false}] # AWS Foundational Security Best Practices v1.0.0 S3.8
       VersioningConfiguration: !If [HasVersioning, {Status: Enabled}, !If [HadVersioning, {Status: Suspended}, !Ref 'AWS::NoValue']]
       BucketEncryption:

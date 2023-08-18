@@ -71,7 +71,29 @@ public class TestS3 extends ACloudFormationTest {
 
     @Test
     public void testVpcEndpointRead() {
-        this.test("VpcEndpointRead");
+        final Context context = new Context();
+        final String vpcStackName = "vpc-" + this.random8String();
+        final String vpcEndpointStackName = "vpc-endpoint-" + this.random8String();
+        final String stackName = "s3-" + this.random8String();
+        try {
+            this.createStack(context, vpcStackName, "vpc/vpc-2azs.yaml");
+            try {
+                this.createStack(context, vpcEndpointStackName, "vpc/vpc-endpoint-s3.yaml",
+                        new Parameter().withParameterKey("ParentVPCStack").withParameterValue(vpcStackName));
+                try {
+                    this.createStack(context, stackName, "state/s3.yaml",
+                            new Parameter().withParameterKey("ParentVpcEndpointStack").withParameterValue(vpcEndpointStackName),
+                            new Parameter().withParameterKey("Access").withParameterValue("VpcEndpointRead"));
+                    // TODO how can we check if this stack works?
+                } finally {
+                    this.deleteStack(context, stackName);
+                }
+            } finally {
+                this.deleteStack(context, vpcEndpointStackName);
+            }
+        } finally {
+            this.deleteStack(context, vpcStackName);
+        }
     }
 
     @Test
