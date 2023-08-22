@@ -76,7 +76,8 @@ Parameters:
     - '8.0.mysql-aurora.3.02.1'
     - '8.0.mysql-aurora.3.02.0'
     - '5.7.mysql-aurora.2.11.1'
-    - 'aurora-postgresql-14.6' # aws rds describe-db-engine-versions --engine aurora-postgresql --query 'DBEngineVersions[?contains(SupportedEngineModes,`provisioned`)].EngineVersion'
+    - 'aurora-postgresql-15.3' # aws rds describe-db-engine-versions --engine aurora-postgresql --query 'DBEngineVersions[?contains(SupportedEngineModes,`provisioned`)].EngineVersion'
+    - 'aurora-postgresql-14.6'
     - 'aurora-postgresql-14.3'
     - 'aurora-postgresql-13.9'
     - 'aurora-postgresql-13.4'
@@ -153,6 +154,12 @@ Mappings:
       Port: 3306
       ClusterParameterGroupFamily: 'aurora-mysql5.7'
       ParameterGroupFamily: 'aurora-mysql5.7'
+    'aurora-postgresql-15.3':
+      Engine: 'aurora-postgresql'
+      EngineVersion: '15.3'
+      Port: 5432
+      ClusterParameterGroupFamily: 'aurora-postgresql15'
+      ParameterGroupFamily: 'aurora-postgresql15'
     'aurora-postgresql-14.6':
       Engine: 'aurora-postgresql'
       EngineVersion: '14.6'
