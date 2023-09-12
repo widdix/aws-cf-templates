@@ -195,9 +195,9 @@ Mappings:
     'us-west-1':
       ECSAMI: 'ami-08c160e4491d2a9a1'
     'us-west-2':
-      ECSAMI: 'ami-02a4b44230bc8650a'
+      ECSAMI: 'ami-0d1102e15bc291204'
     'af-south-1':
-      ECSAMI: 'ami-0cf6dcf424617dc1c'
+      ECSAMI: 'ami-0c242397746b7a9be'
     'eu-north-1':
       ECSAMI: 'ami-024910ace68ce0343'
     'eu-west-3':
