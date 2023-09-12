@@ -164,9 +164,9 @@ Parameters:
     Type: String
     Default: 'cron(0 5 ? * * *)'
   DBServerInstanceType:
-    Description: 'The instance type of database server (e.g. db.t3.small).'
+    Description: 'The instance type of database server (e.g. db.t3.medium).'
     Type: String
-    Default: 'db.t3.small'
+    Default: 'db.t3.medium'
   DBBackupRetentionPeriod:
     Description: 'The number of days to keep snapshots of the database.'
     Type: Number
