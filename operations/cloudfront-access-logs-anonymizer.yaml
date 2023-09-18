@@ -196,7 +196,7 @@ Resources:
                 }
               }).done();
             } catch(err) {
-              if (err.Code === 'NoSuchKey') {
+              if (err.name === 'NoSuchKey') {
                 console.log('original object no longer exists, checking for anonymized object')
                 try {
                   await s3.send(new HeadObjectCommand({
@@ -204,8 +204,10 @@ Resources:
                     Key: anonymizedKey
                   }));
                 } catch(err) {
-                  if (err.Code === 'NoSuchKey') {
+                  if (err.name === 'NoSuchKey') {
                     throw new Error('original object no longer exists, but anoymized object not found');
+                  } else {
+                    throw err;
                   }
                 }
               } else {
