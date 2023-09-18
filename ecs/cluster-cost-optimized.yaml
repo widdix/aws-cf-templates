@@ -1310,7 +1310,7 @@ Resources:
           const AWS = require('aws-sdk');
           const { ECSClient, UpdateContainerInstancesStateCommand, ListTasksCommand, ListContainerInstancesCommand } = require("@aws-sdk/client-ecs");
           const ecs = new ECSClient({apiVersion: '2014-11-13'});
-          const { SQSClient, SendMessageCommand } = require("@aws-sdk/client-sqs"); 
+          const { SQSClient, SendMessageCommand } = require("@aws-sdk/client-sqs");
           const sqs = new SQSClient({apiVersion: '2012-11-05'});
           const { AutoScalingClient, CompleteLifecycleActionCommand, RecordLifecycleActionHeartbeatCommand } = require("@aws-sdk/client-auto-scaling");
           const asg = new AutoScalingClient({apiVersion: '2011-01-01'});

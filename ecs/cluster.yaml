@@ -1240,7 +1240,7 @@ Resources:
           'use strict';
           const { ECSClient, ListContainerInstancesCommand, DescribeContainerInstancesCommand } = require("@aws-sdk/client-ecs");
           const ecs = new ECSClient({apiVersion: '2014-11-13'});
-          const { CloudWatchClient, PutMetricDataCommand } = require("@aws-sdk/client-cloudwatch"); 
+          const { CloudWatchClient, PutMetricDataCommand } = require("@aws-sdk/client-cloudwatch");
           const cloudwatch = new CloudWatchClient({apiVersion: '2010-08-01'});
           const CONTAINER_MAX_CPU = ${ContainerMaxCPU};
           const CONTAINER_MAX_MEMORY = ${ContainerMaxMemory};
@@ -1420,7 +1420,7 @@ Resources:
           const ecs = new ECSClient({apiVersion: '2014-11-13'});
           const { SQSClient, SendMessageCommand } = require("@aws-sdk/client-sqs");
           const sqs = new SQSClient({apiVersion: '2012-11-05'});
-          const { AutoScalingClient, CompleteLifecycleActionCommand, RecordLifecycleActionHeartbeatCommand } = require("@aws-sdk/client-auto-scaling"); 
+          const { AutoScalingClient, CompleteLifecycleActionCommand, RecordLifecycleActionHeartbeatCommand } = require("@aws-sdk/client-auto-scaling");
           const asg = new AutoScalingClient({apiVersion: '2011-01-01'});
           const cluster = process.env.CLUSTER;
           const queueUrl = process.env.QUEUE_URL;
