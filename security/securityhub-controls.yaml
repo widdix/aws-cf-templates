@@ -93,9 +93,9 @@ Resources:
     Properties:
       Code:
         ZipFile: |
-          const AWS = require('aws-sdk');
           const response = require('cfn-response');
-          const securitysub = new AWS.SecurityHub({apiVersion: '2018-10-26'});
+          const { SecurityHubClient, UpdateStandardsControlCommand } = require('@aws-sdk/client-securityhub');
+          const securityhub = new SecurityHubClient({apiVersion: '2018-10-26'});
           async function sleep(ms) {
             return new Promise((resolve) => setTimeout(resolve, ms));
           }
@@ -113,7 +113,7 @@ Resources:
               if (status === 'DISABLED') {
                 params.DisabledReason = 'Disabled by aws-cf-templates';
               }
-              await securitysub.updateStandardsControl(params).promise();
+              await securityhub.send(new UpdateStandardsControlCommand(params));
               await sleep(1000); // avoid rate limit
             }
           }
@@ -155,7 +155,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'LambdaRole.Arn'
-      Runtime: 'nodejs16.x'
+      Runtime: 'nodejs18.x'
       Timeout: 60
   LambdaLogGroup:
     Type: 'AWS::Logs::LogGroup'

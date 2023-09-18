@@ -200,9 +200,9 @@ Resources:
       Code:
         ZipFile: |
           'use strict';
-          const AWS = require('aws-sdk');
           const response = require('cfn-response');
-          const config = new AWS.ConfigService({apiVersion: '2014-11-12'});
+          const { ConfigServiceClient, DeleteRetentionConfigurationCommand, PutRetentionConfigurationCommand } = require('@aws-sdk/client-config-service');
+          const config = new ConfigServiceClient({apiVersion: '2014-11-12'});
           exports.handler = (event, context, cb) => {
             console.log(`Invoke: ${JSON.stringify(event)}`);
             function done(err) {
@@ -214,13 +214,13 @@ Resources:
               }
             }
             if (event.RequestType === 'Delete') {
-              config.deleteRetentionConfiguration({
+              config.send(new DeleteRetentionConfigurationCommand({
                 RetentionConfigurationName: 'default'
-              }, done);
+              }), done);
             } else if (event.RequestType === 'Create' || event.RequestType === 'Update') {
-              config.putRetentionConfiguration({
+              config.send(new PutRetentionConfigurationCommand({
                 RetentionPeriodInDays: parseInt(event.ResourceProperties.RetentionPeriodInDays, 10),
-              }, done);
+              }), done);
             } else {
               cb(new Error(`unsupported RequestType: ${event.RequestType}`));
             }
@@ -228,7 +228,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'LambdaRole.Arn'
-      Runtime: 'nodejs16.x'
+      Runtime: 'nodejs18.x'
       Timeout: 60
   LambdaLogGroup:
     Type: 'AWS::Logs::LogGroup'
