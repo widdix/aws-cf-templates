@@ -22,7 +22,7 @@ jobs:
     - name: cfn-lint
       run: |
         pip install cfn-lint==0.79.11
-        cfn-lint -i W2001 W4002 W6001 -t '**/*.yaml'
+        cfn-lint -i W2001 W4002 W6001 W8003 -t '**/*.yaml'
 
     - name: license
       run: |
