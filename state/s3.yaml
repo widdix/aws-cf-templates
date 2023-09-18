@@ -411,9 +411,9 @@ Resources:
       Code:
         ZipFile: |
           'use strict';
-          const AWS = require('aws-sdk');
           const response = require('cfn-response');
-          const s3 = new AWS.S3({apiVersion: '2006-03-01'});
+          const { S3Client, GetBucketAclCommand, PutBucketAclCommand } = require('@aws-sdk/client-s3');
+          const s3 = new S3Client({apiVersion: '2006-03-01'});
           exports.handler = (event, context, cb) => {
             console.log(`Invoke: ${JSON.stringify(event)}`);
             function done(err) {
@@ -425,28 +425,28 @@ Resources:
               }
             }
             if (event.RequestType === 'Delete') {
-              s3.getBucketAcl({
+              s3.send(new GetBucketAclCommand({
                 Bucket: event.ResourceProperties.Bucket
-              }, (err, acl) => {
+              }), (err, acl) => {
                 if (err) {
-                  if (err.code === 'NoSuchBucket') {
+                  if (err.name === 'NoSuchBucket') {
                     done();
                   } else {
                     done(err);
                   }
                 } else {
                   acl.Grants = acl.Grants.filter(grant => !(grant.Permission === 'FULL_CONTROL' && grant.Grantee.Type === 'CanonicalUser' && grant.Grantee.ID === 'c4c1ede66af53448b93c283ce9448c4ba468c9432aa01d700d3878632f77d2d0'));
-                  s3.putBucketAcl({
+                  s3.send(new PutBucketAclCommand({
                     Bucket: event.ResourceProperties.Bucket,
                     AccessControlPolicy: acl
-                  }, done);
+                  }), done);
                 }
               });
             } else if (event.RequestType === 'Update' || event.RequestType === 'Create') {
               // The only attribute that can change is the Bucket which is used as the physical id. If Bucket changes, a DELETE call is received during CloudFormation's cleanup.
-              s3.getBucketAcl({
+              s3.send(new GetBucketAclCommand({
                 Bucket: event.ResourceProperties.Bucket
-              }, (err, acl) => {
+              }), (err, acl) => {
                 if (err) {
                   done(err);
                 } else {
@@ -458,10 +458,10 @@ Resources:
                     },
                     Permission: 'FULL_CONTROL'
                   });
-                  s3.putBucketAcl({
+                  s3.send(new PutBucketAclCommand({
                     Bucket: event.ResourceProperties.Bucket,
                     AccessControlPolicy: acl
-                  }, done);
+                  }), done);
                 }
               });
             } else {
@@ -471,7 +471,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'LambdaRole.Arn'
-      Runtime: 'nodejs16.x'
+      Runtime: 'nodejs18.x'
       Timeout: 60
   LambdaLogGroup:
     Condition: HasCloudFrontAccessLogWrite

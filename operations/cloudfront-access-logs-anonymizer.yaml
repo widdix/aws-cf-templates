@@ -104,11 +104,11 @@ Resources:
     Properties:
       Code:
         ZipFile: |
-          const fs = require('fs');
-          const zlib = require('zlib');
-          const stream = require('stream');
-          const AWS = require('aws-sdk');
-          const s3 = new AWS.S3({apiVersion: '2006-03-01'});
+          const zlib = require('node:zlib');
+          const { pipeline, Transform } = require('node:stream');
+          const { S3Client, GetObjectCommand, HeadObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+          const { Upload } = require('@aws-sdk/lib-storage');
+          const s3 = new S3Client({apiVersion: '2006-03-01'});
 
           function anonymizeIPv4Address(str) {
             const s = str.split('.');
@@ -173,55 +173,53 @@ Resources:
             if ('versionId' in record.s3.object) {
               params.VersionId = record.s3.object.versionId;
             }
-            return new Promise((resolve, reject) => {
-              const body = stream.pipeline(
-                s3.getObject(params).createReadStream(),
+
+            try {
+              const getObjectResponse = await s3.send(new GetObjectCommand(params));
+
+              const writePipeline = pipeline(
+                getObjectResponse.Body,
                 zlib.createGunzip(),
-                new stream.Transform({
+                new Transform({
                   transform
                 }),
                 zlib.createGzip(),
                 () => {}
               );
-              s3.upload({
-                Bucket: record.s3.bucket.name,
-                Key: anonymizedKey,
-                Body: body
-              }, (err) => {
-                if (err) {
-                  if (err) {
-                    if (err.code === 'NoSuchKey') {
-                      console.log('original no longer exist, check for anonymized object.')
-                      s3.headObject({
-                        Bucket: record.s3.bucket.name,
-                        Key: anonymizedKey
-                      }, (err) => {
-                        if (err) {
-                          reject(err);
-                        } else {
-                          // original already processed
-                          resolve();
-                        }
-                      });
-                    } else {
-                      reject(err);
-                    }
-                  }
-                } else {
-                  if (chunk.length > 0) {
-                    reject(new Error('file was not read completly'));
+
+              await new Upload({
+                client: s3,
+                params: {
+                  Bucket: record.s3.bucket.name,
+                  Key: anonymizedKey,
+                  Body: writePipeline
+                }
+              }).done();
+            } catch(err) {
+              if (err.name === 'NoSuchKey') {
+                console.log('original object no longer exists, checking for anonymized object')
+                try {
+                  await s3.send(new HeadObjectCommand({
+                    Bucket: record.s3.bucket.name,
+                    Key: anonymizedKey
+                  }));
+                } catch(err) {
+                  if (err.name === 'NoSuchKey') {
+                    throw new Error('original object no longer exists, but anoymized object not found');
                   } else {
-                    s3.deleteObject(params, (err) => {
-                      if (err) {
-                        reject(err);
-                      } else {
-                        resolve();
-                      }
-                    });
+                    throw err;
                   }
                 }
-              });
-            });
+              } else {
+                throw err;
+              }
+            }
+
+            if (chunk.length > 0) {
+              throw new Error('file was not read completly');
+            } else {
+              await s3.send(new DeleteObjectCommand(params));
+            }
           }
 
           exports.handler = async (event) => {
@@ -237,7 +235,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 1024
       Role: !GetAtt 'Role.Arn'
-      Runtime: 'nodejs16.x'
+      Runtime: 'nodejs18.x'
       Timeout: 300
   ErrorsTooHighAlarm:
     Condition: HasAlertTopic

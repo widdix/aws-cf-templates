@@ -8,9 +8,9 @@ jobs:
 
     steps:
 
-    - uses: 'actions/checkout@v2'
+    - uses: 'actions/checkout@v4'
 
-    - uses: 'actions/setup-python@v2'
+    - uses: 'actions/setup-python@v4'
       with:
         python-version: '3.8'
 
@@ -21,8 +21,8 @@ jobs:
 
     - name: cfn-lint
       run: |
-        pip install cfn-lint==0.62.0
-        cfn-lint -i W2001 W4002 W6001 -t '**/*.yaml'
+        pip install cfn-lint==0.79.11
+        cfn-lint -i W2001 W4002 W6001 W8003 E3026 E2520 -t '**/*.yaml'
 
     - name: license
       run: |

@@ -1238,26 +1238,27 @@ Resources:
       Code:
         ZipFile: !Sub |
           'use strict';
-          const AWS = require('aws-sdk');
-          const ecs = new AWS.ECS({apiVersion: '2014-11-13'});
-          const cloudwatch = new AWS.CloudWatch({apiVersion: '2010-08-01'});
+          const { ECSClient, ListContainerInstancesCommand, DescribeContainerInstancesCommand } = require("@aws-sdk/client-ecs");
+          const ecs = new ECSClient({apiVersion: '2014-11-13'});
+          const { CloudWatchClient, PutMetricDataCommand } = require("@aws-sdk/client-cloudwatch");
+          const cloudwatch = new CloudWatchClient({apiVersion: '2010-08-01'});
           const CONTAINER_MAX_CPU = ${ContainerMaxCPU};
           const CONTAINER_MAX_MEMORY = ${ContainerMaxMemory};
           const CLUSTER = '${Cluster}';
           const NAMESPACE = '${AWS::StackName}';
           function list(nextToken) {
-            return ecs.listContainerInstances({
+            return ecs.send(new ListContainerInstancesCommand({
               cluster: CLUSTER,
               maxResults: 1,
               nextToken: nextToken,
               status: 'ACTIVE'
-            }).promise();
+            }));
           }
           function describe(containerInstanceArns) {
-            return ecs.describeContainerInstances({
+            return ecs.send(new DescribeContainerInstancesCommand({
               cluster: CLUSTER,
               containerInstances: containerInstanceArns
-            }).promise();
+            }));
           }
           function compute(totalSchedulableContainers, nextToken) {
             return list(nextToken)
@@ -1285,7 +1286,7 @@ Resources:
             compute(0, undefined)
               .then((schedulableContainers) => {
                 console.log(`schedulableContainers: ${!schedulableContainers}`);
-                return cloudwatch.putMetricData({
+                return cloudwatch.send(new PutMetricDataCommand({
                   MetricData: [{
                     MetricName: 'SchedulableContainers',
                     Dimensions: [{
@@ -1296,7 +1297,7 @@ Resources:
                     Unit: 'Count'
                   }],
                   Namespace: NAMESPACE
-                }).promise();
+                }));
               })
               .then(() => cb())
               .catch(cb);
@@ -1304,7 +1305,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'SchedulableContainersLambdaRole.Arn'
-      Runtime: 'nodejs16.x'
+      Runtime: 'nodejs18.x'
       Timeout: 60
   SchedulableContainersLogGroup:
     Type: 'AWS::Logs::LogGroup'
@@ -1415,21 +1416,23 @@ Resources:
       Code:
         ZipFile: |
           'use strict';
-          const AWS = require('aws-sdk');
-          const ecs = new AWS.ECS({apiVersion: '2014-11-13'});
-          const sqs = new AWS.SQS({apiVersion: '2012-11-05'});
-          const asg = new AWS.AutoScaling({apiVersion: '2011-01-01'});
+          const { ECSClient, ListContainerInstancesCommand, UpdateContainerInstancesStateCommand, ListTasksCommand } = require("@aws-sdk/client-ecs");
+          const ecs = new ECSClient({apiVersion: '2014-11-13'});
+          const { SQSClient, SendMessageCommand } = require("@aws-sdk/client-sqs");
+          const sqs = new SQSClient({apiVersion: '2012-11-05'});
+          const { AutoScalingClient, CompleteLifecycleActionCommand, RecordLifecycleActionHeartbeatCommand } = require("@aws-sdk/client-auto-scaling");
+          const asg = new AutoScalingClient({apiVersion: '2011-01-01'});
           const cluster = process.env.CLUSTER;
           const queueUrl = process.env.QUEUE_URL;
           const drainingTimeout = process.env.DRAINING_TIMEOUT;
           async function getContainerInstanceArn(ec2InstanceId) {
             console.log(`getContainerInstanceArn(${[...arguments].join(', ')})`);
-            const listResult = await ecs.listContainerInstances({cluster: cluster, filter: `ec2InstanceId == '${ec2InstanceId}'`}).promise();
+            const listResult = await ecs.send(new ListContainerInstancesCommand({cluster: cluster, filter: `ec2InstanceId == '${ec2InstanceId}'`}));
             return listResult.containerInstanceArns[0];
           }
           async function drainInstance(ciArn) {
             console.log(`drainInstance(${[...arguments].join(', ')})`);
-            await ecs.updateContainerInstancesState({cluster: cluster, containerInstances: [ciArn], status: 'DRAINING'}).promise();
+            await ecs.send(new UpdateContainerInstancesStateCommand({cluster: cluster, containerInstances: [ciArn], status: 'DRAINING'}));
           }
           async function wait(ciArn, asgName, lchName, lcaToken, terminateTime) {
             console.log(`wait(${[...arguments].join(', ')})`);
@@ -1442,33 +1445,33 @@ Resources:
               LifecycleActionToken: lcaToken,
               TerminateTime: terminateTime
             };
-            await sqs.sendMessage({
+            await sqs.send(new SendMessageCommand({
               QueueUrl: queueUrl,
               DelaySeconds: 60,
               MessageBody: JSON.stringify(payload)
-            }).promise();
+            }));
           }
           async function countTasks(ciArn) {
             console.log(`countTasks(${[...arguments].join(', ')})`);
-            const listResult = await ecs.listTasks({cluster: cluster, containerInstance: ciArn}).promise();
+            const listResult = await ecs.send(new ListTasksCommand({cluster: cluster, containerInstance: ciArn}));
             return listResult.taskArns.length;
           }
           async function terminateInstance(asgName, lchName, lcaToken) {
             console.log(`terminateInstance(${[...arguments].join(', ')})`);
-            await asg.completeLifecycleAction({
+            await asg.send(new CompleteLifecycleActionCommand({
               AutoScalingGroupName: asgName,
               LifecycleHookName: lchName,
               LifecycleActionToken: lcaToken,
               LifecycleActionResult: 'CONTINUE'
-            }).promise();
+            }));
           }
           async function heartbeat(asgName, lchName, lcaToken) {
             console.log(`heartbeat(${[...arguments].join(', ')})`);
-            await asg.recordLifecycleActionHeartbeat({
+            await asg.send(new RecordLifecycleActionHeartbeatCommand({
               AutoScalingGroupName: asgName,
               LifecycleHookName: lchName,
               LifecycleActionToken: lcaToken
-            }).promise();
+            }));
           }
           exports.handler = async function(event, context) {
             console.log(`Invoke: ${JSON.stringify(event)}`);
@@ -1501,7 +1504,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'DrainInstanceLambdaRole.Arn'
-      Runtime: 'nodejs16.x'
+      Runtime: 'nodejs18.x'
       Timeout: 30
       Environment:
         Variables:
