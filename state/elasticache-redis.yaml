@@ -72,7 +72,7 @@ Parameters:
   EngineVersion:
     Description: 'Redis version'
     Type: String
-    AllowedValues: ['7.0', '6.2', '6.0', '5.0.6', '5.0.5', '5.0.4', '5.0.3', '5.0.0', '4.0.10', '3.2.6'] # aws elasticache describe-cache-engine-versions --engine redis --query "CacheEngineVersions[].EngineVersion"
+    AllowedValues: ['7.0', '6.2', '6.0', '5.0.6', '5.0.5', '5.0.4', '5.0.3', '5.0.0', '4.0.10'] # aws elasticache describe-cache-engine-versions --engine redis --query "CacheEngineVersions[].EngineVersion"
   CacheNodeType:
     Description: 'The compute and memory capacity of the nodes in the node group (shard).'
     Type: 'String'
