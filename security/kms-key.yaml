@@ -200,8 +200,6 @@ Resources:
               Service: 'cloudfront.amazonaws.com'
             Action:
             - 'kms:Decrypt'
-            - 'kms:Encrypt'
-            - 'kms:GenerateDataKey*'
             Resource: '*'
             Condition:
               StringLike:
