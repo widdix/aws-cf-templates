@@ -24,4 +24,3 @@ jobs:
         sed -i "s/__VERSION__/latest/g" ./templates/*/*.yaml
         aws s3 sync --delete --exact-timestamps --exclude ".git/*" --exclude "test/*" --exclude "docs/*" ./templates/ s3://widdix-aws-cf-templates/
         aws s3 sync --delete --exact-timestamps --exclude ".git/*" --exclude "test/*" --exclude "docs/*" ./templates/ s3://widdix-aws-cf-templates-releases-eu-west-1/latest/
-
