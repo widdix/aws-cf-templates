@@ -24,14 +24,15 @@ Besides our open-source projects, we also offer commercial products on the AWS M
 * [marbot to monitor AWS](https://marbot.io)
 * [bucketAV to protect S3 buckets form malware and viruses](https://bucketav.com)
 
-## Sponsors
-[Become a sponsor](https://github.com/sponsors/widdix) via GitHub Sponsors.
-
-## Training and Consulting
-Do you want to accelerate your start with AWS CloudFormation and our templates? We do offer remote and on-site training for you and your team. Are you looking for guidance on how to use or adapt our templates to your use case? We offer consulting services as well. [Contact us](mailto:hello@widdix.net), and we’ll accelerate your project.
-
 ## License
 All templates are published under Apache License Version 2.0.
 
 ## About
 A [cloudonaut.io](https://cloudonaut.io/) project. Engineered by [widdix](https://widdix.net).
+
+## Release
+
+1. `git tag vX.Y.Z && git push --tags`
+2. Create Release in GitHub https://github.com/widdix/aws-ec2-ssh/releases/new
+    1. Select tag vX.Y.Z
+    2. Write a Change log by summarizing the commits since last release
