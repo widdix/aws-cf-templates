@@ -23,7 +23,7 @@ jobs:
       run: |
         VERSION=${GITHUB_REF_NAME:1}
         sed -i "s/__VERSION__/${VERSION}/g" ./*/*.yaml
-        aws s3 sync --delete --exact-timestamps --exclude ".git/*" --exclude "test/*" --exclude "docs/*" ./ "s3://widdix-aws-cf-templates-releases-eu-west-1/v${VERSION}/"
+        aws s3 sync --delete --exact-timestamps --exclude ".git/*" --exclude ".github/*" --exclude "test/*" --exclude "docs/*" ./ "s3://widdix-aws-cf-templates-releases-eu-west-1/v${VERSION}/"
         if [[ $VERSION =~ ^[0-9.]*$ ]]; then
-          aws s3 sync --delete --exact-timestamps --exclude ".git/*" --exclude "test/*" --exclude "docs/*" ./ s3://widdix-aws-cf-templates-releases-eu-west-1/stable/
+          aws s3 sync --delete --exact-timestamps --exclude ".git/*" --exclude ".github/*" --exclude "test/*" --exclude "docs/*" ./ s3://widdix-aws-cf-templates-releases-eu-west-1/stable/
         fi

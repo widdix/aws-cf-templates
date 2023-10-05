@@ -20,8 +20,8 @@ jobs:
         role-to-assume: arn:aws:iam::820394158530:role/github-openid-connect
         role-session-name: github-actions-aws-cf-templates
         aws-region: eu-west-1
-    - name: deploy
+    - name: latest
       run: |
         sed -i "s/__VERSION__/latest/g" ./*/*.yaml
-        aws s3 sync --delete --exact-timestamps --exclude ".git/*" --exclude "test/*" --exclude "docs/*" ./ s3://widdix-aws-cf-templates/
-        aws s3 sync --delete --exact-timestamps --exclude ".git/*" --exclude "test/*" --exclude "docs/*" ./ s3://widdix-aws-cf-templates-releases-eu-west-1/latest/
+        aws s3 sync --delete --exact-timestamps --exclude ".git/*" --exclude ".github/*" --exclude "test/*" --exclude "docs/*" ./ s3://widdix-aws-cf-templates/
+        aws s3 sync --delete --exact-timestamps --exclude ".git/*" --exclude ".github/*" --exclude "test/*" --exclude "docs/*" ./ s3://widdix-aws-cf-templates-releases-eu-west-1/latest/
