@@ -3,6 +3,12 @@ on:
   push:
     branch:
     - master
+permissions:
+  id-token: write
+  contents: read
+defaults:
+  run:
+    shell: bash
 jobs:
   latest:
     runs-on: ['hyperenv', 'medium']

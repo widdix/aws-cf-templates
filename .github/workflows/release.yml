@@ -3,6 +3,12 @@ on:
   push:
     tags:
     - v*
+permissions:
+  id-token: write
+  contents: read
+defaults:
+  run:
+    shell: bash
 jobs:
   release:
     runs-on: ['hyperenv', 'medium']

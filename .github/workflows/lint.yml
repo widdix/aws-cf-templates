@@ -1,5 +1,11 @@
 name: Lint
 on: [push, pull_request]
+permissions:
+  id-token: write
+  contents: read
+defaults:
+  run:
+    shell: bash
 jobs:
   lint:
     runs-on: ['hyperenv', 'medium']
