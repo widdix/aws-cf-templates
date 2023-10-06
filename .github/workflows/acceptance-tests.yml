@@ -6,7 +6,7 @@ on:
     branches:
     - master
     paths:
-    - '.github/workflows/acceptance-tests.yaml'
+    - '.github/workflows/acceptance-tests.yml'
     - '*.yaml'
     - 'test/**'
 defaults:
@@ -14,7 +14,7 @@ defaults:
     shell: bash
 jobs:
   acceptance-test:
-    uses: ./.github/workflows/acceptance-test-run.yaml
+    uses: ./.github/workflows/acceptance-test-run.yml
     with:
       region: us-east-1
       tests: '*'

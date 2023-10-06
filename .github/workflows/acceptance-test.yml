@@ -71,7 +71,7 @@ defaults:
     shell: bash
 jobs:
   acceptance-test:
-    uses: ./.github/workflows/acceptance-test-run.yaml
+    uses: ./.github/workflows/acceptance-test-run.yml
     with:
       region: us-east-1
       tests: ${{ inputs.tests }}
