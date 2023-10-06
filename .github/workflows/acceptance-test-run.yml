@@ -9,21 +9,12 @@ on:
       tests:
         required: true
         type: string
-        default: '*'
       deletion-policy:
         required: true
-        type: choice
-        default: delete
-        options:
-        - delete
-        - retain
+        type: string # delete/retain
       failure-policy:
         required: true
-        type: choice
-        default: rollback
-        options:
-        - rollback
-        - retain
+        type: string # rollback/retain
 permissions:
   id-token: write
   contents: read
