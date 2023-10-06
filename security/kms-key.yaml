@@ -40,6 +40,7 @@ Parameters:
     - 'S3_PUBLIC_ACCESS'
     - 'ROUTE53_DNSSEC'
     - 'CLOUDTRAIL'
+    - 'CLOUDFRONT'
     - connect
     - dms
     - ssm
@@ -87,8 +88,9 @@ Conditions:
   HasServiceAllServices: !Equals [!Ref Service, 'ALL_SERVICES']
   HasServiceS3PublicAccess: !Equals [!Ref Service, 'S3_PUBLIC_ACCESS']
   HasServiceRoute53Dnssec: !Or [!Equals [!Ref Service, 'ROUTE53_DNSSEC'], !Equals [!Ref Service, 'dnssec-route53']]
+  HasServiceCloudFront: !Equals [!Ref Service, 'CLOUDFRONT']
   HasServiceCloudTrail: !Equals [!Ref Service, 'CLOUDTRAIL']
-  HasService: !Not [!Or [!Condition HasServiceAllServices, !Condition HasServiceS3PublicAccess, !Condition HasServiceRoute53Dnssec, !Condition HasServiceCloudTrail]]
+  HasService: !Not [!Or [!Condition HasServiceAllServices, !Condition HasServiceS3PublicAccess, !Condition HasServiceRoute53Dnssec, !Condition HasServiceCloudFront, !Condition HasServiceCloudTrail]]
   HasSymmetricKey: !Equals [!Ref KeySpec, 'SYMMETRIC_DEFAULT']
 Resources:
   Key:
@@ -190,6 +192,18 @@ Resources:
             Condition:
               StringLike:
                 'kms:EncryptionContext:aws:cloudtrail:arn': !Sub 'arn:aws:cloudtrail:*:${AWS::AccountId}:trail/*'
+          - !Ref 'AWS::NoValue'
+        - !If
+          - HasServiceCloudFront
+          - Effect: Allow # https://aws.amazon.com/blogs/networking-and-content-delivery/serving-sse-kms-encrypted-content-from-s3-using-cloudfront/
+            Principal:
+              Service: 'cloudfront.amazonaws.com'
+            Action:
+            - 'kms:Decrypt'
+            Resource: '*'
+            Condition:
+              StringLike:
+                'aws:SourceArn': !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/*'
           - !Ref 'AWS::NoValue'
   KeyAlias:
     DeletionPolicy: Retain
