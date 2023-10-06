@@ -1,0 +1,79 @@
+---
+name: Acceptenace Tests
+on:
+  workflow_dispatch:
+    inputs:
+      tests:
+        required: true
+        type: choice
+        default: '*'
+        options: # compile list with cd test/src && find . -name 'Test*' -execdir basename {} .java ';' | sort
+        - '*'
+        - TestAL2MutablePrivate
+        - TestAL2MutablePublic
+        - TestAccessLogsAnonymizer
+        - TestAccountPasswordPolicy
+        - TestAlert
+        - TestCloudtrail
+        - TestConfig
+        - TestDocumentDB
+        - TestDynamoDB
+        - TestECSCluster
+        - TestECSService
+        - TestElastiCacheMemcached
+        - TestElastiCacheRedis
+        - TestElasticsearch
+        - TestFargateCluster
+        - TestFargateService
+        - TestHostedZone
+        - TestJenkins
+        - TestKmsKey
+        - TestRDSAurora
+        - TestRDSAuroraServerless
+        - TestRDSAuroraServerlessPostgres
+        - TestRDSMySQL
+        - TestRDSPostgres
+        - TestS3
+        - TestSecurityAuthProxy
+        - TestStaticWebsite
+        - TestTerraformState
+        - TestVPC2AZs
+        - TestVPC2AZsLegacy
+        - TestVPC3AZs
+        - TestVPC3AZsLegacy
+        - TestVPC4AZs
+        - TestVPC4AZsLegacy
+        - TestVPCEndpointDynamoDB
+        - TestVPCEndpointS3
+        - TestVPCFlowLogs
+        - TestVPCFlowLogsS3
+        - TestVPCNatGateway
+        - TestVPCNatInstance
+        - TestVPCSshBastion
+        - TestVPCVpnBastion
+        - TestWordpressHA
+      deletion-policy:
+        required: true
+        type: choice
+        default: delete
+        options:
+        - delete
+        - retain
+      failure-policy:
+        required: true
+        type: choice
+        default: rollback
+        options:
+        - rollback
+        - retain
+defaults:
+  run:
+    shell: bash
+jobs:
+  acceptance-test:
+    uses: ./.github/workflows/acceptance-test-run.yaml
+    with:
+      region: us-east-1
+      tests: ${{ inputs.tests }}
+      deletion-policy: ${{ inputs.deletion-policy }}
+      failure-policy: ${{ inputs.failure-policy }}
