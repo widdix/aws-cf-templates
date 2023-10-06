@@ -1,5 +1,5 @@
 ---
-name: Acceptenace Tests
+name: Acceptenace Test
 on:
   workflow_dispatch:
     inputs:
