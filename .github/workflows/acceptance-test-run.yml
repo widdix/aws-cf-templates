@@ -1,0 +1,66 @@
+---
+name: Acceptenace Test Run
+on:
+  workflow_call:
+    inputs:
+      region:
+        required: true
+        type: string
+      tests:
+        required: true
+        type: string
+        default: '*'
+      deletion-policy:
+        required: true
+        type: choice
+        default: delete
+        options:
+        - delete
+        - retain
+      failure-policy:
+        required: true
+        type: choice
+        default: rollback
+        options:
+        - rollback
+        - retain
+permissions:
+  id-token: write
+  contents: read
+defaults:
+  run:
+    shell: bash
+jobs:
+  run:
+    runs-on: ['hyperenv', 'medium']
+    steps:
+    - uses: actions/checkout@v4
+    - uses: aws-actions/configure-aws-credentials@v4.0.1
+      with:
+        role-to-assume: arn:aws:iam::068189904525:role/github-openid-connect
+        role-session-name: github-actions-aws-cf-templates
+        role-duration-seconds: 21600
+        aws-region: ${{ inputs.region }}
+    - uses: actions/setup-java@v3
+      with:
+        distribution: corretto
+        java-version: '11'
+        cache: maven
+    - working-directory: test
+      env:
+        DELETION_POLICY: ${{ inputs.deletion-policy }}
+        FAILURE_POLICY: ${{ failure.deletion-policy }}
+        HOSTED_ZONE_ID: Z2W7RO1VZ3Q66M
+        DOMAIN_SUFFIX: awscftemplates.timeseries.guru
+        CLOUDFRONT_ACM_CERTIFICATE_ARN: arn:aws:acm:us-east-1:068189904525:certificate/be2a7595-caf3-4c0a-8021-8a3bd70f6e70
+        ACM_CERTIFICATE_ARN: arn:aws:acm:us-east-1:068189904525:certificate/be2a7595-caf3-4c0a-8021-8a3bd70f6e70 # FIXME region specific
+        IAM_ROLE_ARN: arn:aws:iam::068189904525:role/jenkins-aws-cf-templates-tests-Role-1SCN8855CM44J
+        TEMPLATE_DIR: ../
+        BUCKET_REGION: eu-west-1
+        BUCKET_NAME: jenkins-aws-cf-templates-tests-templatebucket-1ozdkykh3tc2p
+      run: mvn -B clean test -Dtest=${{ inputs.tests }} -Dsurefire.reportNameSuffix=${{ inputs.region }}
+    - uses: actions/upload-artifact@v3
+      if: failure()
+      with:
+        name: surefire-reports-${{ inputs.region }}
+        path: test/target/surefire-reports/

@@ -1,0 +1,22 @@
+---
+name: Acceptenace Tests
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+    - master
+    paths:
+    - '.github/workflows/acceptance-tests.yaml'
+    - '*.yaml'
+    - 'test/**'
+defaults:
+  run:
+    shell: bash
+jobs:
+  acceptance-test:
+    uses: ./.github/workflows/acceptance-test-run.yaml
+    with:
+      region: us-east-1
+      tests: '*'
+      deletion-policy: delete
+      failure-policy: rollback
