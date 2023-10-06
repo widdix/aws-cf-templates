@@ -17,7 +17,6 @@ jobs:
   acceptance-test:
     uses: ./.github/workflows/acceptance-test-run.yml
     with:
-      region: us-east-1
       tests: '*'
       deletion-policy: delete
       failure-policy: rollback

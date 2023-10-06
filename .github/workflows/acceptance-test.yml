@@ -73,7 +73,6 @@ jobs:
   acceptance-test:
     uses: ./.github/workflows/acceptance-test-run.yml
     with:
-      region: us-east-1
       tests: ${{ inputs.tests }}
       deletion-policy: ${{ inputs.deletion-policy }}
       failure-policy: ${{ inputs.failure-policy }}
