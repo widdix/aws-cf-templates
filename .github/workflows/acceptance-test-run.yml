@@ -35,7 +35,7 @@ jobs:
     - uses: actions/setup-java@v3
       with:
         distribution: corretto
-        java-version: '11'
+        java-version: '8'
         cache: maven
     - working-directory: test
       env:
@@ -45,7 +45,7 @@ jobs:
         DOMAIN_SUFFIX: awscftemplates.timeseries.guru
         CLOUDFRONT_ACM_CERTIFICATE_ARN: arn:aws:acm:us-east-1:068189904525:certificate/be2a7595-caf3-4c0a-8021-8a3bd70f6e70
         ACM_CERTIFICATE_ARN: arn:aws:acm:us-east-1:068189904525:certificate/be2a7595-caf3-4c0a-8021-8a3bd70f6e70 # FIXME region specific
-        IAM_ROLE_ARN: arn:aws:iam::068189904525:role/jenkins-aws-cf-templates-tests-Role-1SCN8855CM44J
+        # FIXME not needed anymore? IAM_ROLE_ARN: arn:aws:iam::068189904525:role/jenkins-aws-cf-templates-tests-Role-1SCN8855CM44J
         TEMPLATE_DIR: ../
         BUCKET_REGION: eu-west-1
         BUCKET_NAME: jenkins-aws-cf-templates-tests-templatebucket-1ozdkykh3tc2p

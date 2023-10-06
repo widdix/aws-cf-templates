@@ -9,6 +9,7 @@ on:
     - '.github/workflows/acceptance-tests.yml'
     - '*.yaml'
     - 'test/**'
+concurrency: acceptenace-tests-${{ github.ref }}
 defaults:
   run:
     shell: bash
