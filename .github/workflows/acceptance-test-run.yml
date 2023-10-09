@@ -49,7 +49,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       if: failure()
       with:
-        name: surefire-reports-us-east-1
+        name: acceptance-test-run-us-east-1
         path: |
           test/target/surefire-reports/
           test/target/site/
