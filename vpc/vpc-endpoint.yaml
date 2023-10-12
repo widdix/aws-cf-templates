@@ -49,12 +49,16 @@ Parameters:
     - 'airflow.api'
     - 'airflow.env'
     - 'airflow.ops'
+    - 'analytics-omics'
     - 'app-integrations'
     - 'application-autoscaling'
+    - appmesh
     - 'appmesh-envoy-management'
     - apprunner
+    - 'apprunner.requests'
     - 'appstream.api'
     - 'appstream.streaming'
+    - 'appsync-api'
     - aps
     - 'aps-workspaces'
     - athena
@@ -63,10 +67,18 @@ Parameters:
     - 'autoscaling-plans'
     - awsconnector
     - backup
+    - 'backup-gateway'
+    - batch
+    - bedrock
+    - 'bedrock-runtime'
     - billingconductor
     - braket
+    - cases
     - cassandra
     - 'cassandra-fips'
+    - cleanrooms
+    - cloudcontrolapi
+    - 'cloudcontrolapi-fips'
     - clouddirectory
     - cloudformation
     - cloudhsmv2
@@ -83,17 +95,26 @@ Parameters:
     - 'codeguru-reviewer'
     - codepipeline
     - 'codestar-connections.api'
+    - codewhisperer
     - comprehend
     - comprehendmedical
     - config
+    - 'connect-campaigns'
+    - console
+    - 'control-storage-omics'
+    - 'data-servicediscovery'
+    - 'data-servicediscovery-fips'
     - databrew
     - dataexchange
     - datasync
+    - datazone
+    - 'deviceadvisor.iot'
     - 'devops-guru'
     - dms
     - 'dms-fips'
     - drs
     - ds
+    - dynamodb
     - ebs
     - ec2
     - ec2messages
@@ -102,6 +123,7 @@ Parameters:
     - ecs
     - 'ecs-agent'
     - 'ecs-telemetry'
+    - eks
     - 'elastic-inference.runtime'
     - elasticache
     - 'elasticache-fips'
@@ -113,6 +135,7 @@ Parameters:
     - elasticmapreduce
     - 'email-smtp'
     - 'emr-containers'
+    - 'emr-serverless'
     - events
     - evidently
     - 'evidently-dataplane'
@@ -125,24 +148,35 @@ Parameters:
     - forecastquery
     - 'forecastquery-fips'
     - frauddetector
+    - fsx
+    - 'fsx-fips'
     - 'git-codecommit'
     - 'git-codecommit-fips'
     - glue
     - grafana
+    - 'grafana-workspace'
     - greengrass
     - groundstation
+    - 'guardduty-data'
+    - 'guardduty-data-fips'
     - healthlake
+    - identitystore
     - imagebuilder
     - inspector2
     - 'iot.data'
     - 'iot.fleethub.api'
+    - iotfleetwise
+    - iotroborunner
     - 'iotsitewise.api'
     - 'iotsitewise.data'
+    - 'iottwinmaker.api'
+    - 'iottwinmaker.data'
     - 'iotwireless.api'
     - kendra
     - 'kinesis-firehose'
     - 'kinesis-streams'
     - kms
+    - 'kms-fips'
     - lakeformation
     - lambda
     - 'license-manager'
@@ -153,15 +187,32 @@ Parameters:
     - lookoutvision
     - 'lorawan.cups'
     - 'lorawan.lns'
+    - m2
     - macie2
+    - 'managedblockchain-query'
+    - 'managedblockchain.bitcoin.mainnet'
+    - 'managedblockchain.bitcoin.testnet'
     - mediaconnect
+    - 'medical-imaging'
     - 'memory-db'
     - 'memorydb-fips'
     - mgn
+    - 'migrationhub-orchestrator'
     - 'migrationhub-strategy'
     - 'models-v2-lex'
     - monitoring
     - nimble
+    - panorama
+    - 'payment-cryptography.controlplane'
+    - 'payment-cryptography.dataplane'
+    - 'pca-connector-ad'
+    - personalize
+    - 'personalize-events'
+    - 'personalize-runtime'
+    - pinpoint
+    - 'pinpoint-sms-voice-v2'
+    - polly
+    - 'private-networks'
     - profile
     - proton
     - 'qldb.session'
@@ -170,21 +221,28 @@ Parameters:
     - redshift
     - 'redshift-data'
     - 'redshift-fips'
+    - 'refactor-spaces'
     - rekognition
     - 'rekognition-fips'
+    - robomaker
+    - rolesanywhere
     - rum
     - 'rum-dataplane'
+    - 'runtime-medical-imaging'
     - 'runtime-v2-lex'
     - 'sagemaker.api'
     - 'sagemaker.featurestore-runtime'
+    - 'sagemaker.metrics'
     - 'sagemaker.runtime'
     - 'sagemaker.runtime-fips'
     - secretsmanager
     - securityhub
     - servicecatalog
     - 'servicecatalog-appregistry'
-    - sms
-    - 'sms-fips'
+    - servicediscovery
+    - 'servicediscovery-fips'
+    - signin
+    - simspaceweaver
     - 'snow-device-management'
     - sns
     - sqs
@@ -193,20 +251,29 @@ Parameters:
     - 'ssm-incidents'
     - ssmmessages
     - states
+    - 'storage-omics'
     - storagegateway
+    - 'streaming-rekognition'
+    - 'streaming-rekognition-fips'
     - sts
+    - swf
+    - 'swf-fips'
     - 'sync-states'
     - synthetics
+    - 'tags-omics'
     - textract
     - 'textract-fips'
-    - 'timestream.ingest-cell2'
-    - 'timestream.query-cell2'
+    - tnb
     - transcribe
     - transcribestreaming
     - transfer
     - 'transfer.server'
     - translate
+    - verifiedpermissions
     - voiceid
+    - 'vpc-lattice'
+    - wisdom
+    - 'workflows-omics'
     - workspaces
     - xray
 Conditions:
