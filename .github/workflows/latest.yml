@@ -1,7 +1,7 @@
 name: Latest
 on:
   push:
-    branch:
+    branches:
     - master
 permissions:
   id-token: write

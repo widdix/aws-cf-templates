@@ -45,7 +45,12 @@ jobs:
         TEMPLATE_DIR: ../
         BUCKET_REGION: us-east-1
         BUCKET_NAME: cf-templates-1a2zmgbg9ut4o-us-east-1
-      run: mvn -B clean test site -Dtest=${{ inputs.tests }} -Dsurefire.reportNameSuffix=us-east-1
+      run: |
+        mvn -B clean test -Dtest=${{ inputs.tests }} -Dsurefire.reportNameSuffix=us-east-1
+        mvn surefire-report:report
+    - if: failure()
+      working-directory: test
+      run: mvn surefire-report:report
     - uses: actions/upload-artifact@v3
       if: failure()
       with:
