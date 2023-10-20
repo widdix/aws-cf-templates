@@ -7,7 +7,7 @@ on:
     - master
     paths:
     - '.github/workflows/acceptance-tests.yml'
-    - '*.yaml'
+    - '**.yaml'
     - 'test/**'
 concurrency: acceptenace-tests-${{ github.ref }}
 defaults:
