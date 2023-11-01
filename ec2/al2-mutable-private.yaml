@@ -1136,9 +1136,7 @@ Resources:
           - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:managed-instance-inventory/${VirtualMachine}'
         - Effect: Allow
           Action: 'ssm:UpdateInstanceAssociationStatus'
-          Resource:
-          - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${VirtualMachine}'
-          - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:association/${AssociationRunPatchBaselineScan}'
+          Resource: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${VirtualMachine}'
   IAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
     Condition: HasIAMUserSSHAccess
@@ -1542,16 +1540,6 @@ Resources:
             Operation: [Install]
       TaskType: 'RUN_COMMAND'
       WindowId: !Ref MaintenanceWindow
-  AssociationRunPatchBaselineScan:
-    Type: 'AWS::SSM::Association'
-    Properties:
-      Name: 'AWS-RunPatchBaseline'
-      Parameters:
-        Operation: [Scan]
-      ScheduleExpression: 'rate(1 hour)'
-      Targets:
-      - Key: InstanceIds
-        Values: [!Ref VirtualMachine]
   BackupVault: # cannot be deleted with data
     Condition: HasBackupRetentionPeriod
     Type: 'AWS::Backup::BackupVault'
