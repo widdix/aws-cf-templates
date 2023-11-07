@@ -167,61 +167,61 @@ Parameters:
 Mappings:
   RegionMap:
     'ap-south-2':
-      AMI: 'ami-005211cf59ee548ea'
+      AMI: 'ami-083cf84d7606f9fe5'
     'ap-south-1':
-      AMI: 'ami-0591f4a31aad142d3'
+      AMI: 'ami-0ff36e1c9fc87b74b'
     'eu-south-1':
-      AMI: 'ami-0de6843768d97e24a'
+      AMI: 'ami-04154c8a5ee61adbc'
     'eu-south-2':
-      AMI: 'ami-08cb101d16b9840bf'
+      AMI: 'ami-069ba79a5d7076342'
     'me-central-1':
-      AMI: 'ami-00c32958f9b46f93b'
+      AMI: 'ami-0150983ad5c7c030d'
     'il-central-1':
-      AMI: 'ami-01719ec291a27d947'
+      AMI: 'ami-0aebc0b4f4f27a05c'
     'ca-central-1':
-      AMI: 'ami-03d49c3fb950684d3'
+      AMI: 'ami-08a859076e1aadedb'
     'eu-central-1':
-      AMI: 'ami-05cd636d876311f80'
+      AMI: 'ami-0812d7c8f1abc0e24'
     'eu-central-2':
-      AMI: 'ami-0f48d1788c193cc46'
+      AMI: 'ami-0a22e2ed2464aa2b4'
     'us-west-1':
-      AMI: 'ami-0e06911c995520f34'
+      AMI: 'ami-06c8c34275c6770cf'
     'us-west-2':
-      AMI: 'ami-060f936aec9003903'
+      AMI: 'ami-094a0fafc1bf73bd6'
     'af-south-1':
-      AMI: 'ami-0ede458d3d05559a5'
+      AMI: 'ami-0227908b0a0e8f097'
     'eu-north-1':
-      AMI: 'ami-09312d5a2dd62bbea'
+      AMI: 'ami-0bfa1e6c61e82e4b6'
     'eu-west-3':
-      AMI: 'ami-09edbb170cde0ca31'
+      AMI: 'ami-09f63a3a06d08cac1'
     'eu-west-2':
-      AMI: 'ami-03ec2be5a474ffee7'
+      AMI: 'ami-05e4ed86eaaac596f'
     'eu-west-1':
-      AMI: 'ami-0a123353df8e77189'
+      AMI: 'ami-076c9bc5be2893a11'
     'ap-northeast-3':
-      AMI: 'ami-041d2bbeb674fd992'
+      AMI: 'ami-021028dc7753bc43e'
     'ap-northeast-2':
-      AMI: 'ami-00a08b445dc0ab8c1'
+      AMI: 'ami-05f0b456179f64cce'
     'me-south-1':
-      AMI: 'ami-0f90056caddf83573'
+      AMI: 'ami-0d7f2bd7b639a7bdf'
     'ap-northeast-1':
-      AMI: 'ami-0e402d620b1085dbb'
+      AMI: 'ami-0220a6b98b70e1279'
     'sa-east-1':
-      AMI: 'ami-0d0ae91b9f0773ec5'
+      AMI: 'ami-020689e1463efba96'
     'ap-east-1':
-      AMI: 'ami-0b0b21b5de88ebfd9'
+      AMI: 'ami-0a2944230de004ad2'
     'ap-southeast-1':
-      AMI: 'ami-0433c5a120721d053'
+      AMI: 'ami-0cf829f9c4973625a'
     'ap-southeast-2':
-      AMI: 'ami-0fa4c765f7a72fe01'
+      AMI: 'ami-0b6e1baf8051c736d'
     'ap-southeast-3':
-      AMI: 'ami-0e36a4227f0d1a1ee'
+      AMI: 'ami-0ab7e9ed84451c9a5'
     'ap-southeast-4':
-      AMI: 'ami-05dd383023681ca75'
+      AMI: 'ami-0989bf34932e42a69'
     'us-east-1':
-      AMI: 'ami-0c9e929defa073d7d'
+      AMI: 'ami-076c7acfc9e8ee57d'
     'us-east-2':
-      AMI: 'ami-092963d5b506a4c41'
+      AMI: 'ami-048b22ce7dcf74123'
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]

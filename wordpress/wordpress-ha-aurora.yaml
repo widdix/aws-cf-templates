@@ -191,88 +191,88 @@ Parameters:
 Mappings:
   RegionMap:
     'ap-south-2':
-      AMI: 'ami-005211cf59ee548ea'
+      AMI: 'ami-083cf84d7606f9fe5'
       PrefixListCloudFront: 'pl-0a25c3463226fcc61'
     'ap-south-1':
-      AMI: 'ami-0591f4a31aad142d3'
+      AMI: 'ami-0ff36e1c9fc87b74b'
       PrefixListCloudFront: 'pl-9aa247f3'
     'eu-south-1':
-      AMI: 'ami-0de6843768d97e24a'
+      AMI: 'ami-04154c8a5ee61adbc'
       PrefixListCloudFront: 'pl-1bbc5972'
     'eu-south-2':
-      AMI: 'ami-08cb101d16b9840bf'
+      AMI: 'ami-069ba79a5d7076342'
       PrefixListCloudFront: 'pl-052dcbe0f793f19da'
     'me-central-1':
-      AMI: 'ami-00c32958f9b46f93b'
+      AMI: 'ami-0150983ad5c7c030d'
       PrefixListCloudFront: 'pl-05266a86378662c23'
     'il-central-1':
-      AMI: 'ami-01719ec291a27d947'
+      AMI: 'ami-0aebc0b4f4f27a05c'
       PrefixListCloudFront: 'pl-0dd89524416301988'
     'ca-central-1':
-      AMI: 'ami-03d49c3fb950684d3'
+      AMI: 'ami-08a859076e1aadedb'
       PrefixListCloudFront: 'pl-38a64351'
     'eu-central-1':
-      AMI: 'ami-05cd636d876311f80'
+      AMI: 'ami-0812d7c8f1abc0e24'
       PrefixListCloudFront: 'pl-a3a144ca'
     'eu-central-2':
-      AMI: 'ami-0f48d1788c193cc46'
+      AMI: 'ami-0a22e2ed2464aa2b4'
       PrefixListCloudFront: 'pl-00b37293991dbe6a8'
     'us-west-1':
-      AMI: 'ami-0e06911c995520f34'
+      AMI: 'ami-06c8c34275c6770cf'
       PrefixListCloudFront: 'pl-4ea04527'
     'us-west-2':
-      AMI: 'ami-060f936aec9003903'
+      AMI: 'ami-094a0fafc1bf73bd6'
       PrefixListCloudFront: 'pl-82a045eb'
     'af-south-1':
-      AMI: 'ami-0ede458d3d05559a5'
+      AMI: 'ami-0227908b0a0e8f097'
       PrefixListCloudFront: 'pl-c0aa4fa9'
     'eu-north-1':
-      AMI: 'ami-09312d5a2dd62bbea'
+      AMI: 'ami-0bfa1e6c61e82e4b6'
       PrefixListCloudFront: 'pl-fab65393'
     'eu-west-3':
-      AMI: 'ami-09edbb170cde0ca31'
+      AMI: 'ami-09f63a3a06d08cac1'
       PrefixListCloudFront: 'pl-75b1541c'
     'eu-west-2':
-      AMI: 'ami-03ec2be5a474ffee7'
+      AMI: 'ami-05e4ed86eaaac596f'
       PrefixListCloudFront: 'pl-93a247fa'
     'eu-west-1':
-      AMI: 'ami-0a123353df8e77189'
+      AMI: 'ami-076c9bc5be2893a11'
       PrefixListCloudFront: 'pl-4fa04526'
     'ap-northeast-3':
-      AMI: 'ami-041d2bbeb674fd992'
+      AMI: 'ami-021028dc7753bc43e'
       PrefixListCloudFront: 'pl-31a14458'
     'ap-northeast-2':
-      AMI: 'ami-00a08b445dc0ab8c1'
+      AMI: 'ami-05f0b456179f64cce'
       PrefixListCloudFront: 'pl-22a6434b'
     'me-south-1':
-      AMI: 'ami-0f90056caddf83573'
+      AMI: 'ami-0d7f2bd7b639a7bdf'
       PrefixListCloudFront: 'pl-17b2577e'
     'ap-northeast-1':
-      AMI: 'ami-0e402d620b1085dbb'
+      AMI: 'ami-0220a6b98b70e1279'
       PrefixListCloudFront: 'pl-58a04531'
     'sa-east-1':
-      AMI: 'ami-0d0ae91b9f0773ec5'
+      AMI: 'ami-020689e1463efba96'
       PrefixListCloudFront: 'pl-5da64334'
     'ap-east-1':
-      AMI: 'ami-0b0b21b5de88ebfd9'
+      AMI: 'ami-0a2944230de004ad2'
       PrefixListCloudFront: 'pl-14b2577d'
     'ap-southeast-1':
-      AMI: 'ami-0433c5a120721d053'
+      AMI: 'ami-0cf829f9c4973625a'
       PrefixListCloudFront: 'pl-31a34658'
     'ap-southeast-2':
-      AMI: 'ami-0fa4c765f7a72fe01'
+      AMI: 'ami-0b6e1baf8051c736d'
       PrefixListCloudFront: 'pl-b8a742d1'
     'ap-southeast-3':
-      AMI: 'ami-0e36a4227f0d1a1ee'
+      AMI: 'ami-0ab7e9ed84451c9a5'
       PrefixListCloudFront: 'pl-bca247d5'
     'ap-southeast-4':
-      AMI: 'ami-05dd383023681ca75'
+      AMI: 'ami-0989bf34932e42a69'
       PrefixListCloudFront: 'pl-0fb7e7cfe038ae0e9'
     'us-east-1':
-      AMI: 'ami-0c9e929defa073d7d'
+      AMI: 'ami-076c7acfc9e8ee57d'
       PrefixListCloudFront: 'pl-3b927c52'
     'us-east-2':
-      AMI: 'ami-092963d5b506a4c41'
+      AMI: 'ami-048b22ce7dcf74123'
       PrefixListCloudFront: 'pl-b6a144df'
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
@@ -974,7 +974,7 @@ Resources:
                   # ensure than only one machine installs wp
                   if mkdir /var/www/lock; then
                     cd /var/www/html
-                    wget --quiet --timeout=60 --output-document=wp-cli.phar https://github.com/wp-cli/wp-cli/releases/download/v2.8.1/wp-cli-2.8.1.phar
+                    wget --quiet --timeout=60 --output-document=wp-cli.phar https://github.com/wp-cli/wp-cli/releases/download/v2.9.0/wp-cli-2.9.0.phar
                     if ! php wp-cli.phar core is-installed --allow-root; then
                       php wp-cli.phar core download --allow-root --version=6.3.2
                       php wp-cli.phar core config --dbname='wordpress' --dbuser='wordpress' --dbpass='${DBMasterUserPassword}' --dbhost='${DBHost}' --allow-root
