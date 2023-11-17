@@ -41,7 +41,7 @@ Parameters:
     Type: CommaDelimitedList
     Default: ''
   DisableFSBP100Controls:
-    Description: 'AWS Foundational Security Best Practices v1.0.0 cotrols to disable (e.g., 1.14,1.20).'
+    Description: 'AWS Foundational Security Best Practices v1.0.0 cotrols to disable (e.g., GuardDuty.1,EC2.7,EC2.9,CloudTrail.2).'
     Type: CommaDelimitedList
     Default: ''
   LogsRetentionInDays:
