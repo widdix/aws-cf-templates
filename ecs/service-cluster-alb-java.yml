@@ -109,6 +109,8 @@ Parameters:
     - 768
     - 1024
     - 1280
+    - 1536
+    - 1792
     - 2048
   DesiredCount:
     Description: 'The number of simultaneous tasks, that you want to run on the cluster.'
