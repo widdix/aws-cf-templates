@@ -1013,7 +1013,7 @@ Resources:
         install:
           packages:
             rpm:
-              jenkins: 'https://ftp-chi.osuosl.org/pub/jenkins/redhat-stable/jenkins-2.426.1-1.1.noarch.rpm'
+              jenkins: 'https://ftp-chi.osuosl.org/pub/jenkins/redhat-stable/jenkins-2.426.2-1.1.noarch.rpm'
           files:
             '/etc/cfn/cfn-hup.conf':
               content: !Sub |
