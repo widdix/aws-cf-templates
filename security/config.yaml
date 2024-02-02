@@ -199,7 +199,6 @@ Resources:
     Properties:
       Code:
         ZipFile: |
-          'use strict';
           const response = require('cfn-response');
           const { ConfigServiceClient, DeleteRetentionConfigurationCommand, PutRetentionConfigurationCommand } = require('@aws-sdk/client-config-service');
           const config = new ConfigServiceClient({apiVersion: '2014-11-12'});
@@ -228,7 +227,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'LambdaRole.Arn'
-      Runtime: 'nodejs18.x'
+      Runtime: 'nodejs20.x'
       Timeout: 60
   LambdaLogGroup:
     Type: 'AWS::Logs::LogGroup'
