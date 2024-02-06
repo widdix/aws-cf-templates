@@ -143,7 +143,7 @@ Mappings:
     'ap-east-1':
       NATAMI: 'ami-0ae191faab512a3be'
     'ca-west-1':
-      NATAMI: 'not-yet-available'
+      NATAMI: 'None'
     'ap-southeast-1':
       NATAMI: 'ami-07f6e75d70600a05e'
     'ap-southeast-2':
