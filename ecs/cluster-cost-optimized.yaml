@@ -1183,8 +1183,7 @@ Resources:
     Properties:
       Code:
         ZipFile: |
-          'use strict';
-          const { AutoScalingClient, ExecutePolicyCommand } = require("@aws-sdk/client-auto-scaling");
+          const { AutoScalingClient, ExecutePolicyCommand } = require('@aws-sdk/client-auto-scaling');
           const autoscaling = new AutoScalingClient({apiVersion: '2011-01-01'});
           const sp = process.env.SCALING_POLICY_NAME;
           exports.handler = async function(event, context) {
@@ -1195,7 +1194,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'ScaleUpLambdaRole.Arn'
-      Runtime: 'nodejs18.x'
+      Runtime: 'nodejs20.x'
       Timeout: 60
       Environment:
         Variables:
@@ -1308,13 +1307,11 @@ Resources:
     Properties:
       Code:
         ZipFile: |
-          'use strict';
-          const AWS = require('aws-sdk');
-          const { ECSClient, UpdateContainerInstancesStateCommand, ListTasksCommand, ListContainerInstancesCommand } = require("@aws-sdk/client-ecs");
+          const { ECSClient, UpdateContainerInstancesStateCommand, ListTasksCommand, ListContainerInstancesCommand } = require('@aws-sdk/client-ecs');
           const ecs = new ECSClient({apiVersion: '2014-11-13'});
           const { SQSClient, SendMessageCommand } = require("@aws-sdk/client-sqs");
           const sqs = new SQSClient({apiVersion: '2012-11-05'});
-          const { AutoScalingClient, CompleteLifecycleActionCommand, RecordLifecycleActionHeartbeatCommand } = require("@aws-sdk/client-auto-scaling");
+          const { AutoScalingClient, CompleteLifecycleActionCommand, RecordLifecycleActionHeartbeatCommand } = require('@aws-sdk/client-auto-scaling');
           const asg = new AutoScalingClient({apiVersion: '2011-01-01'});
           const cluster = process.env.CLUSTER;
           const queueUrl = process.env.QUEUE_URL;
@@ -1398,7 +1395,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'DrainInstanceLambdaRole.Arn'
-      Runtime: 'nodejs18.x'
+      Runtime: 'nodejs20.x'
       Timeout: 30
       Environment:
         Variables:

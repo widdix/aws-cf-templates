@@ -153,9 +153,9 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'ViewerRequestRole.Arn'
-      Runtime: 'nodejs18.x'
+      Runtime: 'nodejs20.x'
       Timeout: 5
-  ViewerRequestVersionV4:
+  ViewerRequestVersionV5:
     Type: 'AWS::Lambda::Version'
     Properties:
       FunctionName: !Ref ViewerRequestFunction
@@ -176,4 +176,4 @@ Outputs:
     Value: !Sub '${AWS::StackName}'
   ViewerRequestLambdaEdgeFunctionVersionARN:
     Description: 'Version ARN of Lambda@Edge viewer request function.'
-    Value: !Ref ViewerRequestVersionV4
+    Value: !Ref ViewerRequestVersionV5
