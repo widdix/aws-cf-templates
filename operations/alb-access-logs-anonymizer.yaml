@@ -109,19 +109,16 @@ Resources:
           const { S3Client, GetObjectCommand, HeadObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
           const { Upload } = require('@aws-sdk/lib-storage');
           const s3 = new S3Client({apiVersion: '2006-03-01'});
-
           function anonymizeIPv4Address(str) {
             const s = str.split('.');
             s[3] = '0';
             return s.join('.');
           }
-
           function anonymizeIPv6Address(str) {
             const s = str.split(':').slice(0, 2);
             s.push(':');
             return s.join(':');
           }
-
           function anonymizeIpAddress(str) {
             const s = str.split(':');
             const address = s.slice(0, -1).join(':');
@@ -134,7 +131,6 @@ Resources:
               return str;
             }
           }
-
           function transformLine(line) {
             if (line.trim() === '') {
               return line;
@@ -143,7 +139,6 @@ Resources:
             values[3] = anonymizeIpAddress(values[3]);
             return values.join(' ');
           }
-
           async function process(record) {
             const anonymizedKey = record.s3.object.key.slice(0, -2) + 'anonymized.gz';
             let chunk = Buffer.alloc(0);
@@ -175,7 +170,6 @@ Resources:
 
             try {
               const getObjectResponse = await s3.send(new GetObjectCommand(params));
-
               const writePipeline = pipeline(
                 getObjectResponse.Body,
                 zlib.createGunzip(),
@@ -185,7 +179,6 @@ Resources:
                 zlib.createGzip(),
                 () => {}
               );
-
               await new Upload({
                 client: s3,
                 params: {
@@ -220,7 +213,6 @@ Resources:
               await s3.send(new DeleteObjectCommand(params));
             }
           }
-
           exports.handler = async (event) => {
             console.log(JSON.stringify(event));
             for (let record of event.Records) {
@@ -234,7 +226,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 1024
       Role: !GetAtt 'Role.Arn'
-      Runtime: 'nodejs18.x'
+      Runtime: 'nodejs20.x'
       Timeout: 300
   ErrorsTooHighAlarm:
     Condition: HasAlertTopic

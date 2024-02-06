@@ -252,7 +252,6 @@ Resources:
     Properties:
       Code:
         ZipFile: |
-          'use strict';
           const response = require('cfn-response');
           exports.handler = (event, context, cb) => {
             const nodes = parseInt(event.ResourceProperties.NumCacheNodes, 10);
@@ -265,7 +264,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'CustomResourceLambdaRole.Arn'
-      Runtime: 'nodejs18.x'
+      Runtime: 'nodejs20.x'
       Timeout: 60
   CustomResourceLambdaLogGroup:
     Type: 'AWS::Logs::LogGroup'
