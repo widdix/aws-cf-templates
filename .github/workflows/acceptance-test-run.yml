@@ -23,13 +23,13 @@ jobs:
     runs-on: ['hyperenv', 'medium']
     steps:
     - uses: actions/checkout@v4
-    - uses: aws-actions/configure-aws-credentials@v4.0.1
+    - uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: arn:aws:iam::068189904525:role/github-openid-connect
         role-session-name: github-actions-aws-cf-templates
         role-duration-seconds: 21600
         aws-region: us-east-1
-    - uses: actions/setup-java@v3
+    - uses: actions/setup-java@v4
       with:
         distribution: corretto
         java-version: '8'
@@ -46,7 +46,7 @@ jobs:
         BUCKET_REGION: us-east-1
         BUCKET_NAME: cf-templates-1a2zmgbg9ut4o-us-east-1
       run: mvn -B -q surefire-report:report -Dtest=${{ inputs.tests }} -Dsurefire.reportNameSuffix=us-east-1
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: failure()
       with:
         name: acceptance-test-run-us-east-1

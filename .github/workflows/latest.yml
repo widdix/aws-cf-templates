@@ -14,8 +14,8 @@ jobs:
   latest:
     runs-on: ['hyperenv', 'medium']
     steps:
-    - uses: 'actions/checkout@v4'
-    - uses: aws-actions/configure-aws-credentials@v4.0.1
+    - uses: actions/checkout@v4
+    - uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: arn:aws:iam::820394158530:role/github-openid-connect
         role-session-name: github-actions-aws-cf-templates
