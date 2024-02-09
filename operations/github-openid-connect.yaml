@@ -30,7 +30,7 @@ Metadata:
       - PermissionsBoundary
 Parameters:
   GitHubRestriction:
-    Description: 'Comma-delimited list GitHub (org, repo, git ref) restriction (e.g., repo:octo-org/octo-repo:ref:refs/heads/demo-branch).'
+    Description: 'Comma-delimited list of GitHub restrictions (e.g., repo:octo-org/octo-repo:ref:refs/heads/demo-branch,repo:octo-org/octo-repo:pull_request,repo:octo-org/octo-repo:ref:refs/tags/demo-tag,repo:octo-org/octo-repo:environment:demo=env).'
     Type: String
   RoleName:
     Description: 'Optional name of GitHub OpenID Connect IAM Role.'
