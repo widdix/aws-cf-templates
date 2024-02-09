@@ -72,7 +72,7 @@ Parameters:
     Description: 'Access policy of the bucket.'
     Type: String
     Default: Private
-    AllowedValues: [Private, PublicRead, PublicWrite, PublicReadAndWrite, CloudFrontRead, CloudFrontAccessLogWrite, ElbAccessLogWrite, S3AccessLogWrite, ConfigWrite, CloudTrailWrite, VpcEndpointRead, FlowLogWrite]
+    AllowedValues: [Private, PublicRead, PublicWrite, PublicReadAndWrite, CloudFrontRead, CloudFrontAccessLogWrite, ElbAccessLogWrite, ElbAccessLogWriteEncrypted, S3AccessLogWrite, ConfigWrite, CloudTrailWrite, VpcEndpointRead, FlowLogWrite]
   Versioning:
     Description: 'Enable versioning to keep a backup if objects change.'
     Type: String
@@ -138,7 +138,9 @@ Conditions:
   HasPublicWriteAccess: !Or [!Equals [!Ref Access, PublicWrite], !Equals [!Ref Access, PublicReadAndWrite]]
   HasCloudFrontReadAccess: !Equals [!Ref Access, CloudFrontRead]
   HasCloudFrontAccessLogWrite: !Equals [!Ref Access, CloudFrontAccessLogWrite]
-  HasElbAccessLogWriteAccess: !Equals [!Ref Access, ElbAccessLogWrite]
+  HasElbAccessLogWriteAccess: !Or [!Equals [!Ref Access, ElbAccessLogWrite], !Equals [!Ref Access, ElbAccessLogWriteEncrypted]]
+  # The only server-side encryption option that's supported is Amazon S3-managed keys (SSE-S3).
+  HasElbAccessLogWriteEncrypted: !Equals [!Ref Access, ElbAccessLogWriteEncrypted]
   HasS3AccessLogWrite: !Equals [!Ref Access, S3AccessLogWrite]
   HasConfigWriteAccess: !Equals [!Ref Access, ConfigWrite]
   HasCloudTrailWriteAccess: !Equals [!Ref Access, CloudTrailWrite]
@@ -214,7 +216,9 @@ Resources:
             Resource: !Sub '${Bucket.Arn}/*'
             Condition:
               StringNotEquals:
-                's3:x-amz-server-side-encryption': ''
+                's3:x-amz-server-side-encryption':
+                - 'AES256'
+                - 'aws:kms'
                 's3:x-amz-server-side-encryption-aws-kms-key-id': {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}
           - !Ref 'AWS::NoValue'
         - !If
@@ -293,6 +297,16 @@ Resources:
             Action: 's3:GetBucketAcl'
             Effect: Allow
             Resource: !GetAtt 'Bucket.Arn'
+          - !Ref 'AWS::NoValue'
+        - !If
+          - HasElbAccessLogWriteEncrypted
+          - Principal: '*'
+            Action: 's3:PutObject*'
+            Effect: Deny
+            Resource: !Sub '${Bucket.Arn}/*'
+            Condition:
+              StringNotEquals:
+                's3:x-amz-server-side-encryption': 'AES256' # https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingServerSideEncryption.html
           - !Ref 'AWS::NoValue'
         - !If
           - HasConfigWriteAccess
