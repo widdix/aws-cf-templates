@@ -234,7 +234,7 @@ Mappings:
     'us-west-1':
       ECSAMI: 'ami-00271233a1ebb9161'
     'us-west-2':
-      ECSAMI: 'ami-0dde9c7cb86beac37'
+      ECSAMI: 'ami-03c9d36de2e08b946'
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasKeyName: !Not [!Equals [!Ref KeyName, '']]
