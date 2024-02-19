@@ -57,6 +57,7 @@ Resources:
   Role:
     Type: 'AWS::IAM::Role'
     Properties:
+      RoleName: !Sub '${AWS::StackName}-Role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -80,6 +81,7 @@ Resources:
   LogGroup:
     Type: 'AWS::Logs::LogGroup'
     Properties:
+      LogGroupName: !Sub '${AWS::StackName}-LogGroup'
       RetentionInDays: !Ref RetentionInDays
   FlowLog:
     Type: 'AWS::EC2::FlowLog'

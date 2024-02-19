@@ -127,11 +127,13 @@ Resources:
   CacheSubnetGroupName:
     Type: 'AWS::ElastiCache::SubnetGroup'
     Properties:
+      CacheSubnetGroupName: !Sub '${AWS::StackName}'
       Description: !Ref 'AWS::StackName'
       SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
   SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
+      GroupName : !Sub '${AWS::StackName}'
       GroupDescription: !Ref 'AWS::StackName'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
@@ -153,6 +155,7 @@ Resources:
     # UpdateReplacePolicy: Snapshot # Snapshot not supported by memcached (only Redis)
     Type: 'AWS::ElastiCache::CacheCluster'
     Properties:
+      ClusterName: !Sub '${AWS::StackName}'
       AutoMinorVersionUpgrade: true
       AZMode: !If [HasSingleCacheNode, 'single-az', 'cross-az']
       CacheNodeType: !Ref CacheNodeType
@@ -170,6 +173,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-ClusterCPUUtilizationTooHighAlarm'
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average CPU utilization over last 10 minutes too high.'
@@ -189,6 +193,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-ClusterSwapUsageTooHighAlarm'
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average swap usage over last 10 minutes too high, performance may suffer.'
@@ -208,6 +213,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-ClusterEvictionsTooHighAlarm'
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Evictions over last 10 minutes too high, memory may to less for all keys.'
@@ -226,6 +232,7 @@ Resources:
   CustomResourceLambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
+      RoleName: !Sub '${AWS::StackName}-CustomResourceLambdaRole'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -250,6 +257,7 @@ Resources:
   CustomResourceLambdaFunction: # needs no monitoring because it is used as a custom resource
     Type: 'AWS::Lambda::Function'
     Properties:
+      FunctionName: !Sub '${AWS::StackName}-CustomResourceLambdaFunction'
       Code:
         ZipFile: |
           const response = require('cfn-response');

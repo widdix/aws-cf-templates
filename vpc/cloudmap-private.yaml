@@ -36,6 +36,7 @@ Resources:
   Namespace:
     Type: 'AWS::ServiceDiscovery::PrivateDnsNamespace'
     Properties:
+      Name: !Ref 'AWS::StackName'
       Description: !Ref 'AWS::StackName'
       Vpc: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       Name: !Ref Name

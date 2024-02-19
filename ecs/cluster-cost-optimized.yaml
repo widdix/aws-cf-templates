@@ -254,14 +254,20 @@ Conditions:
 Resources:
   Cluster:
     Type: 'AWS::ECS::Cluster'
-    Properties: {}
+    Properties:
+      ClusterName: !Sub '${AWS::StackName}'
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
   LogGroup:
     Type: 'AWS::Logs::LogGroup'
     Properties:
+      LogGroupName: !Sub '${AWS::StackName}-LogGroup'
       RetentionInDays: !Ref LogsRetentionInDays
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
+      InstanceProfileName: !Sub '${AWS::StackName}'
       Roles:
       - !Ref Role
   Role:
@@ -412,6 +418,7 @@ Resources:
   SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
+      GroupName : !Sub '${AWS::StackName}'
       GroupDescription: 'ecs-cluster'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
@@ -441,6 +448,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-HTTPCodeELB5XXTooHighAlarm'
       AlarmDescription: 'Application load balancer returns 5XX HTTP status codes'
       Namespace: 'AWS/ApplicationELB'
       MetricName: HTTPCode_ELB_5XX_Count
@@ -459,6 +467,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-HTTPCodeTarget5XXTooHighAlarm'
       AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
       Namespace: 'AWS/ApplicationELB'
       MetricName: HTTPCode_Target_5XX_Count
@@ -479,6 +488,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-RejectedConnectionCountTooHighAlarm'
       AlarmDescription: 'Application load balancer rejected connections because the load balancer had reached its maximum number of connections'
       Namespace: 'AWS/ApplicationELB'
       MetricName: RejectedConnectionCount
@@ -497,6 +507,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-TargetConnectionErrorCountTooHighAlarm'
       AlarmDescription: 'Application load balancer could not connect to targets'
       Namespace: 'AWS/ApplicationELB'
       MetricName: TargetConnectionErrorCount
@@ -516,6 +527,7 @@ Resources:
   LoadBalancer: # not monitored, but DefaultTargetGroup is monitored!
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
+      Name: !Sub '${AWS::StackName}'
       LoadBalancerAttributes:
       - Key: 'idle_timeout.timeout_seconds'
         Value: !Ref LoadBalancerIdleTimeout
@@ -571,7 +583,7 @@ Resources:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 443
       Protocol: HTTPS
-      SslPolicy: 'ELBSecurityPolicy-FS-1-2-Res-2019-08'
+      SslPolicy: 'ELBSecurityPolicy-FS-1-2-Res-2020-10'
   LaunchTemplate:
     Type: 'AWS::EC2::LaunchTemplate'
     Metadata:
@@ -888,6 +900,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-CPUTooHighAlarm'
       AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
       Namespace: 'AWS/EC2'
       MetricName: CPUUtilization
@@ -913,6 +926,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-AutoScalingGroupLifecycleHookQueueTooHighAlarm'
       AlarmDescription: 'Queue contains messages older than 10 minutes, messages are not consumed'
       Namespace: 'AWS/SQS'
       MetricName: ApproximateAgeOfOldestMessage
@@ -935,6 +949,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-AutoScalingGroupLifecycleHookDeadLetterQueueTooHighAlarm'
       AlarmDescription: 'Dead letter queue contains messages, message processing failed'
       Namespace: 'AWS/SQS'
       MetricName: ApproximateNumberOfMessagesVisible
@@ -1023,6 +1038,7 @@ Resources:
   ContainerInstancesExcessAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-ContainerInstancesExcessAlarm'
       AlarmDescription: 'Cluster is wasting container instances'
       Metrics:
       - Id: 'overcapacity'
@@ -1076,6 +1092,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-CPUReservationTooHighAlarm'
       AlarmDescription: 'Average CPU reservation over last 10 minutes higher than 90%'
       Namespace: 'AWS/ECS'
       Dimensions:
@@ -1093,6 +1110,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-CPUUtilizationTooHighAlarm'
       AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
       Namespace: 'AWS/ECS'
       Dimensions:
@@ -1110,6 +1128,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-MemoryReservationTooHighAlarm'
       AlarmDescription: 'Average memory reservation over last 10 minutes higher than 90%'
       Namespace: 'AWS/ECS'
       Dimensions:
@@ -1127,6 +1146,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-MemoryUtilizationTooHighAlarm'
       AlarmDescription: 'Average memory utilization over last 10 minutes higher than 80%'
       Namespace: 'AWS/ECS'
       Dimensions:
@@ -1412,6 +1432,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-DrainInstanceLambdaErrorsTooHighAlarm'
       AlarmDescription: 'Invocations failed due to errors in the function'
       Namespace: 'AWS/Lambda'
       MetricName: Errors

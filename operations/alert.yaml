@@ -52,7 +52,8 @@ Conditions:
 Resources:
   Topic:
     Type: 'AWS::SNS::Topic'
-    Properties: {}
+    Properties:
+      TopicName: !Sub '${AWS::StackName}-Topic'
   TopicPolicy:
     Type: 'AWS::SNS::TopicPolicy'
     Properties:
@@ -94,10 +95,12 @@ Resources:
       - !Ref Topic
   FallbackTopic:
     Type: 'AWS::SNS::Topic'
-    Properties: {}
+    Properties:
+      TopicName: !Sub '${AWS::StackName}-FallbackTopic'
   NumberOfNotificationsFailedTooHighAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-NumberOfNotificationsFailedTooHighAlarm'
       AlarmDescription: 'Alerts could not be delivered'
       Namespace: 'AWS/SNS'
       MetricName: NumberOfNotificationsFailed

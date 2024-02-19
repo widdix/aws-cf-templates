@@ -70,6 +70,7 @@ Resources:
     Condition: InternalBucket
     Type: 'AWS::S3::Bucket'
     Properties:
+      BucketName: !Sub '${AWS::StackName}-configbucket'
       PublicAccessBlockConfiguration: # AWS Foundational Security Best Practices v1.0.0 S3.8
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -95,10 +96,12 @@ Resources:
               'aws:SecureTransport': false
   ConfigTopic:
     Type: 'AWS::SNS::Topic'
-    Properties: {}
+    Properties:
+      TopicName: !Sub '${AWS::StackName}-Topic'
   DeliveryChannel:
     Type: 'AWS::Config::DeliveryChannel'
     Properties:
+      Name: !Sub '${AWS::StackName}'
       ConfigSnapshotDeliveryProperties:
         DeliveryFrequency: !Ref DeliveryFrequency
       S3BucketName: !If [InternalBucket, !Ref ConfigBucket, !Ref ExternalConfigBucket]
@@ -107,6 +110,7 @@ Resources:
     Condition: InternalBucket
     Type: 'AWS::IAM::Role'
     Properties:
+      RoleName: !Sub '${AWS::StackName}-ConfigurationRecorderRole'
       ManagedPolicyArns:
       - 'arn:aws:iam::aws:policy/service-role/AWS_ConfigRole'
       AssumeRolePolicyDocument:
@@ -143,6 +147,7 @@ Resources:
     Condition: ExternalBucket
     Type: 'AWS::IAM::Role'
     Properties:
+      RoleName: !Sub '${AWS::StackName}-ExternalConfigurationRecorderRole'
       ManagedPolicyArns:
       - 'arn:aws:iam::aws:policy/service-role/AWS_ConfigRole'
       AssumeRolePolicyDocument:
@@ -157,6 +162,7 @@ Resources:
   ConfigurationRecorder:
     Type: 'AWS::Config::ConfigurationRecorder'
     Properties:
+      Name: !Sub '${AWS::StackName}'
       RecordingGroup:
         AllSupported: true
         IncludeGlobalResourceTypes: true
@@ -164,6 +170,7 @@ Resources:
   LambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
+      RoleName: !Sub '${AWS::StackName}-LambdaRole'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -184,6 +191,7 @@ Resources:
   LambdaPolicy:
     Type: 'AWS::IAM::Policy'
     Properties:
+      PolicyName: !Sub '${AWS::StackName}'
       Roles:
       - !Ref LambdaRole
       PolicyName: lambda
@@ -197,6 +205,7 @@ Resources:
   LambdaFunction: # needs no monitoring because it is used as a custom resource
     Type: 'AWS::Lambda::Function'
     Properties:
+      FunctionName: !Sub '${AWS::StackName}-LambdaFunction'
       Code:
         ZipFile: |
           const response = require('cfn-response');

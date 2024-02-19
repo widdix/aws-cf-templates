@@ -202,6 +202,7 @@ Resources:
   CacheSubnetGroupName:
     Type: 'AWS::ElastiCache::SubnetGroup'
     Properties:
+      CacheSubnetGroupName: !Sub '${AWS::StackName}'
       Description: !Ref 'AWS::StackName'
       SubnetIds: !Split
       - ','
@@ -209,6 +210,7 @@ Resources:
   SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
+      GroupName : !Sub '${AWS::StackName}'
       GroupDescription: !Ref 'AWS::StackName'
       VpcId:
         'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'
@@ -233,6 +235,7 @@ Resources:
     UpdateReplacePolicy: Snapshot
     Type: 'AWS::ElastiCache::ReplicationGroup'
     Properties:
+      ReplicationGroupId: !Sub '${AWS::StackName}'
       ReplicationGroupDescription: !Ref 'AWS::StackName'
       AtRestEncryptionEnabled: true
       AuthToken: !If [HasAuthToken, !Ref AuthToken, !Ref 'AWS::NoValue']
@@ -260,6 +263,7 @@ Resources:
     Condition: HasCPUUtilizationThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-Node1CPUUtilizationTooHighAlarm'
       AlarmDescription: !Sub 'Average CPU utilization over last 10 minutes higher than ${CPUUtilizationThreshold}%'
       Namespace: 'AWS/ElastiCache'
       MetricName: CPUUtilization
@@ -277,6 +281,7 @@ Resources:
     Condition: HasCPUUtilizationThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-Node2CPUUtilizationTooHighAlarm'
       AlarmDescription: !Sub 'Average CPU utilization over last 10 minutes higher than ${CPUUtilizationThreshold}%'
       Namespace: 'AWS/ElastiCache'
       MetricName: CPUUtilization
@@ -294,6 +299,7 @@ Resources:
     Condition: HasCPUUtilizationThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-Node1EngineCPUUtilizationTooHighAlarm'
       AlarmDescription: !Sub 'Average engine CPU utilization over last 10 minutes higher than ${CPUUtilizationThreshold}%'
       Namespace: 'AWS/ElastiCache'
       MetricName: EngineCPUUtilization
@@ -311,6 +317,7 @@ Resources:
     Condition: HasCPUUtilizationThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-Node2EngineCPUUtilizationTooHighAlarm'
       AlarmDescription: !Sub 'Average engine CPU utilization over last 10 minutes higher than ${CPUUtilizationThreshold}%'
       Namespace: 'AWS/ElastiCache'
       MetricName: EngineCPUUtilization
@@ -328,6 +335,7 @@ Resources:
     Condition: HasDatabaseMemoryUsagePercentageThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-Node1DatabaseMemoryUsagePercentageTooHighAlarm'
       AlarmDescription: !Sub 'Average memory usage over last 10 minutes higher than ${DatabaseMemoryUsagePercentageThreshold}, performance may suffer'
       Namespace: 'AWS/ElastiCache'
       MetricName: DatabaseMemoryUsagePercentage
@@ -345,6 +353,7 @@ Resources:
     Condition: HasDatabaseMemoryUsagePercentageThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-Node2DatabaseMemoryUsagePercentageTooHighAlarm'
       AlarmDescription: !Sub 'Average memory usage over last 10 minutes higher than ${DatabaseMemoryUsagePercentageThreshold}, performance may suffer'
       Namespace: 'AWS/ElastiCache'
       MetricName: DatabaseMemoryUsagePercentage
@@ -362,6 +371,7 @@ Resources:
     Condition: HasSwapUsageThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-Node1SwapUsageTooHighAlarm'
       AlarmDescription: !Sub 'Average swap usage over last 10 minutes higher than ${SwapUsageThreshold} bytes, performance may suffer'
       Namespace: 'AWS/ElastiCache'
       MetricName: SwapUsage
@@ -379,6 +389,7 @@ Resources:
     Condition: HasSwapUsageThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-Node2SwapUsageTooHighAlarm'
       AlarmDescription: !Sub 'Average swap usage over last 10 minutes higher than ${SwapUsageThreshold} bytes, performance may suffer'
       Namespace: 'AWS/ElastiCache'
       MetricName: SwapUsage
@@ -396,6 +407,7 @@ Resources:
     Condition: HasEvictionsThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-Node1EvictionsTooHighAlarm'
       AlarmDescription: !Sub 'Average evictions over last 10 minutes higher than ${EvictionsThreshold}, cache hit ratio may suffer'
       Namespace: 'AWS/ElastiCache'
       MetricName: Evictions
@@ -413,6 +425,7 @@ Resources:
     Condition: HasEvictionsThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-Node2EvictionsTooHighAlarm'
       AlarmDescription: !Sub 'Average evictions over last 10 minutes higher than ${EvictionsThreshold}, cache hit ratio may suffer'
       Namespace: 'AWS/ElastiCache'
       MetricName: Evictions
@@ -430,6 +443,7 @@ Resources:
     Condition: HasReplicationLagThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-Node1ReplicationLagTooHighAlarm'
       AlarmDescription: !Sub 'Average replication lag over last 10 minutes higher than ${ReplicationLagThreshold} seconds'
       Namespace: 'AWS/ElastiCache'
       MetricName: ReplicationLag
@@ -447,6 +461,7 @@ Resources:
     Condition: HasReplicationLagThresholdAndAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-Node2ReplicationLagTooHighAlarm'
       AlarmDescription: !Sub 'Average replication lag over last 10 minutes higher than ${ReplicationLagThreshold} seconds'
       Namespace: 'AWS/ElastiCache'
       MetricName: ReplicationLag

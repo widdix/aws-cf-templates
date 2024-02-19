@@ -127,11 +127,13 @@ Resources:
   DBSubnetGroup:
     Type: 'AWS::DocDB::DBSubnetGroup'
     Properties:
+      DBSubnetGroupName: !Sub '${AWS::StackName}'
       DBSubnetGroupDescription: !Ref 'AWS::StackName'
       SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
   SecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
+      GroupName : !Sub '${AWS::StackName}'
       GroupDescription: !Ref 'AWS::StackName'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
@@ -152,6 +154,7 @@ Resources:
     Condition: HasNotDBClusterParameterGroupName
     Type: 'AWS::DocDB::DBClusterParameterGroup'
     Properties:
+      Name: !Sub '${AWS::StackName}'
       Description: !Ref 'AWS::StackName'
       Family: !FindInMap [EngineVersionMap, !Ref EngineVersion, ParameterGroupFamily]
       Parameters:
@@ -161,6 +164,7 @@ Resources:
     # TODO not yet supported by CloudFormation UpdateReplacePolicy: Snapshot
     Type: 'AWS::DocDB::DBCluster'
     Properties:
+      DBClusterIdentifier: !Sub '${AWS::StackName}'
       AvailabilityZones: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-AZList'}]
       BackupRetentionPeriod: !Ref BackupRetentionPeriod
       DBClusterParameterGroupName: !If [HasDBClusterParameterGroupName, !Ref DBClusterParameterGroupName, !Ref ParameterGroup]
@@ -187,12 +191,14 @@ Resources:
   InstanceA:
     Type: 'AWS::DocDB::DBInstance'
     Properties:
+      DBInstanceIdentifier: instancea
       AvailabilityZone: {'Fn::ImportValue': !Sub '${ParentVPCStack}-AZA'}
       DBClusterIdentifier: !Ref Cluster
       DBInstanceClass: !Ref DBInstanceClass
   InstanceB:
     Type: 'AWS::DocDB::DBInstance'
     Properties:
+      DBInstanceIdentifier: instanceb
       AvailabilityZone: {'Fn::ImportValue': !Sub '${ParentVPCStack}-AZB'}
       DBClusterIdentifier: !Ref Cluster
       DBInstanceClass: !Ref DBInstanceClass
@@ -200,6 +206,7 @@ Resources:
     Condition: HasParentAlertStack
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-ClusterCPUUtilizationTooHighAlarm'
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average database CPU utilization over last 10 minutes too high.'
@@ -219,6 +226,7 @@ Resources:
     Condition: HasParentAlertStack
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-ClusterFreeableMemoryTooLowAlarm'
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average database freeable memory over last 10 minutes too low, performance may suffer.'
@@ -238,6 +246,7 @@ Resources:
     Condition: HasParentAlertStack
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-ClusterSwapUsageTooHighAlarm'
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average database swap usage over last 10 minutes too high, performance may suffer.'
@@ -257,6 +266,7 @@ Resources:
     Condition: HasParentAlertStack
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-DatabaseFreeLocalStorageTooLowAlarm'
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: 'Average database free local storage space over last 10 minutes too low.'

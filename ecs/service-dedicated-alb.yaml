@@ -186,6 +186,7 @@ Resources:
   ALBSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
+      GroupName : !Sub '${AWS::StackName}-load-balancer'
       GroupDescription: 'ecs-cluster-alb'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
   ALBSecurityGroupInHttpWorld:
@@ -271,6 +272,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-HTTPCodeELB5XXTooHighAlarm'
       AlarmDescription: 'Application load balancer returns 5XX HTTP status codes'
       Namespace: 'AWS/ApplicationELB'
       MetricName: HTTPCode_ELB_5XX_Count
@@ -289,6 +291,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-HTTPCodeTarget5XXTooHighAlarm'
       AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
       Namespace: 'AWS/ApplicationELB'
       MetricName: HTTPCode_Target_5XX_Count
@@ -307,6 +310,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-RejectedConnectionCountTooHighAlarm'
       AlarmDescription: 'Application load balancer rejected connections because the load balancer had reached its maximum number of connections'
       Namespace: 'AWS/ApplicationELB'
       MetricName: RejectedConnectionCount
@@ -325,6 +329,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-TargetConnectionErrorCountTooHighAlarm'
       AlarmDescription: 'Application load balancer could not connect to targets'
       Namespace: 'AWS/ApplicationELB'
       MetricName: TargetConnectionErrorCount
@@ -368,6 +373,7 @@ Resources:
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
+      Name: !Sub '${AWS::StackName}'
       IpAddressType: !If [HasLoadBalancerSchemeInternal, 'ipv4', 'dualstack']
       LoadBalancerAttributes:
       - Key: 'idle_timeout.timeout_seconds'
@@ -412,7 +418,7 @@ Resources:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 443
       Protocol: HTTPS
-      SslPolicy: 'ELBSecurityPolicy-FS-1-2-Res-2019-08'
+      SslPolicy: 'ELBSecurityPolicy-FS-1-2-Res-2020-10'
   ServiceRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -430,6 +436,7 @@ Resources:
     Type: 'AWS::ECS::Service'
     DependsOn: HttpListener
     Properties:
+      ServiceName: !Sub '${AWS::StackName}'
       Cluster: {'Fn::ImportValue': !Sub '${ParentClusterStack}-Cluster'}
       DeploymentConfiguration:
         MaximumPercent: 200
@@ -454,6 +461,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-CPUUtilizationTooHighAlarm'
       AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
       Namespace: 'AWS/ECS'
       Dimensions:
@@ -563,6 +571,7 @@ Resources:
     Condition: HasAutoScaling
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-CPUUtilizationHighAlarm'
       AlarmDescription: 'Service is running out of CPU'
       Namespace: 'AWS/ECS'
       Dimensions:
@@ -582,6 +591,7 @@ Resources:
     Condition: HasAutoScaling
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-CPUUtilizationLowAlarm'
       AlarmDescription: 'Service is wasting CPU'
       Namespace: 'AWS/ECS'
       Dimensions:

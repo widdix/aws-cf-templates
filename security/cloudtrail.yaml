@@ -177,6 +177,7 @@ Resources:
     Condition: InternalBucket
     Type: 'AWS::S3::Bucket'
     Properties:
+      BucketName: !Sub '${AWS::StackName}-trailbucket'
       PublicAccessBlockConfiguration: # AWS Foundational Security Best Practices v1.0.0 S3.8
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -218,10 +219,12 @@ Resources:
   TrailLogGroup:
     Type: 'AWS::Logs::LogGroup'
     Properties:
+      LogGroupName: !Sub '${AWS::StackName}-LogGroup'
       RetentionInDays: !Ref CloudWatchLogsRetentionInDays
   TrailLogGroupRole:
     Type: 'AWS::IAM::Role'
     Properties:
+      RoleName: !Sub '${AWS::StackName}-TrailLogGroupRole'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -243,7 +246,8 @@ Resources:
             Resource: !GetAtt 'TrailLogGroup.Arn'
   TrailTopic:
     Type: 'AWS::SNS::Topic'
-    Properties: {}
+    Properties:
+      TopicName: !Sub '${AWS::StackName}-Topic'
   TrailTopicPolicy:
     Type: 'AWS::SNS::TopicPolicy'
     Properties:
@@ -265,6 +269,7 @@ Resources:
     - TrailTopicPolicy
     Type: 'AWS::CloudTrail::Trail'
     Properties:
+      TrailName: !Sub '${AWS::StackName}'
       IncludeGlobalServiceEvents: true
       IsLogging: true
       IsMultiRegionTrail: true
@@ -282,6 +287,7 @@ Resources:
     - TrailTopicPolicy
     Type: 'AWS::CloudTrail::Trail'
     Properties:
+      TrailName: !Sub '${AWS::StackName}'
       IncludeGlobalServiceEvents: true
       IsLogging: true
       IsMultiRegionTrail: true
@@ -307,6 +313,7 @@ Resources:
     Condition: HasUnauthorizedOperationAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-UnauthorizedOperationAlarm'
       AlarmDescription: 'CloudTrail: unauthorized API calls detected'
       Namespace: !Ref 'AWS::StackName'
       MetricName: UnauthorizedOperationCount
@@ -332,6 +339,7 @@ Resources:
     Condition: HasNonMfaConsoleLoginAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-NonMfaConsoleLoginAlarm'
       AlarmDescription: 'CloudTrail: Management Console sign-in without MFA detected'
       Namespace: !Ref 'AWS::StackName'
       MetricName: NonMfaConsoleLoginCount
@@ -357,6 +365,7 @@ Resources:
     Condition: HasRootUserActivityAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-RootUserActivityAlarm'
       AlarmDescription: 'CloudTrail: usage of root account/user detected'
       Namespace: !Ref 'AWS::StackName'
       MetricName: RootUserActivityCount
@@ -382,6 +391,7 @@ Resources:
     Condition: HasIamPolicyChangeAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-IamPolicyChangeAlarm'
       AlarmDescription: 'CloudTrail: IAM policy changes detected'
       Namespace: !Ref 'AWS::StackName'
       MetricName: IamPolicyChangeCount
@@ -407,6 +417,7 @@ Resources:
     Condition: HasCloudTrailConfigChangeAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-CloudTrailConfigChangeAlarm'
       AlarmDescription: 'CloudTrail: CloudTrail configuration changes detected'
       Namespace: !Ref 'AWS::StackName'
       MetricName: CloudTrailConfigChangeCount
@@ -432,6 +443,7 @@ Resources:
     Condition: HasManagementConsoleAuthFailureAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-ManagementConsoleAuthFailureAlarm'
       AlarmDescription: 'CloudTrail: Management Console authentication failures detected'
       Namespace: !Ref 'AWS::StackName'
       MetricName: ManagementConsoleAuthFailureCount
@@ -457,6 +469,7 @@ Resources:
     Condition: HasDeletingKmsCmkAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-DeletingKmsCmkAlarm'
       AlarmDescription: 'CloudTrail: disabling or scheduled deletion of customer created CMKs detected'
       Namespace: !Ref 'AWS::StackName'
       MetricName: DeletingKmsCmkCount
@@ -482,6 +495,7 @@ Resources:
     Condition: HasS3BucketPolicyChangeAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-S3BucketPolicyChangeAlarm'
       AlarmDescription: 'CloudTrail:  S3 bucket policy changes detected'
       Namespace: !Ref 'AWS::StackName'
       MetricName: S3BucketPolicyChangeCount
@@ -507,6 +521,7 @@ Resources:
     Condition: HasConfigChangeAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-ConfigChangeAlarm'
       AlarmDescription: 'CloudTrail: AWS Config configuration changes detected'
       Namespace: !Ref 'AWS::StackName'
       MetricName: ConfigChangeCount
@@ -532,6 +547,7 @@ Resources:
     Condition: HasSecurityGroupChangeAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-SecurityGroupChangeAlarm'
       AlarmDescription: 'CloudTrail: security group changes detected'
       Namespace: !Ref 'AWS::StackName'
       MetricName: SecurityGroupChangeCount
@@ -557,6 +573,7 @@ Resources:
     Condition: HasNaclChangeAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-NaclChangeAlarm'
       AlarmDescription: 'CloudTrail: changes to Network Access Control List (NACL) detected'
       Namespace: !Ref 'AWS::StackName'
       MetricName: NaclChangeCount
@@ -582,6 +599,7 @@ Resources:
     Condition: HasNetworkGatewayChangeAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-NetworkGatewayChangeAlarm'
       AlarmDescription: 'CloudTrail: changes to network gateways detected'
       Namespace: !Ref 'AWS::StackName'
       MetricName: NetworkGatewayChangeChangeCount
@@ -607,6 +625,7 @@ Resources:
     Condition: HasRouteTableChangeAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-RouteTableChangeAlarm'
       AlarmDescription: 'CloudTrail: changes to route tables detected'
       Namespace: !Ref 'AWS::StackName'
       MetricName: RouteTableChangeCount
@@ -632,6 +651,7 @@ Resources:
     Condition: HasVpcChangeAlarm
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-VpcTableChangeAlarm'
       AlarmDescription: 'CloudTrail: changes to VPCs detected'
       Namespace: !Ref 'AWS::StackName'
       MetricName: VpcChangeCount

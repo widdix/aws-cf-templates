@@ -186,6 +186,7 @@ Resources:
   Logs:
     Type: 'AWS::Logs::LogGroup'
     Properties:
+      LogGroupName: !Sub '${AWS::StackName}-LogGroup'
       RetentionInDays: !Ref LogsRetentionInDays
   NATSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -548,6 +549,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-CPUTooHighAlarm'
       AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
       Namespace: 'AWS/EC2'
       MetricName: CPUUtilization

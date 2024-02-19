@@ -216,6 +216,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::Events::Rule'
     Properties:
+      Name: !Sub '${AWS::StackName}-DeletionNotification'
       EventPattern:
         source:
         - 'aws.kms'

@@ -65,6 +65,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-AlarmNatGatewayErrorPortAllocation'
       AlarmDescription: !Sub 'NAT gateway ${SubnetZone} could not allocate a source port. Too many concurrent connections are open through the NAT gateway.'
       Namespace: 'AWS/NATGateway'
       MetricName: ErrorPortAllocation
@@ -82,6 +83,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-AlarmNatGatewayPacketsDropCount'
       AlarmDescription: !Sub 'NAT gateway ${SubnetZone} dropped packets. This might indicate an ongoing transient issue with the NAT gateway.'
       Namespace: 'AWS/NATGateway'
       MetricName: PacketsDropCount
@@ -99,6 +101,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-AlarmNatGatewayBandwidth'
       AlarmActions:
       - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
       AlarmDescription: !Sub 'NAT gateway ${SubnetZone} bandwidth utilization is over 80%'

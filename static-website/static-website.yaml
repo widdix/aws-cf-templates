@@ -247,7 +247,7 @@ Resources:
           - HEAD
           - OPTIONS
           Compress: true
-          DefaultTTL: 3600 # in seconds
+          DefaultTTL: 1 # in seconds
           ForwardedValues:
             Cookies:
               Forward: none
@@ -257,8 +257,8 @@ Resources:
           - !If [HasOriginRequestLambdaEdgeFunctionVersionARN, {EventType: 'origin-request', LambdaFunctionARN: !Ref OriginRequestLambdaEdgeFunctionVersionARN}, !Ref 'AWS::NoValue']
           - !If [HasOriginResponseLambdaEdgeFunctionVersionARN, {EventType: 'origin-response', LambdaFunctionARN: !Ref OriginResponseLambdaEdgeFunctionVersionARN}, !Ref 'AWS::NoValue']
           - !If [HasViewerResponseLambdaEdgeFunctionVersionARN, {EventType: 'viewer-response', LambdaFunctionARN: !Ref ViewerResponseLambdaEdgeFunctionVersionARN}, !Ref 'AWS::NoValue']
-          MaxTTL: 86400 # in seconds
-          MinTTL: 60 # in seconds
+          MaxTTL: 1 # in seconds
+          MinTTL: 1 # in seconds
           TargetOriginId: s3origin
           ViewerProtocolPolicy: 'redirect-to-https'
         DefaultRootObject: !If [HasDefaultRootObject, !Ref DefaultRootObject, !Ref 'AWS::NoValue']
@@ -275,7 +275,7 @@ Resources:
         ViewerCertificate:
           AcmCertificateArn: !If [HasCreateAcmCertificate, !Ref Certificate, !If [HasAcmCertificateArn, !Ref ExistingCertificate, !Ref 'AWS::NoValue']]
           IamCertificateId: !If [HasIamCertificateId, !Ref ExistingCertificate, !Ref 'AWS::NoValue']
-          MinimumProtocolVersion: 'TLSv1.2_2019'
+          MinimumProtocolVersion: 'TLSv1.2_2021'
           SslSupportMethod: 'sni-only'
         WebACLId: !If
         - HasWAF

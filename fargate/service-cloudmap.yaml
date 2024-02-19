@@ -400,11 +400,12 @@ Resources:
         RoutingPolicy: MULTIVALUE
       HealthCheckCustomConfig:
         FailureThreshold: 1
-      Name: !Ref Name
+      Name: !Sub '${AWS::StackName}'
       NamespaceId: {'Fn::ImportValue': !Sub '${ParentCloudMapStack}-NamespaceID'}
   TaskExecutionRole:
     Type: 'AWS::IAM::Role'
     Properties:
+      RoleName: !Sub '${AWS::StackName}-TaskExecutionRole'
       AssumeRolePolicyDocument:
         Statement:
         - Effect: Allow
@@ -431,6 +432,7 @@ Resources:
   TaskRole:
     Type: 'AWS::IAM::Role'
     Properties:
+      RoleName: !Sub '${AWS::StackName}-TaskRole'
       AssumeRolePolicyDocument:
         Statement:
         - Effect: Allow
@@ -510,10 +512,12 @@ Resources:
   LogGroup:
     Type: 'AWS::Logs::LogGroup'
     Properties:
+      LogGroupName: !Sub '${AWS::StackName}-LogGroup'
       RetentionInDays: !Ref LogsRetentionInDays
   ServiceSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
+      GroupName: !Sub '${AWS::StackName}-service'
       GroupDescription: !Sub '${AWS::StackName}-service'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
@@ -533,6 +537,7 @@ Resources:
   Service:
     Type: 'AWS::ECS::Service'
     Properties:
+      ServiceName: !Sub '${AWS::StackName}'
       CapacityProviderStrategy:
       - Base: 0
         CapacityProvider: !If [HasSpot, FARGATE_SPOT, FARGATE]
@@ -564,6 +569,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-CPUUtilizationTooHighAlarm'
       AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
       Namespace: 'AWS/ECS'
       Dimensions:
@@ -583,6 +589,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::Events::Rule'
     Properties:
+      Name: !Sub '${AWS::StackName}-ServiceFailedNotification'
       EventPattern:
         source:
         - 'aws.ecs'
@@ -673,6 +680,7 @@ Resources:
     Condition: HasAutoScaling
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-CPUUtilizationHighAlarm'
       AlarmDescription: 'Service is running out of CPU'
       Namespace: 'AWS/ECS'
       Dimensions:
@@ -692,6 +700,7 @@ Resources:
     Condition: HasAutoScaling
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-CPUUtilizationLowAlarm'
       AlarmDescription: 'Service is wasting CPU'
       Namespace: 'AWS/ECS'
       Dimensions:

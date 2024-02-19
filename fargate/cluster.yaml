@@ -94,7 +94,20 @@ Conditions:
 Resources:
   Cluster:
     Type: 'AWS::ECS::Cluster'
-    Properties: {}
+    Properties:
+      ClusterName: !Sub '${AWS::StackName}'
+      CapacityProviders:
+        - FARGATE
+        - FARGATE_SPOT
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE
+          Weight: 1
+          Base: 1
+        - CapacityProvider: FARGATE_SPOT
+          Weight: 4
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
   RecordSet:
     Condition: HasZone
     Type: 'AWS::Route53::RecordSet'
@@ -124,6 +137,7 @@ Resources:
   LoadBalancerSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
+      GroupName : !Sub '${AWS::StackName}-load-balancer'
       GroupDescription: !Sub '${AWS::StackName}-load-balancer'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
   LoadBalancerSecurityGroupInHttpFromWorld:
@@ -183,6 +197,7 @@ Resources:
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
+      Name: !Sub '${AWS::StackName}'
       IpAddressType: !If [HasLoadBalancerSchemeInternal, 'ipv4', 'dualstack']
       LoadBalancerAttributes:
       - Key: 'idle_timeout.timeout_seconds'
@@ -211,6 +226,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-HTTPCodeELB5XXTooHighAlarm'
       AlarmDescription: 'Application load balancer returns 5XX HTTP status codes'
       Namespace: 'AWS/ApplicationELB'
       MetricName: HTTPCode_ELB_5XX_Count
@@ -229,6 +245,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-RejectedConnectionCountTooHighAlarm'
       AlarmDescription: 'Application load balancer rejected connections because the load balancer had reached its maximum number of connections'
       Namespace: 'AWS/ApplicationELB'
       MetricName: RejectedConnectionCount
@@ -277,7 +294,7 @@ Resources:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 443
       Protocol: HTTPS
-      SslPolicy: 'ELBSecurityPolicy-FS-1-2-Res-2019-08'
+      SslPolicy: 'ELBSecurityPolicy-FS-1-2-Res-2020-10'
 Outputs:
   TemplateID:
     Description: 'cloudonaut.io template id.'

@@ -213,6 +213,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-HTTPCodeTarget5XXTooHighAlarm'
       AlarmDescription: 'Application load balancer receives 5XX HTTP status codes from targets'
       Namespace: 'AWS/ApplicationELB'
       MetricName: HTTPCode_Target_5XX_Count
@@ -233,6 +234,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-TargetConnectionErrorCountTooHighAlarm'
       AlarmDescription: 'Application load balancer could not connect to targets'
       Namespace: 'AWS/ApplicationELB'
       MetricName: TargetConnectionErrorCount
@@ -344,6 +346,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-CPUUtilizationTooHighAlarm'
       AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
       Namespace: 'AWS/ECS'
       Dimensions:
@@ -453,6 +456,7 @@ Resources:
     Condition: HasAutoScaling
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-CPUUtilizationHighAlarm'
       AlarmDescription: 'Service is running out of CPU'
       Namespace: 'AWS/ECS'
       Dimensions:
@@ -472,6 +476,7 @@ Resources:
     Condition: HasAutoScaling
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-CPUUtilizationLowAlarm'
       AlarmDescription: 'Service is wasting CPU'
       Namespace: 'AWS/ECS'
       Dimensions:

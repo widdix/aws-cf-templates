@@ -548,6 +548,7 @@ Resources:
   MasterELB:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
+      Name: !Sub '${AWS::StackName}'
       IpAddressType: !If [HasMasterELBSchemeInternal, 'ipv4', 'dualstack']
       LoadBalancerAttributes:
       - Key: 'idle_timeout.timeout_seconds'

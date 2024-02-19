@@ -164,9 +164,9 @@ Parameters:
     Type: String
     Default: 'cron(0 5 ? * * *)'
   DBServerInstanceType:
-    Description: 'The instance type of database server (e.g. db.t3.medium).'
+    Description: 'The instance type of database server (e.g. db.t2.small).'
     Type: String
-    Default: 'db.t3.medium'
+    Default: 'db.t2.small'
   DBBackupRetentionPeriod:
     Description: 'The number of days to keep snapshots of the database.'
     Type: Number
@@ -298,10 +298,12 @@ Resources:
   WebServerLogs:
     Type: 'AWS::Logs::LogGroup'
     Properties:
+      LogGroupName: !Sub '${AWS::StackName}-WebServerLogs'
       RetentionInDays: !Ref WebServerLogsRetentionInDays
   LoadBalancerSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
+      GroupName : !Sub '${AWS::StackName}-load-balancer'
       GroupDescription: 'wordpress-elb'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
   LoadBalancerSecurityGroupInCloudFront:
@@ -325,6 +327,7 @@ Resources:
   WebServerSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
+      GroupName : !Sub '${AWS::StackName}-WebServerSecurityGroup'
       GroupDescription: 'wordpress-ec2'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
@@ -353,6 +356,7 @@ Resources:
   DatabaseSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
+      GroupName : !Sub '${AWS::StackName}-DatabaseSecurityGroup'
       GroupDescription: 'wordpress-rds'
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
@@ -373,6 +377,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-HTTPCodeELB5XXTooHighAlarm'
       AlarmDescription: 'Elastic load balancer returns 5XX HTTP status codes'
       Namespace: 'AWS/ApplicationELB'
       MetricName: HTTPCode_ELB_5XX_Count
@@ -391,6 +396,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-HTTPCodeTarget5XXTooHighAlarm'
       AlarmDescription: 'Elastic load balancer receives 5XX HTTP status codes from backends'
       Namespace: 'AWS/ApplicationELB'
       MetricName: HTTPCode_Target_5XX_Count
@@ -409,6 +415,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-RejectedConnectionCountTooHighAlarm'
       AlarmDescription: 'Application load balancer rejected connections because the load balancer had reached its maximum number of connections'
       Namespace: 'AWS/ApplicationELB'
       MetricName: RejectedConnectionCount
@@ -427,6 +434,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-TargetConnectionErrorCountTooHighAlarm'
       AlarmDescription: 'Application load balancer could not connect to targets'
       Namespace: 'AWS/ApplicationELB'
       MetricName: TargetConnectionErrorCount
@@ -444,6 +452,7 @@ Resources:
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
+      Name: !Sub '${AWS::StackName}'
       IpAddressType: dualstack
       LoadBalancerAttributes:
       - Key: 'idle_timeout.timeout_seconds'
@@ -478,10 +487,11 @@ Resources:
       Protocol: HTTPS
       Certificates:
       - CertificateArn: !Ref ElbAcmCertificate
-      SslPolicy: 'ELBSecurityPolicy-FS-1-2-Res-2019-08'
+      SslPolicy: 'ELBSecurityPolicy-FS-1-2-Res-2020-10'
   LoadBalancerTargetGroup: # not monitored, but LoadBalancer is monitored!
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
+      Name: !Sub '${AWS::StackName}'
       HealthCheckIntervalSeconds: 15
       HealthCheckPath: '/'
       HealthCheckPort: '80'
@@ -500,6 +510,7 @@ Resources:
   DBSubnetGroup:
     Type: 'AWS::RDS::DBSubnetGroup'
     Properties:
+      DBSubnetGroupName: !Sub '${AWS::StackName}'
       DBSubnetGroupDescription: 'DB subnet group'
       SubnetIds:
       - {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetAPrivate'}
@@ -510,6 +521,7 @@ Resources:
     UpdateReplacePolicy: Snapshot
     Type: 'AWS::RDS::DBCluster'
     Properties:
+      DBClusterIdentifier: !Sub '${AWS::StackName}'
       BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
       DatabaseName: wordpress
       DBSubnetGroupName: !Ref DBSubnetGroup
@@ -522,6 +534,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-DatabaseClusterBurstBalanceTooLowAlarm'
       AlarmDescription: 'Average database cluster storage burst balance over last 10 minutes lower than 20%, expect a significant performance drop soon'
       Namespace: 'AWS/RDS'
       MetricName: BurstBalance
@@ -539,6 +552,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-DatabaseClusterCPUUtilizationTooHighAlarm'
       AlarmDescription: 'Average database cluster CPU utilization over last 10 minutes higher than 80%'
       Namespace: 'AWS/RDS'
       MetricName: CPUUtilization
@@ -556,6 +570,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-DatabaseClusterDiskQueueDepthTooHighAlarm'
       AlarmDescription: 'Average database cluster disk queue depth over last 10 minutes higher than 64, performance may suffer'
       Namespace: 'AWS/RDS'
       MetricName: DiskQueueDepth
@@ -573,6 +588,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-DatabaseClusterFreeableMemoryTooLowAlarm'
       AlarmDescription: 'Average database cluster freeable memory over last 10 minutes lower than 64 MB, performance may suffer'
       Namespace: 'AWS/RDS'
       MetricName: FreeableMemory
@@ -590,6 +606,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-DatabaseClusterFreeStorageSpaceTooLowAlarm'
       AlarmDescription: 'Average database cluster free storage space over last 10 minutes lower than 2 GB'
       Namespace: 'AWS/RDS'
       MetricName: FreeStorageSpace
@@ -607,6 +624,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-DatabaseClusterSwapUsageTooHighAlarm'
       AlarmDescription: 'Average database cluster swap usage over last 10 minutes higher than 256 MB, performance may suffer'
       Namespace: 'AWS/RDS'
       MetricName: SwapUsage
@@ -623,6 +641,7 @@ Resources:
   DatabaseA:
     Type: 'AWS::RDS::DBInstance'
     Properties:
+      DBInstanceIdentifier: !Sub '${AWS::StackName}-DatabaseA'
       DBClusterIdentifier: !Ref DatabaseCluster
       DBInstanceClass: !Ref DBServerInstanceType
       Engine: 'aurora-mysql'
@@ -630,6 +649,7 @@ Resources:
   DatabaseB:
     Type: 'AWS::RDS::DBInstance'
     Properties:
+      DBInstanceIdentifier: !Sub '${AWS::StackName}-DatabaseB'
       DBClusterIdentifier: !Ref DatabaseCluster
       DBInstanceClass: !Ref DBServerInstanceType
       Engine: 'aurora-mysql'
@@ -637,11 +657,13 @@ Resources:
   WebServerInstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
+      InstanceProfileName: !Sub '${AWS::StackName}-WebServerInstanceProfile'
       Roles:
       - !Ref WebServerIAMRole
   WebServerIAMRole:
     Type: 'AWS::IAM::Role'
     Properties:
+      RoleName: !Sub '${AWS::StackName}-WebServerIAMRole'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -680,6 +702,7 @@ Resources:
     Type: 'AWS::IAM::Policy'
     Condition: HasIAMUserSSHAccess
     Properties:
+      PolicyName: !Sub '${AWS::StackName}-WebServerIAMPolicySSHAccess'
       Roles:
       - !Ref WebServerIAMRole
       PolicyName: iam
@@ -1048,6 +1071,7 @@ Resources:
     - EFSMountTargetB
     - EFSMountTargetC
     Properties:
+      AutoScalingGroupName: !Sub '${AWS::StackName}-AutoScalingGroup'
       TargetGroupARNs:
       - !Ref LoadBalancerTargetGroup
       LaunchTemplate:
@@ -1090,6 +1114,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-CPUTooHighAlarm'
       AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
       Namespace: 'AWS/EC2'
       MetricName: CPUUtilization
@@ -1114,6 +1139,7 @@ Resources:
   CPUHighAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-CPUHighAlarm'
       EvaluationPeriods: 1
       Statistic: Average
       Threshold: 60
@@ -1138,6 +1164,7 @@ Resources:
   CPULowAlarm:
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-CPULowAlarm'
       EvaluationPeriods: 3
       Statistic: Average
       Threshold: 30
@@ -1163,6 +1190,7 @@ Resources:
     Condition: HasAlertTopicAndNotEFSProvisionedThroughput
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-EFSFileSystemBurstCreditBalanceTooLowAlarm'
       AlarmDescription: 'Average burst credit balance over last 10 minutes too low, expect a significant performance drop soon.'
       Namespace: 'AWS/EFS'
       MetricName: BurstCreditBalance
@@ -1180,6 +1208,7 @@ Resources:
     Condition: HasAlertTopicAndNotEFSProvisionedThroughput
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-EFSFileSystemPercentIOLimitTooHighAlarm'
       AlarmDescription: 'I/O limit has been reached, consider using Max I/O performance mode.'
       Namespace: 'AWS/EFS'
       MetricName: PercentIOLimit
@@ -1197,6 +1226,7 @@ Resources:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
     Properties:
+      AlarmName: !Sub '${AWS::StackName}-EFSFileSystemThroughputAlarm'
       AlarmDescription: 'Reached 80% of the permitted throughput 6 times over last 10 minutes.'
       Metrics:
       - Id: m1
@@ -1267,6 +1297,7 @@ Resources:
   EFSSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
+      GroupName : !Sub '${AWS::StackName}-EFSSecurityGroup'
       GroupDescription: Allowing access to EFS
       VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
       SecurityGroupIngress:
@@ -1409,6 +1440,7 @@ Resources:
     Condition: HasEFSBackupRetentionPeriod
     Type: 'AWS::IAM::Role'
     Properties:
+      RoleName: !Sub '${AWS::StackName}-BackupRole'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:

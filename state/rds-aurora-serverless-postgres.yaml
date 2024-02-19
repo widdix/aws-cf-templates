@@ -176,6 +176,7 @@ Resources:
   ClusterSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
+      GroupName : !Sub '${AWS::StackName}'
       GroupDescription: !Ref 'AWS::StackName'
       SecurityGroupIngress:
       - IpProtocol: tcp
@@ -195,6 +196,7 @@ Resources:
   DBSubnetGroup:
     Type: 'AWS::RDS::DBSubnetGroup'
     Properties:
+      DBSubnetGroupName: !Sub '${AWS::StackName}'
       DBSubnetGroupDescription: !Ref 'AWS::StackName'
       SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
   DBClusterParameterGroup:
@@ -209,6 +211,7 @@ Resources:
     UpdateReplacePolicy: Snapshot
     Type: 'AWS::RDS::DBCluster'
     Properties:
+      DBClusterIdentifier: !Sub '${AWS::StackName}'
       BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
       DatabaseName: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBName]
       DBClusterParameterGroupName: !Ref DBClusterParameterGroup
