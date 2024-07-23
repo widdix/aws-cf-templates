@@ -62,6 +62,7 @@ Parameters:
     - workspaces
     - dnssec-route53 # Deprecated since v13. Will be removed in v15. Use ROUTE53_DNSSEC instead.
     - cloudtrail
+    - cloudfront-logs
     Default: ALL_SERVICES
   KeySpec:
     Description: 'Specify the type of the CMK.'
@@ -89,6 +90,7 @@ Conditions:
   HasServiceS3PublicAccess: !Equals [!Ref Service, 'S3_PUBLIC_ACCESS']
   HasServiceRoute53Dnssec: !Or [!Equals [!Ref Service, 'ROUTE53_DNSSEC'], !Equals [!Ref Service, 'dnssec-route53']]
   HasServiceCloudFront: !Equals [!Ref Service, 'CLOUDFRONT']
+  HasServiceCloudFrontLogs: !Equals [!Ref Service, 'cloudfront-logs']
   HasServiceCloudTrail: !Equals [!Ref Service, 'CLOUDTRAIL']
   HasService: !Not [!Or [!Condition HasServiceAllServices, !Condition HasServiceS3PublicAccess, !Condition HasServiceRoute53Dnssec, !Condition HasServiceCloudFront, !Condition HasServiceCloudTrail]]
   HasSymmetricKey: !Equals [!Ref KeySpec, 'SYMMETRIC_DEFAULT']
@@ -204,6 +206,16 @@ Resources:
             Condition:
               StringLike:
                 'aws:SourceArn': !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/*'
+          - !Ref 'AWS::NoValue'
+        - !If
+          - HasServiceCloudFrontLogs
+          - Effect: Allow # https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html#AccessLogsKMSPermissions
+            Principal:
+              Service: 'delivery.logs.amazonaws.com'
+            Action:
+            - 'kms:GenerateDataKey*'
+            - 'kms:Decrypt'
+            Resource: '*'
           - !Ref 'AWS::NoValue'
   KeyAlias:
     DeletionPolicy: Retain
