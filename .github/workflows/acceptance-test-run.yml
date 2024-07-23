@@ -20,7 +20,7 @@ defaults:
     shell: bash
 jobs:
   run:
-    runs-on: ['hyperenv', 'medium']
+    runs-on: ['hyperenv', 'medium-us-east-1']
     steps:
     - uses: actions/checkout@v4
     - uses: aws-actions/configure-aws-credentials@v4

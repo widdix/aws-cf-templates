@@ -11,7 +11,7 @@ defaults:
     shell: bash
 jobs:
   release:
-    runs-on: ['hyperenv', 'medium']
+    runs-on: ['hyperenv', 'medium-eu-west-1']
     steps:
     - uses: actions/checkout@v4
     - uses: aws-actions/configure-aws-credentials@v4
