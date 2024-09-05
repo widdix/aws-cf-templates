@@ -25,6 +25,11 @@ Metadata:
         default: 'Crowdstrike Parameters'
       Parameters:
         - CrowdstrikeTags
+        - OpsScriptsBucket
+    - Label:
+        default: 'Tenable Parameters'
+      Parameters:
+        - TenableXKey    
     - Label:
         default: 'Load Balancer Parameters'
       Parameters:
@@ -57,6 +62,14 @@ Parameters:
     Description: comma-delimited tags for Crowdstrike
     Type: String
     Default: ecs-cluster
+  OpsScriptsBucket:
+    Description: S3 bucket for Ops Scripts
+    Type: String
+    Default: verifly-ops-scripts
+  TenableXKey:
+    Description: X-Key for Tenable install
+    Type: String
+    Default: 8487e4dfa0e7b8d99652a51db2fe0ab6ad2d3d98e639da865592211d17ecdc75
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
@@ -357,7 +370,7 @@ Resources:
           - Effect: Allow
             Action:
             - s3:GetObject
-            Resource: 'arn:aws:s3:::verifly-ops-scripts/pkgs/*'
+            Resource: !Sub 'arn:aws:s3:::${OpsScriptsBucket}/pkgs/*'
   IAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
     Condition: HasIAMUserSSHAccess
@@ -860,11 +873,12 @@ Resources:
           yum install -y aws-cfn-bootstrap
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
           cd ~
-          aws s3 cp s3://verifly-ops-scripts/pkgs/falcon-sensor-installer.sh . --no-progress
-          aws s3 cp s3://verifly-ops-scripts/pkgs/ecs-workload-init.sh . --no-progress
+          curl -H 'X-Key: ${TenableXKey}' 'https://sensor.cloud.tenable.com/install/agent?name=agent-name&groups=agent-group' | bash
+          aws s3 cp s3://${OpsScriptsBucket}/pkgs/falcon-sensor-installer.sh . --no-progress
+          aws s3 cp s3://${OpsScriptsBucket}/pkgs/ecs-workload-init.sh . --no-progress
           chmod +x ./falcon-sensor-installer.sh
           chmod +x ./ecs-workload-init.sh
-          ./falcon-sensor-installer.sh --tags ${CrowdstrikeTags}
+          ./falcon-sensor-installer.sh --bucket s3://${OpsScriptsBucket}/pkgs/falcon-sensor --tags ${CrowdstrikeTags}
           nohup ./ecs-workload-init.sh > /var/log/ecs-workload-init.log &
           /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
