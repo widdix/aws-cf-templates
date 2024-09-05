@@ -370,7 +370,7 @@ Resources:
           - Effect: Allow
             Action:
             - s3:GetObject
-            Resource: 'arn:aws:s3:::verifly-ops-scripts/pkgs/*'
+            Resource: !Sub 'arn:aws:s3:::${OpsScriptsBucket}/pkgs/*'
   IAMPolicySSHAccess:
     Type: 'AWS::IAM::Policy'
     Condition: HasIAMUserSSHAccess
@@ -878,7 +878,7 @@ Resources:
           aws s3 cp s3://${OpsScriptsBucket}/pkgs/ecs-workload-init.sh . --no-progress
           chmod +x ./falcon-sensor-installer.sh
           chmod +x ./ecs-workload-init.sh
-          ./falcon-sensor-installer.sh --tags ${CrowdstrikeTags}
+          ./falcon-sensor-installer.sh --bucket s3://${OpsScriptsBucket}/pkgs/falcon-sensor --tags ${CrowdstrikeTags}
           nohup ./ecs-workload-init.sh > /var/log/ecs-workload-init.log &
           /opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
   AutoScalingGroup:
