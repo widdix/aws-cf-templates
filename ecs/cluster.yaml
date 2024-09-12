@@ -69,7 +69,6 @@ Parameters:
   TenableXKey:
     Description: X-Key for Tenable install
     Type: String
-    Default: 8487e4dfa0e7b8d99652a51db2fe0ab6ad2d3d98e639da865592211d17ecdc75
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
     Type: String
