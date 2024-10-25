@@ -1,0 +1,370 @@
+---
+# Copyright 2018 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'State: RDS Aurora Serverless v2 PostgreSQL, a cloudonaut.io template, contributed by https://github.com/ab77'
+
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+      - ParentClientStack
+      - ParentKmsKeyStack
+      - ParentZoneStack
+      - ParentSSHBastionStack
+      - ParentAlertStack
+      - ParentSecretStack
+    - Label:
+        default: 'RDS Parameters'
+      Parameters:
+      - CACertificateIdentifier
+      - DBBackupRetentionPeriod
+      - DBClusterParameterGroupName
+      - DBMasterUsername
+      - DBMasterUserPassword
+      - DBName
+      - DBPort
+      - DBParameterGroupName
+      - DBSnapshotIdentifier
+      - EnableDataApi
+      - EngineVersion
+      - PerformanceInsightsRetentionPeriod
+      - PreferredBackupWindow
+      - PreferredMaintenanceWindow
+      - SubDomainNameWithDot
+    - Label:
+        default: 'Serverless Parameters'
+      Parameters:
+      - MaxCapacity
+      - MinCapacity
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+  ParentClientStack:
+    Description: 'Stack name of parent client stack based on state/client-sg.yaml template.'
+    Type: String
+  ParentKmsKeyStack:
+    Description: 'Stack name of parent KMS key stack based on security/kms-key.yaml template (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
+    Type: String
+    Default: ''
+  ParentZoneStack:
+    Description: 'Optional stack name of parent zone stack based on vpc/vpc-zone-*.yaml template.'
+    Type: String
+    Default: ''
+  ParentSSHBastionStack:
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-*-bastion.yaml template.'
+    Type: String
+    Default: ''
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  PerformanceInsightsRetentionPeriod:
+    Description: 'Retention period in days for Performance Insights.'
+    Type: String
+    Default: 341
+    AllowedValues: [7, 93, 341, 589, 731]
+  DBSnapshotIdentifier:
+    Description: 'Optional identifier for the DB cluster snapshot from which you want to restore (leave blank to create an empty cluster).'
+    Type: String
+    Default: ''
+  ParentSecretStack:
+    Description: 'Optional Stack name of parent SecretsManager Secret Stack based on state/secretsmanager-dbsecret.yaml template.'
+    Type: String
+    Default: ''
+  DBName:
+    Description: 'Name of the database (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
+    Type: String
+    Default: ''
+  DBBackupRetentionPeriod:
+    Description: 'The number of days to keep snapshots of the cluster.'
+    Type: Number
+    MinValue: 1
+    MaxValue: 35
+    Default: 30
+  DBMasterUsername:
+    Description: 'The master user name for the DB instance (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
+    Type: 'String'
+    Default: master
+  DBMasterUserPassword:
+    Description: 'The master password for the DB instance (ignored when DBSnapshotIdentifier is set, value used from snapshot. Also ignored when ParentSecretStack is used).'
+    Type: String
+    NoEcho: true
+    Default: ''
+  DBClusterParameterGroupName:
+    Description: 'The name of the DB cluster parameter group to associate with this DB cluster.'
+    Type: String
+    Default: ''
+  DBParameterGroupName:
+    Description: 'The name of an existing DB parameter group.'
+    Type: String
+    Default: ''
+  DBPort:
+    Description: 'The port number on which the instances in the DB cluster accept connections.'
+    Type: Number
+    Default: 5432
+  SubDomainNameWithDot:
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
+    Type: String
+    Default: 'aurora.'
+  PreferredBackupWindow:
+    Description: 'IGNORED BECAUSE OF A BUG IN CLOUDFORMATION! VALUE WILL APPLY IN THE FUTURE! The daily time range in UTC during which you want to create automated backups.' # TODO remove uppercase warning
+    Type: String
+    Default: '09:54-10:24'
+  PreferredMaintenanceWindow:
+    Description: 'IGNORED BECAUSE OF A BUG IN CLOUDFORMATION! VALUE WILL APPLY IN THE FUTURE! The weekly time range (in UTC) during which system maintenance can occur.' # TODO remove uppercase warning
+    Type: String
+    Default: 'sat:07:00-sat:07:30'
+  EnableDataApi:
+    Description: 'Enable the Data API (https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/data-api.html).'
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'false'
+  MaxCapacity:
+    Description: 'The maximum capacity units for a Serverless Aurora cluster.'
+    Type: String
+    AllowedValues: [1, 2, 4, 8, 16, 32, 64, 128]
+    Default: 1
+  MinCapacity:
+    Description: 'The minimum capacity units for a Serverless Aurora cluster.'
+    Type: String
+    AllowedValues: [0.5, 1, 2, 4, 8, 16, 32, 64, 128]
+    Default: 0.5
+  EngineVersion:
+    Description: 'Aurora Serverless v2 PostgreSQL version.'
+    Type: String
+    AllowedValues: ['15.5', '14.10', '13.13'] # aws rds describe-orderable-db-instance-options --engine aurora-postgresql --db-instance-class db.serverless --query 'OrderableDBInstanceOptions[].[EngineVersion]' --output text
+  CACertificateIdentifier:
+    Description: 'The identifier of the CA certificate for this DB instance.'
+    Type: String
+    AllowedValues: ['rds-ca-rsa2048-g1', 'rds-ca-rsa4096-g1', 'rds-ca-ecc384-g1'] # https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/UsingWithRDS.SSL-certificate-rotation.html
+    Default: 'rds-ca-ecc384-g1'
+Mappings:
+  EngineVersionMap:
+    '15.5':
+      ClusterParameterGroupFamily: 'aurora-postgresql15'
+    '14.10':
+      ClusterParameterGroupFamily: 'aurora-postgresql14'
+    '13.13':
+      ClusterParameterGroupFamily: 'aurora-postgresql13'
+Conditions:
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasDBClusterParameterGroup: !Not [!Equals [!Ref DBClusterParameterGroupName, '']]
+  HasDBParameterGroup: !Not [!Equals [!Ref DBParameterGroupName, '']]
+  HasDBSnapshotIdentifier: !Not [!Condition HasNotDBSnapshotIdentifier]
+  HasNotDBClusterParameterGroup: !Not [!Condition HasDBClusterParameterGroup]
+  HasNotDBParameterGroup: !Not [!Condition HasDBParameterGroup]
+  HasNotDBSnapshotIdentifier: !Equals [!Ref DBSnapshotIdentifier, '']
+  HasSecret: !Not [!Equals [!Ref ParentSecretStack, '']]
+  HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
+  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+Resources:
+  SecretTargetAttachment:
+    Condition: HasSecret
+    Type: 'AWS::SecretsManager::SecretTargetAttachment'
+    Properties:
+      TargetId: !Ref DBCluster
+      SecretId: {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}
+      TargetType: 'AWS::RDS::DBCluster'
+  RecordSet:
+    Condition: HasZone
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
+      Name: !Sub
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+      ResourceRecords:
+      - !GetAtt 'DBCluster.Endpoint.Address'
+      TTL: 60
+      Type: CNAME
+  ClusterSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Ref 'AWS::StackName'
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: !Ref DBPort
+        ToPort: !Ref DBPort
+        SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentClientStack}-ClientSecurityGroup'}
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+  ClusterSecurityGroupInSSHBastion:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasSSHBastionSecurityGroup
+    Properties:
+      GroupId: !Ref ClusterSecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref DBPort
+      ToPort: !Ref DBPort
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
+  DBSubnetGroup:
+    Type: 'AWS::RDS::DBSubnetGroup'
+    Properties:
+      DBSubnetGroupDescription: !Ref 'AWS::StackName'
+      SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-SubnetsPrivate'}]
+  DBClusterParameterGroup:
+    Type: 'AWS::RDS::DBClusterParameterGroup'
+    Condition: HasNotDBClusterParameterGroup
+    Properties:
+      Description: !Ref 'AWS::StackName'
+      Family: !FindInMap [EngineVersionMap, !Ref EngineVersion, ClusterParameterGroupFamily]
+      Parameters:
+        client_encoding: 'UTF8'
+  DBParameterGroup:
+    Type: 'AWS::RDS::DBParameterGroup'
+    Condition: HasNotDBParameterGroup
+    Properties:
+      Description: !Ref 'AWS::StackName'
+      Family: !FindInMap [EngineVersionMap, !Ref EngineVersion, ClusterParameterGroupFamily]
+      Parameters: {}
+  EnhancedMonitoringRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Sid: AmazonRDSEnhancedMonitoringRole
+          Effect: Allow
+          Principal:
+            Service: monitoring.rds.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+  DBCluster:
+    DeletionPolicy: Snapshot # default
+    UpdateReplacePolicy: Snapshot
+    Type: 'AWS::RDS::DBCluster'
+    Properties:
+      AvailabilityZones: !Split [',', {'Fn::ImportValue': !Sub '${ParentVPCStack}-AZList'}]
+      BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
+      DatabaseName: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBName]
+      CopyTagsToSnapshot: true
+      DBClusterParameterGroupName: !If
+      - HasDBClusterParameterGroup
+      - !Ref DBClusterParameterGroupName
+      - !Ref DBClusterParameterGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      EnableHttpEndpoint: !Ref EnableDataApi
+      EnableCloudwatchLogsExports:
+      - postgresql
+      Engine: aurora-postgresql
+      EngineVersion: !Ref EngineVersion
+      Port: !Ref DBPort
+      KmsKeyId: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}]
+      MasterUsername: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBMasterUsername]
+      MasterUserPassword: !If
+      - HasDBSnapshotIdentifier
+      - !Ref 'AWS::NoValue'
+      - !If
+        - HasSecret
+        - !Join ['', ['{{resolve:secretsmanager:', {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}, ':SecretString:password}}']]
+        - !Ref DBMasterUserPassword
+      # PreferredBackupWindow: !Ref PreferredBackupWindow TODO re-enable as soon as CloudFormation bug ix fixed
+      # PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow TODO re-enable as soon as CloudFormation bug ix fixed
+      ServerlessV2ScalingConfiguration:
+        MaxCapacity: !Ref MaxCapacity
+        MinCapacity: !Ref MinCapacity
+      SnapshotIdentifier: !If [HasDBSnapshotIdentifier, !Ref DBSnapshotIdentifier, !Ref 'AWS::NoValue']
+      StorageEncrypted: true
+      VpcSecurityGroupIds:
+      - !Ref ClusterSecurityGroup
+  DBInstanceA:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: true
+      CACertificateIdentifier: !Ref CACertificateIdentifier
+      DBClusterIdentifier: !Ref DBCluster
+      DBInstanceClass: db.serverless
+      DBParameterGroupName: !If
+      - HasDBParameterGroup
+      - !Ref DBParameterGroupName
+      - !Ref DBParameterGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      EnablePerformanceInsights: true
+      Engine: aurora-postgresql
+      MonitoringInterval: 30
+      MonitoringRoleArn: !GetAtt EnhancedMonitoringRole.Arn
+      PerformanceInsightsRetentionPeriod: !Ref PerformanceInsightsRetentionPeriod
+  DBInstanceB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: true
+      CACertificateIdentifier: !Ref CACertificateIdentifier
+      DBClusterIdentifier: !Ref DBCluster
+      DBInstanceClass: db.serverless
+      DBParameterGroupName: !If
+      - HasDBParameterGroup
+      - !Ref DBParameterGroupName
+      - !Ref DBParameterGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      EnablePerformanceInsights: true
+      Engine: aurora-postgresql
+      MonitoringInterval: 30
+      MonitoringRoleArn: !GetAtt EnhancedMonitoringRole.Arn
+      PerformanceInsightsRetentionPeriod: !Ref PerformanceInsightsRetentionPeriod
+  DatabaseClusterEventSubscription:
+    Condition: HasAlertTopic
+    Type: 'AWS::RDS::EventSubscription'
+    Properties:
+      EventCategories:
+      - failover
+      - failure
+      - maintenance
+      SnsTopicArn: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      SourceIds: [!Ref DBCluster]
+      SourceType: 'db-cluster'
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'state/rds-aurora-serverless-postgres'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
+  ClusterName:
+    Description: 'The name of the cluster.'
+    Value: !Ref DBCluster
+    Export:
+      Name: !Sub '${AWS::StackName}-ClusterName'
+  DNSName:
+    Description: 'The connection endpoint for the DB cluster.'
+    Value: !GetAtt 'DBCluster.Endpoint.Address'
+    Export:
+      Name: !Sub '${AWS::StackName}-DNSName'
+  SecurityGroupId:
+    Description: 'The security group used to manage access to RDS Aurora Serverless Postgres.'
+    Value: !Ref ClusterSecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-SecurityGroupId'
+  EndpointAddress:
+    Value: !GetAtt 'DBCluster.Endpoint.Address'
+    Export:
+      Name: !Sub '${AWS::StackName}-EndpointAddress'
+  ReadEndpointAddress:
+    Value: !GetAtt 'DBCluster.ReadEndpoint.Address'
+    Export:
+      Name: !Sub '${AWS::StackName}-ReadEndpointAddress'
+  EndpointPort:
+    Value: !GetAtt 'DBCluster.Endpoint.Port'
+    Export:
+      Name: !Sub '${AWS::StackName}-EndpointPort'
