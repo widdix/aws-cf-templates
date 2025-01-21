@@ -78,6 +78,11 @@ Parameters:
     Type: String
     Default: true
     AllowedValues: [true, false, 'false-but-was-true']
+  RestrictCustomerKeys:
+    Description: 'Block the use of SSE-C encryption (https://aws.amazon.com/blogs/security/preventing-unintended-encryption-of-amazon-s3-objects/).'
+    Type: String
+    Default: true
+    AllowedValues: [true, false]
   NoncurrentVersionExpirationInDays:
     Description: 'Remove noncurrent object versions after days (set to 0 to disable).'
     Type: Number
@@ -161,6 +166,7 @@ Conditions:
   HasBlockPublicAccess: !Not [!Or [!Condition HasPublicReadAccess, !Condition HasPublicWriteAccess]]
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   HasBucketOwnerPreferred: !Or [!Condition HasCloudFrontAccessLogWrite, !Condition HasS3AccessLogWrite, !Not [!Condition HasBlockPublicAccess]]
+  HasRestrictCustomerKeys: !Equals [!Ref RestrictCustomerKeys, 'true']
 Resources:
   Bucket: # cannot be deleted with data
     Type: 'AWS::S3::Bucket'
@@ -208,6 +214,17 @@ Resources:
           Condition:
             Bool:
               'aws:SecureTransport': false
+        - !If
+          - HasRestrictCustomerKeys
+          - Sid: RestrictSSECObjectUploads # https://aws.amazon.com/blogs/security/preventing-unintended-encryption-of-amazon-s3-objects/
+            Principal: '*'
+            Action: 's3:PutObject'
+            Effect: Deny
+            Resource: !Sub '${Bucket.Arn}/*'
+            Condition:
+              'Null':
+                's3:x-amz-server-side-encryption-customer-algorithm': 'false'
+          - !Ref 'AWS::NoValue'
         - !If
           - HasPrivateAccessAndKmsKey
           - Principal: '*'
