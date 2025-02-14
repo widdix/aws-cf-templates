@@ -64,7 +64,6 @@ Parameters:
 Conditions:
   HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
   InternalBucket: !Equals [!Ref ExternalConfigBucket, '']
-  ExternalBucket: !Not [!Equals [!Ref ExternalConfigBucket, '']]
 Resources:
   ConfigBucket:
     Condition: InternalBucket
@@ -103,64 +102,17 @@ Resources:
         DeliveryFrequency: !Ref DeliveryFrequency
       S3BucketName: !If [InternalBucket, !Ref ConfigBucket, !Ref ExternalConfigBucket]
       SnsTopicARN: !Ref ConfigTopic
-  ConfigurationRecorderRole:
-    Condition: InternalBucket
-    Type: 'AWS::IAM::Role'
+  ConfigServiceRole:
+    Type: 'AWS::IAM::ServiceLinkedRole'
     Properties:
-      ManagedPolicyArns:
-      - 'arn:aws:iam::aws:policy/service-role/AWS_ConfigRole'
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Sid: AssumeRole1
-          Effect: Allow
-          Principal:
-            Service: 'config.amazonaws.com'
-          Action: 'sts:AssumeRole'
-      PermissionsBoundary: !If [HasPermissionsBoundary, !Ref PermissionsBoundary, !Ref 'AWS::NoValue']
-      Policies:
-      - PolicyName: 's3-policy'
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action: 's3:PutObject'
-            Resource: !Sub 'arn:aws:s3:::${ConfigBucket}/*'
-            Condition:
-              StringLike:
-                's3:x-amz-acl': 'bucket-owner-full-control'
-          - Effect: Allow
-            Action: 's3:GetBucketAcl'
-            Resource: !Sub 'arn:aws:s3:::${ConfigBucket}'
-      - PolicyName: 'sns-policy'
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action: 'sns:Publish'
-            Resource: !Ref ConfigTopic
-  ExternalConfigurationRecorderRole:
-    Condition: ExternalBucket
-    Type: 'AWS::IAM::Role'
-    Properties:
-      ManagedPolicyArns:
-      - 'arn:aws:iam::aws:policy/service-role/AWS_ConfigRole'
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Sid: AssumeRole1
-          Effect: Allow
-          Principal:
-            Service: 'config.amazonaws.com'
-          Action: 'sts:AssumeRole'
-      PermissionsBoundary: !If [HasPermissionsBoundary, !Ref PermissionsBoundary, !Ref 'AWS::NoValue']
+      AWSServiceName: 'config.amazonaws.com'
   ConfigurationRecorder:
     Type: 'AWS::Config::ConfigurationRecorder'
     Properties:
       RecordingGroup:
         AllSupported: true
         IncludeGlobalResourceTypes: true
-      RoleARN: !If [InternalBucket, !GetAtt 'ConfigurationRecorderRole.Arn', !GetAtt 'ExternalConfigurationRecorderRole.Arn']
+      RoleARN: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/config.amazonaws.com/AWSServiceRoleForConfig'
   LambdaRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -227,7 +179,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'LambdaRole.Arn'
-      Runtime: 'nodejs20.x'
+      Runtime: 'nodejs22.x'
       Timeout: 60
   LambdaLogGroup:
     Type: 'AWS::Logs::LogGroup'
