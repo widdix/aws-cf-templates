@@ -29,6 +29,7 @@ Metadata:
       Parameters:
       - BucketName
       - Access
+      - TransferAcceleration
       - Versioning
       - NoncurrentVersionExpirationInDays
       - ExpirationInDays
@@ -73,6 +74,11 @@ Parameters:
     Type: String
     Default: Private
     AllowedValues: [Private, PublicRead, PublicWrite, PublicReadAndWrite, CloudFrontRead, CloudFrontAccessLogWrite, ElbAccessLogWrite, ElbAccessLogWriteEncrypted, S3AccessLogWrite, ConfigWrite, CloudTrailWrite, VpcEndpointRead, FlowLogWrite]
+  TransferAcceleration:
+    Description: 'Specifies the transfer acceleration status of the bucket.'
+    Type: String
+    Default: Suspended
+    AllowedValues: [Enabled, Suspended]
   Versioning:
     Description: 'Enable versioning to keep a backup if objects change.'
     Type: String
@@ -168,6 +174,8 @@ Resources:
       BucketName: !If [HasBucketName, !Ref BucketName, !Ref 'AWS::NoValue']
       LoggingConfiguration: !If [HasS3Bucket, {DestinationBucketName: {'Fn::ImportValue': !Sub '${ParentS3StackAccessLog}-BucketName'}, LogFilePrefix: !Ref 'AWS::StackName'}, !Ref 'AWS::NoValue']
       AccessControl: !If [HasS3AccessLogWrite, LogDeliveryWrite, !Ref 'AWS::NoValue']
+      AccelerateConfiguration:
+        AccelerationStatus: !Ref TransferAcceleration
       LifecycleConfiguration:
         Rules:
         - AbortIncompleteMultipartUpload:
