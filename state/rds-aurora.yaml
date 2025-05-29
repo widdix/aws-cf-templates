@@ -37,10 +37,16 @@ Metadata:
       - DBBackupRetentionPeriod
       - DBMasterUsername
       - DBMasterUserPassword
+      - DBClusterParameterGroupName
+      - DBParameterGroupName
       - SubDomainNameWithDot
       - ReadSubDomainNameWithDot
       - PreferredBackupWindow
       - PreferredMaintenanceWindow
+      - EnablePerformanceInsights
+      - PerformanceInsightsRetentionPeriod
+      - DatabaseInsightsMode
+      - MonitoringInterval
 Parameters:
   ParentVPCStack:
     Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
@@ -76,8 +82,8 @@ Parameters:
     - '8.0.mysql-aurora.3.02.1'
     - '8.0.mysql-aurora.3.02.0'
     - '5.7.mysql-aurora.2.11.1'
-    - 'aurora-postgresql-15.3' # aws rds describe-db-engine-versions --engine aurora-postgresql --query 'DBEngineVersions[?contains(SupportedEngineModes,`provisioned`)].EngineVersion'
-    - 'aurora-postgresql-14.6'
+    - 'aurora-postgresql-17.4' # aws rds describe-db-engine-versions --engine aurora-postgresql --query 'DBEngineVersions[?contains(SupportedEngineModes,`provisioned`)].EngineVersion'
+    - 'aurora-postgresql-15.3'
     - 'aurora-postgresql-14.3'
     - 'aurora-postgresql-13.9'
     - 'aurora-postgresql-13.4'
@@ -112,6 +118,14 @@ Parameters:
     Type: String
     NoEcho: true
     Default: ''
+  DBClusterParameterGroupName:
+    Description: 'The name of the DB cluster parameter group.'
+    Type: String
+    Default: ''
+  DBParameterGroupName:
+    Description: 'The name of the DB instance parameter group.'
+    Type: String
+    Default: ''
   SubDomainNameWithDot:
     Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
     Type: String
@@ -128,6 +142,43 @@ Parameters:
     Description: 'The weekly time range (in UTC) during which system maintenance can occur.'
     Type: String
     Default: 'sat:07:00-sat:07:30'
+  EnablePerformanceInsights:
+    Description: 'Specifies whether to enable Performance Insights for the DB instance.'
+    Type: String
+    Default: false
+    AllowedValues:
+    - true
+    - false
+  PerformanceInsightsRetentionPeriod:
+    Description: 'The number of days to retain Performance Insights data.'
+    Type: Number
+    Default: 7
+    AllowedValues:
+    - 7
+    - 93
+    - 341
+    - 465
+    - 589
+    - 731
+  DatabaseInsightsMode:
+    Description: 'Specifies the mode of Database Insights to enable for the DB cluster.'
+    Type: String
+    Default: standard
+    AllowedValues:
+    - standard
+    - advanced
+  MonitoringInterval:
+    Description: 'The interval, in seconds, between points when Enhanced Monitoring metrics are collected for the DB instance.'
+    Type: Number
+    Default: 0
+    AllowedValues:
+    - 0
+    - 1
+    - 5
+    - 10
+    - 15
+    - 30
+    - 60
 Mappings:
   EngineMap:
     '8.0.mysql-aurora.3.03.0':
@@ -154,6 +205,12 @@ Mappings:
       Port: 3306
       ClusterParameterGroupFamily: 'aurora-mysql5.7'
       ParameterGroupFamily: 'aurora-mysql5.7'
+    'aurora-postgresql-17.4':
+      Engine: 'aurora-postgresql'
+      EngineVersion: '17.4'
+      Port: 5432
+      ClusterParameterGroupFamily: 'aurora-postgresql17'
+      ParameterGroupFamily: 'aurora-postgresql17'
     'aurora-postgresql-15.3':
       Engine: 'aurora-postgresql'
       EngineVersion: '15.3'
@@ -217,6 +274,10 @@ Conditions:
   HasDBSnapshotIdentifier: !Not [!Equals [!Ref DBSnapshotIdentifier, '']]
   HasKmsKeyAndNotDBSnapshotIdentifier: !And [!Condition HasKmsKey, !Not [!Condition HasDBSnapshotIdentifier]]
   HasEngineMySQL: !Equals [!FindInMap [EngineMap, !Ref Engine, Engine], 'aurora-mysql']
+  HasPerformanceInsights: !Equals [!Ref EnablePerformanceInsights, 'true']
+  HasEnhancedMonitoring: !Not [!Equals [!Ref MonitoringInterval, 0]]
+  HasDBClusterParameterGroup: !Not [!Equals [!Ref DBClusterParameterGroupName, '']]
+  HasDBParameterGroup: !Not [!Equals [!Ref DBParameterGroupName, '']]
 Resources:
   SecretTargetAttachment:
     Condition: HasSecret
@@ -299,7 +360,7 @@ Resources:
       BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
       CopyTagsToSnapshot: true
       DatabaseName: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref DBName]
-      DBClusterParameterGroupName: !Ref DBClusterParameterGroup
+      DBClusterParameterGroupName: !If [HasDBClusterParameterGroup, !Ref DBClusterParameterGroupName, !Ref DBClusterParameterGroup]
       DBSubnetGroupName: !Ref DBSubnetGroup
       Engine: !FindInMap [EngineMap, !Ref Engine, Engine]
       EngineMode: provisioned
@@ -312,7 +373,10 @@ Resources:
       - !If
         - HasSecret
         - !Join ['', ['{{resolve:secretsmanager:', {'Fn::ImportValue': !Sub '${ParentSecretStack}-SecretArn'}, ':SecretString:password}}']]
-        - !Ref DBMasterUserPassword
+        - !Sub "${DBMasterUserPassword}"  # https://github.com/aws-cloudformation/cfn-lint/issues/3418#issuecomment-2192228851
+      PerformanceInsightsEnabled: !If [HasPerformanceInsights, !Ref EnablePerformanceInsights, !Ref 'AWS::NoValue']
+      PerformanceInsightsRetentionPeriod: !If [HasPerformanceInsights, !Ref PerformanceInsightsRetentionPeriod, !Ref 'AWS::NoValue']
+      DatabaseInsightsMode: !Ref DatabaseInsightsMode
       Port: !FindInMap [EngineMap, !Ref Engine, Port]
       PreferredBackupWindow: !Ref PreferredBackupWindow
       PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
@@ -325,6 +389,20 @@ Resources:
     Properties:
       Description: !Ref 'AWS::StackName'
       Family: !FindInMap [EngineMap, !Ref Engine, ParameterGroupFamily]
+  DBEnhancedMonitoringRole:
+    Type: AWS::IAM::Role
+    Condition: HasEnhancedMonitoring
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Sid: AmazonRDSEnhancedMonitoringRole
+          Effect: Allow
+          Principal:
+            Service: monitoring.rds.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
   DBInstanceA:
     Type: 'AWS::RDS::DBInstance'
     Properties:
@@ -333,9 +411,13 @@ Resources:
       CopyTagsToSnapshot: true
       DBClusterIdentifier: !Ref DBCluster
       DBInstanceClass: !Ref DBInstanceClass
-      DBParameterGroupName: !Ref DBParameterGroup
+      DBParameterGroupName: !If [HasDBParameterGroup, !Ref DBParameterGroupName, !Ref DBParameterGroup]
       DBSubnetGroupName: !Ref DBSubnetGroup
       Engine: !FindInMap [EngineMap, !Ref Engine, Engine]
+      EnablePerformanceInsights: !If [HasPerformanceInsights, !Ref EnablePerformanceInsights, !Ref 'AWS::NoValue']
+      PerformanceInsightsRetentionPeriod: !If [HasPerformanceInsights, !Ref PerformanceInsightsRetentionPeriod, !Ref 'AWS::NoValue']
+      MonitoringInterval: !If [HasEnhancedMonitoring, !Ref MonitoringInterval, !Ref 'AWS::NoValue']
+      MonitoringRoleArn: !If [HasEnhancedMonitoring, !GetAtt DBEnhancedMonitoringRole.Arn, !Ref 'AWS::NoValue']
   DBInstanceB:
     Type: 'AWS::RDS::DBInstance'
     Properties:
@@ -344,9 +426,13 @@ Resources:
       CopyTagsToSnapshot: true
       DBClusterIdentifier: !Ref DBCluster
       DBInstanceClass: !Ref DBInstanceClass
-      DBParameterGroupName: !Ref DBParameterGroup
+      DBParameterGroupName: !If [HasDBParameterGroup, !Ref DBParameterGroupName, !Ref DBParameterGroup]
       DBSubnetGroupName: !Ref DBSubnetGroup
       Engine: !FindInMap [EngineMap, !Ref Engine, Engine]
+      EnablePerformanceInsights: !If [HasPerformanceInsights, !Ref EnablePerformanceInsights, !Ref 'AWS::NoValue']
+      PerformanceInsightsRetentionPeriod: !If [HasPerformanceInsights, !Ref PerformanceInsightsRetentionPeriod, !Ref 'AWS::NoValue']
+      MonitoringInterval: !If [HasEnhancedMonitoring, !Ref MonitoringInterval, !Ref 'AWS::NoValue']
+      MonitoringRoleArn: !If [HasEnhancedMonitoring, !GetAtt DBEnhancedMonitoringRole.Arn, !Ref 'AWS::NoValue']
   DatabaseACPUUtilizationTooHighAlarm:
     Condition: HasAlertTopic
     Type: 'AWS::CloudWatch::Alarm'
