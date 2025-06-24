@@ -207,9 +207,9 @@ Resources:
             function done(err) {
               if (err) {
                 console.log(`Error: ${JSON.stringify(err)}`);
-                response.send(event, context, response.FAILED, {});
+                response.send(event, context, response.FAILED, {}, event.LogicalResourceId);
               } else {
-                response.send(event, context, response.SUCCESS, {});
+                response.send(event, context, response.SUCCESS, {}, event.LogicalResourceId);
               }
             }
             if (event.RequestType === 'Delete') {

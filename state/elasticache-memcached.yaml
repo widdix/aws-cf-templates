@@ -259,7 +259,7 @@ Resources:
             const preferredAZs = Array(nodes).fill('').map((v, i) => azs[i % azs.length]);
             response.send(event, context, response.SUCCESS, {
               PreferredAvailabilityZones: preferredAZs.join(',')
-            });
+            }, event.LogicalResourceId);
           };
       Handler: 'index.handler'
       MemorySize: 128
