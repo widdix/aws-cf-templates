@@ -21,6 +21,7 @@ Metadata:
         default: 'Config Parameters'
       Parameters:
       - DeliveryFrequency
+      - RecordingFrequency
       - RetentionPeriodInDays
       - ExternalConfigBucket
     - Label:
@@ -46,6 +47,13 @@ Parameters:
     - Six_Hours
     - Twelve_Hours
     - TwentyFour_Hours
+  RecordingFrequency:
+    Description: 'The recording frequency that AWS Config uses to record configuration changes.'
+    Type: String
+    Default: CONTINUOUS
+    AllowedValues:
+    - CONTINUOUS
+    - DAILY
   RetentionPeriodInDays:
     Description: 'Number of days AWS Config stores your historical information.'
     Type: Number
@@ -160,6 +168,8 @@ Resources:
       RecordingGroup:
         AllSupported: true
         IncludeGlobalResourceTypes: true
+      RecordingMode:
+        RecordingFrequency: !Ref RecordingFrequency
       RoleARN: !If [InternalBucket, !GetAtt 'ConfigurationRecorderRole.Arn', !GetAtt 'ExternalConfigurationRecorderRole.Arn']
   LambdaRole:
     Type: 'AWS::IAM::Role'
