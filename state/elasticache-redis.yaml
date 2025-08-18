@@ -38,6 +38,7 @@ Metadata:
       - SubDomainName
       - NumShards
       - NumReplicas
+      - MaxmemoryPolicy
     - Label:
         default: 'Alerting Parameters'
       Parameters:
@@ -70,9 +71,9 @@ Parameters:
     Type: String
     Default: ''
   EngineVersion:
-    Description: 'Redis version'
+    Description: 'Redis or Valkey version'
     Type: String
-    AllowedValues: ['7.0', '6.2', '6.0', '5.0.6', '5.0.5', '5.0.4', '5.0.3', '5.0.0', '4.0.10'] # aws elasticache describe-cache-engine-versions --engine redis --query "CacheEngineVersions[].EngineVersion"
+    AllowedValues: ['8.0', '7.2', '7.1', '7.0', '6.2', '6.0', '5.0.6', '5.0.5', '5.0.4', '5.0.3', '5.0.0', '4.0.10'] # aws elasticache describe-cache-engine-versions --engine redis --query "CacheEngineVersions[].EngineVersion"
   CacheNodeType:
     Description: 'The compute and memory capacity of the nodes in the node group (shard).'
     Type: 'String'
@@ -142,26 +143,58 @@ Parameters:
     Type: Number
     Default: 30
     MinValue: -1
+  # https://docs.aws.amazon.com/whitepapers/latest/database-caching-strategies-using-redis/evictions.html
+  MaxmemoryPolicy:
+    Type: String
+    Default: volatile-lru
+    AllowedValues:
+    - allkeys-lfu
+    - allkeys-lru
+    - allkeys-lru
+    - allkeys-random
+    - no-eviction
+    - volatile-lfu
+    - volatile-lru
+    - volatile-random
+    - volatile-ttl
 Mappings:
   EngineVersionMap:
+    '8.0':
+      CacheParameterGroupFamily: valkey8
+      Engine: valkey
+    '7.2':
+      CacheParameterGroupFamily: valkey7
+      Engine: valkey
+    '7.1':
+      CacheParameterGroupFamily: redis7
+      Engine: redis
     '7.0':
       CacheParameterGroupFamily: redis7
+      Engine: redis
     '6.2':
       CacheParameterGroupFamily: 'redis6.x'
+      Engine: redis
     '6.0':
       CacheParameterGroupFamily: 'redis6.x'
+      Engine: redis
     '5.0.6':
       CacheParameterGroupFamily: 'redis5.0'
+      Engine: redis
     '5.0.4':
       CacheParameterGroupFamily: 'redis5.0'
+      Engine: redis
     '5.0.3':
       CacheParameterGroupFamily: 'redis5.0'
+      Engine: redis
     '5.0.0':
       CacheParameterGroupFamily: 'redis5.0'
+      Engine: redis
     '4.0.10':
       CacheParameterGroupFamily: 'redis4.0'
+      Engine: redis
     '3.2.6':
       CacheParameterGroupFamily: 'redis3.2'
+      Engine: redis
 Conditions:
   HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
   HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
@@ -198,7 +231,10 @@ Resources:
     Properties:
       CacheParameterGroupFamily: !FindInMap [EngineVersionMap, !Ref EngineVersion, CacheParameterGroupFamily]
       Description: !Ref 'AWS::StackName'
-      Properties: !If [HasClusterModeEnabled, {'cluster-enabled': 'yes'}, {}]
+      Properties:
+        cluster-enabled: !If [HasClusterModeEnabled, "yes", "no"]
+        # https://docs.docker.com/registry/configuration/#redis
+        maxmemory-policy: !Ref MaxmemoryPolicy
   CacheSubnetGroupName:
     Type: 'AWS::ElastiCache::SubnetGroup'
     Properties:
@@ -232,16 +268,21 @@ Resources:
     DeletionPolicy: Snapshot
     UpdateReplacePolicy: Snapshot
     Type: 'AWS::ElastiCache::ReplicationGroup'
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - E3026
     Properties:
       ReplicationGroupDescription: !Ref 'AWS::StackName'
       AtRestEncryptionEnabled: true
-      AuthToken: !If [HasAuthToken, !Ref AuthToken, !Ref 'AWS::NoValue']
+      AuthToken: !If [HasAuthToken, !Sub "${AuthToken}", !Ref 'AWS::NoValue']
       AutomaticFailoverEnabled: !If [HasAutomaticFailoverEnabled, true, false]
       MultiAZEnabled: !If [HasAutomaticFailoverEnabled, true, false]
       CacheNodeType: !Ref CacheNodeType
       CacheParameterGroupName: !Ref CacheParameterGroup
       CacheSubnetGroupName: !Ref CacheSubnetGroupName
-      Engine: redis
+      Engine: !FindInMap [EngineVersionMap, !Ref EngineVersion, Engine]
       EngineVersion: !Ref EngineVersion
       KmsKeyId: !If [HasKmsKey, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}, !Ref 'AWS::NoValue']
       NotificationTopicArn: !If [HasAlertTopic, {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}, !Ref 'AWS::NoValue']
