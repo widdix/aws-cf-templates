@@ -153,7 +153,7 @@ Resources:
       Handler: 'index.handler'
       MemorySize: 128
       Role: !GetAtt 'ViewerRequestRole.Arn'
-      Runtime: 'nodejs20.x'
+      Runtime: 'nodejs22.x'
       Timeout: 5
   ViewerRequestVersionV5:
     Type: 'AWS::Lambda::Version'
