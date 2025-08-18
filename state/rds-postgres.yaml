@@ -139,6 +139,17 @@ Parameters:
     Type: String
     AllowedValues: ['true', 'false']
     Default: 'false'
+  PerformanceInsights:
+    Type: String
+    Description: 'Enable Performance Insights in rds (https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PerfInsights.html).'
+    AllowedValues: [true, false]
+    Default: true
+  PerformanceInsightsRetentionPeriod:
+    Type: Number
+    Default: 7
+    Description: "In number of days. 0 disables retention. Allowed: 0 - 731."
+    MinValue: 0
+    MaxValue: 731
 Conditions:
   HasSecret: !Not [!Equals [!Ref ParentSecretStack, '']]
   HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
@@ -149,6 +160,7 @@ Conditions:
   HasDBOptionGroupName: !Not [!Equals [!Ref DBOptionGroupName, '']]
   HasDBParameterGroupName: !Not [!Equals [!Ref DBParameterGroupName, '']]
   HasKmsKeyAndNotDBSnapshotIdentifier: !And [!Condition HasKmsKey, !Not [!Condition HasDBSnapshotIdentifier]]
+  HasPerformanceInsightsEnabled: !Equals [!Ref PerformanceInsights, true]
 Resources:
   SecretTargetAttachment:
     Condition: HasSecret
@@ -210,6 +222,7 @@ Resources:
       DBSnapshotIdentifier: !If [HasDBSnapshotIdentifier, !Ref DBSnapshotIdentifier, !Ref 'AWS::NoValue']
       DBSubnetGroupName: !Ref DBSubnetGroup
       EnableIAMDatabaseAuthentication: !Ref EnableIAMDatabaseAuthentication
+      EnablePerformanceInsights: !Ref PerformanceInsights
       Engine: postgres
       EngineVersion: !If [HasDBSnapshotIdentifier, !Ref 'AWS::NoValue', !Ref EngineVersion]
       KmsKeyId: !If [HasKmsKeyAndNotDBSnapshotIdentifier, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyId'}, !Ref 'AWS::NoValue']
@@ -223,6 +236,7 @@ Resources:
         - !Ref DBMasterUserPassword
       MultiAZ: !Ref DBMultiAZ
       OptionGroupName: !If [HasDBOptionGroupName, !Ref DBOptionGroupName, !Ref 'AWS::NoValue']
+      PerformanceInsightsRetentionPeriod: !If [HasPerformanceInsightsEnabled, !Ref PerformanceInsightsRetentionPeriod, !Ref "AWS::NoValue"]
       PreferredBackupWindow: !Ref PreferredBackupWindow
       PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
       StorageType: gp2
