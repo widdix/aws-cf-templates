@@ -38,10 +38,10 @@ jobs:
       env:
         DELETION_POLICY: ${{ inputs.deletion-policy }}
         FAILURE_POLICY: ${{ inputs.failure-policy }}
-        HOSTED_ZONE_ID: Z2W7RO1VZ3Q66M
-        DOMAIN_SUFFIX: awscftemplates.timeseries.guru
-        CLOUDFRONT_ACM_CERTIFICATE_ARN: arn:aws:acm:us-east-1:068189904525:certificate/be2a7595-caf3-4c0a-8021-8a3bd70f6e70
-        ACM_CERTIFICATE_ARN: arn:aws:acm:us-east-1:068189904525:certificate/be2a7595-caf3-4c0a-8021-8a3bd70f6e70
+        HOSTED_ZONE_ID: Z06496441UUZUWB5DC4QT
+        DOMAIN_SUFFIX: github-tests.widdix.net
+        CLOUDFRONT_ACM_CERTIFICATE_ARN: arn:aws:acm:us-east-1:068189904525:certificate/f0440932-f495-4321-81d6-6f05202942e4
+        ACM_CERTIFICATE_ARN: arn:aws:acm:us-east-1:068189904525:certificate/f0440932-f495-4321-81d6-6f05202942e4
         TEMPLATE_DIR: ../
         BUCKET_REGION: us-east-1
         BUCKET_NAME: cf-templates-1a2zmgbg9ut4o-us-east-1
