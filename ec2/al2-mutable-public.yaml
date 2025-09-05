@@ -1228,7 +1228,7 @@ Resources:
           - 'iam:GetSSHPublicKey'
           Resource:
           - !Sub 'arn:aws:iam::${AWS::AccountId}:user/*'
-  VirtualMachine: # TODO make IMDSv2 required (waits for https://github.com/aws-cloudformation/aws-cloudformation-coverage-roadmap/issues/655)
+  VirtualMachine:
     DependsOn: EIPAssociation
     Type: 'AWS::EC2::Instance'
     Metadata:
@@ -1481,6 +1481,8 @@ Resources:
       ImageId: !If [HasRestoreImageId, !Ref RestoreImageId, !FindInMap [!FindInMap [VersionMap, !Ref AmazonLinux2Version, Map], !Ref 'AWS::Region', AMI]]
       InstanceType: !Ref InstanceType
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+      MetadataOptions:
+        HttpTokens: required
       BlockDeviceMappings:
       - DeviceName: '/dev/xvda'
         Ebs:
