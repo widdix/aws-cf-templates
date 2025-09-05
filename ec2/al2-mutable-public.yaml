@@ -1380,7 +1380,7 @@ Resources:
                 - '/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json'
                 packages:
                   yum:
-                    - cloudwatch
+                  - cloudwatch
         ssh-access:
           files:
             '/opt/authorized_keys_command.sh':
