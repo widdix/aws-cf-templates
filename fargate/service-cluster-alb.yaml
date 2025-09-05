@@ -586,7 +586,7 @@ Resources:
         - HasProxyImage
         - Name: proxy
           Image: !Ref ProxyImage
-          Command: !If [HasProxyCommand, !Ref ProxyCommand, !Ref 'AWS::NoValue']
+          Command: !If [HasProxyCommand, [!Ref ProxyCommand], !Ref 'AWS::NoValue']
           PortMappings:
           - ContainerPort: !Ref ProxyPort
             Protocol: tcp
@@ -623,7 +623,7 @@ Resources:
         - HasSidecarImage
         - Name: sidecar
           Image: !Ref SidecarImage
-          Command: !If [HasSidecarCommand, !Ref SidecarCommand, !Ref 'AWS::NoValue']
+          Command: !If [HasSidecarCommand, [!Ref SidecarCommand], !Ref 'AWS::NoValue']
           PortMappings:
           - ContainerPort: !Ref SidecarPort
             Protocol: tcp
