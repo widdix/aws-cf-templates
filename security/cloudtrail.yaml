@@ -43,6 +43,7 @@ Metadata:
       - DisableNetworkGatewayChangeAlarm
       - DisableRouteTableChangeAlarm
       - DisableVpcChangeAlarm
+      - DisableOrganizationsChangeAlarm
     - Label:
         default: 'Permission Parameters'
       Parameters:
@@ -143,6 +144,11 @@ Parameters:
     Type: String
     Default: 'false'
     AllowedValues: ['true', 'false']
+  DisableOrganizationsChangeAlarm:
+    Description: 'Disable AVA-01, NET-02, NET-04 alarms (ISO 27001 2022/SOC 2).'
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
   S3DataEvents:
     Description: 'Record data events of all S3 buckets? (Warning: additional charges apply.)'
     Type: String
@@ -172,6 +178,7 @@ Conditions:
   HasNetworkGatewayChangeAlarm: !And [!Equals [!Ref DisableNetworkGatewayChangeAlarm, 'false'], !Condition HasAlertTopic]
   HasRouteTableChangeAlarm: !And [!Equals [!Ref DisableRouteTableChangeAlarm, 'false'], !Condition HasAlertTopic]
   HasVpcChangeAlarm: !And [!Equals [!Ref DisableVpcChangeAlarm, 'false'], !Condition HasAlertTopic]
+  HasOrganizationsChangeAlarm: !And [!Equals [!Ref DisableOrganizationsChangeAlarm, 'false'], !Condition HasAlertTopic]
 Resources:
   TrailBucket:
     Condition: InternalBucket
@@ -635,6 +642,31 @@ Resources:
       AlarmDescription: 'CloudTrail: changes to VPCs detected'
       Namespace: !Ref 'AWS::StackName'
       MetricName: VpcChangeCount
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 0
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      TreatMissingData: notBreaching
+  OrganizationsChangeMetricFilter: # ISO 27001 2022; SOC 2 (AVA-01, NET-02, NET-04)
+    Condition: HasOrganizationsChangeAlarm
+    Type: 'AWS::Logs::MetricFilter'
+    Properties:
+      FilterPattern: '{($.eventSource = organizations.amazonaws.com) && (($.eventName = AcceptHandshake) || ($.eventName = AttachPolicy) || ($.eventName = CreateAccount) || ($.eventName = CreateOrganizationalUnit) || ($.eventName = CreatePolicy) || ($.eventName = DeclineHandshake) || ($.eventName = DeleteOrganization) || ($.eventName = DeleteOrganizationalUnit) || ($.eventName = DeletePolicy) || ($.eventName = DetachPolicy) || ($.eventName = DisablePolicyType) || ($.eventName = EnablePolicyType) || ($.eventName = InviteAccountToOrganization) || ($.eventName = LeaveOrganization) || ($.eventName = MoveAccount) || ($.eventName = RemoveAccountFromOrganization) || ($.eventName = UpdatePolicy) || ($.eventName = UpdateOrganizationalUnit))}'
+      LogGroupName: !Ref TrailLogGroup
+      MetricTransformations:
+      - MetricValue: '1'
+        MetricNamespace: !Ref 'AWS::StackName'
+        MetricName: 'OrganizationsChangeCount'
+  OrganizationsChangeAlarm:
+    Condition: HasOrganizationsChangeAlarm
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'CloudTrail: changes to Organizations detected'
+      Namespace: !Ref 'AWS::StackName'
+      MetricName: OrganizationsChangeCount
       Statistic: Sum
       Period: 300
       EvaluationPeriods: 1
