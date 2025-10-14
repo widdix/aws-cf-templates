@@ -42,240 +42,488 @@ Parameters:
   ServiceName:
     Description: 'The name of the service.'
     Type: String
-    AllowedValues: # generate list with aws --region us-east-1 ec2 describe-vpc-endpoint-services --query 'ServiceDetails[].ServiceName'
-    - 'access-analyzer'
+    AllowedValues: # generate list with aws --no-cli-pager --region us-east-1 ec2 describe-vpc-endpoint-services --query 'ServiceDetails[].ServiceName' | grep 'com.amazonaws.us-east-1.'
+    - cassandra-streams
+    - bcm-data-exports
+    - emr-service-cell01
+    - freetier
+    - kendra-ranking
+    - qbusiness
+    - resource-explorer-2
+    - resource-explorer-2-fips
+    - experiments
+    - notebook
+    - partner-app
+    - studio
+    - access-analyzer
+    - access-analyzer-fips
     - account
-    - 'acm-pca'
-    - 'airflow.api'
-    - 'airflow.env'
-    - 'airflow.ops'
-    - 'analytics-omics'
-    - 'app-integrations'
-    - 'application-autoscaling'
+    - acm
+    - acm-fips
+    - acm-pca
+    - acm-pca-fips
+    - aiops
+    - aiops-fips
+    - airflow.api
+    - airflow.api-fips
+    - airflow.env
+    - airflow.env-fips
+    - airflow.ops
+    - analytics-omics
+    - analytics-omics-fips
+    - apigateway
+    - app-integrations
+    - appconfig
+    - appconfigdata
+    - application-autoscaling
+    - application-signals
+    - applicationinsights
     - appmesh
-    - 'appmesh-envoy-management'
+    - appmesh-envoy-management
     - apprunner
-    - 'apprunner.requests'
-    - 'appstream.api'
-    - 'appstream.streaming'
-    - 'appsync-api'
+    - apprunner.requests
+    - appstream.api
+    - appstream.streaming
+    - appsync
+    - appsync-api
+    - apptest
     - aps
-    - 'aps-workspaces'
+    - aps-workspaces
+    - arc-region-switch
+    - arc-region-switch-control-plane
+    - arc-zonal-shift
+    - arsenal-discovery
     - athena
+    - athena-fips
     - auditmanager
     - autoscaling
-    - 'autoscaling-plans'
+    - autoscaling-fips
+    - autoscaling-plans
     - awsconnector
+    - b2bi
     - backup
-    - 'backup-gateway'
+    - backup-fips
+    - backup-gateway
     - batch
+    - bcm-pricing-calculator
     - bedrock
-    - 'bedrock-runtime'
+    - bedrock-agent
+    - bedrock-agent-runtime
+    - bedrock-agentcore
+    - bedrock-agentcore.gateway
+    - bedrock-data-automation
+    - bedrock-data-automation-fips
+    - bedrock-data-automation-runtime
+    - bedrock-data-automation-runtime-fips
+    - bedrock-fips
+    - bedrock-runtime
+    - bedrock-runtime-fips
+    - billing
     - billingconductor
     - braket
     - cases
     - cassandra
-    - 'cassandra-fips'
+    - cassandra-fips
+    - ce
     - cleanrooms
+    - cleanrooms-fips
+    - cleanrooms-ml
     - cloudcontrolapi
-    - 'cloudcontrolapi-fips'
+    - cloudcontrolapi-fips
     - clouddirectory
     - cloudformation
+    - cloudformation-fips
     - cloudhsmv2
     - cloudtrail
-    - 'codeartifact.api'
-    - 'codeartifact.repositories'
+    - cloudtrail-fips
+    - codeartifact.api
+    - codeartifact.repositories
     - codebuild
-    - 'codebuild-fips'
+    - codebuild-fips
     - codecommit
-    - 'codecommit-fips'
+    - codecommit-fips
+    - codeconnections.api
     - codedeploy
-    - 'codedeploy-commands-secure'
-    - 'codeguru-profiler'
-    - 'codeguru-reviewer'
+    - codedeploy-commands-secure
+    - codedeploy-fips
+    - codeguru-profiler
+    - codeguru-reviewer
     - codepipeline
-    - 'codestar-connections.api'
+    - codestar-connections.api
     - codewhisperer
     - comprehend
     - comprehendmedical
+    - compute-optimizer
     - config
-    - 'connect-campaigns'
+    - connect-campaigns
     - console
-    - 'control-storage-omics'
-    - 'data-servicediscovery'
-    - 'data-servicediscovery-fips'
+    - control-storage-omics
+    - control-storage-omics-fips
+    - controlcatalog
+    - controltower
+    - controltower-fips
+    - cost-optimization-hub
+    - data-servicediscovery
+    - data-servicediscovery-fips
     - databrew
+    - databrew-fips
     - dataexchange
     - datasync
+    - datasync-fips
     - datazone
-    - 'deviceadvisor.iot'
-    - 'devops-guru'
+    - datazone-fips
+    - deadline.management
+    - deadline.scheduling
+    - detective
+    - detective-fips
+    - deviceadvisor.iot
+    - devops-guru
+    - dicom-medical-imaging
+    - dilithium
+    - diode
+    - diode-fips
+    - directconnect
+    - directconnect-fips
+    - discovery
+    - dlm
+    - dlm-fips
     - dms
-    - 'dms-fips'
+    - dms-fips
     - drs
     - ds
+    - ds-data
+    - ds-data-fips
+    - ds-fips
+    - dsql
+    - dsql-fnh4
     - dynamodb
+    - dynamodb
+    - dynamodb-fips
+    - dynamodb-streams
     - ebs
+    - ebs-fips
     - ec2
+    - ec2-fips
     - ec2messages
-    - 'ecr.api'
-    - 'ecr.dkr'
+    - ecr.api
+    - ecr.dkr
     - ecs
-    - 'ecs-agent'
-    - 'ecs-telemetry'
+    - ecs-agent
+    - ecs-fips
+    - ecs-telemetry
     - eks
-    - 'elastic-inference.runtime'
+    - eks-auth
+    - eks-fips
+    - eks-proxy
+    - elastic-inference.runtime
     - elasticache
-    - 'elasticache-fips'
+    - elasticache-fips
     - elasticbeanstalk
-    - 'elasticbeanstalk-health'
+    - elasticbeanstalk-fips
+    - elasticbeanstalk-health
     - elasticfilesystem
-    - 'elasticfilesystem-fips'
+    - elasticfilesystem-fips
     - elasticloadbalancing
+    - elasticloadbalancing-fips
     - elasticmapreduce
-    - 'email-smtp'
-    - 'emr-containers'
-    - 'emr-serverless'
+    - elasticmapreduce-fips
+    - email-smtp
+    - emr-containers
+    - emr-serverless
+    - emr-serverless-services.livy
+    - emr-serverless.dashboard
+    - emrwal.prod
+    - entityresolution
+    - entityresolution-fips
     - events
+    - events-fips
     - evidently
-    - 'evidently-dataplane'
-    - 'execute-api'
+    - evidently-dataplane
+    - evs
+    - evs-fips
+    - execute-api
     - finspace
-    - 'finspace-api'
+    - finspace-api
     - fis
+    - fis-fips
+    - fms
+    - fms-fips
     - forecast
-    - 'forecast-fips'
+    - forecast-fips
     - forecastquery
-    - 'forecastquery-fips'
+    - forecastquery-fips
     - frauddetector
     - fsx
-    - 'fsx-fips'
-    - 'git-codecommit'
-    - 'git-codecommit-fips'
+    - fsx-fips
+    - gamelift
+    - geo.geofencing
+    - geo.maps
+    - geo.metadata
+    - geo.places
+    - geo.routes
+    - geo.tracking
+    - git-codecommit
+    - git-codecommit-fips
     - glue
+    - glue.dashboard
     - grafana
-    - 'grafana-workspace'
+    - grafana-workspace
     - greengrass
     - groundstation
-    - 'guardduty-data'
-    - 'guardduty-data-fips'
+    - groundstation-fips
+    - guardduty
+    - guardduty-data
+    - guardduty-data-fips
+    - guardduty-fips
     - healthlake
+    - highlander
     - identitystore
     - imagebuilder
+    - imagebuilder-fips
+    - inspector-scan
+    - inspector-scan-fips
     - inspector2
-    - 'iot.data'
-    - 'iot.fleethub.api'
+    - inspector2-fips
+    - internetmonitor
+    - internetmonitor-fips
+    - invoicing
+    - iot.credentials
+    - iot.data
+    - iot.fleethub.api
     - iotfleetwise
-    - iotroborunner
-    - 'iotsitewise.api'
-    - 'iotsitewise.data'
-    - 'iottwinmaker.api'
-    - 'iottwinmaker.data'
-    - 'iotwireless.api'
+    - iotsitewise.api
+    - iotsitewise.data
+    - iottwinmaker.api
+    - iottwinmaker.data
+    - iotwireless.api
+    - kafka
+    - kafka-fips
+    - kafkaconnect
     - kendra
-    - 'kinesis-firehose'
-    - 'kinesis-streams'
+    - kinesis-firehose
+    - kinesis-firehose-fips
+    - kinesis-streams
+    - kinesis-streams-fips
+    - kinesisanalytics
+    - kinesisanalytics-fips
     - kms
-    - 'kms-fips'
+    - kms-fips
     - lakeformation
     - lambda
-    - 'license-manager'
-    - 'license-manager-fips'
+    - launchwizard
+    - license-manager
+    - license-manager-fips
+    - license-manager-linux-subscriptions
+    - license-manager-linux-subscriptions-fips
+    - license-manager-user-subscriptions
+    - license-manager-user-subscriptions-fips
+    - lightsail
     - logs
+    - logs-fips
     - lookoutequipment
     - lookoutmetrics
     - lookoutvision
-    - 'lorawan.cups'
-    - 'lorawan.lns'
+    - lorawan.cups
+    - lorawan.lns
     - m2
     - macie2
-    - 'managedblockchain-query'
-    - 'managedblockchain.bitcoin.mainnet'
-    - 'managedblockchain.bitcoin.testnet'
+    - macie2-fips
+    - mail-manager
+    - mail-manager-fips
+    - mail-manager-smtp.auth.fips
+    - mail-manager-smtp.open.fips
+    - managedblockchain-query
+    - managedblockchain.bitcoin.mainnet
+    - managedblockchain.bitcoin.testnet
     - mediaconnect
-    - 'medical-imaging'
-    - 'memory-db'
-    - 'memorydb-fips'
+    - mediaconvert
+    - mediaconvert-fips
+    - medical-imaging
+    - memory-db
+    - memorydb-fips
+    - metering-marketplace
     - mgn
-    - 'migrationhub-orchestrator'
-    - 'migrationhub-strategy'
-    - 'models-v2-lex'
+    - migrationhub-orchestrator
+    - migrationhub-strategy
+    - models-v2-lex
     - monitoring
+    - mpa
+    - mq
+    - mq-fips
+    - neptune-graph
+    - neptune-graph-data
+    - neptune-graph-fips
+    - network-firewall
+    - network-firewall-fips
+    - networkflowmonitor
+    - networkflowmonitorreports
+    - networkmonitor
     - nimble
+    - notifications
+    - notifications-contacts
+    - oam
+    - observabilityadmin
+    - odb
+    - odb-fips
+    - organizations
+    - organizations-fips
+    - outposts
     - panorama
-    - 'payment-cryptography.controlplane'
-    - 'payment-cryptography.dataplane'
-    - 'pca-connector-ad'
+    - payment-cryptography.controlplane
+    - payment-cryptography.dataplane
+    - pca-connector-ad
+    - pca-connector-scep
+    - pcs
+    - pcs-fips
     - personalize
-    - 'personalize-events'
-    - 'personalize-runtime'
+    - personalize-events
+    - personalize-runtime
+    - pi
+    - pi-fips
     - pinpoint
-    - 'pinpoint-sms-voice-v2'
+    - pinpoint-sms-voice-v2
+    - pipes
+    - pipes-data
+    - pipes-fips
     - polly
-    - 'private-networks'
+    - polly-fips
+    - pricing.api
     - profile
     - proton
-    - 'qldb.session'
+    - q
+    - qapps
+    - qldb.session
+    - quicksight-website
+    - ram
+    - ram-fips
+    - rbin
     - rds
-    - 'rds-data'
+    - rds-data
+    - rds-fips
     - redshift
-    - 'redshift-data'
-    - 'redshift-fips'
-    - 'refactor-spaces'
+    - redshift-data
+    - redshift-data-fips
+    - redshift-fips
+    - redshift-serverless
+    - redshift-serverless-fips
+    - refactor-spaces
     - rekognition
-    - 'rekognition-fips'
+    - rekognition-fips
+    - repostspace
+    - resource-groups
+    - resource-groups-fips
     - robomaker
     - rolesanywhere
+    - rolesanywhere-fips
+    - route53profiles
     - rum
-    - 'rum-dataplane'
-    - 'runtime-medical-imaging'
-    - 'runtime-v2-lex'
-    - 'sagemaker.api'
-    - 'sagemaker.featurestore-runtime'
-    - 'sagemaker.metrics'
-    - 'sagemaker.runtime'
-    - 'sagemaker.runtime-fips'
+    - rum-dataplane
+    - runtime-medical-imaging
+    - runtime-v2-lex
+    - s3
+    - s3
+    - s3-outposts
+    - s3express
+    - s3tables
+    - sagemaker-data-science-assistant
+    - sagemaker.api
+    - sagemaker.api-fips
+    - sagemaker.featurestore-runtime
+    - sagemaker.featurestore-runtime-fips
+    - sagemaker.metrics
+    - sagemaker.runtime
+    - sagemaker.runtime-fips
+    - scheduler
+    - schemas
+    - scn
     - secretsmanager
+    - secretsmanager-fips
+    - security-ir
     - securityhub
+    - securityhub-fips
+    - securitylake
+    - securitylake-fips
+    - serverlessrepo
+    - service.user-subscriptions
     - servicecatalog
-    - 'servicecatalog-appregistry'
+    - servicecatalog-appregistry
+    - servicecatalog-fips
     - servicediscovery
-    - 'servicediscovery-fips'
+    - servicediscovery-fips
+    - servicequotas
+    - shield
+    - shield-fips
     - signin
     - simspaceweaver
-    - 'snow-device-management'
+    - snow-device-management
     - sns
+    - sns-fips
+    - social-messaging
+    - social-messaging-fips
     - sqs
+    - sqs-fips
     - ssm
-    - 'ssm-contacts'
-    - 'ssm-incidents'
+    - ssm-contacts
+    - ssm-incidents
+    - ssm-incidents-fips
+    - ssm-quicksetup
+    - ssm-sap
+    - ssm-sap-fips
     - ssmmessages
     - states
-    - 'storage-omics'
+    - storage-omics
     - storagegateway
-    - 'streaming-rekognition'
-    - 'streaming-rekognition-fips'
+    - streaming-rekognition
+    - streaming-rekognition-fips
     - sts
+    - sts-fips
     - swf
-    - 'swf-fips'
-    - 'sync-states'
+    - swf-fips
+    - sync-states
     - synthetics
-    - 'tags-omics'
+    - synthetics-fips
+    - tagging
+    - tags-omics
+    - tags-omics-fips
+    - tax
     - textract
-    - 'textract-fips'
+    - textract-fips
+    - thinclient.api
+    - timestream-influxdb
+    - timestream-influxdb-fips
+    - timestream.ingest-cell2
+    - timestream.query-cell2
     - tnb
     - transcribe
+    - transcribe-fips
     - transcribestreaming
+    - transcribestreaming-fips
     - transfer
-    - 'transfer.server'
+    - transfer-fips
+    - transfer.server
+    - transform
     - translate
+    - trustedadvisor
+    - uxc
     - verifiedpermissions
+    - verifiedpermissions-fips
     - voiceid
-    - 'vpc-lattice'
+    - vpc-lattice
+    - wafv2
+    - wafv2-fips
+    - wellarchitected
     - wisdom
-    - 'workflows-omics'
+    - workflows-omics
+    - workflows-omics-fips
+    - workmail
+    - workmailmessageflow
     - workspaces
+    - workspaces-fips
+    - workspaces-instances
+    - workspaces-web
+    - workspaces-web-fips
     - xray
+    - xray-fips
 Conditions:
   HasParentClientStack: !Not [!Equals [!Ref ParentClientStack, '']]
   HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
