@@ -20,7 +20,7 @@ jobs:
         yamllint .
     - name: cfn-lint
       run: |
-        pip install cfn-lint==1.39.1
+        pip install cfn-lint==1.44.0
         cfn-lint -i E1022 E3003 E3014 E3026 E3032 W1011 W2001 W2010 W3045 W6001 W8003 -t '**/*.yaml'
     - name: license
       run: |
