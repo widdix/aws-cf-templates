@@ -21,8 +21,10 @@ Learn more: https://github.com/cfn-modules/docs
 
 Besides our open-source projects, we also offer commercial products on the AWS Marketplace.
 
-* [marbot to monitor AWS](https://marbot.io)
-* [bucketAV to protect S3 buckets form malware and viruses](https://bucketav.com)
+* [bucketAV - Antivirus for Amazon S3 and Cloudflare R2](https://bucketav.com)
+* [attachmentAV - Antivirus for SaaS and cloud platforms](https://attachmentav.com)
+* [HyperEnv - Self-hosted GitHub Actions runners for AWS](https://hyperenv.com)
+* [marbot - Event-driven AWS Monitoring](https://marbot.io)
 
 ## License
 All templates are published under Apache License Version 2.0.
