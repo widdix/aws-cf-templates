@@ -188,6 +188,7 @@ Resources:
               Service: 'cloudtrail.amazonaws.com'
             Action:
             - 'kms:GenerateDataKey*'
+            - 'kms:DescribeKey'
             Resource: '*'
             Condition:
               StringLike:
