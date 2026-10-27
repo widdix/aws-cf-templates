@@ -1,0 +1,806 @@
+---
+# Copyright 2018 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'EC2: Amazon Linux 2023 (mutable, private), a cloudonaut.io template'
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+    - Label:
+        default: 'Parent Stacks'
+      Parameters:
+      - ParentVPCStack
+      - ParentSSHBastionStack
+      - ParentAlertStack
+      - ParentKmsKeyStack
+      - ParentZoneStack
+      - ParentClientStack1
+      - ParentClientStack2
+      - ParentClientStack3
+    - Label:
+        default: 'Network Parameters'
+      Parameters:
+      - SubnetName
+      - SubDomainNameWithDot
+      - IngressTcpPort1
+      - IngressTcpParentClientStack1
+      - IngressTcpPort2
+      - IngressTcpParentClientStack2
+      - IngressTcpPort3
+      - IngressTcpParentClientStack3
+    - Label:
+        default: 'Permission Parameters'
+      Parameters:
+      - KeyName
+      - ManagedPolicyArns
+      - PermissionsBoundary
+    - Label:
+        default: 'EC2 Parameters'
+      Parameters:
+      - Name
+      - AmazonLinux2023Version
+      - RestoreImageId
+      - InstanceType
+      - UserData
+      - RootVolumeSize
+    - Label:
+        default: 'Operational Parameters'
+      Parameters:
+      - LogsRetentionInDays
+      - MaintenanceWindowSchedule
+      - MaintenanceWindowScheduleTimezone
+      - BackupRetentionPeriod
+      - BackupScheduleExpression
+Parameters:
+  ParentVPCStack:
+    Description: 'Stack name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+  ParentSSHBastionStack:
+    Description: 'Optional but recommended stack name of parent SSH bastion host/instance stack based on vpc/vpc-*-bastion.yaml template.'
+    Type: String
+    Default: ''
+  ParentAlertStack:
+    Description: 'Optional but recommended stack name of parent alert stack based on operations/alert.yaml template.'
+    Type: String
+    Default: ''
+  ParentKmsKeyStack:
+    Description: 'Optional stack name of parent KMS key stack based on security/kms-key.yaml template.'
+    Type: String
+    Default: ''
+  ParentZoneStack:
+    Description: 'Optional stack name of parent zone stack based on vpc/zone-*.yaml template.'
+    Type: String
+    Default: ''
+  ParentClientStack1:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the EC2 instance to whatever uses the client security group.'
+    Type: String
+    Default: ''
+  ParentClientStack2:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the EC2 instance to whatever uses the client security group.'
+    Type: String
+    Default: ''
+  ParentClientStack3:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml template to allow network access from the EC2 instance to whatever uses the client security group.'
+    Type: String
+    Default: ''
+  KeyName:
+    Description: 'Optional key pair of the ec2-user to establish a SSH connection to the EC2 instance.'
+    Type: String
+    Default: ''
+  InstanceType:
+    Description: 'The instance type for the EC2 instance.'
+    Type: String
+    Default: 't3.micro'
+  Name:
+    Description: 'The name for the EC2 instance.'
+    Type: String
+    Default: 'test'
+  SubnetName:
+    Description: 'Subnet name of parent VPC stack based on vpc/vpc-*azs.yaml template.'
+    Type: String
+    Default: SubnetAPrivate
+    AllowedValues:
+    - SubnetAPrivate
+    - SubnetBPrivate
+    - SubnetCPrivate
+    - SubnetDPrivate
+  LogsRetentionInDays:
+    Description: 'Specifies the number of days you want to retain log events.'
+    Type: Number
+    Default: 14
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+  SubDomainNameWithDot:
+    Description: 'Name that is used to create the DNS entry with trailing dot, e.g. §{SubDomainNameWithDot}§{HostedZoneName}. Leave blank for naked (or apex and bare) domain. Requires ParentZoneStack parameter!'
+    Type: String
+    Default: ''
+  UserData:
+    Description: 'Optional Bash script executed on first instance launch.'
+    Type: String
+    Default: ''
+  IngressTcpPort1:
+    Description: 'Optional port allowing ingress TCP traffic.'
+    Type: String
+    Default: ''
+  IngressTcpParentClientStack1:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml that is required to access IngressTcpPort1 (if you leave this blank, IngressTcpPort1 is open to the world 0.0.0.0/0).'
+    Type: String
+    Default: ''
+  IngressTcpPort2:
+    Description: 'Optional port allowing ingress TCP traffic.'
+    Type: String
+    Default: ''
+  IngressTcpParentClientStack2:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml that is required to access IngressTcpPort2 (if you leave this blank, IngressTcpPort2 is open to the world 0.0.0.0/0).'
+    Type: String
+    Default: ''
+  IngressTcpPort3:
+    Description: 'Optional port allowing ingress TCP traffic.'
+    Type: String
+    Default: ''
+  IngressTcpParentClientStack3:
+    Description: 'Optional stack name of parent Client Security Group stack based on state/client-sg.yaml that is required to access IngressTcpPort3 (if you leave this blank, IngressTcpPort3 is open to the world 0.0.0.0/0).'
+    Type: String
+    Default: ''
+  ManagedPolicyArns:
+    Description: 'Optional comma-delimited list of IAM managed policy ARNs to attach to the instance''s IAM role.'
+    Type: String
+    Default: ''
+  PermissionsBoundary:
+    Description: 'Optional ARN for a policy that will be used as the permission boundary for all roles created by this template.'
+    Type: String
+    Default: ''
+  RootVolumeSize:
+    Description: 'The root volume size, in Gibibytes (GiB) (if RestoreImageId is set, value must be >= snapshot of AMI).'
+    Type: Number
+    Default: 8
+    ConstraintDescription: 'Must be in the range [8-1024]'
+    MinValue: 8
+    MaxValue: 1024
+  MaintenanceWindowSchedule:
+    Description: 'SSM cron expressions to trigger the maintenace window for patch installation (leave empty to disable).'
+    Type: String
+    Default: 'cron(0 5 ? * SUN *)'
+  MaintenanceWindowScheduleTimezone:
+    Description: 'Timezone for maintenance window schedule (in IANA format).'
+    Type: String
+    Default: UTC
+  BackupRetentionPeriod:
+    Description: 'The number of days to keep backups of the EC2 instance (set to 0 to disable).'
+    Type: Number
+    MinValue: 0
+    MaxValue: 35
+    Default: 30
+  BackupScheduleExpression:
+    Description: 'A CRON expression specifying when AWS Backup initiates a backup job.'
+    Type: String
+    Default: 'cron(0 4 ? * * *)'
+  RestoreImageId:
+    Description: 'Restore from existing Amazon Machine Image (AMI).'
+    Type: String
+    Default: ''
+  AmazonLinux2023Version:
+    Description: 'Version of Amazon Linux 2023 to boot from the first time (ignored if RestoreImageId is set; select the latest version for new stacks; OS updates are enabled to patch the system).'
+    Type: String
+    AllowedValues: ['2023.12.20261016.0']
+Mappings:
+  VersionMap:
+    '2023.12.20261016.0':
+      Map: RegionMap202312202610160
+  RegionMap202312202610160:
+    'ap-south-2':
+      AMI: 'ami-04f617474d20eae29'
+    'ap-south-1':
+      AMI: 'ami-04394a3a96907e9ec'
+    'eu-south-1':
+      AMI: 'ami-01d10a718a6f17b2e'
+    'eu-south-2':
+      AMI: 'ami-0811d916734978def'
+    'me-central-1':
+      AMI: 'ami-0df6aa23903f06b06'
+    'il-central-1':
+      AMI: 'ami-06548c51a69087b86'
+    'ca-central-1':
+      AMI: 'ami-023d7517d5be89c0e'
+    'ap-east-2':
+      AMI: 'ami-06aa11473654314af'
+    'mx-central-1':
+      AMI: 'ami-07a2c29e64ae2c7a4'
+    'eu-central-1':
+      AMI: 'ami-02021c18e1ca11070'
+    'eu-central-2':
+      AMI: 'ami-089be1cfd4d318560'
+    'us-west-1':
+      AMI: 'ami-00f0b088032c72fda'
+    'us-west-2':
+      AMI: 'ami-0803a33fd43db1fbf'
+    'af-south-1':
+      AMI: 'ami-01e13d903c268a58b'
+    'eu-north-1':
+      AMI: 'ami-0a7acf71650e53201'
+    'eu-west-3':
+      AMI: 'ami-0f57133a57fb0b7a3'
+    'eu-west-2':
+      AMI: 'ami-06cdac14c9c4da91b'
+    'eu-west-1':
+      AMI: 'ami-051ef443317b2de18'
+    'ap-northeast-3':
+      AMI: 'ami-0ebd151166d8449f4'
+    'ap-northeast-2':
+      AMI: 'ami-06a87fea194ac0452'
+    'me-south-1':
+      AMI: '' # region unavailable
+    'ap-northeast-1':
+      AMI: 'ami-0c1e0061f931b36f8'
+    'sa-east-1':
+      AMI: 'ami-0de7704dcfbf9a7ae'
+    'ap-east-1':
+      AMI: 'ami-00ca19b031d82f0dd'
+    'ca-west-1':
+      AMI: 'ami-01708406018fd035d'
+    'ap-southeast-1':
+      AMI: 'ami-07e095c7966985339'
+    'ap-southeast-2':
+      AMI: 'ami-085ce13fd231ab4ae'
+    'ap-southeast-3':
+      AMI: 'ami-0513bcfd16c5c75bc'
+    'ap-southeast-4':
+      AMI: 'ami-076a53ec09f4442d2'
+    'us-east-1':
+      AMI: 'ami-0567589d25e06853e'
+    'ap-southeast-5':
+      AMI: 'ami-01635f90fa4d4a7d3'
+    'ap-southeast-6':
+      AMI: 'ami-066388cfbaf284c81'
+    'us-east-2':
+      AMI: 'ami-0d31a22b09ceec4db'
+    'ap-southeast-7':
+      AMI: 'ami-04302af0ce722d6ff'
+Conditions:
+  HasPermissionsBoundary: !Not [!Equals [!Ref PermissionsBoundary, '']]
+  HasKmsKey: !Not [!Equals [!Ref ParentKmsKeyStack, '']]
+  HasKeyName: !Not [!Equals [!Ref KeyName, '']]
+  HasSSHBastionSecurityGroup: !Not [!Equals [!Ref ParentSSHBastionStack, '']]
+  HasNotSSHBastionSecurityGroup: !Equals [!Ref ParentSSHBastionStack, '']
+  HasAlertTopic: !Not [!Equals [!Ref ParentAlertStack, '']]
+  HasZone: !Not [!Equals [!Ref ParentZoneStack, '']]
+  HasIngressTcpPort1: !Not [!Equals [!Ref IngressTcpPort1, '']]
+  HasIngressTcpParentClientStack1: !Not [!Equals [!Ref IngressTcpParentClientStack1, '']]
+  HasIngressTcpPort2: !Not [!Equals [!Ref IngressTcpPort2, '']]
+  HasIngressTcpParentClientStack2: !Not [!Equals [!Ref IngressTcpParentClientStack2, '']]
+  HasIngressTcpPort3: !Not [!Equals [!Ref IngressTcpPort3, '']]
+  HasIngressTcpParentClientStack3: !Not [!Equals [!Ref IngressTcpParentClientStack3, '']]
+  HasClientSecurityGroup1: !Not [!Equals [!Ref ParentClientStack1, '']]
+  HasClientSecurityGroup2: !Not [!Equals [!Ref ParentClientStack2, '']]
+  HasClientSecurityGroup3: !Not [!Equals [!Ref ParentClientStack3, '']]
+  HasManagedPolicyArns: !Not [!Equals [!Ref ManagedPolicyArns, '']]
+  HasBackupRetentionPeriod: !Not [!Equals [!Ref BackupRetentionPeriod, 0]]
+  HasRestoreImageId: !Not [!Equals [!Ref RestoreImageId, '']]
+  HasMaintenanceWindowSchedule: !Not [!Equals [!Ref MaintenanceWindowSchedule, '']]
+Resources:
+  RecordSet:
+    Condition: HasZone
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      HostedZoneId: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneId'}
+      Name: !Sub
+      - '${SubDomainNameWithDot}${HostedZoneName}'
+      - SubDomainNameWithDot: !Ref SubDomainNameWithDot
+        HostedZoneName: {'Fn::ImportValue': !Sub '${ParentZoneStack}-HostedZoneName'}
+      ResourceRecords:
+      - !GetAtt 'NetworkInterface.PrimaryPrivateIpAddress'
+      TTL: 60
+      Type: A
+  NetworkInterface:
+    Type: 'AWS::EC2::NetworkInterface'
+    Properties:
+      GroupSet:
+      - !Ref SecurityGroup
+      - !If [HasClientSecurityGroup1, {'Fn::ImportValue': !Sub '${ParentClientStack1}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
+      - !If [HasClientSecurityGroup2, {'Fn::ImportValue': !Sub '${ParentClientStack2}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
+      - !If [HasClientSecurityGroup3, {'Fn::ImportValue': !Sub '${ParentClientStack3}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
+      SubnetId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-${SubnetName}'}
+  Logs:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      RetentionInDays: !Ref LogsRetentionInDays
+  SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Ref Name
+      VpcId: {'Fn::ImportValue': !Sub '${ParentVPCStack}-VPC'}
+  SecurityGroupInSSHBastion:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasSSHBastionSecurityGroup
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ParentSSHBastionStack}-SecurityGroup'}
+  SecurityGroupInSSHWorld:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasNotSSHBastionSecurityGroup
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: '0.0.0.0/0'
+  SecurityGroupIngressTcpPort1:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasIngressTcpPort1
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref IngressTcpPort1
+      ToPort: !Ref IngressTcpPort1
+      SourceSecurityGroupId: !If [HasIngressTcpParentClientStack1, {'Fn::ImportValue': !Sub '${IngressTcpParentClientStack1}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
+      CidrIp: !If [HasIngressTcpParentClientStack1, !Ref 'AWS::NoValue', '0.0.0.0/0']
+  SecurityGroupIngressTcpPort2:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasIngressTcpPort2
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref IngressTcpPort2
+      ToPort: !Ref IngressTcpPort2
+      SourceSecurityGroupId: !If [HasIngressTcpParentClientStack2, {'Fn::ImportValue': !Sub '${IngressTcpParentClientStack2}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
+      CidrIp: !If [HasIngressTcpParentClientStack2, !Ref 'AWS::NoValue', '0.0.0.0/0']
+  SecurityGroupIngressTcpPort3:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasIngressTcpPort3
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref IngressTcpPort3
+      ToPort: !Ref IngressTcpPort3
+      SourceSecurityGroupId: !If [HasIngressTcpParentClientStack3, {'Fn::ImportValue': !Sub '${IngressTcpParentClientStack3}-ClientSecurityGroup'}, !Ref 'AWS::NoValue']
+      CidrIp: !If [HasIngressTcpParentClientStack3, !Ref 'AWS::NoValue', '0.0.0.0/0']
+  InstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Roles:
+      - !Ref IAMRole
+  IAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'ec2.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      ManagedPolicyArns: !If [HasManagedPolicyArns, !Split [',', !Ref ManagedPolicyArns], !Ref 'AWS::NoValue']
+      PermissionsBoundary: !If [HasPermissionsBoundary, !Ref PermissionsBoundary, !Ref 'AWS::NoValue']
+      Policies:
+      - PolicyName: ssm
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'ssmmessages:*' # SSM Agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+            - 'ssm:UpdateInstanceInformation' # SSM agent by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+            - 'ec2messages:*' # SSM Session Manager by https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-setting-up-messageAPIs.html
+            - 'ssm:GetDeployablePatchSnapshotForInstance'
+            - 'ssm:ListAssociations'
+            Resource: '*'
+          - Effect: Allow
+            Action: 's3:GetObject'
+            Resource:
+            - !Sub 'arn:${AWS::Partition}:s3:::aws-ssm-${AWS::Region}/*'
+            - !Sub 'arn:${AWS::Partition}:s3:::patch-baseline-snapshot-${AWS::Region}/*'
+      - PolicyName: cloudwatch
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action: 'cloudwatch:PutMetricData'
+            Resource: '*'
+            Condition:
+              StringEquals:
+                'cloudwatch:namespace': !Ref 'AWS::StackName'
+          - Effect: Allow
+            Action:
+            - 'logs:CreateLogGroup'
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+            - 'logs:DescribeLogStreams'
+            - 'logs:DescribeLogGroups'
+            Resource: !GetAtt 'Logs.Arn'
+  IAMPolicySSM:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Roles:
+      - !Ref IAMRole
+      PolicyName: ssm2
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action: 'ssm:ListInstanceAssociations'
+          Resource: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${VirtualMachine}'
+        - Effect: Allow
+          Action: 'ssm:PutInventory'
+          Resource:
+          - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${VirtualMachine}'
+          - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:managed-instance-inventory/${VirtualMachine}'
+        - Effect: Allow
+          Action: 'ssm:UpdateInstanceAssociationStatus'
+          Resource: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${VirtualMachine}'
+  VirtualMachine:
+    Type: 'AWS::EC2::Instance'
+    Metadata:
+      'AWS::CloudFormation::Init':
+        configSets:
+          default: [cloudwatch, config]
+        cloudwatch:
+          packages:
+            yum:
+              'amazon-cloudwatch-agent': []
+          files:
+            '/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json': # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-Configuration-File-Details.html
+              content: !Sub |
+                {
+                  "logs": {
+                    "logs_collected": {
+                      "files": {
+                        "collect_list": [{
+                          "log_group_name": "${Logs}",
+                          "file_path": "/var/log/amazon/ssm/amazon-ssm-agent.log",
+                          "log_stream_name": "{instance_id}/var/log/amazon/ssm/amazon-ssm-agent.log",
+                          "timestamp_format": "%Y-%m-%d %H:%M:%S.%f"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/amazon/ssm/errors.log",
+                           "log_stream_name": "{instance_id}/var/log/amazon/ssm/errors.log",
+                           "timestamp_format": "%Y-%m-%d %H:%M:%S.%f"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/audit/audit.log",
+                           "log_stream_name": "{instance_id}/var/log/audit/audit.log"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/cfn-hup.log",
+                           "log_stream_name": "{instance_id}/var/log/cfn-hup.log",
+                           "timestamp_format": "%Y-%m-%d %H:%M:%S,%f"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/cfn-init-cmd.log",
+                           "log_stream_name": "{instance_id}/var/log/cfn-init-cmd.log",
+                           "timestamp_format": "%Y-%m-%d %H:%M:%S,%f"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/cfn-init.log",
+                           "log_stream_name": "{instance_id}/var/log/cfn-init.log",
+                           "timestamp_format": "%Y-%m-%d %H:%M:%S,%f"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/cfn-wire.log",
+                           "log_stream_name": "{instance_id}/var/log/cfn-wire.log",
+                           "timestamp_format": "%Y-%m-%d %H:%M:%S,%f"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/cloud-init-output.log",
+                           "log_stream_name": "{instance_id}/var/log/cloud-init-output.log"
+                        }, {
+                           "log_group_name": "${Logs}",
+                           "file_path": "/var/log/cloud-init.log",
+                           "log_stream_name": "{instance_id}/var/log/cloud-init.log",
+                           "timestamp_format": "%Y-%m-%d %H:%M:%S,%f"
+                        }]
+                      },
+                      "journald": {
+                        "collect_list": [{
+                          "log_group_name": "${Logs}",
+                          "log_stream_name": "{instance_id}/journald"
+                        }]
+                      }
+                    }
+                  },
+                  "metrics": {
+                    "namespace": "${AWS::StackName}",
+                    "append_dimensions": {
+                      "InstanceId": "${!aws:InstanceId}"
+                    },
+                    "metrics_collected": {
+                      "mem": {
+                        "measurement": [
+                          "mem_used_percent"
+                        ]
+                      },
+                      "swap": {
+                        "measurement": [
+                          "swap_used_percent"
+                        ]
+                      },
+                      "disk": {
+                        "resources": [
+                          "/"
+                        ],
+                        "measurement": [
+                          "used_percent"
+                        ],
+                        "drop_device": true
+                      }
+                    }
+                  }
+                }
+              mode: '000644'
+              owner: root
+              group: root
+          services:
+            systemd:
+              'amazon-cloudwatch-agent':
+                enabled: true
+                ensureRunning: true
+                files:
+                - '/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json'
+                packages:
+                  yum:
+                  - amazon-cloudwatch-agent
+        config:
+          files:
+            '/etc/cfn/cfn-hup.conf':
+              content: !Sub |
+                [main]
+                stack=${AWS::StackId}
+                region=${AWS::Region}
+                interval=1
+              mode: '000400'
+              owner: root
+              group: root
+            '/etc/cfn/hooks.d/cfn-auto-reloader.conf':
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.VirtualMachine.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init --verbose --stack=${AWS::StackName} --region=${AWS::Region} --resource=VirtualMachine
+                runas=root
+          services:
+            systemd:
+              cfn-hup:
+                enabled: true
+                ensureRunning: true
+                files:
+                - '/etc/cfn/cfn-hup.conf'
+                - '/etc/cfn/hooks.d/cfn-auto-reloader.conf'
+              amazon-ssm-agent:
+                enabled: true
+                ensureRunning: true
+    Properties:
+      IamInstanceProfile: !Ref InstanceProfile
+      ImageId: !If [HasRestoreImageId, !Ref RestoreImageId, !FindInMap [!FindInMap [VersionMap, !Ref AmazonLinux2023Version, Map], !Ref 'AWS::Region', AMI]]
+      InstanceType: !Ref InstanceType
+      KeyName: !If [HasKeyName, !Ref KeyName, !Ref 'AWS::NoValue']
+      MetadataOptions:
+        HttpTokens: required
+      BlockDeviceMappings:
+      - DeviceName: '/dev/xvda'
+        Ebs:
+          Encrypted: true
+          KmsKeyId: !If [HasKmsKey, {'Fn::ImportValue': !Sub '${ParentKmsKeyStack}-KeyArn'}, !Ref 'AWS::NoValue']
+          VolumeSize: !Ref RootVolumeSize
+          VolumeType: gp3
+      PropagateTagsToVolumeOnCreation: true
+      NetworkInterfaces:
+      - DeviceIndex: '0'
+        NetworkInterfaceId: !Ref NetworkInterface
+      UserData:
+        'Fn::Base64': !Sub |
+          #!/bin/bash -ex
+          trap '/opt/aws/bin/cfn-signal -e 1 --region ${AWS::Region} --stack ${AWS::StackName} --resource VirtualMachine' ERR
+          ${UserData}
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource VirtualMachine --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e 0 --region ${AWS::Region} --stack ${AWS::StackName} --resource VirtualMachine
+      Tags:
+      - Key: Name
+        Value: !Ref Name
+    CreationPolicy:
+      ResourceSignal:
+        Count: 1
+        Timeout: PT10M
+  CPUTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average CPU utilization over last 10 minutes higher than 80%'
+      Namespace: 'AWS/EC2'
+      MetricName: CPUUtilization
+      Statistic: Average
+      Period: 600
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: InstanceId
+        Value: !Ref VirtualMachine
+  MemoryTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average memory utilization over last 10 minutes higher than 80%'
+      Namespace: !Ref 'AWS::StackName'
+      MetricName: mem_used_percent
+      Statistic: Average
+      Period: 600
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: InstanceId
+        Value: !Ref VirtualMachine
+  DiskTooHighAlarm:
+    Condition: HasAlertTopic
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: 'Average disk utilization over last 10 minutes higher than 80%'
+      Namespace: !Ref 'AWS::StackName'
+      MetricName: disk_used_percent
+      Statistic: Average
+      Period: 600
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 80
+      AlarmActions:
+      - {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}
+      Dimensions:
+      - Name: InstanceId
+        Value: !Ref VirtualMachine
+      - Name: fstype
+        Value: xfs
+      - Name: path
+        Value: '/'
+  MaintenanceWindow:
+    Condition: HasMaintenanceWindowSchedule
+    Type: 'AWS::SSM::MaintenanceWindow'
+    Properties:
+      AllowUnassociatedTargets: false
+      Cutoff: 1
+      Duration: 2
+      Name: !Ref 'AWS::StackName'
+      Schedule: !Ref MaintenanceWindowSchedule
+      ScheduleTimezone: !Ref MaintenanceWindowScheduleTimezone
+  MaintenanceWindowTarget:
+    Condition: HasMaintenanceWindowSchedule
+    Type: 'AWS::SSM::MaintenanceWindowTarget'
+    Properties:
+      ResourceType: INSTANCE
+      Targets:
+      - Key: InstanceIds
+        Values: [!Ref VirtualMachine]
+      WindowId: !Ref MaintenanceWindow
+  MaintenanceWindowTask:
+    Condition: HasMaintenanceWindowSchedule
+    Type: 'AWS::SSM::MaintenanceWindowTask'
+    Properties:
+      MaxConcurrency: '1'
+      MaxErrors: '1'
+      Priority: 0
+      Targets:
+      - Key: WindowTargetIds
+        Values: [!Ref MaintenanceWindowTarget]
+      TaskArn: 'AWS-RunPatchBaseline'
+      TaskInvocationParameters:
+        MaintenanceWindowRunCommandParameters:
+          CloudWatchOutputConfig:
+            CloudWatchLogGroupName: !Ref Logs
+            CloudWatchOutputEnabled: true
+          Parameters:
+            Operation: [Install]
+      TaskType: 'RUN_COMMAND'
+      WindowId: !Ref MaintenanceWindow
+  BackupVault: # cannot be deleted with data
+    Condition: HasBackupRetentionPeriod
+    Type: 'AWS::Backup::BackupVault'
+    Properties:
+      BackupVaultName: !Ref 'AWS::StackName'
+      Notifications: !If [HasAlertTopic, {BackupVaultEvents: [BACKUP_JOB_STARTED, BACKUP_JOB_COMPLETED, RESTORE_JOB_STARTED, RESTORE_JOB_COMPLETED, RECOVERY_POINT_MODIFIED], SNSTopicArn: {'Fn::ImportValue': !Sub '${ParentAlertStack}-TopicARN'}}, !Ref 'AWS::NoValue']
+  BackupPlan:
+    Condition: HasBackupRetentionPeriod
+    Type: 'AWS::Backup::BackupPlan'
+    Properties:
+      BackupPlan:
+        BackupPlanName: !Ref 'AWS::StackName'
+        BackupPlanRule:
+        - CompletionWindowMinutes: 1440
+          Lifecycle:
+            DeleteAfterDays: !Ref BackupRetentionPeriod
+          RuleName: !Ref 'AWS::StackName'
+          ScheduleExpression: !Ref BackupScheduleExpression
+          StartWindowMinutes: 60
+          TargetBackupVault: !Ref BackupVault
+  BackupRole:
+    Condition: HasBackupRetentionPeriod
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: 'backup.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      PermissionsBoundary: !If [HasPermissionsBoundary, !Ref PermissionsBoundary, !Ref 'AWS::NoValue']
+      Policies:
+      - PolicyName: backup
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'ec2:CreateTags'
+            - 'ec2:DeleteSnapshot'
+            Resource: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}::snapshot/*'
+          - Effect: Allow
+            Action:
+            - 'ec2:CreateImage'
+            - 'ec2:DeregisterImage'
+            - 'ec2:DescribeSnapshots'
+            - 'ec2:DescribeTags'
+            - 'ec2:DescribeImages'
+            - 'ec2:DescribeInstances'
+            - 'ec2:DescribeInstanceAttribute'
+            - 'ec2:DescribeInstanceCreditSpecifications'
+            - 'ec2:DescribeNetworkInterfaces'
+            - 'ec2:DescribeElasticGpus'
+            - 'ec2:DescribeSpotInstanceRequests'
+            Resource: '*'
+          - Effect: Allow
+            Action: 'ec2:CreateTags'
+            Resource: !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}::image/*'
+          - Effect: Allow
+            Action:
+            - 'ec2:CreateSnapshot'
+            - 'ec2:DeleteSnapshot'
+            - 'ec2:DescribeVolumes'
+            - 'ec2:DescribeSnapshots'
+            Resource:
+            - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}::snapshot/*'
+            - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:volume/*'
+  BackupSelection:
+    Condition: HasBackupRetentionPeriod
+    Type: 'AWS::Backup::BackupSelection'
+    Properties:
+      BackupPlanId: !Ref BackupPlan
+      BackupSelection:
+        IamRoleArn: !GetAtt 'BackupRole.Arn'
+        Resources:
+        - !Sub 'arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${VirtualMachine}'
+        SelectionName: !Ref 'AWS::StackName'
+Outputs:
+  TemplateID:
+    Description: 'cloudonaut.io template id.'
+    Value: 'ec2/al2023-mutable-private'
+  TemplateVersion:
+    Description: 'cloudonaut.io template version.'
+    Value: '__VERSION__'
+  StackName:
+    Description: 'Stack name.'
+    Value: !Sub '${AWS::StackName}'
+  InstanceId:
+    Description: 'The EC2 instance id.'
+    Value: !Ref VirtualMachine
+    Export:
+      Name: !Sub '${AWS::StackName}-InstanceId'
+  PrivateIPAddress:
+    Description: 'The private IP address of the EC2 instance.'
+    Value: !GetAtt 'NetworkInterface.PrimaryPrivateIpAddress'
+    Export:
+      Name: !Sub '${AWS::StackName}-PrivateIPAddress'

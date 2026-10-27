@@ -9,6 +9,8 @@ on:
         default: '*'
         options: # compile list with cd test/src && find . -name 'Test*' -execdir basename {} .java ';' | sort
         - '*'
+        - TestAL2023MutablePrivate
+        - TestAL2023MutablePublic
         - TestAL2MutablePrivate
         - TestAL2MutablePublic
         - TestAccessLogsAnonymizer
